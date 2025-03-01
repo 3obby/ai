@@ -2,12 +2,19 @@ import json
 from openai import OpenAI
 import uuid
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize OpenAI client
-client = OpenAI(api_key="ai key")
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
 # List of people to create companions for
 people = [
+    {"name": "Billy Brainstormer", "category": "Scientists"},
     {"name": "Albert Einstein", "category": "Scientists"},
     {"name": "Socrates", "category": "Philosophy"},
     {"name": "Call of Duty", "category": "Games"},

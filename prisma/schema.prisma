@@ -3,158 +3,147 @@ generator client {
 }
 
 datasource db {
- provider = "postgresql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Category {
-  id            String @id @default(uuid())
-  name          String
-  companions    Companion[]
+  id         String      @id @default(uuid())
+  name       String
+  companions Companion[]
 }
 
 model Companion {
-  id            String @id @default(uuid())
-  userId        String
-  xpEarned      Int    @default(0)
-  userName      String
-  src           String
-  name          String @db.Text
-  instructions  String @db.Text
-  private       Boolean @default(false)
-  isFree        Boolean @default(false)
-  messageDelay  Int     @default(0)  // Added: Delay in milliseconds between messages
-  sendMultipleMessages Boolean @default(true)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  category      Category @relation(fields: [categoryId], references: [id])
-  categoryId    String
-
-  messages      Message[]
-  groupChats    GroupChatMember[]  // Added: Relation to group messages
+  id                   String            @id @default(uuid())
+  userId               String
+  userName             String
+  src                  String
+  name                 String
+  instructions         String
+  private              Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  categoryId           String
+  isFree               Boolean           @default(false)
+  xpEarned             Int               @default(0)
+  messageDelay         Int               @default(0)
+  sendMultipleMessages Boolean           @default(true)
+  category             Category          @relation(fields: [categoryId], references: [id])
+  groupChats           GroupChatMember[]
+  messages             Message[]
 
   @@index([categoryId])
 }
 
-enum Role {
-  user
-  system
-}
-
 model Message {
-  id          String   @id @default(uuid())
-  role        Role   
-  content     String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id          String    @id @default(uuid())
+  role        Role
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   companionId String
   userId      String
-
   companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
-  
+
   @@index([companionId])
 }
 
 model DailyMessageCount {
-  id          String   @id @default(uuid())
-  userId      String
-  date        DateTime @default(now())
-  count       Int      @default(0)
+  id     String   @id @default(uuid())
+  userId String
+  date   DateTime @default(now())
+  count  Int      @default(0)
 
   @@unique([userId, date])
   @@index([userId, date])
 }
 
 model UserSubscription {
-  id                        String    @id @default(cuid())
-  userId                    String    @unique
-  stripeCustomerId          String?   @unique @map(name: "stripe_customer_id")
-  stripeSubscriptionId      String?   @unique @map(name: "stripe_subscription_id")
-  stripePriceId             String?   @map(name: "stripe_price_id")
-  stripeCurrentPeriodEnd    DateTime? @map(name: "stripe_current_period_end")
-  price                     Float     @map(name: "price")
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  stripeCustomerId       String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map("stripe_subscription_id")
+  stripePriceId          String?   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
+  price                  Float     @map("price")
 }
 
 model UserUsage {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  email           String    @unique
-  totalMoneySpent Float     @default(0)      // Total money spent
-  totalSpent      Float     @default(0)      // Total money spent
-  availableTokens Int       @default(100)    // Free tokens to start
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  totalSpent      Float    @default(0)
+  availableTokens Int      @default(100)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  email           String   @unique
+  totalMoneySpent Float    @default(0)
 
   @@index([userId])
   @@index([email])
 }
 
 model UsageTransaction {
-  id          String    @id @default(cuid())
-  userId      String
-  amount      Int       // Number of tokens used
-  createdAt   DateTime  @default(now())
-  
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  createdAt DateTime @default(now())
+
   @@index([userId])
 }
 
 model CommunityIdea {
-  id          String    @id @default(cuid())
-  userId      String    // Creator of the idea 
-  title       String    @db.Text
-  description String    @db.Text
-  upvotes     Int       @default(0)
-  downvotes   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  upvotes     Int      @default(0)
+  downvotes   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([userId])
   @@index([createdAt])
 }
 
-// Added: New model for group chats
 model GroupChat {
-  id          String   @id @default(uuid())
-  name        String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  creatorId   String   // User who created the group
-  
-  members     GroupChatMember[]
-  messages    GroupMessage[]
+  id        String            @id @default(uuid())
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  creatorId String
+  members   GroupChatMember[]
+  messages  GroupMessage[]
 }
 
-// Added: Model for group chat members (companions)
 model GroupChatMember {
-  id          String   @id @default(uuid())
-  groupChat   GroupChat @relation(fields: [groupChatId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
   groupChatId String
-  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
   companionId String
-  joinedAt    DateTime @default(now())
+  joinedAt    DateTime  @default(now())
+  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  groupChat   GroupChat @relation(fields: [groupChatId], references: [id], onDelete: Cascade)
 
   @@unique([groupChatId, companionId])
   @@index([groupChatId])
   @@index([companionId])
 }
 
-// Added: Model for group chat messages
 model GroupMessage {
-  id          String   @id @default(uuid())
-  content     String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  groupChat   GroupChat @relation(fields: [groupChatId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   groupChatId String
-  
-  isBot       Boolean  
-  senderId    String    // ID of either the user or companion who sent the message
+  isBot       Boolean
+  senderId    String
+  groupChat   GroupChat @relation(fields: [groupChatId], references: [id], onDelete: Cascade)
 
   @@index([groupChatId])
   @@index([senderId])
 }
 
+enum Role {
+  user
+  system
+  assistant
+}
