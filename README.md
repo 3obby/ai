@@ -1,6 +1,6 @@
-## Personna.AI
+## GroupChatBotBuilder.AI
 
-Personna.AI is a specialized GPT wrapper focused on creating AI companions that emulate real or fictional personas. It lets users engage with one or more companion AIs in individual or group chats.
+GroupChatBotBuilder.AI is a specialized GPT wrapper focused on creating AI companions that emulate real or fictional personas. It lets users engage with one or more companion AIs in individual or group chats.
 
 ### Features
 
@@ -23,7 +23,7 @@ Personna.AI is a specialized GPT wrapper focused on creating AI companions that 
 
 1. **Clone or Fork** the repository:
    ```bash
-   git clone https://github.com/yourusername/personna-ai.git
+   git clone https://github.com/yourusername/GroupChatBotBuilder-ai.git
    ```
 2. **Install Node Dependencies** (from the project root):
    ```bash
@@ -87,9 +87,9 @@ Personna.AI is a specialized GPT wrapper focused on creating AI companions that 
 
 This project is licensed under the terms specified in your license file (if provided). If none exists, please consider adding one to clarify usage rights.
 
-Enjoy using Personna.AI for all your character-driven AI interactions!
+Enjoy using GroupChatBotBuilder.AI for all your character-driven AI interactions!
 
-Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into Personna.AI. Adjust as needed for your setup:
+Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into GroupChatBotBuilder.AI. Adjust as needed for your setup:
 
 ---
 
@@ -138,4 +138,4 @@ Below is an example **Character Creation** workflow you can add to the README, s
    - In your Next.js logs or browser console, verify that Billy Brainstormer (or any new companion) is visible.
    - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion’s ID.
 
-That’s it! You can now create, generate, and sync new AI companions seamlessly into Personna.AI.
+That’s it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.AI.

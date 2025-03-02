@@ -14,8 +14,8 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Personna.AI",
-  description: "Your customized personna.",
+  title: "GroupChatBotBuilder.AI",
+  description: "Your customized GroupChatBotBuilder.",
 }
 
 export default function RootLayout({

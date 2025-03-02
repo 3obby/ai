@@ -94,7 +94,7 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
               font.className
             )}
           >
-            personna.ai
+            GroupChatBotBuilder.ai
           </h1>
         </Link>
       </div>

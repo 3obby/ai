@@ -79,7 +79,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
     // Use a shorter interval for better responsiveness
     const interval = setInterval(fetchProgress, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchProgress])
 
   // Show loading state if no progress data is available yet
   if (!progress) {

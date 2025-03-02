@@ -69,7 +69,7 @@ export const ProModal = () => {
         <DialogHeader>
           <DialogTitle className="flex justify-center items-center flex-col gap-y-4 pb-2">
             <div className="flex items-center gap-x-2 font-bold text-xl">
-              You're out of Tokens!
+              You&apos;re out of Tokens!
               <Zap className="h-6 w-6 text-amber-500" />
             </div>
           </DialogTitle>

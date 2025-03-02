@@ -1,33 +1,37 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function AdminLogin() {
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const [error, setError] = useState("")
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    
-    if ((formData.get("email") === "personna@ai.com" ||formData.get("email") === "admin") && 
-        (formData.get("password") === "personna@ai.com" || formData.get("password") === "admin")) {
-      localStorage.setItem("isAdminAuthenticated", "true");
-      localStorage.setItem("isAdmin", "true");
-      router.push("/admin/dashboard");
+    e.preventDefault()
+    const formData = new FormData(e.target as HTMLFormElement)
+
+    if (
+      (formData.get("email") === "GroupChatBotBuilder@ai.com" ||
+        formData.get("email") === "admin") &&
+      (formData.get("password") === "GroupChatBotBuilder@ai.com" ||
+        formData.get("password") === "admin")
+    ) {
+      localStorage.setItem("isAdminAuthenticated", "true")
+      localStorage.setItem("isAdmin", "true")
+      router.push("/admin/dashboard")
     } else {
-      setError("Invalid credentials");
+      setError("Invalid credentials")
     }
-  };
+  }
 
   return (
     <div className="flex h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-xl shadow-lg">
-        <h2 className="text-2xl font-bold text-center text-foreground">Admin Login</h2>
-        {error && (
-          <p className="text-red-500 text-center">{error}</p>
-        )}
+        <h2 className="text-2xl font-bold text-center text-foreground">
+          Admin Login
+        </h2>
+        {error && <p className="text-red-500 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-foreground">
@@ -60,5 +64,5 @@ export default function AdminLogin() {
         </form>
       </div>
     </div>
-  );
-} 
+  )
+}

@@ -78,7 +78,7 @@ export const GroupChatClient = ({
 }: GroupChatClientProps) => {
   const router = useRouter()
   const { decrementRemaining } = useChatLimit()
-  const { prompts } = usePrompts()
+  const { prompts, togglePrompt } = usePrompts()
   const activePrompts = prompts.filter((prompt) => prompt.isActive)
 
   const [messages, setMessages] = useState<GroupMessage[]>(groupChat.messages)
@@ -93,111 +93,68 @@ export const GroupChatClient = ({
     setInput(e.target.value)
   }
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  // Moving handleSubmit into useCallback
+  const handleSubmit = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
 
-    try {
-      // Modify the input to include active prompts
-      let modifiedInput = input
-
-      if (activePrompts.length > 0) {
-        const promptsText = activePrompts
-          .map((prompt) => `- ${prompt.text}`)
-          .join("\n")
-
-        modifiedInput = `[ADDITIONAL INSTRUCTIONS FOR ALL BOTS IN THIS CONVERSATION]\n${promptsText}\n\n[USER MESSAGE]\n${input}`
-      }
-
-      const response = await fetch(`/api/group-chat/${groupChat.id}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt: modifiedInput }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to send message")
-      }
-
-      const data = await response.json()
-      const { botMessages, respondingBots } = data
-
-      // Add initial messages
-      for (let i = 0; i < botMessages.length; i++) {
-        const msg = botMessages[i]
-        const bot = respondingBots.find((b: any) => b.id === msg.senderId)
-        const delay = bot?.messageDelay || 0
-
-        await new Promise((resolve) => setTimeout(resolve, delay * 1000))
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: msg.id,
-            content: msg.content,
-            isBot: true,
-            senderId: msg.senderId,
-            createdAt: new Date(msg.createdAt),
-          },
-        ])
-      }
-
-      // Check for second message (15% chance)
-      const doubleMessageRoll = Math.random() * 100
-      if (doubleMessageRoll <= 15) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: "loading",
-            content: "",
-            isBot: true,
-            senderId: botMessages[0].senderId,
-            createdAt: new Date(),
-          },
-        ])
-
-        // Include prompts in follow-up message too
-        let followUpPrompt = botMessages[0].content
+      try {
+        // Modify the input to include active prompts
+        let modifiedInput = input
 
         if (activePrompts.length > 0) {
           const promptsText = activePrompts
             .map((prompt) => `- ${prompt.text}`)
             .join("\n")
-
-          followUpPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${followUpPrompt}`
+          modifiedInput = `${input}\n\nRespond with these prompts in mind:\n${promptsText}`
         }
 
-        const followUpResponse = await fetch(
-          `/api/group-chat/${groupChat.id}/chat`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt: followUpPrompt,
-              isFollowUp: true,
-            }),
-          }
-        )
+        // Don't send empty messages
+        if (!modifiedInput.trim()) {
+          return
+        }
 
-        const followUpData = await followUpResponse.json()
+        setInput("")
+        // Reset active prompts
+        activePrompts.forEach((prompt) => togglePrompt(prompt.id))
 
-        setMessages((prev) => {
-          const filtered = prev.filter((msg) => msg.id !== "loading")
-          return [
-            ...filtered,
-            ...followUpData.botMessages.map((msg: BotResponse) => ({
+        const response = await fetch(`/api/group-chat/${groupChat.id}/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt: modifiedInput }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to send message")
+        }
+
+        const data = await response.json()
+        const { botMessages, respondingBots } = data
+
+        // Add initial messages
+        for (let i = 0; i < botMessages.length; i++) {
+          const msg = botMessages[i]
+          const bot = respondingBots.find((b: any) => b.id === msg.senderId)
+          const delay = bot?.messageDelay || 0
+
+          await new Promise((resolve) => setTimeout(resolve, delay * 1000))
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
               id: msg.id,
               content: msg.content,
               isBot: true,
               senderId: msg.senderId,
               createdAt: new Date(msg.createdAt),
-            })),
-          ]
-        })
+            },
+          ])
+        }
 
-        // Check for third message (5% chance)
-        const tripleMessageRoll = Math.random() * 100
-        if (tripleMessageRoll <= 5) {
+        // Check for second message (15% chance)
+        const doubleMessageRoll = Math.random() * 100
+        if (doubleMessageRoll <= 15) {
           setMessages((prev) => [
             ...prev,
             {
@@ -209,36 +166,36 @@ export const GroupChatClient = ({
             },
           ])
 
-          // Include prompts in third message too
-          let thirdPrompt = followUpData.botMessages[0].content
+          // Include prompts in follow-up message too
+          let followUpPrompt = botMessages[0].content
 
           if (activePrompts.length > 0) {
             const promptsText = activePrompts
               .map((prompt) => `- ${prompt.text}`)
               .join("\n")
 
-            thirdPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${thirdPrompt}`
+            followUpPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${followUpPrompt}`
           }
 
-          const thirdResponse = await fetch(
+          const followUpResponse = await fetch(
             `/api/group-chat/${groupChat.id}/chat`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                prompt: thirdPrompt,
+                prompt: followUpPrompt,
                 isFollowUp: true,
               }),
             }
           )
 
-          const thirdData = await thirdResponse.json()
+          const followUpData = await followUpResponse.json()
 
           setMessages((prev) => {
             const filtered = prev.filter((msg) => msg.id !== "loading")
             return [
               ...filtered,
-              ...thirdData.botMessages.map((msg: BotResponse) => ({
+              ...followUpData.botMessages.map((msg: BotResponse) => ({
                 id: msg.id,
                 content: msg.content,
                 isBot: true,
@@ -247,17 +204,71 @@ export const GroupChatClient = ({
               })),
             ]
           })
-        }
-      }
 
-      setInput("")
-      decrementRemaining()
-    } catch (error) {
-      console.error("Error sending message:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+          // Check for third message (5% chance)
+          const tripleMessageRoll = Math.random() * 100
+          if (tripleMessageRoll <= 5) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: "loading",
+                content: "",
+                isBot: true,
+                senderId: botMessages[0].senderId,
+                createdAt: new Date(),
+              },
+            ])
+
+            // Include prompts in third message too
+            let thirdPrompt = followUpData.botMessages[0].content
+
+            if (activePrompts.length > 0) {
+              const promptsText = activePrompts
+                .map((prompt) => `- ${prompt.text}`)
+                .join("\n")
+
+              thirdPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${thirdPrompt}`
+            }
+
+            const thirdResponse = await fetch(
+              `/api/group-chat/${groupChat.id}/chat`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  prompt: thirdPrompt,
+                  isFollowUp: true,
+                }),
+              }
+            )
+
+            const thirdData = await thirdResponse.json()
+
+            setMessages((prev) => {
+              const filtered = prev.filter((msg) => msg.id !== "loading")
+              return [
+                ...filtered,
+                ...thirdData.botMessages.map((msg: BotResponse) => ({
+                  id: msg.id,
+                  content: msg.content,
+                  isBot: true,
+                  senderId: msg.senderId,
+                  createdAt: new Date(msg.createdAt),
+                })),
+              ]
+            })
+          }
+        }
+
+        decrementRemaining()
+      } catch (error) {
+        console.error("Error sending message:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [input, activePrompts, togglePrompt, decrementRemaining]
+  )
 
   // Ensure all hooks are called at the top level
   const onSubmit = useCallback(
