@@ -14,7 +14,7 @@ export const SUBSCRIPTION_PLAN: SubscriptionPlan = {
   id: "standard",
   name: "Standard Plan",
   description: "All features, generous token allowance",
-  weeklyPrice: 17,
+  weeklyPrice: 4.99,
   features: [
     "200,000 tokens included per week",
     "Create unlimited AI personas",
