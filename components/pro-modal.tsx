@@ -99,7 +99,7 @@ export const ProModal = () => {
                   <p className="font-medium">weekly Token Allowance</p>
                   <p className="text-sm text-muted-foreground">
                     {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens
-                    per month (~
+                    per week (~
                     {Math.floor(SUBSCRIPTION_PLAN.tokensPerMonth / 2000)}{" "}
                     conversations)
                   </p>

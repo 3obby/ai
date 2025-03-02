@@ -170,7 +170,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
           </div>
           <p className="text-lg text-muted-foreground max-w-3xl">
             Get unlimited AI companions and{" "}
-            {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens per month
+            {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens per week
           </p>
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
                 <span className="text-4xl font-bold">
                   ${SUBSCRIPTION_PLAN.weeklyPrice}
                 </span>
-                <span className="text-gray-500">/month</span>
+                <span className="text-gray-500">/week</span>
               </div>
             </div>
 
@@ -213,7 +213,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
                   <h4 className="font-medium">Weekly Token Allowance</h4>
                   <p className="text-sm text-gray-500">
                     {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens
-                    per month (~
+                    per week (~
                     {Math.floor(SUBSCRIPTION_PLAN.tokensPerMonth / 2000)}{" "}
                     conversations)
                   </p>

@@ -34,9 +34,9 @@ interface IdeaType {
   createdAt: Date
 }
 
-const IDEA_SUBMISSION_COST = 1000
-const UPVOTE_COST = 100
-const DOWNVOTE_COST = 17
+const IDEA_SUBMISSION_COST = 20000
+const UPVOTE_COST = 10000
+const DOWNVOTE_COST = 3000
 
 const CommunityPage = () => {
   const [ideas, setIdeas] = useState<IdeaType[]>([])

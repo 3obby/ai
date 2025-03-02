@@ -16,16 +16,16 @@ export const SUBSCRIPTION_PLAN: SubscriptionPlan = {
   description: "All features, generous token allowance",
   weeklyPrice: 17,
   features: [
-    "250,000 tokens included per week",
+    "200,000 tokens included per week",
     "Create unlimited AI personas",
     "Join and create group chats",
     "Access to community voting",
     "Custom prompts and AI customization",
   ],
-  includeBaseTokens: 1000000,
+  includeBaseTokens: 200000,
   additionalTokenCost: 0.00003, // $0.00003 per additional token
   stripePriceId: process.env.STRIPE_STANDARD_PRICE_ID || "",
-  tokensPerMonth: 1000000, // Same as includeBaseTokens
+  tokensPerMonth: 200000, // Same as includeBaseTokens
 }
 
 // For backward compatibility
