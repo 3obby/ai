@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs"
 import { NextResponse } from "next/server"
+import Stripe from "stripe"
 
 import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
@@ -49,20 +50,20 @@ export async function POST(req: Request) {
     // Get the Stripe price ID for the metered usage (for additional tokens)
     const stripeMeteredPriceId = process.env.STRIPE_METERED_PRICE_ID
 
-    // Create line items array
-    const lineItems = [
+    // Create line items array with the standard subscription
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {
         price: stripePriceId,
         quantity: 1,
       },
     ]
 
-    // Add metered usage item if available
+    // Add metered usage item if available, without quantity
     if (stripeMeteredPriceId) {
+      // For metered pricing, we must not specify a quantity
       lineItems.push({
         price: stripeMeteredPriceId,
-        quantity: 1,
-      })
+      } as Stripe.Checkout.SessionCreateParams.LineItem)
     }
 
     // Create a Stripe session

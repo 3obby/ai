@@ -1,15 +1,22 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useProModal } from "@/hooks/use-pro-modal";
+import { useState, useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useProModal } from "@/hooks/use-pro-modal"
 
 interface CreateGroupChatModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (name: string) => void;
-  companionName: string;
-  isLoading?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (name: string) => void
+  companionName: string
+  isLoading?: boolean
 }
 
 export const CreateGroupChatModal = ({
@@ -19,31 +26,31 @@ export const CreateGroupChatModal = ({
   companionName,
   isLoading = false,
 }: CreateGroupChatModalProps) => {
-  const [name, setName] = useState(`${companionName}'s Group`);
-  const [userXP, setUserXP] = useState(0);
-  const proModal = useProModal();
+  const [name, setName] = useState(`${companionName}'s Group`)
+  const [userXP, setUserXP] = useState(0)
+  const proModal = useProModal()
 
   useEffect(() => {
     const fetchUserXP = async () => {
       try {
-        const response = await fetch("/api/user-progress");
-        const data = await response.json();
-        setUserXP(data.availableTokens);
+        const response = await fetch("/api/user-progress")
+        const data = await response.json()
+        setUserXP(data.remainingTokens)
       } catch (error) {
-        console.error("Error fetching user XP:", error);
+        console.error("Error fetching user XP:", error)
       }
-    };
-    fetchUserXP();
-  }, []);
+    }
+    fetchUserXP()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (userXP < 50) {
-      proModal.onOpen();
-      return;
+      proModal.onOpen()
+      return
     }
-    onConfirm(name);
-  };
+    onConfirm(name)
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -51,7 +58,8 @@ export const CreateGroupChatModal = ({
         <DialogHeader>
           <DialogTitle>Create Group Chat</DialogTitle>
           <DialogDescription>
-            Create a new group chat starting with {companionName}. You can add more companions later.
+            Create a new group chat starting with {companionName}. You can add
+            more companions later.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -69,7 +77,12 @@ export const CreateGroupChatModal = ({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
@@ -79,5 +92,5 @@ export const CreateGroupChatModal = ({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}; 
+  )
+}

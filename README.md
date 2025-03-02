@@ -1,6 +1,6 @@
-## GroupChatBotBuilder.AI
+## GroupChatBotBuilder
 
-GroupChatBotBuilder.AI is a specialized GPT wrapper focused on creating AI companions that emulate real or fictional personas. It lets users engage with one or more companion AIs in individual or group chats.
+GroupChatBotBuilder is a specialized GPT wrapper focused on creating AI companions that emulate real or fictional personas. It lets users engage with one or more companion AIs in individual or group chats.
 
 ### Features
 
@@ -87,9 +87,9 @@ GroupChatBotBuilder.AI is a specialized GPT wrapper focused on creating AI compa
 
 This project is licensed under the terms specified in your license file (if provided). If none exists, please consider adding one to clarify usage rights.
 
-Enjoy using GroupChatBotBuilder.AI for all your character-driven AI interactions!
+Enjoy using GroupChatBotBuilder for all your character-driven AI interactions!
 
-Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into GroupChatBotBuilder.AI. Adjust as needed for your setup:
+Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into GroupChatBotBuilder. Adjust as needed for your setup:
 
 ---
 
@@ -138,4 +138,4 @@ Below is an example **Character Creation** workflow you can add to the README, s
    - In your Next.js logs or browser console, verify that Billy Brainstormer (or any new companion) is visible.
    - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion’s ID.
 
-That’s it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.AI.
+That’s it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.
