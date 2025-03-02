@@ -7,7 +7,7 @@ import { stripe } from "@/lib/stripe"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 import { absoluteUrl } from "@/lib/utils"
 
-const settingsUrl = absoluteUrl("/settings")
+const settingsUrl = absoluteUrl("/")
 const subscribeUrl = absoluteUrl("/subscribe")
 
 export async function POST(req: Request) {
