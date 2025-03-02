@@ -27,7 +27,9 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
       ? [
           {
             role: "system",
-            content: "Hi there! 👋",
+            content:
+              (companion as any).customIntroduction ||
+              `Hi there! I'm ${companion.name}. 👋`,
             src: companion.src,
           },
         ]

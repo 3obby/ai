@@ -20,6 +20,7 @@ model Companion {
   src                  String
   name                 String
   instructions         String
+  customIntroduction   String?           @db.Text
   private              Boolean           @default(false)
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
