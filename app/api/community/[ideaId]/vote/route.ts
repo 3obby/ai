@@ -2,8 +2,8 @@ import { auth, currentUser } from "@clerk/nextjs"
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
-const UPVOTE_COST = 25
-const DOWNVOTE_COST = 15
+const UPVOTE_COST = 10000
+const DOWNVOTE_COST = 3000
 
 export async function PATCH(
   req: Request,
