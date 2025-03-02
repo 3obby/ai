@@ -6,6 +6,7 @@ import {
   getXPForNextLevel,
   getProgressToNextLevel,
 } from "@/lib/level-system"
+import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
 // Non-subscribed users get this many free tokens
 const FREE_TOKEN_ALLOWANCE = 10000
@@ -81,7 +82,11 @@ export async function GET() {
 
     // Calculate token allocation based on subscription status
     const baseTokens = isSubscribed
-      ? (userSubscription as any)?.includeBaseTokens || FREE_TOKEN_ALLOWANCE
+      ? (userSubscription as any)?.includeBaseTokens ||
+        // Explicitly check SUBSCRIPTION_PLAN for better reliability
+        (userSubscription?.stripeSubscriptionId
+          ? SUBSCRIPTION_PLAN.includeBaseTokens
+          : FREE_TOKEN_ALLOWANCE)
       : FREE_TOKEN_ALLOWANCE
 
     // For now, just use the availableTokens as the actual available tokens

@@ -31,6 +31,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [progress, setProgress] = useState<UserProgress | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [tokensUpdated, setTokensUpdated] = useState(false)
   const { user } = useUser()
 
   const fetchProgress = async () => {
@@ -56,6 +57,14 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
         return
       }
 
+      // If we already had progress data and tokens increased significantly,
+      // show a visual indicator
+      if (progress && data.remainingTokens > progress.remainingTokens + 10000) {
+        setTokensUpdated(true)
+        // Hide the indicator after 5 seconds
+        setTimeout(() => setTokensUpdated(false), 5000)
+      }
+
       setProgress({
         earnedXP: data.earnedXP || 0,
         level: data.level || 0,
@@ -79,6 +88,26 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
     // Use a shorter interval for better responsiveness
     const interval = setInterval(fetchProgress, 5000)
     return () => clearInterval(interval)
+  }, [fetchProgress])
+
+  // Check for Stripe success or canceled parameters, indicating a return from Stripe
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Check if URL has parameters indicating a return from Stripe
+      const urlParams = new URLSearchParams(window.location.search)
+      const hasStripeParams =
+        urlParams.has("payment_intent") ||
+        urlParams.has("setup_intent") ||
+        urlParams.has("redirect_status")
+
+      // If we detect we've returned from Stripe, immediately fetch updated progress
+      if (hasStripeParams) {
+        console.log(
+          "Detected return from Stripe - fetching updated token balance"
+        )
+        fetchProgress()
+      }
+    }
   }, [fetchProgress])
 
   // Show loading state if no progress data is available yet
@@ -125,7 +154,9 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
     <div className="relative">
       {/* Desktop view - Enhanced stylized display */}
       <div
-        className="hidden md:flex items-center gap-x-4 cursor-pointer px-2"
+        className={`hidden md:flex items-center gap-x-4 cursor-pointer px-2 ${
+          tokensUpdated ? "animate-pulse" : ""
+        }`}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
@@ -178,20 +209,32 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
         </div>
       </div>
 
-      {/* Mobile view - Simplified badge */}
+      {/* Mobile view - Simplified to focus on tokens which is the most important info */}
       <div
-        className="md:hidden flex items-center gap-x-2 cursor-pointer"
+        className={`md:hidden flex items-center gap-x-2 cursor-pointer ${
+          tokensUpdated ? "animate-pulse" : ""
+        }`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div
-          className={`flex items-center justify-center rounded-full p-1 ${getLevelBadgeColor(
-            progress.level
-          )}`}
-        >
-          <Trophy className="h-4 w-4 text-white" />
+        <div className="flex items-center gap-x-2">
+          <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20">
+            <Coins className="h-4 w-4 text-amber-500" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Tokens</span>
+            <span className="text-sm font-semibold">
+              {progress.remainingTokens.toLocaleString()}
+            </span>
+          </div>
         </div>
-        <span className="text-sm font-medium">Lv.{progress.level}</span>
       </div>
+
+      {/* If tokens were updated, show a tooltip/notification */}
+      {tokensUpdated && (
+        <div className="absolute -bottom-10 left-0 bg-green-500 text-white text-xs py-1 px-2 rounded-md">
+          Tokens updated! Your subscription is active.
+        </div>
+      )}
 
       {/* Expanded detail popup */}
       {isExpanded && (

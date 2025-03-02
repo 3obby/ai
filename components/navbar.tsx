@@ -84,7 +84,7 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
   // };
 
   return (
-    <div className="fixed w-full z-50 flex justify-between items-center py-2 px-4 h-16 border-b border-primary/10 bg-secondary">
+    <div className="fixed w-full z-50 flex justify-between items-center py-2 px-2 sm:px-4 h-16 border-b border-primary/10 bg-secondary">
       <div className="flex items-center">
         <MobileSidebar isPro={isPro} />
         <Link href="/">
@@ -98,12 +98,12 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
           </h1>
         </Link>
       </div>
-      <div className="flex items-center gap-x-3">
-        <div className="flex-1 min-w-[150px]">
+      <div className="flex items-center gap-x-2 sm:gap-x-3">
+        <div className="flex-1 min-w-[100px] md:min-w-[150px]">
           <ChatLimit userId={userId} />
         </div>
         {!userProgress?.isSubscribed ? (
-          <Link href="/subscribe">
+          <Link href="/subscribe" className="hidden sm:block">
             <Button size="sm" variant="premium">
               Upgrade
               <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
@@ -114,6 +114,7 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
             onClick={() => setShowChangePlan(true)}
             size="sm"
             variant="premium"
+            className="hidden sm:flex"
           >
             Change Plan
             <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
@@ -132,7 +133,9 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
         >
           <Settings className="h-5 w-5" />
         </Button>
-        <ModeToggle />
+        <div className="hidden sm:block">
+          <ModeToggle />
+        </div>
         <UserButton afterSignOutUrl="/" />
       </div>
       <SettingsModal />
