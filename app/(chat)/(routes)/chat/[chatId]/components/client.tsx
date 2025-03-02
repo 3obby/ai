@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react"
 import { Companion, Message } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useChatLimit } from "@/store/use-chat-limit"
+import { usePrompts } from "@/store/use-prompts"
 
 import { ChatForm } from "@/components/chat-form"
 import { ChatHeader } from "@/components/chat-header"
@@ -22,6 +23,9 @@ interface ChatClientProps {
 
 export const ChatClient = ({ companion }: ChatClientProps) => {
   const router = useRouter()
+  const { prompts } = usePrompts()
+  const activePrompts = prompts.filter((prompt) => prompt.isActive)
+
   const [messages, setMessages] = useState<ChatMessageProps[]>(
     companion.messages.length === 0
       ? [
@@ -59,11 +63,45 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
     setIsLoading(true)
 
     try {
+      // Create a system message with active prompts if there are any
+      let messageWithPrompts = [...newMessages]
+
+      // Only include prompts when it's not a follow-up message
+      if (activePrompts.length > 0) {
+        // Find the system message index (should be the first one)
+        const systemMessageIndex = messageWithPrompts.findIndex(
+          (msg) => msg.role === "system"
+        )
+
+        if (systemMessageIndex >= 0) {
+          // Modify the existing system message to include prompts
+          const systemMessage = messageWithPrompts[systemMessageIndex]
+          const promptsText = activePrompts
+            .map((prompt) => `- ${prompt.text}`)
+            .join("\n")
+
+          messageWithPrompts[systemMessageIndex] = {
+            ...systemMessage,
+            content: `${systemMessage.content}\n\nAdditional instructions:\n${promptsText}`,
+          }
+        } else {
+          // Add a new system message with the prompts
+          const promptsText = activePrompts
+            .map((prompt) => `- ${prompt.text}`)
+            .join("\n")
+
+          messageWithPrompts.unshift({
+            role: "system",
+            content: `Additional instructions:\n${promptsText}`,
+          })
+        }
+      }
+
       const response = await fetch(`/api/chat/${companion.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          allMessages: newMessages,
+          allMessages: messageWithPrompts,
           isFollowUp: false,
         }),
       })
@@ -102,13 +140,23 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
           ])
 
           try {
+            // For followup messages, also apply the active prompts
+            let followUpPrompt = `Reply in a short, casual style—like texting—with a friendly tone.`
+
+            if (activePrompts.length > 0) {
+              const promptsText = activePrompts
+                .map((prompt) => `- ${prompt.text}`)
+                .join("\n")
+              followUpPrompt += `\n\nAdditional instructions:\n${promptsText}`
+            }
+
+            followUpPrompt += `\n\nHere's my previous message:\n"${completion}"`
+
             const followUpResponse = await fetch(`/api/chat/${companion.id}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                prompt: `Reply in a short, casual style—like texting—with a friendly tone. 
-Here's my previous message:
-"${completion}"`,
+                prompt: followUpPrompt,
                 isFollowUp: true,
               }),
             })
@@ -148,11 +196,21 @@ Here's my previous message:
                 },
               ])
 
+              // Apply prompts to third message as well
+              let thirdPrompt = completion + "\n\n" + secondMessage
+
+              if (activePrompts.length > 0) {
+                const promptsText = activePrompts
+                  .map((prompt) => `- ${prompt.text}`)
+                  .join("\n")
+                thirdPrompt = `Additional instructions:\n${promptsText}\n\n${thirdPrompt}`
+              }
+
               const thirdResponse = await fetch(`/api/chat/${companion.id}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  prompt: completion + "\n\n" + secondMessage,
+                  prompt: thirdPrompt,
                   isFollowUp: true,
                 }),
               })

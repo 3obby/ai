@@ -1,18 +1,18 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
-import prismadb from "@/lib/prismadb";
+import { auth, currentUser } from "@clerk/nextjs"
+import { NextResponse } from "next/server"
+import prismadb from "@/lib/prismadb"
 
 export async function GET() {
   try {
-    const user = await currentUser();
+    const user = await currentUser()
 
     if (!user || !user.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 })
     }
 
     const companions = await prismadb.companion.findMany({
       where: {
-        private: false,
+        OR: [{ private: false }, { userId: "system" }],
       },
       select: {
         id: true,
@@ -20,13 +20,13 @@ export async function GET() {
         src: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
-    });
+        createdAt: "desc",
+      },
+    })
 
-    return NextResponse.json(companions);
+    return NextResponse.json(companions)
   } catch (error) {
-    console.log("[COMPANIONS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.log("[COMPANIONS_GET]", error)
+    return new NextResponse("Internal Error", { status: 500 })
   }
-} 
+}

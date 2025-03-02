@@ -21,6 +21,15 @@ const shouldBotRespond = async (
     } should respond to: "${prompt.substring(0, 30)}..."`
   )
 
+  // Special handling for Vanilla OpenAI
+  if (bot.name === "Vanilla OpenAI") {
+    return {
+      shouldRespond: true,
+      shouldEmoji: false,
+      shouldSkip: false,
+    }
+  }
+
   // Check if bot's last message was just an emoji
   let botLastMessageWasEmoji = false
   if (previousMessages && previousMessages.length > 0) {
@@ -835,9 +844,12 @@ export async function POST(
               messages: [
                 {
                   role: "system",
-                  content: `${bot.instructions}\n\nYou are ${
-                    bot.name
-                  } in a group chat. 
+                  content:
+                    bot.name === "Vanilla OpenAI"
+                      ? "You are an AI assistant having a conversation in a group chat. Be helpful, concise, and friendly."
+                      : `${bot.instructions}\n\nYou are ${
+                          bot.name
+                        } in a group chat. 
 
 ===== STRICT CHARACTER GUIDELINES =====
 YOU MUST MAINTAIN ${bot.name}'s AUTHENTIC VOICE AND PERSONALITY AT ALL TIMES.
@@ -877,11 +889,11 @@ IGNORE CONVERSATIONS BETWEEN OTHER BOTS.
 
 Information about the group chat:
 - These bots are also in the chat: ${otherBots
-                    .map(
-                      (b) =>
-                        `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
-                    )
-                    .join(", ")}
+                          .map(
+                            (b) =>
+                              `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
+                          )
+                          .join(", ")}
 - There are also human users in the chat
 - Keep your responses brief and conversational (1-3 sentences max)
 - Your response should be immediately recognizable as coming from ${bot.name}
@@ -894,10 +906,10 @@ ${
 
 ===== REMINDER =====
 The messages you're seeing are FILTERED to focus primarily on interactions involving you (${
-                    bot.name
-                  }) and the human users. Don't worry about other bot conversations you don't see - focus only on providing an authentic response as ${
-                    bot.name
-                  }.`,
+                          bot.name
+                        }) and the human users. Don't worry about other bot conversations you don't see - focus only on providing an authentic response as ${
+                          bot.name
+                        }.`,
                 },
                 ...getConversationHistoryForBot(bot),
                 {
@@ -959,9 +971,12 @@ The messages you're seeing are FILTERED to focus primarily on interactions invol
                 messages: [
                   {
                     role: "system",
-                    content: `${bot.instructions}\n\nYou are ${
-                      bot.name
-                    } in a group chat. 
+                    content:
+                      bot.name === "Vanilla OpenAI"
+                        ? "You are an AI assistant having a conversation in a group chat. Be helpful, concise, and friendly."
+                        : `${bot.instructions}\n\nYou are ${
+                            bot.name
+                          } in a group chat. 
 
 ===== STRICT CHARACTER GUIDELINES =====
 YOU MUST MAINTAIN ${bot.name}'s AUTHENTIC VOICE AND PERSONALITY AT ALL TIMES.
@@ -1001,11 +1016,11 @@ IGNORE CONVERSATIONS BETWEEN OTHER BOTS.
 
 Information about the group chat:
 - These bots are also in the chat: ${otherBots
-                      .map(
-                        (b) =>
-                          `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
-                      )
-                      .join(", ")}
+                            .map(
+                              (b) =>
+                                `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
+                            )
+                            .join(", ")}
 - There are also human users in the chat
 - Keep your responses brief and conversational (1-3 sentences max)
 - Your response should be immediately recognizable as coming from ${bot.name}
