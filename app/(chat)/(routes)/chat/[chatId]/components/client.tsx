@@ -70,7 +70,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
       console.log("🤖 First message received")
 
       const aiMessage: ChatMessageProps = {
-        role: "system",
+        role: "assistant",
         content: completion,
         src: companion.src,
       }

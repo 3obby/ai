@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 import prismadb from "@/lib/prismadb"
+import { Role } from "@prisma/client"
 
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
@@ -93,7 +94,7 @@ export async function POST(
       prismadb.message.create({
         data: {
           content: responseContent,
-          role: "system",
+          role: "assistant" as Role,
           companionId: params.chatId,
           userId: user.id,
         },
