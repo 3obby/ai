@@ -100,6 +100,9 @@ export async function POST(req: Request) {
     const additionalTokenCost = parseFloat(
       session.metadata?.additionalTokenCost || "0.00003"
     )
+    const amountPaid = session.amount_total
+      ? session.amount_total / 100
+      : SUBSCRIPTION_PLAN.weeklyPrice // Convert cents to dollars or use plan price as fallback
 
     if (!userId) {
       return new NextResponse("Missing subscription metadata", { status: 400 })
@@ -138,11 +141,12 @@ export async function POST(req: Request) {
       },
     })
 
-    // Credit the user with the base tokens included in the plan
+    // Credit the user with the base tokens included in the plan and update totalMoneySpent
     await prismadb.userUsage.update({
       where: { userId },
       data: {
         availableTokens: { increment: includeBaseTokens },
+        totalMoneySpent: { increment: amountPaid },
       },
     })
 
