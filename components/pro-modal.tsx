@@ -84,7 +84,7 @@ export const ProModal = () => {
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold">{SUBSCRIPTION_PLAN.name}</h3>
               <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-medium">
-                ${SUBSCRIPTION_PLAN.monthlyPrice}/month
+                ${SUBSCRIPTION_PLAN.weeklyPrice}/month
               </div>
             </div>
 
@@ -96,7 +96,7 @@ export const ProModal = () => {
               <div className="flex items-start gap-x-2">
                 <Check className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">Monthly Token Allowance</p>
+                  <p className="font-medium">weekly Token Allowance</p>
                   <p className="text-sm text-muted-foreground">
                     {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens
                     per month (~

@@ -2,9 +2,9 @@ export interface SubscriptionPlan {
   id: string
   name: string
   description: string
-  monthlyPrice: number // in USD
+  weeklyPrice: number // in USD
   features: string[]
-  includeBaseTokens: number // Monthly included tokens
+  includeBaseTokens: number // Weekly included tokens
   additionalTokenCost: number // Cost per additional token
   stripePriceId: string
   tokensPerMonth: number // Alias for includeBaseTokens for more readable code
@@ -14,9 +14,9 @@ export const SUBSCRIPTION_PLAN: SubscriptionPlan = {
   id: "standard",
   name: "Standard Plan",
   description: "All features, generous token allowance",
-  monthlyPrice: 17,
+  weeklyPrice: 17,
   features: [
-    "1,000,000 tokens included per month",
+    "250,000 tokens included per week",
     "Create unlimited AI personas",
     "Join and create group chats",
     "Access to community voting",
@@ -33,5 +33,5 @@ export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   standard: SUBSCRIPTION_PLAN,
 }
 
-// Cost per token for additional usage beyond the monthly included amount
+// Cost per token for additional usage beyond the weekly included amount
 export const COMPUTE_COST_PER_TOKEN = 0.00003 // $0.00003 per token

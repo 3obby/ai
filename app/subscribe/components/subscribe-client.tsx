@@ -116,7 +116,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
       const plan = SUBSCRIPTION_PLAN
 
       const response = await axios.post("/api/stripe/subscription", {
-        priceAmount: plan.monthlyPrice * 100, // Convert to cents
+        priceAmount: plan.weeklyPrice * 100, // Convert to cents
       })
 
       window.location.href = response.data.url
@@ -197,7 +197,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
               </p>
               <div className="flex items-baseline gap-x-2">
                 <span className="text-4xl font-bold">
-                  ${SUBSCRIPTION_PLAN.monthlyPrice}
+                  ${SUBSCRIPTION_PLAN.weeklyPrice}
                 </span>
                 <span className="text-gray-500">/month</span>
               </div>
@@ -210,7 +210,7 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
                   <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Monthly Token Allowance</h4>
+                  <h4 className="font-medium">Weekly Token Allowance</h4>
                   <p className="text-sm text-gray-500">
                     {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens
                     per month (~

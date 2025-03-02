@@ -120,7 +120,7 @@ export async function POST(req: Request) {
           session.metadata?.stripePriceId ||
           process.env.STRIPE_STANDARD_PRICE_ID,
         stripeCurrentPeriodEnd: subscriptionEndDate,
-        price: SUBSCRIPTION_PLAN.monthlyPrice,
+        price: SUBSCRIPTION_PLAN.weeklyPrice,
         includeBaseTokens,
         computeMultiplier: 1.0, // No markup in the new model, just direct per-token cost
         lastUsageResetDate: new Date(),
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
           session.metadata?.stripePriceId ||
           process.env.STRIPE_STANDARD_PRICE_ID,
         stripeCurrentPeriodEnd: subscriptionEndDate,
-        price: SUBSCRIPTION_PLAN.monthlyPrice,
+        price: SUBSCRIPTION_PLAN.weeklyPrice,
         includeBaseTokens,
         computeMultiplier: 1.0, // No markup in the new model
         lastUsageResetDate: new Date(),
@@ -189,7 +189,7 @@ export async function POST(req: Request) {
       },
     })
 
-    // Credit the user with the monthly included tokens
+    // Credit the user with the weekly included tokens
     await prismadb.userUsage.update({
       where: { userId },
       data: {
