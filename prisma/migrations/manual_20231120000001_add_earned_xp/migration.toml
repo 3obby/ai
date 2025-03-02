@@ -1,0 +1,11 @@
+# This is the Prisma migration metadata file
+# Learn more: https://pris.ly/d/prisma-migrate-json
+
+# migration_id is a unique identifier for this migration
+migration_id = "20231120000001_add_earned_xp"
+
+# Migration applied to database
+database = "neondb"
+
+# This field is used to check if a manual migration has been applied.
+is_applied_manually = true 

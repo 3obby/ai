@@ -20,7 +20,6 @@ model Companion {
   src                  String
   name                 String
   instructions         String
-  customIntroduction   String?           @db.Text
   private              Boolean           @default(false)
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
@@ -29,6 +28,7 @@ model Companion {
   xpEarned             Int               @default(0)
   messageDelay         Int               @default(0)
   sendMultipleMessages Boolean           @default(true)
+  customIntroduction   String?
   category             Category          @relation(fields: [categoryId], references: [id])
   groupChats           GroupChatMember[]
   messages             Message[]
@@ -67,6 +67,10 @@ model UserSubscription {
   stripePriceId          String?   @map("stripe_price_id")
   stripeCurrentPeriodEnd DateTime? @map("stripe_current_period_end")
   price                  Float     @map("price")
+  computeMultiplier      Float     @default(1.0)
+  includeBaseTokens      Int       @default(1000000)
+  lastUsageResetDate     DateTime  @default(now())
+  subscriptionType       String?   @default("standard")
 }
 
 model UserUsage {

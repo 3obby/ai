@@ -1,147 +1,260 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import * as Progress from '@radix-ui/react-progress';
-import { Trophy, Zap, ChevronRight, Star } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
-import React from "react";
+import { useEffect, useState } from "react"
+import * as Progress from "@radix-ui/react-progress"
+import { Trophy, Zap, ChevronRight, Star, Coins } from "lucide-react"
+import { useUser } from "@clerk/nextjs"
+import React from "react"
+import {
+  calculateLevel,
+  getXPForNextLevel,
+  getProgressToNextLevel,
+} from "@/lib/level-system"
 
 interface ChatLimitProps {
-  userId: string;
-  onXpChange?: (newXp: number) => void;
+  userId: string
+  onXpChange?: (newXp: number) => void
 }
 
 interface UserProgress {
-  totalSpent: number;
-  availableTokens: number;
+  earnedXP: number
+  level: number
+  nextLevelXP: number
+  progressToNextLevel: number
+  usedTokens: number
+  remainingTokens: number
+  baseTokenAllocation: number
+  isSubscribed: boolean
 }
 
-const XP_PER_LEVEL = 160; // Fixed XP difference between levels
-
-// Calculate level based on total XP spent
-const calculateLevel = (totalSpent: number): number => {
-  return Math.floor(totalSpent / XP_PER_LEVEL);
-};
-
-// Calculate XP needed for next level
-const getThresholdForLevel = (level: number): number => {
-  return level * XP_PER_LEVEL;
-};
-
 export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [progress, setProgress] = useState<UserProgress | null>(null);
-  const { user } = useUser();
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [progress, setProgress] = useState<UserProgress | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const { user } = useUser()
 
   const fetchProgress = async () => {
     try {
-      const response = await fetch("/api/user-progress");
-      const data = await response.json();
+      console.log("Fetching user progress...")
+      setFetchError(null)
+      const response = await fetch("/api/user-progress")
+
+      if (!response.ok) {
+        console.error("Failed to fetch user progress:", response.statusText)
+        setFetchError(
+          `Failed to fetch: ${response.status} ${response.statusText}`
+        )
+        return
+      }
+
+      const data = await response.json()
+      console.log("Fetched user progress:", data) // Debug log
+
+      if (!data) {
+        console.error("No data returned from user progress API")
+        setFetchError("No data returned from API")
+        return
+      }
+
       setProgress({
-        totalSpent: data.totalSpent || 0,
-        availableTokens: data.availableTokens || 0
-      });
-      onXpChange?.(data.availableTokens);
+        earnedXP: data.earnedXP || 0,
+        level: data.level || 0,
+        nextLevelXP: data.nextLevelXP || 0,
+        progressToNextLevel: data.progressToNextLevel || 0,
+        usedTokens: data.usedTokens || 0,
+        remainingTokens: data.remainingTokens || 0,
+        baseTokenAllocation: data.baseTokenAllocation || 0,
+        isSubscribed: data.isSubscribed || false,
+      })
+
+      onXpChange?.(data.remainingTokens)
     } catch (error) {
-      console.error("Error fetching progress:", error);
+      console.error("Error fetching progress:", error)
+      setFetchError(error instanceof Error ? error.message : "Unknown error")
     }
-  };
+  }
 
   useEffect(() => {
-    fetchProgress();
-    const interval = setInterval(fetchProgress, 5000);
-    return () => clearInterval(interval);
-  }, [fetchProgress]);
+    fetchProgress()
+    // Use a shorter interval for better responsiveness
+    const interval = setInterval(fetchProgress, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
-  if (!progress) return null;
-
-  const totalXP = progress.totalSpent;
-  const currentLevel = calculateLevel(totalXP);
-  const nextLevel = currentLevel + 1;
-  
-  const currentLevelThreshold = getThresholdForLevel(currentLevel);
-  const nextLevelThreshold = getThresholdForLevel(nextLevel);
-  const xpNeededForNextLevel = nextLevelThreshold - totalXP;
-  
-  // Calculate percentage within current level
-  const percentage = Math.min(
-    ((totalXP - currentLevelThreshold) / XP_PER_LEVEL) * 100,
-    100
-  );
-
-  const levelInfoText = `Need ${xpNeededForNextLevel} more XP to reach Level ${nextLevel}`;
-
-  const LevelDisplay = ({ showNextLevel = false }) => (
-    <div className="flex items-center gap-x-3">
+  // Show loading state if no progress data is available yet
+  if (!progress) {
+    return (
       <div className="flex items-center gap-x-2">
-        <Trophy className="h-5 w-5 text-emerald-500" />
-        <span className="text-base font-medium text-emerald-500">
-          Level {currentLevel}
+        <div className="h-4 w-4 animate-pulse bg-secondary rounded-full"></div>
+        <span className="text-xs text-muted-foreground">
+          {fetchError ? `Error: ${fetchError}` : "Loading..."}
         </span>
       </div>
+    )
+  }
 
-      <div className="text-base text-muted-foreground font-medium">
-        {progress.totalSpent} XP
-      </div>
+  const xpNeededForNextLevel = progress.nextLevelXP - progress.earnedXP
 
-      {showNextLevel && (
-        <div className="flex items-center gap-x-2">
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          <Trophy className="h-5 w-5 text-emerald-500" />
-          <span className="text-base text-muted-foreground">Level {nextLevel}</span>
-        </div>
-      )}
-    </div>
-  );
+  const levelInfoText =
+    xpNeededForNextLevel > 0
+      ? `Need ${xpNeededForNextLevel} more XP to reach Level ${
+          progress.level + 1
+        }`
+      : "Ready to level up!"
+
+  // Function to determine badge color based on level
+  const getLevelBadgeColor = (level: number) => {
+    if (level < 5) return "bg-blue-500"
+    if (level < 10) return "bg-emerald-500"
+    if (level < 20) return "bg-purple-500"
+    if (level < 50) return "bg-amber-500"
+    return "bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"
+  }
+
+  // Function to determine level title
+  const getLevelTitle = (level: number) => {
+    if (level < 3) return "Novice"
+    if (level < 7) return "Apprentice"
+    if (level < 15) return "Adept"
+    if (level < 25) return "Expert"
+    if (level < 40) return "Master"
+    return "Grandmaster"
+  }
 
   return (
     <div className="relative">
-      {/* Desktop view */}
-      <div 
-        className="hidden md:flex items-center cursor-pointer px-2"
+      {/* Desktop view - Enhanced stylized display */}
+      <div
+        className="hidden md:flex items-center gap-x-4 cursor-pointer px-2"
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
-        <LevelDisplay showNextLevel={true} />
+        {/* Level badge */}
+        <div className="flex items-center gap-x-2">
+          <div
+            className={`flex items-center justify-center rounded-full p-1 ${getLevelBadgeColor(
+              progress.level
+            )}`}
+          >
+            <Trophy className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">
+              {getLevelTitle(progress.level)}
+            </span>
+            <span className="text-sm font-semibold">
+              Level {progress.level}
+            </span>
+          </div>
+        </div>
+
+        {/* Tokens remaining */}
+        <div className="flex items-center gap-x-2 border-l pl-4">
+          <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20">
+            <Coins className="h-4 w-4 text-amber-500" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Tokens</span>
+            <span className="text-sm font-semibold">
+              {progress.remainingTokens.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress to next level - Mini progress bar */}
+        <div className="hidden lg:flex flex-col gap-y-1 border-l pl-4">
+          <div className="flex items-center justify-between w-24">
+            <span className="text-xs text-muted-foreground">Next Level</span>
+            <span className="text-xs font-medium">
+              {Math.floor(progress.progressToNextLevel)}%
+            </span>
+          </div>
+          <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-300"
+              style={{ width: `${progress.progressToNextLevel}%` }}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Mobile view */}
-      <div 
+      {/* Mobile view - Simplified badge */}
+      <div
         className="md:hidden flex items-center gap-x-2 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <Trophy className="h-5 w-5 text-emerald-500" />
-        <span className="text-base font-medium text-emerald-500">Level {currentLevel}</span>
+        <div
+          className={`flex items-center justify-center rounded-full p-1 ${getLevelBadgeColor(
+            progress.level
+          )}`}
+        >
+          <Trophy className="h-4 w-4 text-white" />
+        </div>
+        <span className="text-sm font-medium">Lv.{progress.level}</span>
       </div>
 
+      {/* Expanded detail popup */}
       {isExpanded && (
-        <div 
+        <div
           className="absolute md:right-0 right-auto -left-24 top-12 w-80 p-5 rounded-xl shadow-lg bg-secondary/95 border backdrop-blur-sm z-50"
           onMouseEnter={() => setIsExpanded(true)}
           onMouseLeave={() => setIsExpanded(false)}
         >
           <div className="space-y-5">
+            {/* Level header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-x-2">
+                <div
+                  className={`flex items-center justify-center rounded-full p-1.5 ${getLevelBadgeColor(
+                    progress.level
+                  )}`}
+                >
+                  <Trophy className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <span className="block text-sm text-muted-foreground">
+                    {getLevelTitle(progress.level)}
+                  </span>
+                  <span className="text-lg font-bold">
+                    Level {progress.level}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="block text-xs text-muted-foreground">
+                  Total XP
+                </span>
+                <span className="text-lg font-bold">
+                  {progress.earnedXP.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
             {/* Level Progress Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground font-medium">Progress to Level {nextLevel}</span>
-                <span className="text-emerald-500 font-semibold">{progress.totalSpent} / {nextLevelThreshold} XP</span>
+                <span className="text-muted-foreground font-medium">
+                  Progress to Level {progress.level + 1}
+                </span>
+                <span className="text-emerald-500 font-semibold">
+                  {progress.earnedXP.toLocaleString()} /{" "}
+                  {progress.nextLevelXP.toLocaleString()} XP
+                </span>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="relative w-full h-3 bg-secondary rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-300"
-                  style={{ width: `${percentage}%` }}
+                  style={{ width: `${progress.progressToNextLevel}%` }}
                 />
               </div>
-              
+
               {/* XP Needed */}
               <p className="text-xs text-muted-foreground">
-                {xpNeededForNextLevel > 0 
-                  ? `${xpNeededForNextLevel} XP needed for next level`
-                  : "Ready to level up!"
-                }
+                {xpNeededForNextLevel > 0
+                  ? `${xpNeededForNextLevel.toLocaleString()} XP needed for next level`
+                  : "Ready to level up!"}
               </p>
             </div>
 
@@ -149,17 +262,22 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
             <div className="grid grid-cols-2 gap-4 p-3 bg-secondary/50 rounded-lg">
               <div className="space-y-1">
                 <div className="flex items-center gap-x-2">
-                  <Zap className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Available XP</span>
+                  <Coins className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs text-muted-foreground">
+                    Remaining Tokens
+                  </span>
                 </div>
-                <p className="text-sm font-semibold">{progress.availableTokens}</p>
+                <p className="text-sm font-semibold">
+                  {progress.remainingTokens.toLocaleString()} /{" "}
+                  {progress.baseTokenAllocation.toLocaleString()}
+                </p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-x-2">
                   <Star className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Current Level</span>
+                  <span className="text-xs text-muted-foreground">XP Rate</span>
                 </div>
-                <p className="text-sm font-semibold">Level {currentLevel}</p>
+                <p className="text-sm font-semibold">+1 XP / 100 tokens</p>
               </div>
             </div>
 
@@ -169,15 +287,17 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
               <ul className="space-y-2 text-xs">
                 <li className="flex items-center gap-x-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Use your available XP for AI features
+                  {progress.isSubscribed
+                    ? "Your subscription includes 1M tokens per month"
+                    : "You have 10,000 free tokens to use"}
                 </li>
                 <li className="flex items-center gap-x-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Each message/action costs XP
+                  Earn XP by using the AI features
                 </li>
                 <li className="flex items-center gap-x-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Buy more XP to spend and level up faster
+                  Level up to unlock badges and recognition
                 </li>
               </ul>
               <p className="text-xs font-medium text-emerald-500 pt-2">
@@ -188,18 +308,18 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 // Create a context to share XP updates across components
 export const XpContext = React.createContext<{
-  updateXp: (spent: number) => void;
+  updateXp: (remainingTokens: number) => void
 }>({
   updateXp: () => {},
-});
+})
 
 // Usage in chat component:
 export const useChatXp = () => {
-  const context = React.useContext(XpContext);
-  return context.updateXp;
-}; 
+  const context = React.useContext(XpContext)
+  return context.updateXp
+}

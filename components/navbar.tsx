@@ -33,6 +33,9 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
   const [currentPlan, setCurrentPlan] = useState<
     "starter" | "pro" | "ultimate"
   >("starter")
+  const [userProgress, setUserProgress] = useState<{
+    isSubscribed: boolean
+  } | null>(null)
 
   useEffect(() => {
     if (stripePriceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID) {
@@ -45,6 +48,22 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
       setCurrentPlan("ultimate")
     }
   }, [stripePriceId])
+
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      try {
+        const response = await fetch("/api/user-progress")
+        if (response.ok) {
+          const data = await response.json()
+          setUserProgress(data)
+        }
+      } catch (error) {
+        console.error("Error fetching user progress:", error)
+      }
+    }
+
+    fetchUserProgress()
+  }, [])
 
   // const onChangeSubscription = async () => {
   //   try {
@@ -80,29 +99,31 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
         </Link>
       </div>
       <div className="flex items-center gap-x-3">
-        <ChatLimit userId={userId} />
-        {/* {!isPro ? ( */}
-        <Button onClick={proModal.onOpen} size="sm" variant="premium">
-          Buy XP
-          <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
-        </Button>
-        {/* ) : (
-          <>
-            <Button 
-              onClick={() => setShowChangePlan(true)} 
-              size="sm" 
-              variant="premium"
-            >
-              Change Plan
+        <div className="flex-1 min-w-[150px]">
+          <ChatLimit userId={userId} />
+        </div>
+        {!userProgress?.isSubscribed ? (
+          <Link href="/subscribe">
+            <Button size="sm" variant="premium">
+              Upgrade
               <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
             </Button>
-            <ChangePlanModal 
-              isOpen={showChangePlan}
-              onClose={() => setShowChangePlan(false)}
-              currentPlan={currentPlan}
-            />
-          </>
-        )} */}
+          </Link>
+        ) : (
+          <Button
+            onClick={() => setShowChangePlan(true)}
+            size="sm"
+            variant="premium"
+          >
+            Change Plan
+            <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
+          </Button>
+        )}
+        <ChangePlanModal
+          isOpen={showChangePlan}
+          onClose={() => setShowChangePlan(false)}
+          currentPlan={currentPlan}
+        />
         <Button
           onClick={settingsModal.onOpen}
           size="icon"

@@ -1,0 +1,94 @@
+import { auth, currentUser } from "@clerk/nextjs"
+import { NextResponse } from "next/server"
+
+import prismadb from "@/lib/prismadb"
+import { stripe } from "@/lib/stripe"
+import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
+import { absoluteUrl } from "@/lib/utils"
+
+const settingsUrl = absoluteUrl("/settings")
+const subscribeUrl = absoluteUrl("/subscribe")
+
+export async function POST(req: Request) {
+  try {
+    const { userId } = auth()
+    const user = await currentUser()
+    const { priceAmount } = await req.json()
+
+    if (!userId || !user) {
+      return new NextResponse("Unauthorized", { status: 401 })
+    }
+
+    // Check if the user already has a subscription
+    const userSubscription = await prismadb.userSubscription.findUnique({
+      where: { userId },
+    })
+
+    let stripeCustomerId = userSubscription?.stripeCustomerId
+
+    // If user doesn't have a Stripe customer ID, create one
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.emailAddresses[0].emailAddress,
+        name: `${user.firstName} ${user.lastName}`,
+        metadata: {
+          userId,
+        },
+      })
+      stripeCustomerId = customer.id
+    }
+
+    // Get the Stripe price ID for the standard subscription
+    const stripePriceId =
+      process.env.STRIPE_STANDARD_PRICE_ID || SUBSCRIPTION_PLAN.stripePriceId
+
+    if (!stripePriceId) {
+      return new NextResponse("Price ID not configured", { status: 400 })
+    }
+
+    // Get the Stripe price ID for the metered usage (for additional tokens)
+    const stripeMeteredPriceId = process.env.STRIPE_METERED_PRICE_ID
+
+    // Create line items array
+    const lineItems = [
+      {
+        price: stripePriceId,
+        quantity: 1,
+      },
+    ]
+
+    // Add metered usage item if available
+    if (stripeMeteredPriceId) {
+      lineItems.push({
+        price: stripeMeteredPriceId,
+        quantity: 1,
+      })
+    }
+
+    // Create a Stripe session
+    const stripeSession = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      success_url: settingsUrl,
+      cancel_url: subscribeUrl,
+      payment_method_types: ["card"],
+      mode: "subscription",
+      billing_address_collection: "auto",
+      line_items: lineItems,
+      metadata: {
+        userId,
+        includeBaseTokens: SUBSCRIPTION_PLAN.includeBaseTokens.toString(),
+        additionalTokenCost: SUBSCRIPTION_PLAN.additionalTokenCost.toString(),
+      },
+      subscription_data: {
+        metadata: {
+          userId,
+        },
+      },
+    })
+
+    return new NextResponse(JSON.stringify({ url: stripeSession.url }))
+  } catch (error) {
+    console.log("[STRIPE_SUBSCRIPTION]", error)
+    return new NextResponse("Internal Error", { status: 500 })
+  }
+}

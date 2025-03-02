@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Check,
   Zap,
@@ -10,24 +10,26 @@ import {
   Bot,
   ThumbsUp,
   Sparkles,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
-import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+  Loader2,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import axios from "axios"
+import { useState } from "react"
+import { useToast } from "@/components/ui/use-toast"
+import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
 interface SubscribeClientProps {
-  userId: string;
+  userId: string
 }
 
-const AI_PERSONA_COST = 100;
-const VOTE_COST = 25;
-const XP_PER_LEVEL = 160;
-const XP_Submit_Features = 50;
+const AI_PERSONA_COST = 100
+const VOTE_COST = 25
+const XP_PER_LEVEL = 160
+const XP_Submit_Features = 50
 
 const calculateLevel = (totalSpent: number): number => {
-  return Math.floor(totalSpent / XP_PER_LEVEL);
-};
+  return Math.floor(totalSpent / XP_PER_LEVEL)
+}
 
 const options = {
   xp100: {
@@ -96,43 +98,38 @@ const options = {
     votesLimit: Math.floor(2000 / VOTE_COST),
     submitLimit: Math.floor(2000 / XP_Submit_Features),
   },
-};
+}
 
-export default function SubscribeClient({
-  userId,
-}: SubscribeClientProps) {
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const [selectedOption, setSelectedOption] = useState<
-    "xp100" | "xp500" | "xp2000"
-  >("xp100");
-  const { toast } = useToast();
+export default function SubscribeClient({ userId }: SubscribeClientProps) {
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
 
+  // Handler for subscription
   const onSubscribe = async () => {
     try {
       if (!userId || userId === "") {
-      return  router.push("/")
-      
+        return router.push("/")
       }
-      setLoading(true);
+      setLoading(true)
 
-      const response = await axios.post("/api/stripe", {
-        option: selectedOption,
-        xpAmount: options[selectedOption].xp,
-        priceAmount: options[selectedOption].price * 100,
-      });
+      const plan = SUBSCRIPTION_PLAN
 
-      window.location.href = response.data.url;
+      const response = await axios.post("/api/stripe/subscription", {
+        priceAmount: plan.monthlyPrice * 100, // Convert to cents
+      })
+
+      window.location.href = response.data.url
     } catch (error) {
       console.log(error)
       toast({
-        description: "Something went wrong",
+        description: "Something went wrong with the subscription",
         variant: "destructive",
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
@@ -168,121 +165,132 @@ export default function SubscribeClient({
       <div className="theme-container text-center mb-12">
         <div className="flex justify-center items-center flex-col gap-y-4 pb-2">
           <div className="flex items-center gap-x-2 font-bold text-2xl">
-            Level Up Your AI Experience
+            Subscribe to Premium
             <Trophy className="h-8 w-8 theme-highlight animate-pulse" />
           </div>
+          <p className="text-lg text-muted-foreground max-w-3xl">
+            Get unlimited AI companions and{" "}
+            {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens per month
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-        {Object.entries(options).map(([key, option]) => {
-          const Icon = option.icon;
-          const isSelected = selectedOption === key;
-          return (
-            <div
-              key={key}
-              onClick={() => setSelectedOption(key as keyof typeof options)}
-              className={`
-                relative overflow-hidden group
-                p-6 rounded-xl cursor-pointer transition-all
-                border-2 theme-border hover:shadow-xl
-                ${
-                  isSelected
-                    ? `bg-${option.color}-500/10 dark:bg-${option.color}-500/20 ring-2 ring-${option.color}-500 ring-offset-2`
-                    : "hover:border-zinc-300 dark:hover:border-zinc-700"
-                }
-              `}
-            >
-              {isSelected && (
-                <div className="absolute top-3 right-3">
-                  <Check className={`h-6 w-6 theme-highlight`} />
+      {/* Subscription Plan */}
+      <div className="max-w-3xl mx-auto">
+        <div
+          className="
+            relative overflow-hidden
+            p-8 rounded-xl transition-all
+            border-2 theme-border hover:shadow-xl
+            bg-blue-500/10 dark:bg-blue-500/20 
+          "
+        >
+          {/* Sparkle effects */}
+          <div className="absolute -top-10 -right-10 h-20 w-20 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-xl transform group-hover:scale-150 transition-transform" />
+
+          <div className="relative">
+            {/* Header */}
+            <div className="flex flex-col items-center mb-6">
+              <h3 className="text-2xl font-bold">{SUBSCRIPTION_PLAN.name}</h3>
+              <p className="text-gray-500 text-sm mb-3">
+                {SUBSCRIPTION_PLAN.description}
+              </p>
+              <div className="flex items-baseline gap-x-2">
+                <span className="text-4xl font-bold">
+                  ${SUBSCRIPTION_PLAN.monthlyPrice}
+                </span>
+                <span className="text-gray-500">/month</span>
+              </div>
+            </div>
+
+            {/* Feature List */}
+            <div className="space-y-4 my-6">
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-1">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
-              )}
-
-              {/* Sparkle effects */}
-              <div className="absolute -top-10 -right-10 h-20 w-20 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-xl transform group-hover:scale-150 transition-transform" />
-
-              <div className="relative">
-                {/* Header */}
-                <div className="flex flex-col items-center mb-4">
-                  <div
-                    className={`p-3 rounded-full bg-${
-                      option.color
-                    }-500/20 mb-3 ${isSelected ? "animate-bounce" : ""}`}
-                  >
-                    <Icon className={`h-8 w-8 theme-highlight`} />
-                  </div>
-                  <h3 className="text-xl font-bold">{option.name}</h3>
-                  <div className="flex items-baseline gap-x-2 mt-2">
-                    <span className="text-3xl font-bold">${option.price}</span>
-                    <span className="text-zinc-500">one-time</span>
-                  </div>
+                <div>
+                  <h4 className="font-medium">Monthly Token Allowance</h4>
+                  <p className="text-sm text-gray-500">
+                    {SUBSCRIPTION_PLAN.tokensPerMonth.toLocaleString()} tokens
+                    per month (~
+                    {Math.floor(SUBSCRIPTION_PLAN.tokensPerMonth / 2000)}{" "}
+                    conversations)
+                  </p>
                 </div>
+              </div>
 
-                {/* Benefits Grid */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-x-2">
-                    <Zap className={`h-4 w-4 theme-highlight`} />
-                    <span className="text-base font-semibold">
-                      {option.xp} XP
-                    </span>
-                  </div>
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-1">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium">
+                    Create Unlimited AI Companions
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Customize and create as many AI companions as you want
+                  </p>
+                </div>
+              </div>
 
-                  <div className="flex items-center gap-x-2">
-                    <Trophy className={`h-4 w-4 theme-highlight`} />
-                    <span className="text-sm">
-                      Increase {option.levelUp}{" "}
-                      {option.levelUp === 1 ? "Level" : "Levels"}
-                    </span>
-                  </div>
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-1">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium">Premium Features</h4>
+                  <p className="text-sm text-gray-500">
+                    Access all premium features including group chats and more
+                  </p>
+                </div>
+              </div>
 
-                  <div className="flex items-center gap-x-2">
-                    <Bot className={`h-4 w-4 theme-highlight`} />
-                    <span className="text-sm">
-                      Create {option.botLimit} AI Personas
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({AI_PERSONA_COST} XP)
-                    </span>
-                  </div>
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-1">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium">Priority Support</h4>
+                  <p className="text-sm text-gray-500">
+                    Get prioritized assistance and feature requests
+                  </p>
+                </div>
+              </div>
 
-                  <div className="flex items-center gap-x-2">
-                    <ThumbsUp className={`h-4 w-4 theme-highlight`} />
-                    <span className="text-sm">
-                      Send {option.votesLimit} Votes
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({VOTE_COST} XP)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-x-2">
-                    <Sparkles className={`h-4 w-4 theme-highlight`} />
-                    <span className="text-sm">
-                      Submit {option.submitLimit} Features
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({XP_Submit_Features} XP)
-                    </span>
-                  </div>
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-1">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium">No Interruptions</h4>
+                  <p className="text-sm text-gray-500">
+                    Enjoy seamless conversations without token limits
+                  </p>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      <div className="pt-6 text-center">
-        <Button
-          onClick={onSubscribe}
-          disabled={loading}
-          size="lg"
-          variant="premium"
-          className="w-full md:w-auto md:min-w-[200px]"
-        >
-          Purchase {options[selectedOption].name}
-        </Button>
+            <Button
+              onClick={onSubscribe}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white py-6 rounded-lg text-lg font-semibold transition"
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  Subscribe Now
+                  <Sparkles className="h-5 w-5 ml-2" />
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-center mt-4 text-gray-500">
+              Secure payment processing by Stripe. Cancel anytime.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
-  );
+  )
 }
