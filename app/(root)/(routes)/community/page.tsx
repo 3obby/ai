@@ -41,7 +41,7 @@ const DOWNVOTE_COST = 3000
 const CommunityPage = () => {
   const [ideas, setIdeas] = useState<IdeaType[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState("recent")
+  const [sortBy, setSortBy] = useState("netScore")
   const [newIdea, setNewIdea] = useState({ title: "", description: "" })
   const [isSubmitOpen, setIsSubmitOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -79,6 +79,7 @@ const CommunityPage = () => {
       }
 
       const updatedIdea = await response.json()
+      updatedIdea.createdAt = new Date(updatedIdea.createdAt)
       setIdeas((currentIdeas) =>
         currentIdeas.map((idea) =>
           idea.id === ideaId ? { ...updatedIdea, hasVoted: voteType } : idea
@@ -127,6 +128,7 @@ const CommunityPage = () => {
       }
 
       const idea = await response.json()
+      idea.createdAt = new Date(idea.createdAt)
       setIdeas((prev) => [idea, ...prev])
       setNewIdea({ title: "", description: "" })
       setIsSubmitOpen(false)
@@ -181,11 +183,17 @@ const CommunityPage = () => {
     .sort((a, b) => {
       switch (sortBy) {
         case "recent":
+          if (!(a.createdAt instanceof Date))
+            a.createdAt = new Date(a.createdAt)
+          if (!(b.createdAt instanceof Date))
+            b.createdAt = new Date(b.createdAt)
           return b.createdAt.getTime() - a.createdAt.getTime()
         case "mostLiked":
           return b.upvotes - a.upvotes
         case "mostDisliked":
           return b.downvotes - a.downvotes
+        case "netScore":
+          return b.upvotes - b.downvotes - (a.upvotes - a.downvotes)
         default:
           return 0
       }
@@ -272,6 +280,7 @@ const CommunityPage = () => {
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="netScore">Net Score</SelectItem>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="mostLiked">Most Liked</SelectItem>
             <SelectItem value="mostDisliked">Most Disliked</SelectItem>
