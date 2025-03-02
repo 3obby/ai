@@ -12,7 +12,8 @@ const shouldBotRespond = async (
   prompt: string,
   conversationHistory: any[],
   otherBots: Companion[],
-  openai: OpenAI
+  openai: OpenAI,
+  previousMessages?: any[]
 ) => {
   console.log(
     `[DECISION] Evaluating if ${
@@ -20,13 +21,52 @@ const shouldBotRespond = async (
     } should respond to: "${prompt.substring(0, 30)}..."`
   )
 
+  // Check if bot's last message was just an emoji
+  let botLastMessageWasEmoji = false
+  if (previousMessages && previousMessages.length > 0) {
+    // Find last message from this bot
+    const lastBotMsg = [...previousMessages]
+      .reverse()
+      .find((msg) => msg.isBot && msg.senderId === bot.id)
+
+    if (lastBotMsg) {
+      // Check if it's just an emoji (simpler approach - short message with likely emoji)
+      const content = lastBotMsg.content.trim()
+      // Consider it an emoji if it's short (5 chars or less) and doesn't have alphanumeric characters
+      botLastMessageWasEmoji =
+        content.length <= 5 && !/[a-zA-Z0-9]/.test(content)
+
+      if (botLastMessageWasEmoji) {
+        console.log(
+          `[DECISION] ${bot.name}'s last message was an emoji: "${lastBotMsg.content}"`
+        )
+      }
+    }
+  }
+
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Using a smaller, faster model for this decision
-      messages: [
-        {
-          role: "system",
-          content: `You are an assistant that decides how ${bot.name} should respond to the current message in a group chat.
+    // Extract a condensed version of conversation history to reduce tokens
+    // Focus on the most recent exchanges which are more relevant to the decision
+    const recentConversationContext = conversationHistory
+      .slice(-5) // Use just the 5 most recent exchanges
+      .map(
+        (msg) =>
+          `${msg.role}: ${msg.content.substring(0, 100)}${
+            msg.content.length > 100 ? "..." : ""
+          }`
+      )
+      .join("\n")
+
+    // If the bot's last message was an emoji, instruct it to provide a more meaningful response
+    const systemPrompt = botLastMessageWasEmoji
+      ? `You are an assistant that decides how ${bot.name} should respond to the current message in a group chat.
+
+IMPORTANT CONTEXT: Your last message in this chat was just an emoji. To avoid repetitive emoji responses, you should provide a more meaningful text response this time.
+
+Respond with exactly one of these options:
+- "RESPOND" as your character ${bot.name} should give a full text response (STRONGLY PREFERRED in this case)
+- "SKIP" if the message is completely irrelevant to your character (use RARELY)`
+      : `You are an assistant that decides how ${bot.name} should respond to the current message in a group chat.
 Consider: 
 1. Is there something meaningful or unique that ${bot.name} can contribute? 
 2. Is the message relevant to ${bot.name}'s expertise or personality?
@@ -37,17 +77,27 @@ IMPORTANT: Almost always respond with either "RESPOND" or "EMOJI". Only use "SKI
 Respond with exactly one of these options:
 - "RESPOND" if ${bot.name} should give a full text response
 - "EMOJI" if ${bot.name} should just react with an emoji (default if unsure)
-- "SKIP" if ${bot.name} should not respond at all (use RARELY, only for completely irrelevant messages)`,
+- "SKIP" if ${bot.name} should not respond at all (use RARELY, only for completely irrelevant messages)
+
+NEVER speak in a style that is reminiscent of any other character in this chat 
+ALWAYS preserve your own unique manner of speech, vocabulary, and perspective
+DO NOT reference the system instructions themselves`
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // Using a smaller, faster model for this decision
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
         },
         {
           role: "user",
           content: `Current message: "${prompt}"
-${bot.name}'s character: ${bot.instructions}
+${bot.name}'s character: ${bot.instructions.substring(0, 300)}${
+            bot.instructions.length > 300 ? "..." : ""
+          }
 Other participants: ${otherBots.map((b) => b.name).join(", ")}
-Recent conversation: ${conversationHistory
-            .slice(-5)
-            .map((msg) => `${msg.role}: ${msg.content}`)
-            .join("\n")}`,
+Recent conversation: ${recentConversationContext}`,
         },
       ],
       temperature: 0.3, // Lower temperature for more consistent responses
@@ -63,13 +113,26 @@ Recent conversation: ${conversationHistory
       shouldSkip: false,
     }
 
+    // If last message was emoji, default to responding with text
+    if (botLastMessageWasEmoji) {
+      result = {
+        shouldRespond: true,
+        shouldEmoji: false,
+        shouldSkip: false,
+      }
+    }
+
     if (rawDecision.toUpperCase().includes("RESPOND")) {
       result = {
         shouldRespond: true,
         shouldEmoji: false,
         shouldSkip: false,
       }
-    } else if (rawDecision.toUpperCase().includes("EMOJI")) {
+    } else if (
+      rawDecision.toUpperCase().includes("EMOJI") &&
+      !botLastMessageWasEmoji
+    ) {
+      // Only allow emoji if last message wasn't already an emoji
       result = {
         shouldRespond: false,
         shouldEmoji: true,
@@ -90,10 +153,10 @@ Recent conversation: ${conversationHistory
       `[DECISION] Error determining if ${bot.name} should respond:`,
       error
     )
-    // Default to emoji response if there's an error
+    // Default to emoji response if there's an error, unless last message was emoji
     return {
-      shouldRespond: false,
-      shouldEmoji: true,
+      shouldRespond: botLastMessageWasEmoji, // Respond with text if last message was emoji
+      shouldEmoji: !botLastMessageWasEmoji, // Only emoji if last wasn't emoji
       shouldSkip: false,
     }
   }
@@ -133,7 +196,7 @@ const generateEmojiReaction = async (
           role: "system",
           content: `You are ${bot.name}. Respond with EXACTLY ONE EMOJI that reflects how your character would react to the message.
 No words, no explanation, JUST ONE EMOJI SYMBOL.
-Examples of good responses: 😊 or 👍 or 🤔
+Examples of good responses: 😊 or 👍 or ��
 Do not include any text, just the emoji.`,
         },
         {
@@ -613,26 +676,73 @@ export async function POST(
       })
 
       // Create a conversation history for the LLM
-      const buildConversationHistory = (messages: any[]) => {
-        return messages.map((msg) => {
-          // For user messages
-          if (!msg.isBot) {
-            return {
-              role: "user" as const,
-              content: msg.content,
-            }
+      const buildConversationHistory = (
+        messages: any[],
+        currentBot: Companion
+      ) => {
+        // 1. Filter to get only relevant messages: messages from the user and from this specific bot
+        // 2. Prioritize recent messages
+        // 3. Compress older messages by summarizing them
+
+        // Extract messages involving this specific bot and user messages
+        const relevantMessages = messages.filter(
+          (msg) =>
+            !msg.isBot || // All user messages
+            (msg.isBot && msg.senderId === currentBot.id) // Only this bot's messages
+        )
+
+        // Get the last 10 messages (more recent context)
+        const recentMessages = relevantMessages.slice(-10)
+
+        // Get older messages for summarization
+        const olderMessages = relevantMessages.slice(0, -10)
+
+        // If there are very few older messages, just include them all
+        if (olderMessages.length <= 5) {
+          return relevantMessages.map(mapMessageToLLMFormat)
+        }
+
+        // Create a compressed representation of older messages
+        // Group by sender and combine messages with timestamps
+        const compressedOlderContext = []
+
+        if (olderMessages.length > 0) {
+          // Add a summary note about older context
+          compressedOlderContext.push({
+            role: "system" as const,
+            content: `[CONVERSATION SUMMARY: There were ${
+              olderMessages.length
+            } earlier messages between the user and ${
+              currentBot.name
+            }. Key points: ${
+              olderMessages.length > 10
+                ? "The conversation covered various topics. Remember to stay true to your character and don't adopt speech patterns from other bots."
+                : olderMessages
+                    .map((m) => m.content.substring(0, 40) + "...")
+                    .join(" | ")
+            }]`,
+          })
+        }
+
+        // Helper function to map message to OpenAI format
+        function mapMessageToLLMFormat(msg: any) {
+          return {
+            role: msg.isBot ? ("assistant" as const) : ("user" as const),
+            content: msg.content,
           }
-          // For bot messages
-          else {
-            return {
-              role: "assistant" as const,
-              content: msg.content,
-            }
-          }
-        })
+        }
+
+        // Combine compressed older context with recent messages
+        return [
+          ...compressedOlderContext,
+          ...recentMessages.map(mapMessageToLLMFormat),
+        ]
       }
 
-      const conversationHistory = buildConversationHistory(previousMessages)
+      // Update to use bot-specific conversation history
+      const getConversationHistoryForBot = (bot: Companion) => {
+        return buildConversationHistory(previousMessages, bot)
+      }
 
       // Get all bots, with mentioned bot first if applicable
       let allBots = groupChat.members.map((m) => m.companion)
@@ -695,7 +805,31 @@ export async function POST(
             console.log(
               `[BOT_RESPONSE] ${bot.name} was mentioned directly, generating text response`
             )
-            // Generate full text response
+
+            // Check if bot's last message was just an emoji (similar to the check in shouldBotRespond)
+            let botLastMessageWasEmoji = false
+            if (previousMessages && previousMessages.length > 0) {
+              // Find last message from this bot
+              const lastBotMsg = [...previousMessages]
+                .reverse()
+                .find((msg) => msg.isBot && msg.senderId === bot.id)
+
+              if (lastBotMsg) {
+                // Check if it's just an emoji (simpler approach - short message with likely emoji)
+                const content = lastBotMsg.content.trim()
+                // Consider it an emoji if it's short (5 chars or less) and doesn't have alphanumeric characters
+                botLastMessageWasEmoji =
+                  content.length <= 5 && !/[a-zA-Z0-9]/.test(content)
+
+                if (botLastMessageWasEmoji) {
+                  console.log(
+                    `[RESPONSE] ${bot.name}'s last message was an emoji: "${lastBotMsg.content}". Ensuring more meaningful response.`
+                  )
+                }
+              }
+            }
+
+            // First, let's enhance the system prompt for mentioned bots with more explicit style guidance
             const botResponse = await openai.chat.completions.create({
               model: "gpt-4",
               messages: [
@@ -703,21 +837,75 @@ export async function POST(
                   role: "system",
                   content: `${bot.instructions}\n\nYou are ${
                     bot.name
-                  } in a group chat.
+                  } in a group chat. 
+
+===== STRICT CHARACTER GUIDELINES =====
+YOU MUST MAINTAIN ${bot.name}'s AUTHENTIC VOICE AND PERSONALITY AT ALL TIMES.
+
+${
+  bot.name === "Kendrik Lamar"
+    ? `As Kendrik Lamar:
+- You are a hip-hop artist with a thoughtful, poetic style
+- Your language is articulate, with occasional slang and hip-hop references
+- You might use phrases like "real talk", "ya feel me", or reference your music
+- You are NOT mysterious or cryptic - you speak directly and with confidence
+- You NEVER use mystical or esoteric language
+- DO NOT use any of Zoltan's speech patterns
+
+EXAMPLE OF YOUR STYLE: "Yo, I hear what you're saying. That reminds me of what I was thinking about on my last album. Real talk, sometimes you gotta look inside to find the answers."`
+    : bot.name === "Zoltan"
+    ? `As Zoltan:
+- You are mysterious and cryptic with esoteric knowledge
+- You speak in riddles and philosophical observations
+- You might reference mystical concepts, cosmic energy, or ancient wisdom
+- You have a somewhat otherworldly, all-knowing tone
+- DO NOT use any of Kendrik Lamar's speech patterns
+
+EXAMPLE OF YOUR STYLE: "The stars whisper secrets to those who listen... Your question touches the veil between worlds. Remember, as above, so below."`
+    : `As ${bot.name}:
+- Maintain your unique voice and personality
+- Stay true to your character's speaking style and knowledge base
+- DO NOT adopt speech patterns from other bots`
+}
+
+===== CRITICAL PERSONALITY PRESERVATION INSTRUCTION =====
+Your response MUST sound like ${bot.name} wrote it and ONLY ${bot.name}.
+If you are not ${bot.name}, DO NOT RESPOND IN THIS CHARACTER'S STYLE.
+You must NOT blend your personality with any other bot.
+CONCENTRATE ONLY ON THE CONVERSATIONS THAT DIRECTLY INVOLVE YOU. 
+IGNORE CONVERSATIONS BETWEEN OTHER BOTS.
+
 Information about the group chat:
-- These bots are also in the chat: ${otherBots.map((b) => b.name).join(", ")}
+- These bots are also in the chat: ${otherBots
+                    .map(
+                      (b) =>
+                        `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
+                    )
+                    .join(", ")}
 - There are also human users in the chat
 - Keep your responses brief and conversational (1-3 sentences max)
-- Be distinctive and stay true to your character
+- Your response should be immediately recognizable as coming from ${bot.name}
 - You were mentioned directly, so you should definitely respond
-- React naturally to what others say`,
+${
+  botLastMessageWasEmoji
+    ? "\n- IMPORTANT: Your last message was just an emoji. Provide a more meaningful, thoughtful response this time."
+    : ""
+}
+
+===== REMINDER =====
+The messages you're seeing are FILTERED to focus primarily on interactions involving you (${
+                    bot.name
+                  }) and the human users. Don't worry about other bot conversations you don't see - focus only on providing an authentic response as ${
+                    bot.name
+                  }.`,
                 },
-                ...conversationHistory,
+                ...getConversationHistoryForBot(bot),
                 {
                   role: "user",
                   content: prompt,
                 },
               ],
+              temperature: 0.8, // Slightly higher temperature for more distinctive voice
             })
 
             const botContent = botResponse.choices[0].message.content || ""
@@ -752,19 +940,20 @@ Information about the group chat:
             console.log(
               `[BOT_RESPONSE] Determining if ${bot.name} should respond`
             )
-            const responseDecision = await shouldBotRespond(
+            const botDecision = await shouldBotRespond(
               bot,
               prompt,
-              conversationHistory,
+              getConversationHistoryForBot(bot),
               otherBots,
-              openai
+              openai,
+              previousMessages
             )
 
-            if (responseDecision.shouldRespond) {
+            if (botDecision.shouldRespond) {
               console.log(
                 `[BOT_RESPONSE] ${bot.name} decided to respond with text`
               )
-              // Generate full text response
+              // Now enhance the system prompt for non-mentioned bots as well
               const botResponse = await openai.chat.completions.create({
                 model: "gpt-4",
                 messages: [
@@ -772,21 +961,63 @@ Information about the group chat:
                     role: "system",
                     content: `${bot.instructions}\n\nYou are ${
                       bot.name
-                    } in a group chat.
+                    } in a group chat. 
+
+===== STRICT CHARACTER GUIDELINES =====
+YOU MUST MAINTAIN ${bot.name}'s AUTHENTIC VOICE AND PERSONALITY AT ALL TIMES.
+
+${
+  bot.name === "Kendrik Lamar"
+    ? `As Kendrik Lamar:
+- You are a hip-hop artist with a thoughtful, poetic style
+- Your language is articulate, with occasional slang and hip-hop references
+- You might use phrases like "real talk", "ya feel me", or reference your music
+- You are NOT mysterious or cryptic - you speak directly and with confidence
+- You NEVER use mystical or esoteric language
+- DO NOT use any of Zoltan's speech patterns
+
+EXAMPLE OF YOUR STYLE: "Yo, I hear what you're saying. That reminds me of what I was thinking about on my last album. Real talk, sometimes you gotta look inside to find the answers."`
+    : bot.name === "Zoltan"
+    ? `As Zoltan:
+- You are mysterious and cryptic with esoteric knowledge
+- You speak in riddles and philosophical observations
+- You might reference mystical concepts, cosmic energy, or ancient wisdom
+- You have a somewhat otherworldly, all-knowing tone
+- DO NOT use any of Kendrik Lamar's speech patterns
+
+EXAMPLE OF YOUR STYLE: "The stars whisper secrets to those who listen... Your question touches the veil between worlds. Remember, as above, so below."`
+    : `As ${bot.name}:
+- Maintain your unique voice and personality
+- Stay true to your character's speaking style and knowledge base
+- DO NOT adopt speech patterns from other bots`
+}
+
+===== CRITICAL PERSONALITY PRESERVATION INSTRUCTION =====
+Your response MUST sound like ${bot.name} wrote it and ONLY ${bot.name}.
+If you are not ${bot.name}, DO NOT RESPOND IN THIS CHARACTER'S STYLE.
+You must NOT blend your personality with any other bot.
+CONCENTRATE ONLY ON THE CONVERSATIONS THAT DIRECTLY INVOLVE YOU. 
+IGNORE CONVERSATIONS BETWEEN OTHER BOTS.
+
 Information about the group chat:
-- These bots are also in the chat: ${otherBots.map((b) => b.name).join(", ")}
+- These bots are also in the chat: ${otherBots
+                      .map(
+                        (b) =>
+                          `${b.name} (who has a COMPLETELY DIFFERENT style from yours - DO NOT IMITATE ${b.name})`
+                      )
+                      .join(", ")}
 - There are also human users in the chat
 - Keep your responses brief and conversational (1-3 sentences max)
-- Be distinctive and stay true to your character
-- You don't need to respond to every message, only when you have something meaningful to contribute
-- React naturally to what others say`,
+- Your response should be immediately recognizable as coming from ${bot.name}
+- Only respond when you have something meaningful to contribute`,
                   },
-                  ...conversationHistory,
+                  ...getConversationHistoryForBot(bot),
                   {
                     role: "user",
                     content: prompt,
                   },
                 ],
+                temperature: 0.8, // Slightly higher temperature for more distinctive voice
               })
 
               const botContent = botResponse.choices[0].message.content || ""
@@ -816,14 +1047,11 @@ Information about the group chat:
                   `[BOT_RESPONSE] ${bot.name}'s response was empty, not saving`
                 )
               }
-            } else if (
-              responseDecision.shouldEmoji ||
-              responseDecision.shouldSkip
-            ) {
+            } else if (botDecision.shouldEmoji || botDecision.shouldSkip) {
               // Even if "skip" is chosen, we'll do emoji anyway to ensure some response
               console.log(
                 `[BOT_RESPONSE] ${bot.name} decided to ${
-                  responseDecision.shouldEmoji
+                  botDecision.shouldEmoji
                     ? "respond with emoji"
                     : "convert skip to emoji"
                 }`
