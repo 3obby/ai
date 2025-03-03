@@ -42,43 +42,45 @@ export const ChatMessages = ({
   }, [messages, isLoading])
 
   return (
-    <div className="flex-1 overflow-y-auto pr-4">
-      {messages.map((message, index) => {
-        // Check if this is the last user message to add the "typing" indicator
-        const isLastUserMessage =
-          message.role === "user" &&
-          index ===
-            messages.findIndex((m, i) => m.role === "user" && i >= index)
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 w-full">
+      <div className="flex flex-col w-full max-w-5xl mx-auto">
+        {messages.map((message, index) => {
+          // Check if this is the last user message to add the "typing" indicator
+          const isLastUserMessage =
+            message.role === "user" &&
+            index ===
+              messages.findIndex((m, i) => m.role === "user" && i >= index)
 
-        return (
-          <div
-            key={message.id || index}
-            className={`flex ${
-              message.role === "user"
-                ? "justify-end flex-wrap"
-                : "justify-start"
-            } mb-2`}
-          >
-            <ChatMessage
-              src={message.role === "user" ? "" : message.src}
-              name={message.name}
-              content={message.content}
-              role={message.role}
-              isLoading={message.isLoading}
-              messageStatus={message.messageStatus}
-              reactions={message.reactions}
-              readBy={message.readBy}
-              activeTypingBot={message.activeTypingBot}
-            />
+          return (
+            <div
+              key={message.id || index}
+              className={`flex w-full ${
+                message.role === "user"
+                  ? "justify-end flex-wrap"
+                  : "justify-start"
+              } mb-1`}
+            >
+              <ChatMessage
+                src={message.role === "user" ? "" : message.src}
+                name={message.name}
+                content={message.content}
+                role={message.role}
+                isLoading={message.isLoading}
+                messageStatus={message.messageStatus}
+                reactions={message.reactions}
+                readBy={message.readBy}
+                activeTypingBot={message.activeTypingBot}
+              />
+            </div>
+          )
+        })}
+        {isLoading && (
+          <div className="flex justify-start">
+            <ChatMessage role="system" isLoading />
           </div>
-        )
-      })}
-      {isLoading && (
-        <div className="flex justify-start">
-          <ChatMessage role="system" isLoading />
-        </div>
-      )}
-      <div ref={scrollRef} />
+        )}
+        <div ref={scrollRef} />
+      </div>
     </div>
   )
 }

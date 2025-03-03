@@ -92,7 +92,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
           })
         })
 
-        if (Math.random() > 0.5) {
+        if (Math.random() < 0.7) {
           const emojis = ["👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉"]
           const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
 
@@ -114,6 +114,37 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
               return msg
             })
           })
+        }
+
+        if (Math.random() < 0.2) {
+          const botMessages = messages.filter((msg) => msg.role === "assistant")
+
+          if (botMessages.length > 0) {
+            const randomBotMessage =
+              botMessages[Math.floor(Math.random() * botMessages.length)]
+            const emojis = ["👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉"]
+            const randomEmoji =
+              emojis[Math.floor(Math.random() * emojis.length)]
+
+            setMessages((prevMessages) => {
+              return prevMessages.map((msg) => {
+                if (msg.id === randomBotMessage.id) {
+                  return {
+                    ...msg,
+                    reactions: [
+                      ...(msg.reactions || []),
+                      {
+                        emoji: randomEmoji,
+                        from: companion.name,
+                        botSrc: companion.src,
+                      },
+                    ],
+                  }
+                }
+                return msg
+              })
+            })
+          }
         }
       }, 1500)
 
@@ -379,7 +410,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
   }
 
   return (
-    <div className="flex flex-col h-full p-4 space-y-2">
+    <div className="flex flex-col h-full p-2 md:p-4 space-y-2 max-w-5xl mx-auto">
       <ChatHeader
         companion={companion}
         onClear={onClear}

@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState, useEffect, useCallback } from "react"
+import { FormEvent, useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useChatLimit } from "@/store/use-chat-limit"
 import { usePrompts } from "@/store/use-prompts"
@@ -16,6 +16,9 @@ interface GroupMessage {
   isBot: boolean
   senderId: string
   createdAt: Date
+  messageStatus?: "sent" | "delivered" | "read"
+  reactions?: { emoji: string; from: string; botSrc?: string }[]
+  readBy?: { name: string; src: string }[]
 }
 
 interface Companion {
@@ -192,12 +195,81 @@ export const GroupChatClient = ({
         isBot: false,
         senderId: "user",
         createdAt: new Date(),
+        messageStatus: "sent",
+        reactions: [],
+        readBy: [],
       }
       setMessages((prev) => [...prev, userMessage])
 
+      // Update message status to delivered after a short delay
+      setTimeout(() => {
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg) => {
+            if (msg.id === userMessage.id) {
+              return { ...msg, messageStatus: "delivered" }
+            }
+            return msg
+          })
+        })
+      }, 500)
+
+      // Update message as read by bots and add random emoji reactions
+      setTimeout(() => {
+        // Get all bots from the group chat
+        const bots = groupChat.members.map((member: any) => member.companion)
+        const botReadReceipts = bots.map((bot: any) => ({
+          name: bot.name as string,
+          src: bot.src as string,
+        }))
+
+        // Update message to read and add read receipts
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg) => {
+            if (msg.id === userMessage.id) {
+              return {
+                ...msg,
+                messageStatus: "read",
+                readBy: botReadReceipts,
+              }
+            }
+            return msg
+          })
+        })
+
+        // Randomly select bots to react with emojis (at least one bot will react)
+        const emojis = ["👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉"]
+        const reactingBots = bots.filter(() => Math.random() < 0.7)
+
+        // Make sure at least one bot reacts
+        const botsToUse = reactingBots.length > 0 ? reactingBots : [bots[0]]
+
+        // Add emoji reactions from selected bots
+        botsToUse.forEach((bot: any) => {
+          const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
+          setMessages((prevMessages) => {
+            return prevMessages.map((msg) => {
+              if (msg.id === userMessage.id) {
+                return {
+                  ...msg,
+                  reactions: [
+                    ...(msg.reactions || []),
+                    {
+                      emoji: randomEmoji,
+                      from: bot.name,
+                      botSrc: bot.src,
+                    },
+                  ],
+                }
+              }
+              return msg
+            })
+          })
+        })
+      }, 1500)
+
       handleSubmit(e)
     },
-    [handleSubmit, input]
+    [handleSubmit, input, groupChat.members]
   )
 
   // Initialize state with messages from the database
@@ -236,25 +308,24 @@ export const GroupChatClient = ({
     )
   }
 
-  // Transform group messages to chat message format
+  // Transform group messages to chat message props
   const transformedMessages: ChatMessageProps[] = messages.map((message) => {
-    if (message.isBot) {
-      const companion = groupChat.members.find(
-        (m: any) => m.companion.id === message.senderId
-      )?.companion
-      return {
-        id: message.id,
-        role: "system",
-        content: message.content,
-        src: companion?.src,
-        name: companion?.name,
-      }
-    }
+    const sender = message.isBot
+      ? groupChat.members.find(
+          (member: any) => member.companion.id === message.senderId
+        )?.companion
+      : null
+
     return {
       id: message.id,
-      role: "user",
+      role: message.isBot ? "assistant" : "user",
       content: message.content,
-    }
+      src: sender?.src || "",
+      name: sender?.name || "User",
+      messageStatus: message.messageStatus || "read",
+      reactions: message.reactions || [],
+      readBy: message.readBy || [],
+    } as ChatMessageProps
   })
 
   return isClearing ? (
@@ -263,7 +334,7 @@ export const GroupChatClient = ({
       Clearing chat messages...
     </div>
   ) : (
-    <div className="flex flex-col h-full p-4 space-y-4 bg-transparent">
+    <div className="flex flex-col h-full p-2 md:p-4 space-y-4 bg-transparent max-w-5xl mx-auto">
       <GroupChatHeader groupChat={groupChat} onClear={handleClearGroupChat} />
       <div className="flex-1 overflow-y-auto">
         <ChatMessages messages={transformedMessages} isLoading={isLoading} />
