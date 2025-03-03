@@ -6,13 +6,9 @@ import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
-// Required for Vercel serverless functions to work with webhooks
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-  maxDuration: 60, // Allow more time for webhook processing
-}
+// Use the new route segment config format
+export const runtime = "edge"
+export const maxDuration = 60 // Allow more time for webhook processing
 
 const XP_PER_LEVEL = 160
 

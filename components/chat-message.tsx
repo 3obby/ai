@@ -5,6 +5,7 @@ import { Copy, Check, CheckCheck } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState } from "react"
 import * as Popover from "@radix-ui/react-popover"
+import Image from "next/image"
 
 import { cn } from "@/lib/utils"
 import { BotAvatar } from "@/components/bot-avatar"
@@ -180,11 +181,13 @@ export const ChatMessage = ({
               title={`Reaction from ${reaction.from}`}
             >
               {reaction.botSrc && (
-                <div className="h-4 w-4 rounded-full overflow-hidden">
-                  <img
+                <div className="h-4 w-4 rounded-full overflow-hidden relative">
+                  <Image
                     src={reaction.botSrc}
                     alt={reaction.from}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="16px"
+                    className="object-cover"
                   />
                 </div>
               )}

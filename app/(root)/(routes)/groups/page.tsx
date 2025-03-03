@@ -55,7 +55,7 @@ const GroupPage = () => {
           {groupChats.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-muted-foreground">
-                You don't have any group chats yet.
+                You don&apos;t have any group chats yet.
               </p>
             </div>
           ) : (
