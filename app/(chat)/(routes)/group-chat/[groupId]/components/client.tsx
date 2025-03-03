@@ -81,7 +81,7 @@ export const GroupChatClient = ({
 }: GroupChatClientProps) => {
   const router = useRouter()
   const { decrementRemaining } = useChatLimit()
-  const { prompts, togglePrompt } = usePrompts()
+  const { prompts } = usePrompts()
   const activePrompts = prompts.filter((prompt) => prompt.isActive)
 
   const [messages, setMessages] = useState<GroupMessage[]>(groupChat.messages)
@@ -118,8 +118,8 @@ export const GroupChatClient = ({
         }
 
         setInput("")
-        // Reset active prompts
-        activePrompts.forEach((prompt) => togglePrompt(prompt.id))
+        // We don't need to reset active prompts here as they are now stored in the database
+        // activePrompts.forEach((prompt) => togglePrompt(prompt.id))
 
         // Create a new AbortController for this request
         const controller = new AbortController()
@@ -179,7 +179,7 @@ export const GroupChatClient = ({
         setIsLoading(false)
       }
     },
-    [input, activePrompts, togglePrompt, decrementRemaining]
+    [input, activePrompts]
   )
 
   // Ensure all hooks are called at the top level
