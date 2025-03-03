@@ -118,151 +118,60 @@ export const GroupChatClient = ({
         // Reset active prompts
         activePrompts.forEach((prompt) => togglePrompt(prompt.id))
 
+        // Create a new AbortController for this request
+        const controller = new AbortController()
+        const signal = controller.signal
+
         const response = await fetch(`/api/group-chat/${groupChat.id}/chat`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ prompt: modifiedInput }),
+          signal, // Add the signal to the fetch request
         })
 
         if (!response.ok) {
           throw new Error("Failed to send message")
         }
 
-        const data = await response.json()
-        const { botMessages, respondingBots } = data
+        if (!response.body) {
+          throw new Error("No response body")
+        }
 
-        // Add initial messages
-        for (let i = 0; i < botMessages.length; i++) {
-          const msg = botMessages[i]
-          const bot = respondingBots.find((b: any) => b.id === msg.senderId)
-          const delay = bot?.messageDelay || 0
+        // Set up the reader
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
 
-          await new Promise((resolve) => setTimeout(resolve, delay * 1000))
+        // Read the stream
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+
+          // Decode the stream chunk and parse the JSON
+          const chunk = decoder.decode(value)
+          const botMessage = JSON.parse(chunk)
+
+          // Add the message to the state
           setMessages((prevMessages) => [
             ...prevMessages,
             {
-              id: msg.id,
-              content: msg.content,
+              id: botMessage.id,
+              content: botMessage.content,
               isBot: true,
-              senderId: msg.senderId,
-              createdAt: new Date(msg.createdAt),
+              senderId: botMessage.senderId,
+              createdAt: new Date(botMessage.createdAt),
             },
           ])
-        }
-
-        // Check for second message (15% chance)
-        const doubleMessageRoll = Math.random() * 100
-        if (doubleMessageRoll <= 15) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: "loading",
-              content: "",
-              isBot: true,
-              senderId: botMessages[0].senderId,
-              createdAt: new Date(),
-            },
-          ])
-
-          // Include prompts in follow-up message too
-          let followUpPrompt = botMessages[0].content
-
-          if (activePrompts.length > 0) {
-            const promptsText = activePrompts
-              .map((prompt) => `- ${prompt.text}`)
-              .join("\n")
-
-            followUpPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${followUpPrompt}`
-          }
-
-          const followUpResponse = await fetch(
-            `/api/group-chat/${groupChat.id}/chat`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                prompt: followUpPrompt,
-                isFollowUp: true,
-              }),
-            }
-          )
-
-          const followUpData = await followUpResponse.json()
-
-          setMessages((prev) => {
-            const filtered = prev.filter((msg) => msg.id !== "loading")
-            return [
-              ...filtered,
-              ...followUpData.botMessages.map((msg: BotResponse) => ({
-                id: msg.id,
-                content: msg.content,
-                isBot: true,
-                senderId: msg.senderId,
-                createdAt: new Date(msg.createdAt),
-              })),
-            ]
-          })
-
-          // Check for third message (5% chance)
-          const tripleMessageRoll = Math.random() * 100
-          if (tripleMessageRoll <= 5) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: "loading",
-                content: "",
-                isBot: true,
-                senderId: botMessages[0].senderId,
-                createdAt: new Date(),
-              },
-            ])
-
-            // Include prompts in third message too
-            let thirdPrompt = followUpData.botMessages[0].content
-
-            if (activePrompts.length > 0) {
-              const promptsText = activePrompts
-                .map((prompt) => `- ${prompt.text}`)
-                .join("\n")
-
-              thirdPrompt = `[ADDITIONAL INSTRUCTIONS]\n${promptsText}\n\n${thirdPrompt}`
-            }
-
-            const thirdResponse = await fetch(
-              `/api/group-chat/${groupChat.id}/chat`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  prompt: thirdPrompt,
-                  isFollowUp: true,
-                }),
-              }
-            )
-
-            const thirdData = await thirdResponse.json()
-
-            setMessages((prev) => {
-              const filtered = prev.filter((msg) => msg.id !== "loading")
-              return [
-                ...filtered,
-                ...thirdData.botMessages.map((msg: BotResponse) => ({
-                  id: msg.id,
-                  content: msg.content,
-                  isBot: true,
-                  senderId: msg.senderId,
-                  createdAt: new Date(msg.createdAt),
-                })),
-              ]
-            })
-          }
         }
 
         decrementRemaining()
       } catch (error) {
-        console.error("Error sending message:", error)
+        if (error instanceof Error && error.name === "AbortError") {
+          console.log("Request was aborted")
+        } else {
+          console.error("Error sending message:", error)
+        }
       } finally {
         setIsLoading(false)
       }

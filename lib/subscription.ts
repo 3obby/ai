@@ -1,16 +1,19 @@
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs"
 
-import prismadb from "@/lib/prismadb";
+import prismadb from "@/lib/prismadb"
 
-const DAY_IN_MS = 86_400_000;
+const DAY_IN_MS = 86_400_000
 
 export const checkSubscription = async () => {
   try {
-    const { userId } = auth();
+    const { userId } = auth()
 
     if (!userId) {
-      return false;
+      console.log("No userId found in auth")
+      return false
     }
+
+    console.log("Checking subscription for userId:", userId)
 
     const userSubscription = await prismadb.userSubscription.findUnique({
       where: {
@@ -22,27 +25,37 @@ export const checkSubscription = async () => {
         stripeCustomerId: true,
         stripePriceId: true,
       },
-    });
+    })
+
+    console.log(
+      "User subscription data:",
+      JSON.stringify(userSubscription, null, 2)
+    )
 
     if (!userSubscription) {
-      return false;
+      console.log("No subscription found for user")
+      return false
     }
 
     const isValid =
-      userSubscription.stripePriceId &&
-      userSubscription.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS > Date.now();
+      userSubscription.stripeSubscriptionId &&
+      userSubscription.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS >
+        Date.now()
 
-    return !!isValid;
+    console.log("Subscription validity check result:", isValid)
+
+    return !!isValid
   } catch (error) {
-    return false;
+    console.error("Error checking subscription:", error)
+    return false
   }
-};
+}
 
 export const getSubscriptionData = async () => {
-  const { userId } = auth();
+  const { userId } = auth()
 
   if (!userId) {
-    return null;
+    return null
   }
 
   const userSubscription = await prismadb.userSubscription.findUnique({
@@ -56,37 +69,37 @@ export const getSubscriptionData = async () => {
       stripePriceId: true,
       price: true,
     },
-  });
+  })
 
   if (!userSubscription) {
-    return null;
+    return null
   }
 
-  return userSubscription;
-};
+  return userSubscription
+}
 
 export const SUBSCRIPTION_TIERS = {
   FREE: process.env.STARTER_PRICE_ID, // No price ID for free tier
   PRO: process.env.PRO_PRICE_ID,
   ENTERPRISE: process.env.ULTIMATE_PRICE_ID,
-} as const;
+} as const
 
 export const changeSubscription = async (newPriceId: string) => {
   try {
-    const response = await fetch('/api/stripe/change-subscription', {
-      method: 'POST',
+    const response = await fetch("/api/stripe/change-subscription", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ newPriceId }),
-    });
+    })
 
     if (!response.ok) {
-      throw new Error('Failed to change subscription');
+      throw new Error("Failed to change subscription")
     }
 
-    return response.json();
+    return response.json()
   } catch (error) {
-    throw error;
+    throw error
   }
-};
+}

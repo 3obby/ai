@@ -1,7 +1,7 @@
 "use client"
 
-import { useCompletion } from "ai/react"
-import { FormEvent, useState } from "react"
+import { useChat } from "ai/react"
+import { FormEvent, useState, useEffect } from "react"
 import { Companion, Message } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useChatLimit } from "@/store/use-chat-limit"
@@ -57,24 +57,74 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
     const userMessage: ChatMessageProps = {
       role: "user",
       content: input,
+      messageStatus: "sent",
+      readBy: [],
+      reactions: [],
     }
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+
+    setMessages((prevMessages) => [...prevMessages, userMessage])
+    setInput("")
     setIsLoading(true)
 
     try {
-      // Create a system message with active prompts if there are any
-      let messageWithPrompts = [...newMessages]
+      setTimeout(() => {
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg) => {
+            if (msg === userMessage) {
+              return { ...msg, messageStatus: "delivered" }
+            }
+            return msg
+          })
+        })
+      }, 500)
 
-      // Only include prompts when it's not a follow-up message
+      setTimeout(() => {
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg) => {
+            if (msg.role === "user" && msg.content === userMessage.content) {
+              return {
+                ...msg,
+                messageStatus: "read",
+                readBy: [{ name: companion.name, src: companion.src }],
+              }
+            }
+            return msg
+          })
+        })
+
+        if (Math.random() > 0.5) {
+          const emojis = ["👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉"]
+          const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
+
+          setMessages((prevMessages) => {
+            return prevMessages.map((msg) => {
+              if (msg.role === "user" && msg.content === userMessage.content) {
+                return {
+                  ...msg,
+                  reactions: [
+                    ...(msg.reactions || []),
+                    {
+                      emoji: randomEmoji,
+                      from: companion.name,
+                      botSrc: companion.src,
+                    },
+                  ],
+                }
+              }
+              return msg
+            })
+          })
+        }
+      }, 1500)
+
+      let messageWithPrompts = [...messages, userMessage]
+
       if (activePrompts.length > 0) {
-        // Find the system message index (should be the first one)
         const systemMessageIndex = messageWithPrompts.findIndex(
           (msg) => msg.role === "system"
         )
 
         if (systemMessageIndex >= 0) {
-          // Modify the existing system message to include prompts
           const systemMessage = messageWithPrompts[systemMessageIndex]
           const promptsText = activePrompts
             .map((prompt) => `- ${prompt.text}`)
@@ -85,7 +135,6 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
             content: `${systemMessage.content}\n\nAdditional instructions:\n${promptsText}`,
           }
         } else {
-          // Add a new system message with the prompts
           const promptsText = activePrompts
             .map((prompt) => `- ${prompt.text}`)
             .join("\n")
@@ -106,16 +155,77 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
         }),
       })
 
-      const completion = await response.text()
-      console.log("🤖 First message received")
-
-      const aiMessage: ChatMessageProps = {
-        role: "assistant",
-        content: completion,
-        src: companion.src,
+      if (!response.ok) {
+        throw new Error(response.statusText)
       }
-      setMessages((current) => [...current, aiMessage])
-      setInput("")
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error("Failed to get response reader")
+      }
+
+      const assistantMessage: ChatMessageProps = {
+        role: "system",
+        content: "",
+        isLoading: true,
+        src: companion.src,
+        activeTypingBot: {
+          name: companion.name,
+          src: companion.src,
+        },
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+
+      let accumulatedContent = ""
+
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          break
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        accumulatedContent += chunk
+
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages]
+          const lastMessageIndex = updatedMessages.length - 1
+          if (
+            lastMessageIndex >= 0 &&
+            updatedMessages[lastMessageIndex].role === "system" &&
+            updatedMessages[lastMessageIndex].isLoading
+          ) {
+            updatedMessages[lastMessageIndex] = {
+              ...updatedMessages[lastMessageIndex],
+              content: accumulatedContent,
+            }
+          }
+          return updatedMessages
+        })
+      }
+
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages]
+        const lastMessageIndex = updatedMessages.length - 1
+        if (
+          lastMessageIndex >= 0 &&
+          updatedMessages[lastMessageIndex].role === "system" &&
+          updatedMessages[lastMessageIndex].isLoading
+        ) {
+          updatedMessages[lastMessageIndex] = {
+            role: "assistant",
+            content: accumulatedContent,
+            src: companion.src,
+            name: companion.name,
+          }
+        }
+        return updatedMessages
+      })
+
       decrementRemaining()
 
       if (companion.sendMultipleMessages) {
@@ -140,7 +250,6 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
           ])
 
           try {
-            // For followup messages, also apply the active prompts
             let followUpPrompt = `Reply in a short, casual style—like texting—with a friendly tone.`
 
             if (activePrompts.length > 0) {
@@ -150,7 +259,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
               followUpPrompt += `\n\nAdditional instructions:\n${promptsText}`
             }
 
-            followUpPrompt += `\n\nHere's my previous message:\n"${completion}"`
+            followUpPrompt += `\n\nHere's my previous message:\n"${accumulatedContent}"`
 
             const followUpResponse = await fetch(`/api/chat/${companion.id}`, {
               method: "POST",
@@ -196,8 +305,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
                 },
               ])
 
-              // Apply prompts to third message as well
-              let thirdPrompt = completion + "\n\n" + secondMessage
+              let thirdPrompt = accumulatedContent + "\n\n" + secondMessage
 
               if (activePrompts.length > 0) {
                 const promptsText = activePrompts
@@ -232,19 +340,15 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
               decrementRemaining()
             }
           } catch (error) {
-            setMessages((current) =>
-              current.filter((message) => !message.isLoading)
-            )
-            console.error("❌ Error sending follow-up messages:", error)
+            console.error("Error in follow-up message:", error)
           }
         }
       }
-
-      router.refresh()
     } catch (error) {
-      console.error("Failed to send message:", error)
+      console.error("Error in handleSubmit:", error)
     } finally {
       setIsLoading(false)
+      router.refresh()
     }
   }
 

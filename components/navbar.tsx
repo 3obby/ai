@@ -4,17 +4,13 @@ import Link from "next/link"
 import { UserButton } from "@clerk/nextjs"
 import { Poppins } from "next/font/google"
 import { Sparkles, Settings } from "lucide-react"
-import { useState, useEffect } from "react"
-import { changeSubscription, SUBSCRIPTION_TIERS } from "@/lib/subscription"
 
 import { cn } from "@/lib/utils"
 import { MobileSidebar } from "@/components/mobile-sidebar"
-import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import { useProModal } from "@/hooks/use-pro-modal"
 import { useSettingsModal } from "@/hooks/use-settings-modal"
 import { ChatLimit } from "@/components/chat-limit"
-import { ChangePlanModal } from "@/components/change-plan-modal"
 import { SettingsModal } from "@/components/settings-modal"
 
 const font = Poppins({ weight: "600", subsets: ["latin"] })
@@ -25,72 +21,18 @@ interface NavbarProps {
   stripePriceId?: string
 }
 
-export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
+export const Navbar = ({ isPro, userId }: NavbarProps) => {
   const proModal = useProModal()
   const settingsModal = useSettingsModal()
-  const [loading, setLoading] = useState(false)
-  const [showChangePlan, setShowChangePlan] = useState(false)
-  const [currentPlan, setCurrentPlan] = useState<
-    "starter" | "pro" | "ultimate"
-  >("starter")
-  const [userProgress, setUserProgress] = useState<{
-    isSubscribed: boolean
-  } | null>(null)
-
-  useEffect(() => {
-    if (stripePriceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID) {
-      setCurrentPlan("starter")
-    } else if (stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID) {
-      setCurrentPlan("pro")
-    } else if (
-      stripePriceId === process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PRICE_ID
-    ) {
-      setCurrentPlan("ultimate")
-    }
-  }, [stripePriceId])
-
-  useEffect(() => {
-    const fetchUserProgress = async () => {
-      try {
-        const response = await fetch("/api/user-progress")
-        if (response.ok) {
-          const data = await response.json()
-          setUserProgress(data)
-        }
-      } catch (error) {
-        console.error("Error fetching user progress:", error)
-      }
-    }
-
-    fetchUserProgress()
-  }, [])
-
-  // const onChangeSubscription = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const newPriceId = isPro
-  //       ? SUBSCRIPTION_TIERS.FREE
-  //       : SUBSCRIPTION_TIERS.PRO;
-
-  //     if (newPriceId) {
-  //       await changeSubscription(newPriceId);
-  //       window.location.reload();
-  //     }
-  //   } catch (error) {
-  //     console.error("Subscription change error:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   return (
-    <div className="fixed w-full z-50 flex justify-between items-center py-2 px-2 sm:px-4 h-16 border-b border-primary/10 bg-secondary">
-      <div className="flex items-center">
+    <div className="fixed w-full z-50 flex items-center py-2 px-2 sm:px-4 h-16 border-b border-primary/10 bg-secondary">
+      <div className="flex items-center w-auto md:w-64 flex-shrink-0">
         <MobileSidebar isPro={isPro} />
         <Link href="/">
           <h1
             className={cn(
-              "hidden md:block text-xl md:text-3xl font-bold text-primary",
+              "hidden md:block text-xl md:text-3xl font-bold text-primary truncate",
               font.className
             )}
           >
@@ -98,47 +40,31 @@ export const Navbar = ({ isPro, userId, stripePriceId }: NavbarProps) => {
           </h1>
         </Link>
       </div>
-      <div className="flex items-center gap-x-2 sm:gap-x-3">
-        <div className="flex-1 min-w-[100px] md:min-w-[150px]">
+      <div className="flex items-center justify-end flex-1 space-x-2 sm:space-x-3 md:space-x-4">
+        <div className="flex-shrink-0 max-w-[300px] min-w-[100px]">
           <ChatLimit userId={userId} />
         </div>
-        {!userProgress?.isSubscribed ? (
-          <Link href="/subscribe" className="hidden sm:block">
-            <Button size="sm" variant="premium">
+        {!isPro && (
+          <Link href="/subscribe" className="hidden sm:block flex-shrink-0">
+            <Button size="sm" variant="premium" className="whitespace-nowrap">
               Upgrade
               <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
             </Button>
           </Link>
-        ) : (
-          <Button
-            onClick={() => setShowChangePlan(true)}
-            size="sm"
-            variant="premium"
-            className="hidden sm:flex"
-          >
-            Change Plan
-            <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
-          </Button>
         )}
-        <ChangePlanModal
-          isOpen={showChangePlan}
-          onClose={() => setShowChangePlan(false)}
-          currentPlan={currentPlan}
-        />
-        <Button
-          onClick={settingsModal.onOpen}
-          size="icon"
-          variant="ghost"
-          className="h-9 w-9"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-        <div className="hidden sm:block">
-          <ModeToggle />
+        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <Button
+            onClick={settingsModal.onOpen}
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 sm:h-9 sm:w-9"
+          >
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          <UserButton afterSignOutUrl="/" />
         </div>
-        <UserButton afterSignOutUrl="/" />
       </div>
-      <SettingsModal />
+      <SettingsModal isPro={isPro} />
     </div>
   )
 }

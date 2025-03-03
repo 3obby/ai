@@ -13,12 +13,17 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Sparkles } from "lucide-react"
 
 import { useSettingsModal } from "@/hooks/use-settings-modal"
 import { usePrompts, Prompt } from "@/store/use-prompts"
+import { ModeToggle } from "@/components/mode-toggle"
 
-export const SettingsModal = () => {
+interface SettingsModalProps {
+  isPro: boolean
+}
+
+export const SettingsModal = ({ isPro }: SettingsModalProps) => {
   const { isOpen, onClose } = useSettingsModal()
   const { prompts, addPrompt, removePrompt, togglePrompt, updatePromptText } =
     usePrompts()
@@ -35,14 +40,29 @@ export const SettingsModal = () => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
+            {isPro && (
+              <div className="flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500">
+                <Sparkles className="h-4 w-4 text-white mr-2" />
+                <span className="text-white font-semibold">PRO</span>
+              </div>
+            )}
+          </div>
           <DialogDescription>
-            Manage your personalized prompts. These will be applied to your
-            conversations.
+            Manage your app settings and personalized prompts.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Appearance</h3>
+            <div className="flex items-center justify-between">
+              <Label>Theme Mode</Label>
+              <ModeToggle />
+            </div>
+          </div>
+
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Your Prompts</h3>
             <p className="text-sm text-muted-foreground">

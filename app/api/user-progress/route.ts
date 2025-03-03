@@ -10,6 +10,7 @@ import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
 // Non-subscribed users get this many free tokens
 const FREE_TOKEN_ALLOWANCE = 10000
+const DAY_IN_MS = 86_400_000
 
 export async function GET() {
   try {
@@ -26,6 +27,12 @@ export async function GET() {
       }),
       prismadb.userSubscription.findUnique({
         where: { userId },
+        select: {
+          stripeSubscriptionId: true,
+          stripeCurrentPeriodEnd: true,
+          stripeCustomerId: true,
+          stripePriceId: true,
+        },
       }),
     ])
 
@@ -67,7 +74,13 @@ export async function GET() {
       }
     }
 
-    console.log("User usage data:", userUsage) // Log the actual data structure
+    // Only log in development mode and in a simplified format
+    if (process.env.NODE_ENV === "development" && Math.random() < 0.1) {
+      console.log(
+        "[USER_PROGRESS] Tokens available:",
+        userUsage.availableTokens
+      )
+    }
 
     // Use totalSpent as the XP value
     const currentXP = userUsage.totalSpent || 0
@@ -76,17 +89,14 @@ export async function GET() {
     const progressToNextLevel = getProgressToNextLevel(currentXP)
 
     // Check subscription status
-    const isSubscribed = userSubscription?.stripeCurrentPeriodEnd
-      ? new Date(userSubscription.stripeCurrentPeriodEnd) > new Date()
-      : false
+    const isSubscribed =
+      userSubscription?.stripePriceId &&
+      userSubscription.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS >
+        Date.now()
 
     // Calculate token allocation based on subscription status
     const baseTokens = isSubscribed
-      ? (userSubscription as any)?.includeBaseTokens ||
-        // Explicitly check SUBSCRIPTION_PLAN for better reliability
-        (userSubscription?.stripeSubscriptionId
-          ? SUBSCRIPTION_PLAN.includeBaseTokens
-          : FREE_TOKEN_ALLOWANCE)
+      ? SUBSCRIPTION_PLAN.includeBaseTokens
       : FREE_TOKEN_ALLOWANCE
 
     // For now, just use the availableTokens as the actual available tokens
@@ -103,7 +113,7 @@ export async function GET() {
       usedTokens: usedTokens,
       remainingTokens: remainingTokens,
       baseTokenAllocation: baseTokens,
-      isSubscribed: isSubscribed,
+      isSubscribed: !!isSubscribed,
       totalMoneySpent: userUsage.totalMoneySpent || 0,
     })
   } catch (error) {

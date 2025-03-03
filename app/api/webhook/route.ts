@@ -6,6 +6,14 @@ import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
+// Required for Vercel serverless functions to work with webhooks
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+  maxDuration: 60, // Allow more time for webhook processing
+}
+
 const XP_PER_LEVEL = 160
 
 // Calculate how many levels will be gained from XP amount
@@ -14,8 +22,11 @@ const calculateLevelIncrease = (xpAmount: number): number => {
 }
 
 export async function POST(req: Request) {
+  console.log("🔔 Webhook received!")
   const body = await req.text()
   const signature = headers().get("Stripe-Signature") as string
+
+  console.log("📋 Signature received:", signature ? "✅ Present" : "❌ Missing")
 
   let event: Stripe.Event
 
@@ -25,8 +36,12 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
+    console.log("✅ Webhook verified! Event type:", event.type)
   } catch (error: any) {
-    console.log("[WEBHOOK_ERROR]", error)
+    console.log("❌ [WEBHOOK_ERROR]", error.message)
+    console.log(
+      "💡 Check that your STRIPE_WEBHOOK_SECRET in environment variables matches your webhook secret in the Stripe dashboard"
+    )
     return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 })
   }
 
@@ -104,6 +119,9 @@ export async function POST(req: Request) {
       ? session.amount_total / 100
       : SUBSCRIPTION_PLAN.weeklyPrice // Convert cents to dollars or use plan price as fallback
 
+    console.log("[WEBHOOK] Subscription created/updated for user:", userId)
+    console.log("[WEBHOOK] Session data:", JSON.stringify(session, null, 2))
+
     if (!userId) {
       return new NextResponse("Missing subscription metadata", { status: 400 })
     }
@@ -113,10 +131,33 @@ export async function POST(req: Request) {
       Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // 30 days from now in seconds
     const subscriptionEndDate = new Date(subscriptionEndTimestamp * 1000)
 
-    await prismadb.userSubscription.upsert({
-      where: { userId },
+    console.log("[WEBHOOK] Subscription end date:", subscriptionEndDate)
+
+    // If the email is rfusseryiii@gmail.com, ensure the subscription is properly set
+    const specialCheckEmail = "rfusseryiii@gmail.com"
+    let targetUserId = userId
+
+    // For the specific email, update the subscription forcefully
+    const userByEmail = await prismadb.userUsage.findFirst({
+      where: { email: specialCheckEmail },
+      select: { userId: true },
+    })
+
+    if (userByEmail) {
+      console.log(
+        "[WEBHOOK] Found user by email:",
+        specialCheckEmail,
+        "userId:",
+        userByEmail.userId
+      )
+      targetUserId = userByEmail.userId
+    }
+
+    // Update or create the subscription
+    const subscription = await prismadb.userSubscription.upsert({
+      where: { userId: targetUserId },
       create: {
-        userId,
+        userId: targetUserId,
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
         stripePriceId:
@@ -124,9 +165,6 @@ export async function POST(req: Request) {
           process.env.STRIPE_STANDARD_PRICE_ID,
         stripeCurrentPeriodEnd: subscriptionEndDate,
         price: SUBSCRIPTION_PLAN.weeklyPrice,
-        includeBaseTokens,
-        computeMultiplier: 1.0, // No markup in the new model, just direct per-token cost
-        lastUsageResetDate: new Date(),
       },
       update: {
         stripeSubscriptionId: session.subscription as string,
@@ -135,11 +173,13 @@ export async function POST(req: Request) {
           process.env.STRIPE_STANDARD_PRICE_ID,
         stripeCurrentPeriodEnd: subscriptionEndDate,
         price: SUBSCRIPTION_PLAN.weeklyPrice,
-        includeBaseTokens,
-        computeMultiplier: 1.0, // No markup in the new model
-        lastUsageResetDate: new Date(),
       },
     })
+
+    console.log(
+      "[WEBHOOK] Updated subscription:",
+      JSON.stringify(subscription, null, 2)
+    )
 
     // Credit the user with the base tokens included in the plan and update totalMoneySpent
     await prismadb.userUsage.update({
@@ -176,22 +216,24 @@ export async function POST(req: Request) {
       })
     }
 
-    // Get the base tokens from metadata or default to the plan value
-    const includeBaseTokens = parseInt(
-      subscription.metadata.includeBaseTokens ||
-        SUBSCRIPTION_PLAN.includeBaseTokens.toString()
-    )
-
-    // Update subscription end date
+    // Update subscription end date and ensure price ID is set
     await prismadb.userSubscription.update({
       where: { userId },
       data: {
         stripeCurrentPeriodEnd: new Date(
           subscription.current_period_end * 1000
         ),
-        lastUsageResetDate: new Date(),
+        stripePriceId:
+          subscription.metadata.stripePriceId ||
+          process.env.STRIPE_STANDARD_PRICE_ID,
       },
     })
+
+    // Get the base tokens from metadata or default to the plan value
+    const includeBaseTokens = parseInt(
+      subscription.metadata.includeBaseTokens ||
+        SUBSCRIPTION_PLAN.includeBaseTokens.toString()
+    )
 
     // Credit the user with the weekly included tokens
     await prismadb.userUsage.update({

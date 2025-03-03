@@ -110,6 +110,16 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
     }
   }, [fetchProgress])
 
+  const formatTokens = (tokens: number): string => {
+    if (tokens >= 1000000) {
+      return `${(tokens / 1000000).toFixed(1)}M`
+    }
+    if (tokens >= 1000) {
+      return `${(tokens / 1000).toFixed(1)}k`
+    }
+    return tokens.toString()
+  }
+
   // Show loading state if no progress data is available yet
   if (!progress) {
     return (
@@ -187,7 +197,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Tokens</span>
             <span className="text-sm font-semibold">
-              {progress.remainingTokens.toLocaleString()}
+              {formatTokens(progress.remainingTokens)}
             </span>
           </div>
         </div>
@@ -211,19 +221,21 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
 
       {/* Mobile view - Simplified to focus on tokens which is the most important info */}
       <div
-        className={`md:hidden flex items-center gap-x-2 cursor-pointer ${
+        className={`md:hidden flex items-center gap-x-2 cursor-pointer overflow-hidden ${
           tokensUpdated ? "animate-pulse" : ""
         }`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-x-2">
-          <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20">
+        <div className="flex items-center gap-x-1 min-w-0 w-full">
+          <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20 shrink-0">
             <Coins className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Tokens</span>
-            <span className="text-sm font-semibold">
-              {progress.remainingTokens.toLocaleString()}
+          <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+            <span className="text-xs text-muted-foreground truncate w-full">
+              Tokens
+            </span>
+            <span className="text-sm font-semibold truncate w-full">
+              {formatTokens(progress.remainingTokens)}
             </span>
           </div>
         </div>
@@ -231,7 +243,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
 
       {/* If tokens were updated, show a tooltip/notification */}
       {tokensUpdated && (
-        <div className="absolute -bottom-10 left-0 bg-green-500 text-white text-xs py-1 px-2 rounded-md">
+        <div className="absolute -bottom-10 left-0 bg-green-500 text-white text-xs py-1 px-2 rounded-md z-50">
           Tokens updated! Your subscription is active.
         </div>
       )}

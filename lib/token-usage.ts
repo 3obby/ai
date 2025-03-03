@@ -1,5 +1,5 @@
 import prismadb from "./prismadb"
-import { COMPUTE_COST_PER_TOKEN } from "./subscription-plans"
+import { COMPUTE_COST_PER_TOKEN, SUBSCRIPTION_PLAN } from "./subscription-plans"
 import { stripe } from "./stripe"
 import { calculateXPEarned } from "./level-system"
 
@@ -96,6 +96,11 @@ export async function trackTokenUsage(
     const [userSubscription, userUsage] = await Promise.all([
       prismadb.userSubscription.findUnique({
         where: { userId },
+        select: {
+          stripeSubscriptionId: true,
+          stripeCurrentPeriodEnd: true,
+          stripePriceId: true,
+        },
       }),
       prismadb.userUsage.findUnique({
         where: { userId },
@@ -110,16 +115,19 @@ export async function trackTokenUsage(
       }
     }
 
-    console.log("[TOKEN_USAGE] User usage data:", userUsage)
+    // Only log in development mode and in a simplified format
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TOKEN_USAGE] User tokens:", userUsage.availableTokens)
+    }
 
     // Check if user has an active subscription
     const isSubscribed =
-      userSubscription?.stripeCurrentPeriodEnd &&
-      userSubscription.stripeCurrentPeriodEnd.getTime() > new Date().getTime()
+      userSubscription?.stripePriceId &&
+      userSubscription.stripeCurrentPeriodEnd?.getTime()! > new Date().getTime()
 
     // Calculate token allocation and remaining tokens
     const baseTokens = isSubscribed
-      ? (userSubscription as any)?.includeBaseTokens || FREE_TOKEN_ALLOWANCE
+      ? SUBSCRIPTION_PLAN.includeBaseTokens
       : FREE_TOKEN_ALLOWANCE
 
     // Use availableTokens directly from the database

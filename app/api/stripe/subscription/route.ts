@@ -79,10 +79,12 @@ export async function POST(req: Request) {
         userId,
         includeBaseTokens: SUBSCRIPTION_PLAN.includeBaseTokens.toString(),
         additionalTokenCost: SUBSCRIPTION_PLAN.additionalTokenCost.toString(),
+        stripePriceId: stripePriceId,
       },
       subscription_data: {
         metadata: {
           userId,
+          stripePriceId: stripePriceId,
         },
       },
     })

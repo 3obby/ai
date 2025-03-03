@@ -1,39 +1,120 @@
 ## GroupChatBotBuilder
 
-GroupChatBotBuilder is a specialized GPT wrapper focused on creating AI companions that emulate real or fictional personas. It lets users engage with one or more companion AIs in individual or group chats.
+GroupChatBotBuilder is a Next.js toolbox gpt wrapper
+
+### Key Features
+
+- **AI Companion Generation & Chat**
+
+  - Create and customize AI companions with unique personalities
+  - Engage in individual or group chats with companions
+  - Companions are generated using OpenAI's API and stored in your database
+
+- **Personalized Prompts**
+
+  - Store and manage custom prompts via the settings menu
+  - Toggle prompts on/off to customize companion behavior
+  - Prompts persist across sessions using local storage
+
+- **Subscription Tiers**
+
+  - Starter: Basic access with limited daily messages
+  - Pro: Increased message limits and companion creation
+  - Ultimate: Unlimited messages and companions
+
+- **User Experience**
+  - Modern UI with dark/light mode support
+  - Mobile-responsive design
+  - Progress tracking and XP system
+
+### Prerequisites
+
+- Node.js
+- OpenAI API key
+- Clerk for authentication
+- Stripe for payments (optional)
+- PostgreSQL database
+
+### Environment Setup
+
+Create a `.env` file with:
+
+```bash
+# Authentication (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+
+# OpenAI
+OPENAI_API_KEY=
+
+# Database (PostgreSQL)
+DATABASE_URL=
+
+# Stripe (Optional)
+STRIPE_API_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID=
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
+NEXT_PUBLIC_STRIPE_ULTIMATE_PRICE_ID=
+```
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/GroupChatBotBuilder.git
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up the database:
+
+   ```bash
+   npx prisma db push
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Project Structure
+
+```text
+.
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   └── (routes)/          # Page routes
+├── components/            # React components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions
+├── prisma/              # Database schema
+└── store/               # State management
+```
+
+### Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### License
+
+This project is licensed under the terms specified in the LICENSE file.
 
 ### Features
 
 - **AI Companion Generation**  
-  In `companions/copm.py`, the script uses OpenAI’s API to generate descriptions, instructions, and seed conversations for various personas, storing them in `companions/Generated_Companions.json`.
+  In `companions/copm.py`, the script uses OpenAI's API to generate descriptions, instructions, and seed conversations for various personas, storing them in `companions/Generated_Companions.json`.
 
 - **Category Management**  
   A separate `Category.json` maps category names to IDs, allowing companions to be organized and filtered by category.
 
 - **API Endpoint**  
   In `app/api/companion/behavior/route.ts`, an API route processes user messages, interacts with GPT (e.g., model `gpt-4`), and returns a summarized or expanded response from the companion persona.
-
-### Prerequisites
-
-- Node.js (for running the Next.js/TypeScript portion of the application).
-- Python 3 (for generating companion data).
-- An OpenAI API key with sufficient quota.
-
-### Setup & Installation
-
-1. **Clone or Fork** the repository:
-   ```bash
-   git clone https://github.com/yourusername/GroupChatBotBuilder-ai.git
-   ```
-2. **Install Node Dependencies** (from the project root):
-   ```bash
-   npm install
-   ```
-3. **Install Python Requirements** (if any are needed for your generation scripts):
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Set Environment Variables** including your OpenAI API key (e.g. `OPENAI_API_KEY`) or edit the relevant API key usage in scripts.
 
 ### Generating Companions
 
@@ -79,16 +160,6 @@ GroupChatBotBuilder is a specialized GPT wrapper focused on creating AI companio
 └── ...
 ```
 
-### Contributing
-
-- Open issues or make pull requests for improvements, new persona ideas, or feature requests.
-
-### License
-
-This project is licensed under the terms specified in your license file (if provided). If none exists, please consider adding one to clarify usage rights.
-
-Enjoy using GroupChatBotBuilder for all your character-driven AI interactions!
-
 Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into GroupChatBotBuilder. Adjust as needed for your setup:
 
 ---
@@ -129,13 +200,13 @@ Below is an example **Character Creation** workflow you can add to the README, s
 4. **Run/Restart Your App**
 
    ```bash
-   npm run dev
+   npx next dev
    ```
 
    Your new characters should now appear in the companion list. Selecting them in the UI or referencing them by ID will start a conversation with their unique personality.
 
 5. **Verification**
    - In your Next.js logs or browser console, verify that Billy Brainstormer (or any new companion) is visible.
-   - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion’s ID.
+   - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion's ID.
 
-That’s it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.
+That's it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.
