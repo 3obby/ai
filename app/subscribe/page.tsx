@@ -1,10 +1,15 @@
-import axios from "axios";
-import SubscribeClient from "./components/subscribe-client";
-import { auth, redirectToSignIn } from "@clerk/nextjs";
+import axios from "axios"
+import SubscribeClient from "./components/subscribe-client"
+import { auth } from "@/lib/server-auth"
+import { redirect } from "next/navigation"
 
 export default async function SubscribePage() {
-  const { userId } = auth();
+  const session = await auth()
+  const userId = session?.userId
 
+  if (!userId) {
+    return redirect("/login")
+  }
 
-  return <SubscribeClient userId={userId || ""} />;
+  return <SubscribeClient userId={userId} />
 }

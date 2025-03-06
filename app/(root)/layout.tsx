@@ -1,22 +1,19 @@
-import { Navbar } from "@/components/navbar";
-import { Sidebar } from "@/components/sidebar";
-import { checkSubscription } from "@/lib/subscription";
-import { auth } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+import { Navbar } from "@/components/navbar"
+import { Sidebar } from "@/components/sidebar"
+import { checkSubscription } from "@/lib/subscription"
+import { auth } from "@/lib/server-auth"
+import { redirect } from "next/navigation"
 
-const RootLayout = async ({
-  children
-}: {
-  children: React.ReactNode;
-}) => {
-  const isPro = await checkSubscription();
-  const {userId} = auth();
+const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const isPro = await checkSubscription()
+  const session = await auth()
+  const userId = session?.userId
 
   if (!userId) {
-    return redirect("/sign-in");
+    return redirect("/login")
   }
 
-  return ( 
+  return (
     <div className="h-full">
       <Navbar isPro={isPro} userId={userId} />
       <div className="hidden md:flex mt-16 h-full w-20 flex-col fixed inset-y-0">
@@ -26,7 +23,7 @@ const RootLayout = async ({
         {children}
       </main>
     </div>
-   );
+  )
 }
- 
-export default RootLayout;
+
+export default RootLayout

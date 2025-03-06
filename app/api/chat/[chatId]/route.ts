@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 import prismadb from "@/lib/prismadb"
@@ -19,15 +19,17 @@ export async function POST(
 ) {
   try {
     const { allMessages, isFollowUp } = await request.json()
-    const user = await currentUser()
+    const session = await auth()
+    const userId = session?.userId
+    const user = session?.user
 
-    if (!user?.id) {
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
     // Check if user has enough XP
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: user.id },
+      where: { userId: userId },
     })
     if (!userUsage) {
       return new NextResponse("User usage record not found", { status: 404 })
@@ -73,13 +75,13 @@ export async function POST(
           allMessages[allMessages.length - 1]?.content || "(no user input)",
         role: isFollowUp ? "system" : "user",
         companionId: params.chatId,
-        userId: user.id,
+        userId: userId,
       },
     })
 
     // Deduct XP
     await prismadb.userUsage.update({
-      where: { userId: user.id },
+      where: { userId: userId },
       data: {
         availableTokens: { decrement: XP_PER_MESSAGE },
         totalSpent: { increment: XP_PER_MESSAGE },
@@ -122,7 +124,7 @@ export async function POST(
               content: fullResponseContent,
               role: "assistant" as Role,
               companionId: params.chatId,
-              userId: user.id,
+              userId: userId,
             },
           })
         }
@@ -145,9 +147,10 @@ export async function DELETE(
   { params }: { params: { chatId: string } }
 ) {
   try {
-    const user = await currentUser()
+    const session = await auth()
+    const userId = session?.userId
 
-    if (!user || !user.id) {
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -155,7 +158,7 @@ export async function DELETE(
     await prismadb.message.deleteMany({
       where: {
         companionId: params.chatId,
-        userId: user.id,
+        userId: userId,
       },
     })
 

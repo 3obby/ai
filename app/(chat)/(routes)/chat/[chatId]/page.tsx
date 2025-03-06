@@ -1,33 +1,32 @@
-import { redirect } from "next/navigation";
-import { auth, redirectToSignIn } from "@clerk/nextjs";
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/server-auth"
 
-import prismadb from "@/lib/prismadb";
+import prismadb from "@/lib/prismadb"
 
-import { ChatClient } from "./components/client";
+import { ChatClient } from "./components/client"
 
 interface ChatIdPageProps {
   params: {
-    chatId: string;
+    chatId: string
   }
 }
 
-const ChatIdPage = async ({
-  params
-}: ChatIdPageProps) => {
-  const { userId } = auth();
+const ChatIdPage = async ({ params }: ChatIdPageProps) => {
+  const session = await auth()
+  const userId = session?.userId
 
   if (!userId) {
-    return redirectToSignIn();
+    return redirect("/login")
   }
 
   const companion = await prismadb.companion.findUnique({
     where: {
-      id: params.chatId
+      id: params.chatId,
     },
     include: {
       messages: {
         orderBy: {
-          createdAt: "asc"
+          createdAt: "asc",
         },
         where: {
           userId,
@@ -36,21 +35,18 @@ const ChatIdPage = async ({
       _count: {
         select: {
           messages: true,
-        }
-      }
-    }
-  });
+        },
+      },
+    },
+  })
 
   if (!companion) {
-    return redirect("/");
+    return redirect("/")
   }
 
   // Redirect non-PRO users if they try to access a paid companion
 
-
-  return (
-    <ChatClient companion={companion} />
-  );
+  return <ChatClient companion={companion} />
 }
- 
-export default ChatIdPage;
+
+export default ChatIdPage

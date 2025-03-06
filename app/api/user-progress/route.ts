@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth"
 import prismadb from "@/lib/prismadb"
 import { NextResponse } from "next/server"
 import {
@@ -12,9 +12,10 @@ import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 const FREE_TOKEN_ALLOWANCE = 10000
 const DAY_IN_MS = 86_400_000
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { userId } = auth()
+    const session = await auth()
+    const userId = session?.userId
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })

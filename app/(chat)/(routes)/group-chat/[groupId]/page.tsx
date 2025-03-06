@@ -1,23 +1,23 @@
+import { auth } from "@/lib/server-auth"
 import { redirect } from "next/navigation"
-import { auth, redirectToSignIn } from "@clerk/nextjs"
-
 import prismadb from "@/lib/prismadb"
 import { GroupChatClient } from "./components/client"
 
-interface GroupChatPageProps {
+interface GroupChatIdPageProps {
   params: {
     groupId: string
   }
 }
 
-const GroupChatPage = async ({ params }: GroupChatPageProps) => {
-  const { userId } = auth()
+const GroupChatIdPage = async ({ params }: GroupChatIdPageProps) => {
+  const session = await auth()
+  const userId = session?.userId
 
   if (!userId) {
-    return redirectToSignIn()
+    return redirect("/login")
   }
 
-  let groupChat = await prismadb.groupChat.findUnique({
+  const groupChat = await prismadb.groupChat.findUnique({
     where: {
       id: params.groupId,
     },
@@ -27,11 +27,6 @@ const GroupChatPage = async ({ params }: GroupChatPageProps) => {
           companion: true,
         },
       },
-      messages: {
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
     },
   })
 
@@ -39,34 +34,12 @@ const GroupChatPage = async ({ params }: GroupChatPageProps) => {
     return redirect("/")
   }
 
-  // Only create welcome messages if there are no existing messages
-  if (groupChat.messages.length === 0) {
-    const welcomeMessages = await Promise.all(
-      groupChat.members.map(async (member) => {
-        // Use the bot's custom introduction if available, or fall back to a generic greeting
-        const greeting =
-          member.companion.customIntroduction ||
-          `Hi there! I'm ${member.companion.name}. 👋`
-
-        return await prismadb.groupMessage.create({
-          data: {
-            content: greeting,
-            groupChatId: params.groupId,
-            isBot: true,
-            senderId: member.companion.id,
-          },
-        })
-      })
-    )
-
-    // Update groupChat with the newly created messages
-    groupChat = {
-      ...groupChat,
-      messages: welcomeMessages,
-    }
+  // Only allow the creator to access the group chat
+  if (groupChat.creatorId !== userId) {
+    return redirect("/")
   }
 
   return <GroupChatClient groupChat={groupChat} initialLoad={true} />
 }
 
-export default GroupChatPage
+export default GroupChatIdPage

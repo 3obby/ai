@@ -1,26 +1,27 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
-import prismadb from "@/lib/prismadb";
+import { auth } from "@/lib/server-auth"
+import { NextResponse } from "next/server"
+import prismadb from "@/lib/prismadb"
 
 // DELETE endpoint to clear all chats
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
-    const user = await currentUser();
+    const session = await auth()
+    const userId = session?.userId
 
-    if (!user || !user.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 })
     }
 
     // Delete all messages for this user
     await prismadb.message.deleteMany({
       where: {
-        userId: user.id,
+        userId: userId,
       },
-    });
+    })
 
-    return new NextResponse("All chats cleared successfully", { status: 200 });
+    return new NextResponse("All chats cleared successfully", { status: 200 })
   } catch (error) {
-    console.log("[CHAT_CLEAR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.log("[CHAT_CLEAR]", error)
+    return new NextResponse("Internal Error", { status: 500 })
   }
-} 
+}
