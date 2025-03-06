@@ -14,7 +14,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useUser } from "@clerk/nextjs"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import * as Popover from "@radix-ui/react-popover"
 import { Input } from "@/components/ui/input"
 import {
@@ -58,7 +58,7 @@ export const GroupChatHeader = ({
   onClear,
 }: GroupChatHeaderProps) => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useCurrentUser()
   const { toast } = useToast()
   const [showClearConfirmation, setShowClearConfirmation] = useState(false)
   const [showAddCompanion, setShowAddCompanion] = useState(false)

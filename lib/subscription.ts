@@ -1,12 +1,12 @@
-import { auth } from "@clerk/nextjs"
-
+import { auth } from "@/lib/server-auth"
 import prismadb from "@/lib/prismadb"
 
 const DAY_IN_MS = 86_400_000
 
 export const checkSubscription = async () => {
   try {
-    const { userId } = auth()
+    const session = await auth()
+    const userId = session?.userId
 
     if (!userId) {
       console.log("No userId found in auth")
@@ -52,7 +52,8 @@ export const checkSubscription = async () => {
 }
 
 export const getSubscriptionData = async () => {
-  const { userId } = auth()
+  const session = await auth()
+  const userId = session?.userId
 
   if (!userId) {
     return null

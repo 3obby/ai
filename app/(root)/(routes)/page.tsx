@@ -2,7 +2,7 @@ import prismadb from "@/lib/prismadb"
 import { Categories } from "@/components/categories"
 import { Companions } from "@/components/companions"
 import { SearchInput } from "@/components/search-input"
-import { auth } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth"
 import { checkSubscription } from "@/lib/subscription"
 import { GroupCards } from "@/components/group-cards"
 import { redirect } from "next/navigation"
@@ -15,7 +15,8 @@ interface RootPageProps {
 }
 
 const RootPage = async ({ searchParams }: RootPageProps) => {
-  const { userId } = auth()
+  const session = await auth()
+  const userId = session?.userId
 
   // If no user is authenticated, redirect to the landing page
   if (!userId) {
