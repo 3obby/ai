@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
@@ -6,17 +6,19 @@ const IDEA_SUBMISSION_COST = 20000
 
 export async function POST(req: Request) {
   try {
-    const user = await currentUser()
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
     const body = await req.json()
     const { title, description } = body
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
     // Check user's available XP
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: user.id },
+      where: { userId: userId },
     })
 
     if (!userUsage || userUsage.availableTokens < IDEA_SUBMISSION_COST) {
@@ -30,13 +32,13 @@ export async function POST(req: Request) {
     const [idea] = await prismadb.$transaction([
       prismadb.communityIdea.create({
         data: {
-          userId: user.id,
+          userId: userId,
           title,
           description,
         },
       }),
       prismadb.userUsage.update({
-        where: { userId: user.id },
+        where: { userId: userId },
         data: {
           availableTokens: userUsage.availableTokens - IDEA_SUBMISSION_COST,
           totalSpent: userUsage.totalSpent + IDEA_SUBMISSION_COST,

@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs";
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 
 import prismadb from "@/lib/prismadb";
@@ -9,8 +9,9 @@ const settingsUrl = absoluteUrl("/");
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
     const { option, xpAmount, priceAmount } = await req.json();
 
     if (!userId || !user) {

@@ -1,11 +1,12 @@
-import { auth } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
 // GET - Fetch all prompts for the current user
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { userId } = auth()
+    const session = await auth();
+const userId = session?.userId;
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
@@ -26,7 +27,6 @@ export async function GET() {
 // POST - Create a new prompt
 export async function POST(req: Request) {
   try {
-    const { userId } = auth()
     const { text } = await req.json()
 
     if (!userId) {
@@ -55,7 +55,6 @@ export async function POST(req: Request) {
 // PUT - Update a user prompt (text or active status)
 export async function PUT(req: Request) {
   try {
-    const { userId } = auth()
     const { id, text, isActive } = await req.json()
 
     if (!userId) {
@@ -97,7 +96,6 @@ export async function PUT(req: Request) {
 // DELETE - Remove a user prompt
 export async function DELETE(req: Request) {
   try {
-    const { userId } = auth()
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 

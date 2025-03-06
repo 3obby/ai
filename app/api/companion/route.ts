@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs";
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 
 import prismadb from "@/lib/prismadb";
@@ -8,11 +8,13 @@ const XP_REQUIRED_FOR_CREATION = 100;
 
 export async function POST(req: Request) {
   try {
-    const user = await currentUser();
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
     const body = await req.json();
     const { src, name, instructions, categoryId,private: isPrivate } = body;
 
-    if (!user || !user.id || !user.firstName) {
+    if (!user || !userId || !user.firstName) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
 
     // Check user's XP using UserUsage
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: user.id }
+      where: { userId: userId }
     });
 
     if (!userUsage || userUsage.availableTokens < XP_REQUIRED_FOR_CREATION) {
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
     const companion = await prismadb.companion.create({
       data: {
         categoryId,
-        userId: user.id,
+        userId: userId,
         userName: user.firstName,
         src,
         name,
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
 
     // Deduct XP after successful creation
     await prismadb.userUsage.update({
-      where: { userId: user.id },
+      where: { userId: userId },
       data: {
         availableTokens: userUsage.availableTokens - XP_REQUIRED_FOR_CREATION,
         totalSpent: {

@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
@@ -10,11 +10,13 @@ export async function PATCH(
   { params }: { params: { ideaId: string } }
 ) {
   try {
-    const user = await currentUser()
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
     const body = await req.json()
     const { voteType } = body // 'up' or 'down'
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -31,7 +33,7 @@ export async function PATCH(
 
     // Check user's available XP
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: user.id },
+      where: { userId: userId },
     })
 
     if (!userUsage || userUsage.availableTokens < voteCost) {
@@ -50,7 +52,7 @@ export async function PATCH(
         },
       }),
       prismadb.userUsage.update({
-        where: { userId: user.id },
+        where: { userId: userId },
         data: {
           availableTokens: userUsage.availableTokens - voteCost,
           totalSpent: userUsage.totalSpent + voteCost,

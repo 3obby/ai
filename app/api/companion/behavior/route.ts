@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@/lib/server-auth";
 import prismadb from "@/lib/prismadb";
 
 const XP_REQUIRED = 15;
@@ -11,7 +11,8 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
+    const session = await auth();
+const userId = session?.userId;
     
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });

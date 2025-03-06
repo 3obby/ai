@@ -1,12 +1,14 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const user = await currentUser()
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 

@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import OpenAI from "openai"
@@ -9,9 +9,11 @@ export async function POST(
 ) {
   try {
     const { companionId } = await request.json()
-    const user = await currentUser()
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -19,7 +21,7 @@ export async function POST(
     const groupChat = await prismadb.groupChat.findUnique({
       where: {
         id: params.groupId,
-        creatorId: user.id,
+        creatorId: userId,
       },
     })
 
@@ -80,9 +82,8 @@ export async function DELETE(
   try {
     const { searchParams } = new URL(request.url)
     const companionId = searchParams.get("companionId")
-    const user = await currentUser()
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -94,7 +95,7 @@ export async function DELETE(
     const groupChat = await prismadb.groupChat.findUnique({
       where: {
         id: params.groupId,
-        creatorId: user.id,
+        creatorId: userId,
       },
     })
 

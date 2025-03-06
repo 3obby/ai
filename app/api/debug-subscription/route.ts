@@ -1,12 +1,13 @@
-import { auth } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 
 import prismadb from "@/lib/prismadb"
 import { checkSubscription } from "@/lib/subscription"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const { userId } = auth()
+    const session = await auth();
+const userId = session?.userId;
 
     if (!userId) {
       return NextResponse.json(

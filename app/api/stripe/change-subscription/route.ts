@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs";
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
@@ -16,7 +16,8 @@ const getPlanFromPriceId = (priceId: string) => {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
+    const session = await auth();
+const userId = session?.userId;
     const { newPriceId, newPrice } = await req.json();
 
     if (!userId || !newPriceId || !newPrice) {

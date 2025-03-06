@@ -1,19 +1,21 @@
-import { auth, currentUser } from "@clerk/nextjs";
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 
 export async function POST(request: Request) {
   try {
     const { name, initialCompanionId } = await request.json();
-    const user = await currentUser();
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Fetch user usage
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: user.id },
+      where: { userId: userId },
     });
 
     if (!userUsage || userUsage.availableTokens < 50) {
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
     const groupChat = await prismadb.groupChat.create({
       data: {
         name,
-        creatorId: user.id,
+        creatorId: userId,
         members: {
           create: {
             companionId: initialCompanionId,
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
 
     // Update user usage
     await prismadb.userUsage.update({
-      where: { userId: user.id },
+      where: { userId: userId },
       data: {
         availableTokens: userUsage.availableTokens - 50,
         totalSpent: userUsage.totalSpent + 50,
@@ -58,9 +60,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const user = await currentUser();
 
-    if (!user || !user.id) {
+    if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
     const [groupChats, totalCount] = await Promise.all([
       prismadb.groupChat.findMany({
         where: {
-          creatorId: user.id,
+          creatorId: userId,
         },
         include: {
           members: {
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
       }),
       prismadb.groupChat.count({
         where: {
-          creatorId: user.id,
+          creatorId: userId,
         },
       }),
     ]);

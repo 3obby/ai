@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
@@ -12,8 +12,9 @@ const subscribeUrl = absoluteUrl("/subscribe")
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth()
-    const user = await currentUser()
+    const session = await auth();
+const userId = session?.userId;
+const user = session?.user;
     const { priceAmount } = await req.json()
 
     if (!userId || !user) {
