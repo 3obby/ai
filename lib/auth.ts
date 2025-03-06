@@ -10,28 +10,41 @@ export type MagicLinkPayload = {
   exp: number
 }
 
+export interface UserType {
+  id: string
+  email: string
+  name?: string | null
+  image?: string | null
+  emailVerified?: Date | null
+}
+
 export async function createMagicLink(email: string): Promise<string> {
-  // Check if user exists, if not create them
-  const user = await prismadb.user.upsert({
-    where: { email },
-    update: {},
-    create: {
+  try {
+    // Check if user exists, if not create them
+    const user = await (prismadb as any).user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
+      },
+    })
+
+    // Create token that expires in 15 minutes
+    const expiresIn = 15 * 60 // 15 minutes
+    const payload: MagicLinkPayload = {
       email,
-    },
-  })
+      exp: Math.floor(Date.now() / 1000) + expiresIn,
+    }
 
-  // Create token that expires in 15 minutes
-  const expiresIn = 15 * 60 // 15 minutes
-  const payload: MagicLinkPayload = {
-    email,
-    exp: Math.floor(Date.now() / 1000) + expiresIn,
+    const token = jwt.sign(payload, JWT_SECRET)
+
+    // Create the magic link URL
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    return `${baseUrl}/api/auth/verify?token=${token}`
+  } catch (error) {
+    console.error("Error creating magic link:", error)
+    throw error
   }
-
-  const token = jwt.sign(payload, JWT_SECRET)
-
-  // Create the magic link URL
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
-  return `${baseUrl}/api/auth/verify?token=${token}`
 }
 
 export async function sendMagicLinkEmail(email: string, link: string) {
@@ -71,13 +84,18 @@ export function verifyMagicLink(token: string): MagicLinkPayload | null {
 }
 
 export async function getUserByEmail(email: string) {
-  return prismadb.user.findUnique({
-    where: { email },
-  })
+  try {
+    return await (prismadb as any).user.findUnique({
+      where: { email },
+    })
+  } catch (error) {
+    console.error("Error finding user by email:", error)
+    return null
+  }
 }
 
 // Store the session in an httpOnly cookie
-export function createSession(res: Response, user: any) {
+export function createSession(res: Response, user: UserType) {
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" })
 
   // Set cookie that expires in 7 days
@@ -109,12 +127,17 @@ export function getSessionFromCookie(req: Request) {
 
 // Get current user from session
 export async function getCurrentUser(req: Request) {
-  const session = getSessionFromCookie(req)
-  if (!session?.userId) return null
+  try {
+    const session = getSessionFromCookie(req)
+    if (!session?.userId) return null
 
-  const user = await prismadb.user.findUnique({
-    where: { id: session.userId },
-  })
+    const user = await (prismadb as any).user.findUnique({
+      where: { id: session.userId },
+    })
 
-  return user
+    return user
+  } catch (error) {
+    console.error("Error getting current user:", error)
+    return null
+  }
 }

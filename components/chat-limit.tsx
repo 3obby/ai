@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import * as Progress from "@radix-ui/react-progress"
 import { Trophy, Zap, ChevronRight, Star, Coins } from "lucide-react"
-import { useUser } from "@clerk/nextjs"
 import React from "react"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import {
   calculateLevel,
   getXPForNextLevel,
@@ -32,7 +32,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
   const [progress, setProgress] = useState<UserProgress | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [tokensUpdated, setTokensUpdated] = useState(false)
-  const { user } = useUser()
+  const { user } = useCurrentUser()
 
   const fetchProgress = async () => {
     try {

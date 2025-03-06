@@ -1,35 +1,42 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import axios from "axios";
-import { Edit, MessagesSquare, MoreVertical, Trash, ChevronLeft, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Companion, Message } from "@prisma/client";
-import { useUser } from "@clerk/nextjs";
+import { useState } from "react"
+import axios from "axios"
+import {
+  Edit,
+  MessagesSquare,
+  MoreVertical,
+  Trash,
+  ChevronLeft,
+  Users,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Companion, Message } from "@prisma/client"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 
-import { Button } from "@/components/ui/button";
-import { BotAvatar } from "@/components/bot-avatar";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/components/ui/use-toast";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
-import { CreateGroupChatModal } from "@/components/modals/create-group-chat-modal";
+import { Button } from "@/components/ui/button"
+import { BotAvatar } from "@/components/bot-avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useToast } from "@/components/ui/use-toast"
+import { ConfirmationModal } from "@/components/modals/confirmation-modal"
+import { CreateGroupChatModal } from "@/components/modals/create-group-chat-modal"
 
 interface ChatHeaderProps {
   companion: Companion & {
-    messages: Message[];
+    messages: Message[]
     _count: {
-      messages: number;
-    };
-  };
-  onClear: (onClose: () => void) => void;
-  isGroupChat: boolean;
-  isClearingMessages: boolean;
-};
+      messages: number
+    }
+  }
+  onClear: (onClose: () => void) => void
+  isGroupChat: boolean
+  isClearingMessages: boolean
+}
 
 export const ChatHeader = ({
   companion,
@@ -37,57 +44,57 @@ export const ChatHeader = ({
   isGroupChat,
   isClearingMessages,
 }: ChatHeaderProps) => {
-  const router = useRouter();
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const router = useRouter()
+  const { user } = useCurrentUser()
+  const { toast } = useToast()
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false)
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
 
   const onDelete = async () => {
     try {
-      await axios.delete(`/api/companion/${companion.id}`);
+      await axios.delete(`/api/companion/${companion.id}`)
       toast({
-        description: "Success."
-      });
-      router.refresh();
-      router.push("/");
+        description: "Success.",
+      })
+      router.refresh()
+      router.push("/")
     } catch (error) {
       toast({
         variant: "destructive",
-        description: "Something went wrong."
+        description: "Something went wrong.",
       })
     }
   }
 
   const onCreateGroupChat = async (name: string) => {
     try {
-      setIsCreatingGroup(true);
+      setIsCreatingGroup(true)
       const response = await axios.post("/api/group-chat", {
         name,
-        initialCompanionId: companion.id
-      });
-      
+        initialCompanionId: companion.id,
+      })
+
       toast({
-        description: "Group chat created successfully!"
-      });
-      
-      router.push(`/group-chat/${response.data.id}`);
+        description: "Group chat created successfully!",
+      })
+
+      router.push(`/group-chat/${response.data.id}`)
     } catch (error) {
       toast({
         variant: "destructive",
-        description: "Failed to create group chat."
-      });
-      setShowCreateGroup(false);
+        description: "Failed to create group chat.",
+      })
+      setShowCreateGroup(false)
     } finally {
-      setIsCreatingGroup(false);
+      setIsCreatingGroup(false)
     }
   }
 
   const handleClearChat = () => {
-    onClear(() => setShowClearConfirmation(false));
-  };
-  
+    onClear(() => setShowClearConfirmation(false))
+  }
+
   return (
     <>
       <div className="flex w-full justify-between items-center border-b border-primary/10 pb-4">
@@ -109,7 +116,7 @@ export const ChatHeader = ({
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-x-2">
           <Button
             onClick={() => setShowCreateGroup(true)}
@@ -120,11 +127,11 @@ export const ChatHeader = ({
             <Users className="h-4 w-4 mr-2" />
             Create Group
           </Button>
-          
+
           {companion.messages.length > 0 && (
-            <Button 
-              onClick={() => setShowClearConfirmation(true)} 
-              size="icon" 
+            <Button
+              onClick={() => setShowClearConfirmation(true)}
+              size="icon"
               variant="ghost"
               className="text-muted-foreground hover:text-red-500"
             >
@@ -139,7 +146,9 @@ export const ChatHeader = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push(`/companion/${companion.id}`)}>
+                <DropdownMenuItem
+                  onClick={() => router.push(`/companion/${companion.id}`)}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -153,7 +162,7 @@ export const ChatHeader = ({
         </div>
       </div>
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={showClearConfirmation}
         onClose={() => setShowClearConfirmation(false)}
         onConfirm={handleClearChat}
@@ -170,5 +179,5 @@ export const ChatHeader = ({
         isLoading={isCreatingGroup}
       />
     </>
-  );
-};
+  )
+}

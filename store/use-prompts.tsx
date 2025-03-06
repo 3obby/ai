@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react"
 import axios from "axios"
-import { useAuth } from "@clerk/nextjs"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import { toast } from "@/components/ui/use-toast"
 
 export interface Prompt {
@@ -34,12 +34,19 @@ const PromptsContext = createContext<PromptsContextType | undefined>(undefined)
 export function PromptsProvider({ children }: { children: ReactNode }) {
   const [prompts, setPrompts] = useState<Prompt[]>(defaultPrompts)
   const [isLoading, setIsLoading] = useState(true)
-  const { userId, isLoaded, isSignedIn } = useAuth()
+  const { user, isLoading: isUserLoading } = useCurrentUser()
+
+  const isSignedIn = !!user
+  const userId = user?.id
 
   // Load prompts from the database on auth load
   useEffect(() => {
     const fetchPrompts = async () => {
-      if (!isLoaded || !isSignedIn) {
+      if (isUserLoading) {
+        return
+      }
+
+      if (!isSignedIn) {
         // If user is not logged in, we can exit early
         setIsLoading(false)
         return
@@ -61,7 +68,7 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
     }
 
     fetchPrompts()
-  }, [isLoaded, isSignedIn])
+  }, [isUserLoading, isSignedIn])
 
   // Add a new prompt
   const addPrompt = async (text: string) => {

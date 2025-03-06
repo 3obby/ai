@@ -1,15 +1,18 @@
-"use client";
+"use client"
 
-import { useUser } from "@clerk/nextjs";
-
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 
-export const UserAvatar = () => {
-  const { user } = useUser();
+interface UserAvatarProps {
+  src?: string
+}
+
+export const UserAvatar = ({ src }: UserAvatarProps) => {
+  const { user } = useCurrentUser()
 
   return (
-    <Avatar className="h-12 w-12">
-      <AvatarImage src={user?.imageUrl} />
+    <Avatar className="h-7 w-7">
+      <AvatarImage src={src || user?.image || "/placeholder.svg"} />
     </Avatar>
-  );
-};
+  )
+}

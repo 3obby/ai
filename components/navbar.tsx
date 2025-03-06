@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { UserButton } from "@clerk/nextjs"
 import { Poppins } from "next/font/google"
 import { Sparkles, Settings } from "lucide-react"
 
@@ -12,6 +11,7 @@ import { useProModal } from "@/hooks/use-pro-modal"
 import { useSettingsModal } from "@/hooks/use-settings-modal"
 import { ChatLimit } from "@/components/chat-limit"
 import { SettingsModal } from "@/components/settings-modal"
+import { UserButton } from "@/components/user-button"
 
 const font = Poppins({ weight: "600", subsets: ["latin"] })
 
@@ -61,7 +61,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
           >
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </div>
       <SettingsModal isPro={isPro} />
