@@ -1,23 +1,25 @@
-import prismadb from "@/lib/prismadb";
-import { Categories } from "@/components/categories";
-import { Companions } from "@/components/companions";
-import { SearchInput } from "@/components/search-input";
-import { auth, redirectToSignIn } from "@clerk/nextjs";
-import { checkSubscription } from "@/lib/subscription";
-import { GroupCards } from "@/components/group-cards";
+import prismadb from "@/lib/prismadb"
+import { Categories } from "@/components/categories"
+import { Companions } from "@/components/companions"
+import { SearchInput } from "@/components/search-input"
+import { auth } from "@clerk/nextjs"
+import { checkSubscription } from "@/lib/subscription"
+import { GroupCards } from "@/components/group-cards"
+import { redirect } from "next/navigation"
 
 interface RootPageProps {
   searchParams: {
-    categoryId: string;
-    name: string;
-  };
+    categoryId: string
+    name: string
+  }
 }
 
 const RootPage = async ({ searchParams }: RootPageProps) => {
-  const { userId } = auth();
+  const { userId } = auth()
 
+  // If no user is authenticated, redirect to the landing page
   if (!userId) {
-    return redirectToSignIn();
+    redirect("/")
   }
 
   const groups = await prismadb.groupChat.findMany({
@@ -27,7 +29,7 @@ const RootPage = async ({ searchParams }: RootPageProps) => {
     orderBy: {
       createdAt: "desc",
     },
-  });
+  })
 
   const data = await prismadb.companion.findMany({
     where: {
@@ -65,9 +67,9 @@ const RootPage = async ({ searchParams }: RootPageProps) => {
         },
       },
     },
-  });
+  })
 
-  const categories = await prismadb.category.findMany();
+  const categories = await prismadb.category.findMany()
 
   return (
     <div className="h-full p-4 space-y-2">
@@ -75,7 +77,7 @@ const RootPage = async ({ searchParams }: RootPageProps) => {
       <Categories data={categories} />
       <Companions userId={userId} data={data} />
     </div>
-  );
-};
+  )
+}
 
-export default RootPage;
+export default RootPage
