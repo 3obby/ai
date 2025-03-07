@@ -85,7 +85,7 @@ export const SettingsModal = ({ isPro }: SettingsModalProps) => {
               <div className="space-y-4">
                 {prompts.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-2">
-                    You don't have any prompts yet. Add one below!
+                    You don&apos;t have any prompts yet. Add one below!
                   </p>
                 ) : (
                   prompts.map((prompt) => (

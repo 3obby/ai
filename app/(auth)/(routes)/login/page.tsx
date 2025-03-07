@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import axios from "axios"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -74,6 +75,18 @@ export default function LoginPage() {
             </Button>
           </form>
         )}
+
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="underline text-sky-500">
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

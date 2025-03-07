@@ -50,7 +50,7 @@ export default function RegisterPage() {
         {emailSent ? (
           <div className="text-center p-4 border rounded-md bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300">
             <h3 className="font-medium">Check your email</h3>
-            <p className="mt-2">We've sent a magic link to {email}</p>
+            <p className="mt-2">We&apos;ve sent a magic link to {email}</p>
             <p className="mt-1 text-sm">
               Click the link in your email to complete registration
             </p>
