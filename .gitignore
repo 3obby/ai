@@ -34,3 +34,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cursor config
+.cursorrules
+.cursor/
+.cursor/settings.json
+
+# eslint
+.eslintrc
+.eslintrc.js
+.eslintrc.json
+.eslintrc.yml
+.eslintrc.yaml
+.eslintcache
