@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken"
 import { ServerClient } from "postmark"
 import prismadb from "./prismadb"
+import cachedPrisma from "./prisma-cache"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 const postmarkClient = new ServerClient(process.env.POSTMARK_API_KEY || "")
@@ -21,7 +22,7 @@ export interface UserType {
 export async function createMagicLink(email: string): Promise<string> {
   try {
     // Check if user exists, if not create them
-    const user = await (prismadb as any).user.upsert({
+    const user = await cachedPrisma.user.upsert({
       where: { email },
       update: {},
       create: {
@@ -38,9 +39,15 @@ export async function createMagicLink(email: string): Promise<string> {
 
     const token = jwt.sign(payload, JWT_SECRET)
 
-    // Create the magic link URL
+    // Create the magic link URL with proper encoding
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
-    return `${baseUrl}/api/auth/verify?token=${token}`
+    // Use encodeURIComponent to ensure token is properly URL encoded
+    const encodedToken = encodeURIComponent(token)
+    
+    // Add a timestamp parameter to prevent email clients from tracking the URL
+    const noTrackingParam = `_=${Date.now()}`
+    
+    return `${baseUrl}/api/auth/verify?token=${encodedToken}&${noTrackingParam}`
   } catch (error) {
     console.error("Error creating magic link:", error)
     throw error
@@ -85,7 +92,8 @@ export function verifyMagicLink(token: string): MagicLinkPayload | null {
 
 export async function getUserByEmail(email: string) {
   try {
-    return await (prismadb as any).user.findUnique({
+    // Use cached Prisma client for better performance
+    return await cachedPrisma.user.findUnique({
       where: { email },
     })
   } catch (error) {
@@ -96,14 +104,26 @@ export async function getUserByEmail(email: string) {
 
 // Store the session in an httpOnly cookie
 export function createSession(res: Response, user: UserType) {
-  const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" })
+  if (!user || !user.id) {
+    console.error("Cannot create session: Invalid user", user);
+    return;
+  }
 
-  // Set cookie that expires in 7 days
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  res.headers.set(
-    "Set-Cookie",
-    `auth-token=${token}; Path=/; HttpOnly; SameSite=Strict; Expires=${expires.toUTCString()}`
-  )
+  try {
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" })
+    console.log(`Created session token for user: ${user.id}`);
+    
+    // Set cookie that expires in 7 days
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    
+    // Use the more compatible format for cookies in Next.js Response
+    const cookieValue = `auth-token=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires.toUTCString()}`;
+    console.log(`Setting cookie: ${cookieValue.substring(0, 40)}...`);
+    
+    res.headers.set("Set-Cookie", cookieValue);
+  } catch (error) {
+    console.error("Error creating session:", error);
+  }
 }
 
 // Verify session from cookie
@@ -129,9 +149,13 @@ export function getSessionFromCookie(req: Request) {
 export async function getCurrentUser(req: Request) {
   try {
     const session = getSessionFromCookie(req)
-    if (!session?.userId) return null
+    if (!session?.userId) {
+      console.log("No userId found in auth");
+      return null;
+    }
 
-    const user = await (prismadb as any).user.findUnique({
+    // Use the cached Prisma client for better performance
+    const user = await cachedPrisma.user.findUnique({
       where: { id: session.userId },
     })
 

@@ -15,12 +15,17 @@ model User {
   emailVerified DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model Category {
   id         String      @id @default(uuid())
   name       String
   companions Companion[]
+
+  @@index([name])
 }
 
 model Companion {
@@ -44,6 +49,12 @@ model Companion {
   messages             Message[]
 
   @@index([categoryId])
+  @@index([userId])
+  @@index([name])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([isFree])
+  @@index([private])
 }
 
 model Message {
@@ -57,6 +68,9 @@ model Message {
   companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
 
   @@index([companionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([role])
 }
 
 model DailyMessageCount {
@@ -67,6 +81,7 @@ model DailyMessageCount {
 
   @@unique([userId, date])
   @@index([userId, date])
+  @@index([date])
 }
 
 model UserSubscription {
@@ -81,6 +96,10 @@ model UserSubscription {
   includeBaseTokens      Int       @default(1000000)
   lastUsageResetDate     DateTime  @default(now())
   subscriptionType       String?   @default("standard")
+
+  @@index([userId])
+  @@index([lastUsageResetDate])
+  @@index([subscriptionType])
 }
 
 model UserUsage {
@@ -95,6 +114,8 @@ model UserUsage {
 
   @@index([userId])
   @@index([email])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model UsageTransaction {
@@ -104,6 +125,7 @@ model UsageTransaction {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([createdAt])
 }
 
 model CommunityIdea {
@@ -118,6 +140,8 @@ model CommunityIdea {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([upvotes])
+  @@index([downvotes])
 }
 
 model GroupChat {
@@ -128,6 +152,10 @@ model GroupChat {
   creatorId String
   members   GroupChatMember[]
   messages  GroupMessage[]
+
+  @@index([creatorId])
+  @@index([createdAt])
+  @@index([name])
 }
 
 model GroupChatMember {
@@ -141,6 +169,7 @@ model GroupChatMember {
   @@unique([groupChatId, companionId])
   @@index([groupChatId])
   @@index([companionId])
+  @@index([joinedAt])
 }
 
 model GroupMessage {
@@ -155,6 +184,8 @@ model GroupMessage {
 
   @@index([groupChatId])
   @@index([senderId])
+  @@index([createdAt])
+  @@index([isBot])
 }
 
 enum Role {
@@ -172,4 +203,6 @@ model UserPrompt {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([isActive])
+  @@index([createdAt])
 }

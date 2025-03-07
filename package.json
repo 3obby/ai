@@ -46,6 +46,7 @@
     "next": "13.4.11",
     "next-cloudinary": "^4.16.0",
     "next-themes": "^0.2.1",
+    "node-cache": "^5.1.2",
     "openai": "^4.85.1",
     "openai-edge": "^1.2.2",
     "postcss": "8.4.27",
