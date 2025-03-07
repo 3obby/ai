@@ -78,6 +78,8 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.9",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "prisma": "^5.0.0",
     "ts-node": "^10.9.2"
   }

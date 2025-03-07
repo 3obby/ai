@@ -75,6 +75,13 @@ class EdgeCompatPrismaClient {
     findMany: () => { throw this.edgeError() }
   }
   
+  // Add category model for Edge compatibility
+  category = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() }
+  }
+  
   // Add minimal compatibility with PrismaClient methods
   $executeRaw() { throw this.edgeError() }
   $executeRawUnsafe() { throw this.edgeError() }

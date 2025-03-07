@@ -162,7 +162,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
 
   return (
     <div className="relative">
-      {/* Desktop view - Enhanced stylized display */}
+      {/* Desktop view - Simplified to only show tokens */}
       <div
         className={`hidden md:flex items-center gap-x-4 cursor-pointer px-2 ${
           tokensUpdated ? "animate-pulse" : ""
@@ -170,63 +170,28 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
-        {/* Level badge */}
-        <div className="flex items-center gap-x-2">
-          <div
-            className={`flex items-center justify-center rounded-full p-1 ${getLevelBadgeColor(
-              progress.level
-            )}`}
-          >
-            <Trophy className="h-4 w-4 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">
-              {getLevelTitle(progress.level)}
-            </span>
-            <span className="text-sm font-semibold">
-              Level {progress.level}
-            </span>
-          </div>
-        </div>
-
         {/* Tokens remaining */}
-        <div className="flex items-center gap-x-2 border-l pl-4">
+        <div className="flex items-center gap-x-2">
           <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20">
             <Coins className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-[80px]">
             <span className="text-xs text-muted-foreground">Tokens</span>
             <span className="text-sm font-semibold">
               {formatTokens(progress.remainingTokens)}
             </span>
           </div>
         </div>
-
-        {/* Progress to next level - Mini progress bar */}
-        <div className="hidden lg:flex flex-col gap-y-1 border-l pl-4">
-          <div className="flex items-center justify-between w-24">
-            <span className="text-xs text-muted-foreground">Next Level</span>
-            <span className="text-xs font-medium">
-              {Math.floor(progress.progressToNextLevel)}%
-            </span>
-          </div>
-          <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-300"
-              style={{ width: `${progress.progressToNextLevel}%` }}
-            />
-          </div>
-        </div>
       </div>
 
-      {/* Mobile view - Simplified to focus on tokens which is the most important info */}
+      {/* Mobile view - Already simplified */}
       <div
         className={`md:hidden flex items-center gap-x-2 cursor-pointer overflow-hidden ${
           tokensUpdated ? "animate-pulse" : ""
         }`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-x-1 min-w-0 w-full">
+        <div className="flex items-center gap-x-2 min-w-0 w-full">
           <div className="flex items-center justify-center rounded-full p-1 bg-amber-500/20 shrink-0">
             <Coins className="h-4 w-4 text-amber-500" />
           </div>
@@ -248,10 +213,10 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
         </div>
       )}
 
-      {/* Expanded detail popup */}
+      {/* Expanded detail popup - Keep this to show full details when clicked */}
       {isExpanded && (
         <div
-          className="absolute md:right-0 right-auto -left-24 top-12 w-80 p-5 rounded-xl shadow-lg bg-secondary/95 border backdrop-blur-sm z-50"
+          className="absolute right-0 top-12 w-80 p-5 rounded-xl shadow-lg bg-secondary/95 border backdrop-blur-sm z-50"
           onMouseEnter={() => setIsExpanded(true)}
           onMouseLeave={() => setIsExpanded(false)}
         >

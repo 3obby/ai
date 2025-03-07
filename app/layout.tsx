@@ -1,44 +1,45 @@
+import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-
-import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { ProModal } from "@/components/pro-modal"
+import { cn } from "@/lib/utils"
 import { SettingsModalProvider } from "@/hooks/use-settings-modal"
 import { PromptsProvider } from "@/store/use-prompts"
-
-import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
+import { auth } from "@/lib/server-auth"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "GroupChatBotBuilder",
-  description: "Your customized GroupChatBotBuilder.",
+  description: "Create and chat with your AI companions",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Get authentication state
+  const session = await auth()
+  const isAuthenticated = !!session?.userId
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-        />
-      </head>
+      <head />
       <body className={cn("bg-secondary", inter.className)}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
           <PromptsProvider>
             <SettingsModalProvider>
-              <ProModal />
               {children}
-              <Toaster />
             </SettingsModalProvider>
           </PromptsProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

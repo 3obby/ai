@@ -40,8 +40,8 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
           </h1>
         </Link>
       </div>
-      <div className="flex items-center justify-end flex-1 space-x-2 sm:space-x-3 md:space-x-4">
-        <div className="flex-shrink-0 max-w-[300px] min-w-[100px]">
+      <div className="flex items-center justify-end flex-1 space-x-5 sm:space-x-6 md:space-x-8">
+        <div className="flex-shrink-0">
           <ChatLimit userId={userId} />
         </div>
         {!isPro && (
@@ -52,7 +52,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
             </Button>
           </Link>
         )}
-        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+        <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
           <Button
             onClick={settingsModal.onOpen}
             size="icon"

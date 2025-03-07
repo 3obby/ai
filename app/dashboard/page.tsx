@@ -3,34 +3,26 @@ import { Categories } from "@/components/categories"
 import { Companions } from "@/components/companions"
 import { SearchInput } from "@/components/search-input"
 import { auth } from "@/lib/server-auth"
-import { checkSubscription } from "@/lib/subscription"
-import { GroupCards } from "@/components/group-cards"
 import { redirect } from "next/navigation"
 
-interface RootPageProps {
+// Force dynamic rendering for this route since it requires authentication
+export const dynamic = 'force-dynamic';
+
+interface DashboardPageProps {
   searchParams: {
     categoryId: string
     name: string
   }
 }
 
-const RootPage = async ({ searchParams }: RootPageProps) => {
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const session = await auth()
   const userId = session?.userId
 
   // If no user is authenticated, redirect to the landing page
   if (!userId) {
-    redirect("/")
+    redirect("/login")
   }
-
-  const groups = await prismadb.groupChat.findMany({
-    where: {
-      creatorId: userId,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  })
 
   const data = await prismadb.companion.findMany({
     where: {
@@ -79,6 +71,4 @@ const RootPage = async ({ searchParams }: RootPageProps) => {
       <Companions userId={userId} data={data} />
     </div>
   )
-}
-
-export default RootPage
+} 
