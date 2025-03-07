@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, Settings, User } from "lucide-react"
+import { LogOut, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export const UserButton = () => {
@@ -40,9 +40,9 @@ export const UserButton = () => {
           {user?.name || user?.email || "My Account"}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/settings")}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+        <DropdownMenuItem onClick={() => router.push("/account")}>
+          <User className="mr-2 h-4 w-4" />
+          <span>Account</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
