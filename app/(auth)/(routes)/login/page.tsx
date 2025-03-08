@@ -8,13 +8,14 @@ import { toast } from "@/components/ui/use-toast"
 import { signIn, useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Mail, Github } from "lucide-react"
+import { ArrowRight, Mail, Github, Check } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import Image from "next/image"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
   const { status } = useSession()
 
@@ -28,16 +29,27 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setIsSuccess(false)
 
     try {
       await signIn("email", {
         email,
         callbackUrl: "/dashboard",
+        redirect: false, // Prevent redirect to check-email page
       })
+      
+      // Show success state
+      setIsSuccess(true)
+      
       toast({
         title: "Magic link sent",
         description: "Check your email for a login link",
       })
+      
+      // Keep success state visible for a moment
+      setTimeout(() => {
+        setEmail("")
+      }, 3000)
     } catch (error) {
       console.error(error)
       toast({
@@ -45,6 +57,7 @@ export default function LoginPage() {
         description: "Something went wrong",
         variant: "destructive",
       })
+      setIsSuccess(false)
     } finally {
       setIsLoading(false)
     }
@@ -74,7 +87,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-white/80">v0.3.7</p>
+            <p className="text-white/80">v0.3.8</p>
             <Link 
               href="/updates" 
               className="text-white/60 hover:text-white text-xs underline"
@@ -93,19 +106,28 @@ export default function LoginPage() {
                 placeholder="Email address"
                 type="email"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSuccess}
                 className="bg-white/10 border-white/30 text-white placeholder-white/50"
               />
             </div>
             <Button 
               type="submit" 
-              disabled={isLoading} 
-              className="w-full bg-white/20 hover:bg-white/30 text-white"
+              disabled={isLoading || isSuccess} 
+              className={`w-full transition-all duration-300 ${
+                isSuccess 
+                  ? "bg-amber-600/80 hover:bg-amber-600/80 text-white border-amber-500" 
+                  : "bg-white/20 hover:bg-white/30 text-white"
+              }`}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
                   Sending link...
+                </span>
+              ) : isSuccess ? (
+                <span className="flex items-center gap-2">
+                  <Check className="h-5 w-5" />
+                  Check your email
                 </span>
               ) : (
                 <span className="flex items-center gap-2">

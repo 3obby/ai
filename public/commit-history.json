@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "3e020c7",
+      "fullHash": "3e020c75b8e7652ff17217c46b1c9945944c5b3a",
+      "date": "2025-03-08 20:10:15 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Improve login UX with in-place email confirmation",
+      "category": "enhancement"
+    },
+    {
       "hash": "de05974",
       "fullHash": "de0597476ef3a165435ce3832790a4fdbed4fba6",
       "date": "2025-03-08 20:03:21 +0700",
