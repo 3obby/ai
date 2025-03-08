@@ -1,0 +1,404 @@
+{
+  "commits": [
+    {
+      "hash": "df99ab7",
+      "fullHash": "df99ab7d1ba569699cbd19435c2d355630efd765",
+      "date": "2025-03-08 19:32:14 +0700",
+      "author": "3obby",
+      "message": "Update robobirds.png background image",
+      "category": "enhancement"
+    },
+    {
+      "hash": "0ff38fc",
+      "fullHash": "0ff38fc25f142edd99d64ab55adc5d1f7096c000",
+      "date": "2025-03-08 19:26:41 +0700",
+      "author": "3obby",
+      "message": "FEATURE: Add auto-documentation system with /updates page and version tracking",
+      "category": "feature"
+    },
+    {
+      "hash": "25c1fb9",
+      "fullHash": "25c1fb9745a39ed55a3991b5122a09d9c2c02098",
+      "date": "2025-03-08 14:26:58 +0700",
+      "author": "3obby",
+      "message": "Disable OAuth buttons with pending review message",
+      "category": "other"
+    },
+    {
+      "hash": "715f074",
+      "fullHash": "715f074fb8ed593e392ade9ffbecf85f733751f1",
+      "date": "2025-03-08 14:17:30 +0700",
+      "author": "3obby",
+      "message": "Update login page with app version and add image assets",
+      "category": "feature"
+    },
+    {
+      "hash": "60052e2",
+      "fullHash": "60052e21be4b03da8d05dd43260ba1fa978513e5",
+      "date": "2025-03-08 13:57:26 +0700",
+      "author": "3obby",
+      "message": "Update login page with robobirds background and robohand logo",
+      "category": "enhancement"
+    },
+    {
+      "hash": "d90d1ef",
+      "fullHash": "d90d1ef8b61ae83ed9964972c4f9b758a6b35b9e",
+      "date": "2025-03-08 13:36:28 +0700",
+      "author": "3obby",
+      "message": "Fix subscription and payment routes for NextAuth compatibility and fix linter errors",
+      "category": "bugfix"
+    },
+    {
+      "hash": "7586e1e",
+      "fullHash": "7586e1e57f54770bfba72b0f3a7a5ed7f60c1266",
+      "date": "2025-03-08 13:32:11 +0700",
+      "author": "3obby",
+      "message": "Fix bot chat output - Change to non-streaming mode to prevent raw JSON output",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f34a2e5",
+      "fullHash": "f34a2e5afe81522436fed8382ae59841ac2d2ae0",
+      "date": "2025-03-08 13:27:47 +0700",
+      "author": "3obby",
+      "message": "Enhance OAuth profile picture handling to display Google profile pictures",
+      "category": "enhancement"
+    },
+    {
+      "hash": "6e35db9",
+      "fullHash": "6e35db97d411e9c8e6027722048ea978e36302d2",
+      "date": "2025-03-08 13:24:44 +0700",
+      "author": "3obby",
+      "message": "Enable account linking for Google and GitHub OAuth providers",
+      "category": "other"
+    },
+    {
+      "hash": "3234fa5",
+      "fullHash": "3234fa57ed9637b2c1879cc7305b296e6f2ef3f4",
+      "date": "2025-03-08 13:22:07 +0700",
+      "author": "3obby",
+      "message": "Fix OAuth authentication by adding missing User-Account-Session relations and add logo.png",
+      "category": "bugfix"
+    },
+    {
+      "hash": "acf881b",
+      "fullHash": "acf881b5628697a3a9228cecd0a29fc108442341",
+      "date": "2025-03-08 13:16:58 +0700",
+      "author": "3obby",
+      "message": "Remove Apple OAuth provider and update login UI",
+      "category": "enhancement"
+    },
+    {
+      "hash": "da372b6",
+      "fullHash": "da372b68d26b30d859dfce3e7f98fd459574a83b",
+      "date": "2025-03-08 13:09:35 +0700",
+      "author": "3obby",
+      "message": "Add basic Privacy Policy and Terms of Service pages",
+      "category": "feature"
+    },
+    {
+      "hash": "5d2451a",
+      "fullHash": "5d2451a8ea8f3e30b03434c6b8920de3094d74f8",
+      "date": "2025-03-08 12:55:31 +0700",
+      "author": "3obby",
+      "message": "Add redirect for logged-in users at login page and OAuth provider support",
+      "category": "feature"
+    },
+    {
+      "hash": "be813e9",
+      "fullHash": "be813e92b547a64c4f23d967d2afca4c7c975dc6",
+      "date": "2025-03-08 12:32:11 +0700",
+      "author": "3obby",
+      "message": "Fix deployment errors by forcing dynamic rendering on all API routes",
+      "category": "bugfix"
+    },
+    {
+      "hash": "9c4aa31",
+      "fullHash": "9c4aa31f00f58694e8b24432ec92d6d2d3dafded",
+      "date": "2025-03-08 12:27:28 +0700",
+      "author": "3obby",
+      "message": "Full sync - push all changes including auth migration and API updates",
+      "category": "enhancement"
+    },
+    {
+      "hash": "02f46ee",
+      "fullHash": "02f46ee1ca44025b59f900154b1ca0407d593078",
+      "date": "2025-03-08 12:26:43 +0700",
+      "author": "3obby",
+      "message": "Fix navbar layout and user display issues; fix admin API routes",
+      "category": "bugfix"
+    },
+    {
+      "hash": "5068e11",
+      "fullHash": "5068e11d776708b2c74cea99e239c6cb1a929eb9",
+      "date": "2025-03-08 01:05:50 +0700",
+      "author": "3obby",
+      "message": "Update Prisma to latest version 6.4.1",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7fdcf3d",
+      "fullHash": "7fdcf3d820be81286dbee7c1777b90548f2dbb4d",
+      "date": "2025-03-08 01:01:52 +0700",
+      "author": "3obby",
+      "message": "Update ESLint to ^8.56.0 to fix dependency conflict with TypeScript ESLint plugin",
+      "category": "bugfix"
+    },
+    {
+      "hash": "b2350cf",
+      "fullHash": "b2350cf2c29d25295c0141173727c6879b418310",
+      "date": "2025-03-08 01:00:15 +0700",
+      "author": "3obby",
+      "message": "Fix routing conflicts and authentication issues in Next.js App Router",
+      "category": "bugfix"
+    },
+    {
+      "hash": "cc4962f",
+      "fullHash": "cc4962f22ae39c2e297ccd7ef679aeae330f48da",
+      "date": "2025-03-08 00:30:05 +0700",
+      "author": "3obby",
+      "message": "Optimize project environment for Life OS platform: add Tailwind plugins, fix TypeScript errors, add Cursor config, and create UI components",
+      "category": "bugfix"
+    },
+    {
+      "hash": "5725adc",
+      "fullHash": "5725adceff04094856dd522ac3236aa0a3506111",
+      "date": "2025-03-08 00:07:00 +0700",
+      "author": "3obby",
+      "message": "Add shadcn/ui components and UI demo page",
+      "category": "feature"
+    },
+    {
+      "hash": "b5f06d8",
+      "fullHash": "b5f06d8a2fe01f4d6e40cdf3eb9a5c9cb72b3a10",
+      "date": "2025-03-08 00:04:49 +0700",
+      "author": "3obby",
+      "message": "Update user dropdown to link to /account page",
+      "category": "enhancement"
+    },
+    {
+      "hash": "f7e4e86",
+      "fullHash": "f7e4e86b28c6e99aaf6621293fd926b654909897",
+      "date": "2025-03-07 23:58:52 +0700",
+      "author": "3obby",
+      "message": "Add enhanced account page with subscription details and personalized UI",
+      "category": "feature"
+    },
+    {
+      "hash": "2ae132c",
+      "fullHash": "2ae132c40c68f917e1dc481b615397e2c595879e",
+      "date": "2025-03-07 23:38:21 +0700",
+      "author": "3obby",
+      "message": "Fix React unescaped quotes and update ESLint config",
+      "category": "bugfix"
+    },
+    {
+      "hash": "2164cf9",
+      "fullHash": "2164cf9be7c7fa7e327e776df86ecc8866bc4788",
+      "date": "2025-03-07 23:35:06 +0700",
+      "author": "3obby",
+      "message": "Implement Edge Runtime compatibility for database operations",
+      "category": "other"
+    },
+    {
+      "hash": "f9c7541",
+      "fullHash": "f9c754165ed9f98d2de5885a4b1cfe0f5059ed9c",
+      "date": "2025-03-07 22:55:04 +0700",
+      "author": "3obby",
+      "message": "update gitignore and next config",
+      "category": "enhancement"
+    },
+    {
+      "hash": "44d3b28",
+      "fullHash": "44d3b28c942ed36897a3ce421e398a8decf7dc4f",
+      "date": "2025-03-06 15:57:17 +0700",
+      "author": "3obby",
+      "message": "Create script to automate auth updates and fix remaining Clerk dependencies",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f11ebf2",
+      "fullHash": "f11ebf265c085c720dfe91b933496d148d89d802",
+      "date": "2025-03-06 15:53:11 +0700",
+      "author": "3obby",
+      "message": "Update API routes to use custom auth instead of Clerk",
+      "category": "enhancement"
+    },
+    {
+      "hash": "1634b79",
+      "fullHash": "1634b791736b8e483626cecf2027e4c28c8a6dd4",
+      "date": "2025-03-06 15:39:25 +0700",
+      "author": "3obby",
+      "message": "Update remaining components to use custom auth instead of Clerk",
+      "category": "enhancement"
+    },
+    {
+      "hash": "ef516ad",
+      "fullHash": "ef516adf8553bf7945c795f7f01eb2e81d93b2d0",
+      "date": "2025-03-06 15:34:07 +0700",
+      "author": "3obby",
+      "message": "Fix Clerk dependencies and update components to use custom magic link auth",
+      "category": "bugfix"
+    },
+    {
+      "hash": "36552df",
+      "fullHash": "36552df24acab06902ad66d258cb07bc671864bb",
+      "date": "2025-03-06 15:27:19 +0700",
+      "author": "3obby",
+      "message": "Replace Clerk with magic link authentication using Postmark",
+      "category": "other"
+    },
+    {
+      "hash": "fdf77e0",
+      "fullHash": "fdf77e0c15d905799849ff695cd531339b8e5486",
+      "date": "2025-03-06 14:51:54 +0700",
+      "author": "3obby",
+      "message": "Updated landing page and authentication flow with cleaner URLs",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9f0ccd1",
+      "fullHash": "9f0ccd1f733d1b9d07dd13d54f61b7ed110bc775",
+      "date": "2025-03-06 14:45:20 +0700",
+      "author": "3obby",
+      "message": "Restored 'looks great' commit with the not-found page",
+      "category": "other"
+    },
+    {
+      "hash": "05fdf64",
+      "fullHash": "05fdf6428d0c56508dc3891f7de6dfdac3dd9578",
+      "date": "2025-03-03 22:30:44 +0700",
+      "author": "3obby",
+      "message": "looks great",
+      "category": "other"
+    },
+    {
+      "hash": "8cc988d",
+      "fullHash": "8cc988d27ccfc28e47b04e530e2c102429e2fe5a",
+      "date": "2025-03-03 21:10:07 +0700",
+      "author": "3obby",
+      "message": "chat ui",
+      "category": "other"
+    },
+    {
+      "hash": "b96459e",
+      "fullHash": "b96459e5124653234b5390896c9f7a6201261cb9",
+      "date": "2025-03-03 19:46:14 +0700",
+      "author": "3obby",
+      "message": "builds",
+      "category": "other"
+    },
+    {
+      "hash": "7742b61",
+      "fullHash": "7742b6194cc4398e7aa8c20c0f9984058aaeb227",
+      "date": "2025-03-03 16:44:58 +0700",
+      "author": "3obby",
+      "message": "updates to emojis/subscriptions",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e0d96fc",
+      "fullHash": "e0d96fcdbe1aa33f6309130f325181fc96540349",
+      "date": "2025-03-02 23:45:10 +0700",
+      "author": "3obby",
+      "message": "maybe fixed subscription",
+      "category": "bugfix"
+    },
+    {
+      "hash": "c8b2116",
+      "fullHash": "c8b211659bd856df522745626173d4ca77810485",
+      "date": "2025-03-02 23:35:28 +0700",
+      "author": "3obby",
+      "message": "fixed stripe redirect",
+      "category": "bugfix"
+    },
+    {
+      "hash": "7fc1377",
+      "fullHash": "7fc13775dd308e589bf7f01ae21c503e0b878f66",
+      "date": "2025-03-02 23:24:38 +0700",
+      "author": "3obby",
+      "message": "updated webhook, added patch scripts",
+      "category": "feature"
+    },
+    {
+      "hash": "dd6e418",
+      "fullHash": "dd6e418dd4ef5b458bd2d7d7e985e0c368317b33",
+      "date": "2025-03-02 23:01:34 +0700",
+      "author": "3obby",
+      "message": "corrected price",
+      "category": "other"
+    },
+    {
+      "hash": "a0b36f6",
+      "fullHash": "a0b36f6458c8c4ee5b3c8034d101a13edd2906f2",
+      "date": "2025-03-02 22:49:32 +0700",
+      "author": "3obby",
+      "message": "fixed voting maybe",
+      "category": "bugfix"
+    },
+    {
+      "hash": "322233d",
+      "fullHash": "322233d07e6bfdfffcdecbc7793853bad0de9ff1",
+      "date": "2025-03-02 22:41:07 +0700",
+      "author": "3obby",
+      "message": "updated voting costs",
+      "category": "enhancement"
+    },
+    {
+      "hash": "bae7130",
+      "fullHash": "bae713074d7ca44db7cba28f9ea91f9e2d049a51",
+      "date": "2025-03-02 22:36:08 +0700",
+      "author": "3obby",
+      "message": "monthy to weekly pt 2",
+      "category": "other"
+    },
+    {
+      "hash": "28d7c17",
+      "fullHash": "28d7c1782a2b267909aab0744e08a11dc7c83654",
+      "date": "2025-03-02 22:26:27 +0700",
+      "author": "3obby",
+      "message": "changed monthly to weekly sub",
+      "category": "other"
+    },
+    {
+      "hash": "8d19ff2",
+      "fullHash": "8d19ff2fc4858823a3416a018b7271b2f3794a55",
+      "date": "2025-03-02 22:15:08 +0700",
+      "author": "3obby",
+      "message": "renamed, fixed stripe, edit vote costs",
+      "category": "bugfix"
+    },
+    {
+      "hash": "ce20232",
+      "fullHash": "ce20232490018cad03db7fdaf8d9c1b1eb583655",
+      "date": "2025-03-02 21:47:57 +0700",
+      "author": "3obby",
+      "message": "groupchatbotbuilder builds",
+      "category": "other"
+    },
+    {
+      "hash": "e60c887",
+      "fullHash": "e60c887b3360a304fc1591876acfacf19cb0fea9",
+      "date": "2025-03-02 21:15:38 +0700",
+      "author": "3obby",
+      "message": "freemium 10k creds",
+      "category": "other"
+    },
+    {
+      "hash": "ac0e954",
+      "fullHash": "ac0e954f8a0dc81e379d7eae9f867a6a72da0d16",
+      "date": "2025-03-02 18:18:28 +0700",
+      "author": "3obby",
+      "message": "+ vanilla gpt, settings",
+      "category": "other"
+    },
+    {
+      "hash": "61b1dda",
+      "fullHash": "61b1dda23ffdbc67def4f6d4542b58226e7858f1",
+      "date": "2025-03-02 15:29:10 +0700",
+      "author": "3obby",
+      "message": "bots maintain independent personality",
+      "category": "other"
+    }
+  ]
+}

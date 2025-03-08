@@ -1,39 +1,47 @@
 import { Metadata } from "next";
-import { execSync } from "child_process";
 import { format } from "date-fns";
+import fs from "fs";
+import path from "path";
 
 export const metadata: Metadata = {
   title: "Updates | GroupChatBotBuilder",
   description: "Release notes and update history for GroupChatBotBuilder"
 };
 
-// This function uses server-side execution to get git commits
-// Will only work in a development environment or server with git access
+// Function to read commit history from JSON file
 async function getCommitHistory() {
   try {
-    // Get the last 50 commits, formatted with hash, date, author, and message
-    const gitLog = execSync(
-      'git log -n 50 --pretty=format:\'{"hash":"%h","date":"%ad","author":"%an","message":"%s"}\' --date=iso',
-      { encoding: 'utf-8' }
-    );
+    // Read from JSON file in both dev and production
+    const filePath = path.join(process.cwd(), 'public', 'commit-history.json');
     
-    // Parse each line as a JSON object
-    const commits = gitLog
-      .split('\n')
-      .map(line => {
-        try {
-          return JSON.parse(line);
-        } catch (e) {
-          console.error('Failed to parse git log line:', line);
-          return null;
-        }
-      })
-      .filter(Boolean); // Remove any null entries
-      
-    return commits;
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.log('Commit history file not found. This is normal for first deployment.');
+      return [];
+    }
+    
+    const data = fs.readFileSync(filePath, 'utf8');
+    const { commits } = JSON.parse(data);
+    return commits || [];
   } catch (error) {
-    console.error('Error getting git history:', error);
+    console.error('Error reading commit history:', error);
     return [];
+  }
+}
+
+// Function to read current version
+async function getCurrentVersion() {
+  try {
+    const filePath = path.join(process.cwd(), 'version.json');
+    if (!fs.existsSync(filePath)) {
+      return 'v0.1.0'; // Default fallback version
+    }
+    
+    const versionData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return `v${versionData.major}.${versionData.minor}.${versionData.patch}`;
+  } catch (error) {
+    console.error('Error reading version:', error);
+    return 'v0.1.0'; // Default fallback version
   }
 }
 
@@ -71,18 +79,10 @@ function categorizeCommit(message: string) {
   }
 }
 
-// Function to determine the version based on commits
-// This is a simple implementation - in reality you might want to use semantic versioning
-function determineVersion(commits: any[]) {
-  // For now we'll assume the most recent version is on the login page
-  // In a real app, you'd want to derive this from tags or a version file
-  return 'v0.2.14'; // Incremented from current v0.2.13
-}
-
 export default async function UpdatesPage() {
   const commits = await getCommitHistory();
   const groupedCommits = groupCommitsByDate(commits);
-  const currentVersion = determineVersion(commits);
+  const currentVersion = await getCurrentVersion();
   
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -99,7 +99,7 @@ export default async function UpdatesPage() {
           
           <div className="space-y-4">
             {dayCommits.map((commit) => {
-              const category = categorizeCommit(commit.message);
+              const category = commit.category || 'other';
               
               return (
                 <div key={commit.hash} className="flex gap-4">
@@ -132,7 +132,7 @@ export default async function UpdatesPage() {
       
       {commits.length === 0 && (
         <div className="p-8 text-center border border-dashed rounded-lg">
-          <p className="text-muted-foreground">No commit history available.</p>
+          <p className="text-muted-foreground">No commit history available yet. History will appear after new commits are made.</p>
         </div>
       )}
     </div>
