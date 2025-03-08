@@ -12,9 +12,19 @@ const POST_COMMIT_HOOK = path.join(HOOKS_DIR, 'post-commit');
 // Create the post-commit hook
 function setupPostCommitHook() {
   const hookContent = `#!/bin/sh
-  
+
+# Prevent hook recursion by detecting if this is an amendment
+if [ -f ".git/AMENDING" ]; then
+  # We're in an amendment cycle, do nothing
+  rm .git/AMENDING
+  exit 0
+fi
+
 # Run the version update script after each commit
 node "$(git rev-parse --show-toplevel)/scripts/update-version.js"
+
+# Mark that we're going to amend
+touch .git/AMENDING
 
 # Automatically commit version changes
 git add version.json public/commit-history.json app/\\(auth\\)/\\(routes\\)/login/page.tsx
@@ -74,7 +84,7 @@ Every commit will now:
 1. Automatically update the version number based on commit message keywords
 2. Update the version displayed on the login page
 3. Update the commit history file for the updates page
-4. Auto-amend the commit to include these version changes
+4. Auto-amend the commit to include these version changes (with recursion protection)
 
 Important Notes:
 - Include "major" or "breaking" in commit messages for major version bumps

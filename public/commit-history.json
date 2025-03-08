@@ -1,804 +1,404 @@
 {
   "commits": [
     {
-      "hash": "31042a0",
-      "fullHash": "31042a03e9c6380166f7a06acf56f39ba89506ba",
+      "hash": "72d30f5",
+      "fullHash": "72d30f5190bc5382499ee6081c29a92568edf219",
       "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
       "message": "Remove old logo file",
       "category": "other"
     },
     {
-      "hash": "a68d6bb",
-      "fullHash": "a68d6bb3af3d38398645c77d35aff5b74fcc41c7",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "7c46c68",
-      "fullHash": "7c46c68f4cc531d8491d720b81f368d2f93b85b8",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "c23414e",
-      "fullHash": "c23414eab058dfb5f93a40306dad0eed7e08be7b",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "438806f",
-      "fullHash": "438806fe2caaed8994ce1fe8d6ca6c9e76187962",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "dc74b28",
-      "fullHash": "dc74b287db08970d113b22a8df6ecff7d0a631f5",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "1242eec",
-      "fullHash": "1242eec43a7e68b64ba79dbac3d6ea14d0ff07f6",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "cf702b5",
-      "fullHash": "cf702b5e2e7487551cf37ee765b9d085e6f9ddf4",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "72529c5",
-      "fullHash": "72529c53c126eadb055f20bfac2fff0536af3b3d",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "00d1d56",
-      "fullHash": "00d1d562163c7b9fff2686da2b3b84840a1a1bf6",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "7209085",
-      "fullHash": "720908515318bc262edc9e5eed8fcdb4b641418a",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "6c33a59",
-      "fullHash": "6c33a595f6149e5a944eaec9fbaf5e3f376da617",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "f9653dd",
-      "fullHash": "f9653dd958b485d6597e534676a12431d4291193",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "ce25e36",
-      "fullHash": "ce25e36685f622665049a2e2ab36a3a950363268",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "d6a80a7",
-      "fullHash": "d6a80a78734c092462565d4e5686ab4b6a65d46c",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "3fec345",
-      "fullHash": "3fec345625b440eaeeba883f97fbc3e6458fe239",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "ea9eab4",
-      "fullHash": "ea9eab4dadf31df73694ed64270472a5616263f8",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "e8e6e10",
-      "fullHash": "e8e6e10b596c42549bd480c7c2d7acce3d4f94e4",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "abacae2",
-      "fullHash": "abacae2db9ec9c4903784bebb9238c9ee4bb5983",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "9af3aae",
-      "fullHash": "9af3aae45249da0fe79dc36f77f82054594150c0",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "18ea6c7",
-      "fullHash": "18ea6c7f31514cf4d8fc6679862c01b1d896c447",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "72e11f2",
-      "fullHash": "72e11f2b9a1962a900a78fc7b145a203a180a6de",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "92e0bf6",
-      "fullHash": "92e0bf602cff90972f814a7d9bba567ec84f25d2",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "15ee016",
-      "fullHash": "15ee01609af45a6f3e2df87a2620576194033dcd",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "8d14ac5",
-      "fullHash": "8d14ac5592f82448a026bc80264bbbb925a36015",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "f2be429",
-      "fullHash": "f2be42914fbfc52c6b71896ec697bbac829efc91",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "667053a",
-      "fullHash": "667053a46a67ab310a903a9164ee9ecce8ea80f2",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "01ef2ff",
-      "fullHash": "01ef2ff1c7e3a5aca95b76f6c35405aaa3ab69c3",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "b1bb04e",
-      "fullHash": "b1bb04e1ac3fc5b707328ce5d80ad070fe717ed4",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "2e7753f",
-      "fullHash": "2e7753f21393a5a4d6b2aa3ac417ba4a19a8d060",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "78e8f82",
-      "fullHash": "78e8f82fa28ad691ba9ec4be674d89b5e90ecbc2",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "9c6cfd2",
-      "fullHash": "9c6cfd232b3fc42ae3740689640320e364a95fe4",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "26911cf",
-      "fullHash": "26911cf8ffa8e8053796d95525375df80d04eb1a",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "d2d9678",
-      "fullHash": "d2d967863b05eb1ad9a58f24809aa8cac3f6b01f",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "a839f00",
-      "fullHash": "a839f0018db1092d22dd220e0bf53440d2106d22",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "7ec7828",
-      "fullHash": "7ec78284a0a90bd2e7a46c85f2317d551f652736",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "62790e2",
-      "fullHash": "62790e22f231a34c733e20b5ae15385b24f3db09",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "fc0d179",
-      "fullHash": "fc0d179384a31ccbbdeb7f4427b52aacd5ddc6bb",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "70fce74",
-      "fullHash": "70fce749490a83568b1ce1c69501222305628487",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "6438f40",
-      "fullHash": "6438f40da336f5cfb006cec77d4bf15a38e077d2",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "346248c",
-      "fullHash": "346248c2e8a467150a3ff05e8bde37a98e806002",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "310ec29",
-      "fullHash": "310ec295540e01b02e9440aac1baf97a4167cd64",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "782150c",
-      "fullHash": "782150c4d1a63a138cadc57179f27410082cee39",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "a1f35ce",
-      "fullHash": "a1f35ce6db94630e8c191d38ed43bf6a7efb7c12",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "9655640",
-      "fullHash": "96556403026e1f2daf38408070911b4348cfe914",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "1e8006f",
-      "fullHash": "1e8006f07d87e038127adeadcf5991879fdb369a",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "023b9c7",
-      "fullHash": "023b9c7cdb2e5f8aa604dc8d4eda67524213653d",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "3accaa9",
-      "fullHash": "3accaa93cbba981ebd64c915f745a11f5609ff16",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "e3f5803",
-      "fullHash": "e3f580381ecf6c83c68efa2d26a77a02ffd878ad",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "1b28a3d",
-      "fullHash": "1b28a3d89ce380b0c8b6e5aec1049bf2484bf55c",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "bfbaa1f",
-      "fullHash": "bfbaa1f318929d65b0b0275e4507cc9c3698c8f0",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
-    },
-    {
-      "hash": "48cd94b",
-      "fullHash": "48cd94bd78c91f860dbf76d3973d26d22467742a",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "d0d7504",
+      "fullHash": "d0d75041d581a28207110f22a2845b66246adaab",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "9efb861",
-      "fullHash": "9efb86176edb009bb1b543c3db099e284591033e",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "1ebe9b5",
+      "fullHash": "1ebe9b5d6f89481d41632441585901a9c244173c",
+      "date": "2025-03-08 19:52:16 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update logo to feather.png and fix version display",
+      "category": "bugfix"
     },
     {
-      "hash": "1a3306b",
-      "fullHash": "1a3306b20a5e364853866f71516ee1ccef1edee4",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "a558f60",
+      "fullHash": "a558f60954ee7451458ca0fbae42529961a3eb82",
+      "date": "2025-03-08 19:47:07 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "FIX: Update auto-documentation system to work in production environment",
+      "category": "bugfix"
     },
     {
-      "hash": "36ecd7e",
-      "fullHash": "36ecd7edd235508248cc89590ea4d4d7479677df",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "df99ab7",
+      "fullHash": "df99ab7d1ba569699cbd19435c2d355630efd765",
+      "date": "2025-03-08 19:32:14 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update robobirds.png background image",
+      "category": "enhancement"
     },
     {
-      "hash": "306f296",
-      "fullHash": "306f296956f88cd23c94301ad894080b50f893d8",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "0ff38fc",
+      "fullHash": "0ff38fc25f142edd99d64ab55adc5d1f7096c000",
+      "date": "2025-03-08 19:26:41 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "FEATURE: Add auto-documentation system with /updates page and version tracking",
+      "category": "feature"
     },
     {
-      "hash": "cdf0dd1",
-      "fullHash": "cdf0dd1c6a351eb699e9736003857be3c7781a3a",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "25c1fb9",
+      "fullHash": "25c1fb9745a39ed55a3991b5122a09d9c2c02098",
+      "date": "2025-03-08 14:26:58 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "Disable OAuth buttons with pending review message",
       "category": "other"
     },
     {
-      "hash": "6be5588",
-      "fullHash": "6be5588cf008c5846fb865b99eab7703111d2b7b",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "715f074",
+      "fullHash": "715f074fb8ed593e392ade9ffbecf85f733751f1",
+      "date": "2025-03-08 14:17:30 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update login page with app version and add image assets",
+      "category": "feature"
     },
     {
-      "hash": "f4284bd",
-      "fullHash": "f4284bd18cab93648e6207957059617b94c2b994",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "60052e2",
+      "fullHash": "60052e21be4b03da8d05dd43260ba1fa978513e5",
+      "date": "2025-03-08 13:57:26 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update login page with robobirds background and robohand logo",
+      "category": "enhancement"
     },
     {
-      "hash": "8167194",
-      "fullHash": "816719489b335cc8fd0c15c294d528784cdff77f",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "d90d1ef",
+      "fullHash": "d90d1ef8b61ae83ed9964972c4f9b758a6b35b9e",
+      "date": "2025-03-08 13:36:28 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix subscription and payment routes for NextAuth compatibility and fix linter errors",
+      "category": "bugfix"
     },
     {
-      "hash": "d5d94ce",
-      "fullHash": "d5d94ce1e5f2c0217a69f59820624685952ed480",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "7586e1e",
+      "fullHash": "7586e1e57f54770bfba72b0f3a7a5ed7f60c1266",
+      "date": "2025-03-08 13:32:11 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix bot chat output - Change to non-streaming mode to prevent raw JSON output",
+      "category": "bugfix"
     },
     {
-      "hash": "38f6cb5",
-      "fullHash": "38f6cb5fe74244af42476d9538bf54fad63ea68b",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "f34a2e5",
+      "fullHash": "f34a2e5afe81522436fed8382ae59841ac2d2ae0",
+      "date": "2025-03-08 13:27:47 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Enhance OAuth profile picture handling to display Google profile pictures",
+      "category": "enhancement"
     },
     {
-      "hash": "040f38b",
-      "fullHash": "040f38b7e190b2d4733b8c8f683eab135552801e",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "6e35db9",
+      "fullHash": "6e35db97d411e9c8e6027722048ea978e36302d2",
+      "date": "2025-03-08 13:24:44 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "Enable account linking for Google and GitHub OAuth providers",
       "category": "other"
     },
     {
-      "hash": "7e53004",
-      "fullHash": "7e530043d6497929504b7a4c6f49b2b23621f837",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "3234fa5",
+      "fullHash": "3234fa57ed9637b2c1879cc7305b296e6f2ef3f4",
+      "date": "2025-03-08 13:22:07 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix OAuth authentication by adding missing User-Account-Session relations and add logo.png",
+      "category": "bugfix"
     },
     {
-      "hash": "20edcf9",
-      "fullHash": "20edcf9f9f267a0978c6a5942af5e2c29ac69d35",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "acf881b",
+      "fullHash": "acf881b5628697a3a9228cecd0a29fc108442341",
+      "date": "2025-03-08 13:16:58 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Remove Apple OAuth provider and update login UI",
+      "category": "enhancement"
     },
     {
-      "hash": "29c4fba",
-      "fullHash": "29c4fba0ce4788f63b27332bd04d154308ed062d",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "da372b6",
+      "fullHash": "da372b68d26b30d859dfce3e7f98fd459574a83b",
+      "date": "2025-03-08 13:09:35 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Add basic Privacy Policy and Terms of Service pages",
+      "category": "feature"
     },
     {
-      "hash": "c9fe07b",
-      "fullHash": "c9fe07b02d029a1f635c3476f50ddf9383bc2808",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "5d2451a",
+      "fullHash": "5d2451a8ea8f3e30b03434c6b8920de3094d74f8",
+      "date": "2025-03-08 12:55:31 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Add redirect for logged-in users at login page and OAuth provider support",
+      "category": "feature"
     },
     {
-      "hash": "df0c91a",
-      "fullHash": "df0c91a091971ce76d19d4627bfbef2df92aa5cc",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "be813e9",
+      "fullHash": "be813e92b547a64c4f23d967d2afca4c7c975dc6",
+      "date": "2025-03-08 12:32:11 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix deployment errors by forcing dynamic rendering on all API routes",
+      "category": "bugfix"
     },
     {
-      "hash": "5334da0",
-      "fullHash": "5334da091caa73281941d77c4e339c3dc81e7a5e",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "9c4aa31",
+      "fullHash": "9c4aa31f00f58694e8b24432ec92d6d2d3dafded",
+      "date": "2025-03-08 12:27:28 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Full sync - push all changes including auth migration and API updates",
+      "category": "enhancement"
     },
     {
-      "hash": "b63830f",
-      "fullHash": "b63830f4cf38ad5227db33ce88d2130ec836ac6b",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "02f46ee",
+      "fullHash": "02f46ee1ca44025b59f900154b1ca0407d593078",
+      "date": "2025-03-08 12:26:43 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix navbar layout and user display issues; fix admin API routes",
+      "category": "bugfix"
     },
     {
-      "hash": "88f93c3",
-      "fullHash": "88f93c3e6713f8a7a3f8e55cb90330f108645ac7",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "5068e11",
+      "fullHash": "5068e11d776708b2c74cea99e239c6cb1a929eb9",
+      "date": "2025-03-08 01:05:50 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update Prisma to latest version 6.4.1",
+      "category": "enhancement"
     },
     {
-      "hash": "72395ca",
-      "fullHash": "72395ca8938de7c40af9c01ec2e0d8265904a91c",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "7fdcf3d",
+      "fullHash": "7fdcf3d820be81286dbee7c1777b90548f2dbb4d",
+      "date": "2025-03-08 01:01:52 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update ESLint to ^8.56.0 to fix dependency conflict with TypeScript ESLint plugin",
+      "category": "bugfix"
     },
     {
-      "hash": "922fe00",
-      "fullHash": "922fe0092f12fef7b5b1b035be6abae8f9cfdf09",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "b2350cf",
+      "fullHash": "b2350cf2c29d25295c0141173727c6879b418310",
+      "date": "2025-03-08 01:00:15 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix routing conflicts and authentication issues in Next.js App Router",
+      "category": "bugfix"
     },
     {
-      "hash": "a278c9f",
-      "fullHash": "a278c9f2238ef987aa37466cf7dd73eec16624dd",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "cc4962f",
+      "fullHash": "cc4962f22ae39c2e297ccd7ef679aeae330f48da",
+      "date": "2025-03-08 00:30:05 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Optimize project environment for Life OS platform: add Tailwind plugins, fix TypeScript errors, add Cursor config, and create UI components",
+      "category": "bugfix"
     },
     {
-      "hash": "c6ca175",
-      "fullHash": "c6ca175d2836285e4fe094c9f1a34372b3e6545d",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "5725adc",
+      "fullHash": "5725adceff04094856dd522ac3236aa0a3506111",
+      "date": "2025-03-08 00:07:00 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Add shadcn/ui components and UI demo page",
+      "category": "feature"
     },
     {
-      "hash": "3749b85",
-      "fullHash": "3749b85162acb3c7a1dbf3ae0ee41004a3a2e6a8",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "b5f06d8",
+      "fullHash": "b5f06d8a2fe01f4d6e40cdf3eb9a5c9cb72b3a10",
+      "date": "2025-03-08 00:04:49 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update user dropdown to link to /account page",
+      "category": "enhancement"
     },
     {
-      "hash": "135a334",
-      "fullHash": "135a334b1e106174d2d04e39a003ea842006b6d4",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "f7e4e86",
+      "fullHash": "f7e4e86b28c6e99aaf6621293fd926b654909897",
+      "date": "2025-03-07 23:58:52 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Add enhanced account page with subscription details and personalized UI",
+      "category": "feature"
     },
     {
-      "hash": "e97da0b",
-      "fullHash": "e97da0b1b3325c8708eb147add9c7db81944c8fc",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "2ae132c",
+      "fullHash": "2ae132c40c68f917e1dc481b615397e2c595879e",
+      "date": "2025-03-07 23:38:21 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix React unescaped quotes and update ESLint config",
+      "category": "bugfix"
     },
     {
-      "hash": "a4af8e7",
-      "fullHash": "a4af8e7aa8f1dd6bd8e2e73ec1ea16ca6b2c8c2e",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "2164cf9",
+      "fullHash": "2164cf9be7c7fa7e327e776df86ecc8866bc4788",
+      "date": "2025-03-07 23:35:06 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "Implement Edge Runtime compatibility for database operations",
       "category": "other"
     },
     {
-      "hash": "c3a64bc",
-      "fullHash": "c3a64bcb396c37c820bc7a26c89b29d1e3437b1e",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "f9c7541",
+      "fullHash": "f9c754165ed9f98d2de5885a4b1cfe0f5059ed9c",
+      "date": "2025-03-07 22:55:04 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "update gitignore and next config",
+      "category": "enhancement"
     },
     {
-      "hash": "02f2b84",
-      "fullHash": "02f2b8440ecc7eff4f47727e26e699531b79539f",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "44d3b28",
+      "fullHash": "44d3b28c942ed36897a3ce421e398a8decf7dc4f",
+      "date": "2025-03-06 15:57:17 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Create script to automate auth updates and fix remaining Clerk dependencies",
+      "category": "bugfix"
     },
     {
-      "hash": "aefc156",
-      "fullHash": "aefc1562dbdba60525705967231e5b7ecb70a9d8",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "f11ebf2",
+      "fullHash": "f11ebf265c085c720dfe91b933496d148d89d802",
+      "date": "2025-03-06 15:53:11 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update API routes to use custom auth instead of Clerk",
+      "category": "enhancement"
     },
     {
-      "hash": "e01836b",
-      "fullHash": "e01836b9ee05ce06942d5750e346c36900be9964",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "1634b79",
+      "fullHash": "1634b791736b8e483626cecf2027e4c28c8a6dd4",
+      "date": "2025-03-06 15:39:25 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Update remaining components to use custom auth instead of Clerk",
+      "category": "enhancement"
     },
     {
-      "hash": "131d7c4",
-      "fullHash": "131d7c4eb48350192704b1f7a3e0bcaf3d8a7ae7",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "ef516ad",
+      "fullHash": "ef516adf8553bf7945c795f7f01eb2e81d93b2d0",
+      "date": "2025-03-06 15:34:07 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Fix Clerk dependencies and update components to use custom magic link auth",
+      "category": "bugfix"
     },
     {
-      "hash": "d45fb47",
-      "fullHash": "d45fb4709fda1291351fffba1f6d336b8015ce0a",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "36552df",
+      "fullHash": "36552df24acab06902ad66d258cb07bc671864bb",
+      "date": "2025-03-06 15:27:19 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "Replace Clerk with magic link authentication using Postmark",
       "category": "other"
     },
     {
-      "hash": "fd285ee",
-      "fullHash": "fd285eeb96c3517eee733ff1cdcecc1cb43132c9",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "fdf77e0",
+      "fullHash": "fdf77e0c15d905799849ff695cd531339b8e5486",
+      "date": "2025-03-06 14:51:54 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "Updated landing page and authentication flow with cleaner URLs",
+      "category": "enhancement"
     },
     {
-      "hash": "1388454",
-      "fullHash": "13884546d28622f15510e55e5bff0344ad49e320",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "9f0ccd1",
+      "fullHash": "9f0ccd1f733d1b9d07dd13d54f61b7ed110bc775",
+      "date": "2025-03-06 14:45:20 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "Restored 'looks great' commit with the not-found page",
       "category": "other"
     },
     {
-      "hash": "abc95bb",
-      "fullHash": "abc95bb37671ac502a5035d58dff99bf30c488bf",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "05fdf64",
+      "fullHash": "05fdf6428d0c56508dc3891f7de6dfdac3dd9578",
+      "date": "2025-03-03 22:30:44 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "looks great",
       "category": "other"
     },
     {
-      "hash": "be9249e",
-      "fullHash": "be9249ec32c9c8486168d3266639d75ee636e992",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "8cc988d",
+      "fullHash": "8cc988d27ccfc28e47b04e530e2c102429e2fe5a",
+      "date": "2025-03-03 21:10:07 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "chat ui",
       "category": "other"
     },
     {
-      "hash": "9cdea06",
-      "fullHash": "9cdea067980a674aa103b840702163ffd93d46f0",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "b96459e",
+      "fullHash": "b96459e5124653234b5390896c9f7a6201261cb9",
+      "date": "2025-03-03 19:46:14 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "builds",
       "category": "other"
     },
     {
-      "hash": "35f931e",
-      "fullHash": "35f931eb94970099affc89cc993ed8091a312533",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "7742b61",
+      "fullHash": "7742b6194cc4398e7aa8c20c0f9984058aaeb227",
+      "date": "2025-03-03 16:44:58 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "updates to emojis/subscriptions",
+      "category": "enhancement"
     },
     {
-      "hash": "6915248",
-      "fullHash": "69152487eb7589c193188edc35efcb0979f9ff51",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "e0d96fc",
+      "fullHash": "e0d96fcdbe1aa33f6309130f325181fc96540349",
+      "date": "2025-03-02 23:45:10 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "maybe fixed subscription",
+      "category": "bugfix"
     },
     {
-      "hash": "1d51b41",
-      "fullHash": "1d51b41135d43edd2c6b5292aaeaa93392233029",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "c8b2116",
+      "fullHash": "c8b211659bd856df522745626173d4ca77810485",
+      "date": "2025-03-02 23:35:28 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "fixed stripe redirect",
+      "category": "bugfix"
     },
     {
-      "hash": "c5dfcb8",
-      "fullHash": "c5dfcb8b9e63d714e06cbdf1da480a934f87c7ca",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "7fc1377",
+      "fullHash": "7fc13775dd308e589bf7f01ae21c503e0b878f66",
+      "date": "2025-03-02 23:24:38 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "updated webhook, added patch scripts",
+      "category": "feature"
     },
     {
-      "hash": "02a27ea",
-      "fullHash": "02a27eaa006b7b4342c45bf69c49d36425bb822a",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "dd6e418",
+      "fullHash": "dd6e418dd4ef5b458bd2d7d7e985e0c368317b33",
+      "date": "2025-03-02 23:01:34 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "corrected price",
       "category": "other"
     },
     {
-      "hash": "28705cf",
-      "fullHash": "28705cf28eecd63bac9504b5c3d65fad90ea1f78",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "a0b36f6",
+      "fullHash": "a0b36f6458c8c4ee5b3c8034d101a13edd2906f2",
+      "date": "2025-03-02 22:49:32 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "fixed voting maybe",
+      "category": "bugfix"
     },
     {
-      "hash": "2164982",
-      "fullHash": "216498297093e51d5574f8e170b9b2394d3fece4",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "322233d",
+      "fullHash": "322233d07e6bfdfffcdecbc7793853bad0de9ff1",
+      "date": "2025-03-02 22:41:07 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "updated voting costs",
+      "category": "enhancement"
     },
     {
-      "hash": "9f4b7cd",
-      "fullHash": "9f4b7cda1e073b2f931fc82c987f0f65bcdbd763",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "bae7130",
+      "fullHash": "bae713074d7ca44db7cba28f9ea91f9e2d049a51",
+      "date": "2025-03-02 22:36:08 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "monthy to weekly pt 2",
       "category": "other"
     },
     {
-      "hash": "2936bbd",
-      "fullHash": "2936bbd64299701b22c06e6a08f1b2cbb7adcde6",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "28d7c17",
+      "fullHash": "28d7c1782a2b267909aab0744e08a11dc7c83654",
+      "date": "2025-03-02 22:26:27 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
+      "message": "changed monthly to weekly sub",
       "category": "other"
     },
     {
-      "hash": "a8a14f6",
-      "fullHash": "a8a14f637b9ec912b8850278a6dc71e43fd93f1a",
-      "date": "2025-03-08 19:57:51 +0700",
+      "hash": "8d19ff2",
+      "fullHash": "8d19ff2fc4858823a3416a018b7271b2f3794a55",
+      "date": "2025-03-02 22:15:08 +0700",
       "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
+      "message": "renamed, fixed stripe, edit vote costs",
+      "category": "bugfix"
     }
   ]
 }
