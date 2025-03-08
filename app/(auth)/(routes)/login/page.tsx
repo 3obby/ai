@@ -62,7 +62,7 @@ export default function LoginPage() {
   // Only show login options if not authenticated
   if (status === "unauthenticated") {
     return (
-      <div className="flex flex-col items-center justify-center w-full mx-auto p-6 space-y-8 backdrop-blur-sm bg-black/30 rounded-lg shadow-xl">
+      <div className="flex flex-col items-center justify-center w-full mx-auto p-6 space-y-8 backdrop-blur-sm bg-black/60 rounded-lg shadow-xl">
         <div className="flex flex-col items-center space-y-2 mb-6">
           <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg mb-4">
             <Image 
@@ -72,8 +72,8 @@ export default function LoginPage() {
               className="object-cover"
             />
           </div>
-          <h1 className="text-2xl font-bold text-center text-white">Welcome back</h1>
-          <p className="text-white/80 text-center">Sign in to continue</p>
+          <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
+          <p className="text-white/80 text-center">v0.2.13</p>
         </div>
 
         <div className="w-full space-y-4">
