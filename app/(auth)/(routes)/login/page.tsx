@@ -73,7 +73,15 @@ export default function LoginPage() {
             />
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
-          <p className="text-white/80 text-center">v0.2.13</p>
+          <div className="flex items-center justify-center space-x-3">
+            <p className="text-white/80">v0.2.14</p>
+            <Link 
+              href="/updates" 
+              className="text-white/80 hover:text-white underline text-sm"
+            >
+              updates
+            </Link>
+          </div>
         </div>
 
         <div className="w-full space-y-4">

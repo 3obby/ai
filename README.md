@@ -214,3 +214,40 @@ Below is an example **Character Creation** workflow you can add to the README, s
    - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion's ID.
 
 That's it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.
+
+## Auto-Documentation System
+
+This project includes an automatic version tracking and documentation system.
+
+### Features
+
+- **Automatic Version Updates**: The version number is automatically incremented based on commit messages
+- **Updates Page**: View all project changes at `/updates`
+- **Git Integration**: Uses Git history to generate documentation
+
+### How it Works
+
+- All Git commits are automatically documented and categorized
+- The version number on the login page is automatically updated
+- Categories are determined by keywords in commit messages:
+  - **Major Version**: Include "major" or "breaking" in commit message
+  - **Minor Version**: Include "minor" or "feature" in commit message
+  - **Patch Version**: All other commits
+
+### Setup for Developers
+
+If you're setting up the project for the first time, run:
+
+```bash
+node scripts/setup-hooks.js
+```
+
+This sets up the necessary Git hooks to keep the documentation updated.
+
+### Manual Version Update
+
+To manually update the version, run:
+
+```bash
+node scripts/update-version.js
+```
