@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/robohand.png",
-        href: "/robohand.png",
+        url: "/feather.png",
+        href: "/feather.png",
       }
     ],
     apple: {
-      url: "/robohand.png",
+      url: "/feather.png",
       sizes: "120x120",
       type: "image/png"
     }
@@ -44,8 +44,8 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/robohand.png" sizes="any" />
-        <link rel="apple-touch-icon" href="/robohand.png" />
+        <link rel="icon" href="/feather.png" sizes="any" />
+        <link rel="apple-touch-icon" href="/feather.png" />
       </head>
       <body className={cn("bg-secondary", inter.className)}>
         <NextAuthProvider>

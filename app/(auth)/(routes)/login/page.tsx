@@ -66,7 +66,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center space-y-2 mb-6">
           <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg mb-4">
             <Image 
-              src="/robohand.png" 
+              src="/feather.png" 
               alt="Logo" 
               fill
               className="object-cover"
@@ -74,7 +74,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-white/80">v0.2.14</p>
+            <p className="text-white/80">v0.3.2</p>
             <Link 
               href="/updates" 
               className="text-white/80 hover:text-white underline text-sm"
