@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/navbar"
 import { Sidebar } from "@/components/sidebar"
 import { checkSubscription } from "@/lib/subscription"
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers"
 import { redirect } from "next/navigation"
 
 const ChatLayout = async ({ children }: { children: React.ReactNode }) => {

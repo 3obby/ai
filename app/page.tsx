@@ -1,4 +1,4 @@
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 // Force dynamic rendering for authentication check
@@ -9,7 +9,7 @@ export default async function HomePage() {
   const session = await auth()
   
   // If authenticated, redirect to dashboard
-  if (session?.userId) {
+  if (session?.user?.id) {
     redirect("/dashboard")
   } else {
     // If not authenticated, redirect to login

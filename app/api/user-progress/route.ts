@@ -1,4 +1,4 @@
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers";
 import prismadb from "@/lib/prismadb"
 import { NextResponse } from "next/server"
 import {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
-import axios from "axios"
+import { signIn } from "next-auth/react"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -18,12 +18,22 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await axios.post("/api/auth/login", { email })
-      setEmailSent(true)
-      toast({
-        title: "Magic link sent!",
-        description: "Check your email for a login link.",
+      // Use NextAuth's signIn with email provider for magic link
+      const result = await signIn("email", { 
+        email, 
+        redirect: false,
+        callbackUrl: "/dashboard"
       })
+
+      if (result?.ok) {
+        setEmailSent(true)
+        toast({
+          title: "Magic link sent!",
+          description: "Check your email for a login link.",
+        })
+      } else {
+        throw new Error(result?.error || "Failed to send login link")
+      }
     } catch (error) {
       console.error(error)
       toast({

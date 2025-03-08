@@ -1,4 +1,4 @@
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers";
 import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { absoluteUrl } from "@/lib/utils"

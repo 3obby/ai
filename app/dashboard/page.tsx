@@ -2,7 +2,7 @@ import prismadb from "@/lib/prismadb"
 import { Categories } from "@/components/categories"
 import { Companions } from "@/components/companions"
 import { SearchInput } from "@/components/search-input"
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation"
 
 // Force dynamic rendering for this route since it requires authentication

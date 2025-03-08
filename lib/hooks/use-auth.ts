@@ -1,33 +1,19 @@
-import { useCurrentUser } from "./use-current-user"
+import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
 
 export function useAuth() {
-  const { user, isLoading } = useCurrentUser()
+  const { data: session, status } = useSession()
   const router = useRouter()
-  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    if (!isLoading) {
-      setIsSignedIn(!!user)
-    }
-  }, [user, isLoading])
-
-  const signOut = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" })
-      router.push("/login")
-      router.refresh()
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
-  }
+  const isLoading = status === "loading"
 
   return {
-    userId: user?.id,
+    userId: session?.user?.id,
     isLoaded: !isLoading,
-    isSignedIn: isSignedIn,
-    user,
-    signOut,
+    isSignedIn: !!session?.user,
+    user: session?.user,
+    signOut: () => {
+      signOut({ callbackUrl: "/login" })
+      router.refresh()
+    },
   }
 }

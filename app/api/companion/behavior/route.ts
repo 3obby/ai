@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { auth } from "@/lib/server-auth";
+import { auth } from "@/lib/auth-helpers";
 import prismadb from "@/lib/prismadb";
 
 const XP_REQUIRED = 15;

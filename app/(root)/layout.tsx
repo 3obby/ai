@@ -1,8 +1,9 @@
+import { auth } from "@/lib/auth-helpers"
+import { redirect } from "next/navigation"
+
 import { Navbar } from "@/components/navbar"
 import { Sidebar } from "@/components/sidebar"
 import { checkSubscription } from "@/lib/subscription"
-import { auth } from "@/lib/server-auth"
-import { redirect } from "next/navigation"
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const isPro = await checkSubscription()

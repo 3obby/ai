@@ -1,6 +1,6 @@
 import axios from "axios"
 import SubscribeClient from "./components/subscribe-client"
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation"
 
 export default async function SubscribePage() {

@@ -14,6 +14,7 @@ import {
 interface ChatLimitProps {
   userId: string
   onXpChange?: (newXp: number) => void
+  className?: string
 }
 
 interface UserProgress {
@@ -27,7 +28,7 @@ interface UserProgress {
   isSubscribed: boolean
 }
 
-export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
+export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [progress, setProgress] = useState<UserProgress | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -123,7 +124,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
   // Show loading state if no progress data is available yet
   if (!progress) {
     return (
-      <div className="flex items-center gap-x-2">
+      <div className={`flex items-center gap-x-2 ${className || ''}`}>
         <div className="h-4 w-4 animate-pulse bg-secondary rounded-full"></div>
         <span className="text-xs text-muted-foreground">
           {fetchError ? `Error: ${fetchError}` : "Loading..."}
@@ -161,7 +162,7 @@ export const ChatLimit = ({ userId, onXpChange }: ChatLimitProps) => {
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${className || ''}`}>
       {/* Desktop view - Simplified to only show tokens */}
       <div
         className={`hidden md:flex items-center gap-x-4 cursor-pointer px-2 ${

@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth-options"
 
-export async function GET(req: Request) {
+// Force Node.js runtime to support jsonwebtoken
+export const runtime = 'nodejs';
+
+export async function GET() {
   try {
-    const user = await getCurrentUser(req)
+    const session = await getServerSession(authOptions)
 
-    if (!user) {
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      image: user.image,
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      image: session.user.image,
     })
   } catch (error) {
     console.error("[GET_CURRENT_USER_ERROR]", error)

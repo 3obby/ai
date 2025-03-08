@@ -30,6 +30,37 @@ class EdgeCompatPrismaClient {
     upsert: () => { throw this.edgeError() },
   }
   
+  // NextAuth required models
+  verificationToken = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
+  account = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
+  session = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
   // User usage model for edge compatibility with webhook
   userUsage = {
     findUnique: () => { throw this.edgeError() },

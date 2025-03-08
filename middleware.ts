@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server"
-import { getSessionFromCookie } from "./lib/auth"
+import { getToken } from "next-auth/jwt"
 import type { NextRequest } from "next/server"
 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/nextjs/middleware for more information about configuring your middleware
-export function middleware(request: NextRequest) {
+// Force Node.js runtime to support jsonwebtoken
+export const runtime = 'nodejs';
+
+// This handles authentication protection for routes
+export async function middleware(request: NextRequest) {
   // Public routes that don't require authentication
   const publicPaths = [
     "/",
     "/login",
-    "/api/auth/login",
-    "/api/auth/verify",
+    "/register",
+    "/api/auth",
     "/api/webhook",
-    "/api/webhook/clerk",
     "/subscribe",
   ]
 
@@ -29,11 +29,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check for authenticated session
-  const session = getSessionFromCookie(request)
+  // Get session token using NextAuth's getToken
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
 
-  // If no session found and not on a public path, redirect to login
-  if (!session) {
+  // If no token found and not on a public path, redirect to login
+  if (!token) {
     url.pathname = "/login"
     return NextResponse.redirect(url)
   }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
-import axios from "axios"
+import { signIn } from "next-auth/react"
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
@@ -17,12 +17,22 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await axios.post("/api/auth/login", { email })
-      setEmailSent(true)
-      toast({
-        title: "Registration successful!",
-        description: "Check your email for a login link.",
+      // Use NextAuth's signIn with email provider for magic link
+      const result = await signIn("email", { 
+        email, 
+        redirect: false,
+        callbackUrl: "/dashboard" 
       })
+
+      if (result?.ok) {
+        setEmailSent(true)
+        toast({
+          title: "Registration successful!",
+          description: "Check your email for a login link.",
+        })
+      } else {
+        throw new Error(result?.error || "Failed to register")
+      }
     } catch (error) {
       console.error(error)
       toast({
@@ -43,14 +53,14 @@ export default function RegisterPage() {
             Create an Account
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Join GroupChatBotBuilder today
+            Sign up to get started with GroupChatBotBuilder
           </p>
         </div>
 
         {emailSent ? (
           <div className="text-center p-4 border rounded-md bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300">
             <h3 className="font-medium">Check your email</h3>
-            <p className="mt-2">We&apos;ve sent a magic link to {email}</p>
+            <p className="mt-2">We've sent a magic link to {email}</p>
             <p className="mt-1 text-sm">
               Click the link in your email to complete registration
             </p>
@@ -70,7 +80,7 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending link..." : "Sign Up with Email"}
+              {isLoading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
         )}

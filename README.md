@@ -31,7 +31,7 @@ GroupChatBotBuilder is a Next.js toolbox gpt wrapper
 
 - Node.js
 - OpenAI API key
-- Clerk for authentication
+- NextAuth.js for authentication with Magic Link Email
 - Stripe for payments (optional)
 - PostgreSQL database
 
@@ -40,22 +40,26 @@ GroupChatBotBuilder is a Next.js toolbox gpt wrapper
 Create a `.env` file with:
 
 ```bash
-# Authentication (Clerk)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
+# Authentication (NextAuth)
+NEXTAUTH_SECRET=your_secret_here
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL_PRODUCTION=https://yourdomain.com
+
+# Email provider (Postmark)
+POSTMARK_API_KEY=your_postmark_api_key
 
 # OpenAI
-OPENAI_API_KEY=
+OPENAI_API_KEY=your_openai_api_key
 
 # Database (PostgreSQL)
-DATABASE_URL=
+DATABASE_URL=your_database_connection_string
 
 # Stripe (Optional)
-STRIPE_API_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID=
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
-NEXT_PUBLIC_STRIPE_ULTIMATE_PRICE_ID=
+STRIPE_API_KEY=your_stripe_api_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID=price_id_for_starter
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_id_for_pro
+NEXT_PUBLIC_STRIPE_ULTIMATE_PRICE_ID=price_id_for_ultimate
 ```
 
 ### Installation

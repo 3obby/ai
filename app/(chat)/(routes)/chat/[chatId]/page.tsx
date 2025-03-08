@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers"
 
 import prismadb from "@/lib/prismadb"
 

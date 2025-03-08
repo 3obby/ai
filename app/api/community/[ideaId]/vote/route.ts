@@ -1,5 +1,5 @@
-import { auth } from "@/lib/server-auth";
 import { NextResponse } from "next/server"
+import { auth } from "@/lib/auth-helpers"
 import prismadb from "@/lib/prismadb"
 
 const UPVOTE_COST = 10000
@@ -10,13 +10,12 @@ export async function PATCH(
   { params }: { params: { ideaId: string } }
 ) {
   try {
-    const session = await auth();
-const userId = session?.userId;
-const user = session?.user;
+    const session = await auth()
+    const userId = session?.userId
     const body = await req.json()
     const { voteType } = body // 'up' or 'down'
 
-    if (!user || !userId) {
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -62,7 +61,7 @@ const user = session?.user;
 
     return NextResponse.json(idea)
   } catch (error) {
-    console.log("[COMMUNITY_VOTE_PATCH]", error)
+    console.log("[COMMUNITY_VOTE_POST]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

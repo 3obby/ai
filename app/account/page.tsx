@@ -7,11 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { getCurrentUser } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import prismadb from "@/lib/prismadb";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
+
+// Add type for transaction
+interface UsageTransaction {
+  id: string;
+  userId: string;
+  amount: number;
+  createdAt: Date;
+}
 
 async function getAccountData(userId: string) {
   // Get user data, subscription and usage information
@@ -35,29 +42,14 @@ async function getAccountData(userId: string) {
 }
 
 export default async function AccountPage() {
-  // Check if user is authenticated using the server-side cookies API
-  const cookieStore = cookies();
-  const authToken = cookieStore.get("auth-token")?.value;
+  // Get the session using NextAuth
+  const session = await auth();
   
-  // Create a mock request with the auth token
-  const request = {
-    headers: {
-      get: (name: string) => {
-        if (name.toLowerCase() === "cookie") {
-          return authToken ? `auth-token=${authToken}` : "";
-        }
-        return null;
-      }
-    }
-  } as Request;
-  
-  const user = await getCurrentUser(request);
-  
-  if (!user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 
-  const { userSubscription, userUsage, transactions } = await getAccountData(user.id);
+  const { userSubscription, userUsage, transactions } = await getAccountData(session.user.id);
 
   // Get subscription renewal date (if available)
   const subscriptionDate = userSubscription?.stripeCurrentPeriodEnd 
@@ -132,157 +124,110 @@ export default async function AccountPage() {
             
             <Card>
               <CardHeader>
-                <CardTitle>Subscription</CardTitle>
+                <CardTitle>Recent Activity</CardTitle>
                 <CardDescription>
-                  Your current plan
+                  Your latest transactions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-xl font-semibold">
-                  {userSubscription 
-                    ? (userSubscription.subscriptionType 
-                        ? userSubscription.subscriptionType.charAt(0).toUpperCase() + userSubscription.subscriptionType.slice(1) 
-                        : "Standard") 
-                    : "Free"} Plan
+                <div className="space-y-2">
+                  {transactions.length > 0 ? (
+                    transactions.map((transaction: UsageTransaction, index: number) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>
+                          {new Date(transaction.createdAt).toLocaleDateString()}
+                        </span>
+                        <span className={transaction.amount > 0 ? "text-green-500" : "text-red-500"}>
+                          {transaction.amount > 0 ? "+" : ""}{transaction.amount} tokens
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No recent transactions</p>
+                  )}
                 </div>
-                {subscriptionDate && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Renews: {subscriptionDate.toLocaleDateString()}
-                  </p>
-                )}
               </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="mt-2">
-                  Manage Plan
-                </Button>
-              </CardFooter>
             </Card>
           </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>
-                Your recent token transactions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {transactions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  No transactions found.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left font-medium p-2">Date</th>
-                        <th className="text-left font-medium p-2">Transaction ID</th>
-                        <th className="text-left font-medium p-2">Type</th>
-                        <th className="text-right font-medium p-2">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map((transaction) => (
-                        <tr key={transaction.id} className="border-b hover:bg-muted/50">
-                          <td className="p-2 text-sm">
-                            {new Date(transaction.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="p-2 text-sm font-mono text-xs">
-                            {transaction.id.substring(0, 8)}...
-                          </td>
-                          <td className="p-2 text-sm">
-                            {transaction.amount > 0 ? "Credit" : "Debit"}
-                          </td>
-                          <td className="p-2 text-sm text-right">
-                            <span className={transaction.amount > 0 ? "text-green-500" : "text-red-500"}>
-                              {transaction.amount > 0 ? "+" : ""}{transaction.amount} tokens
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
         
-        <TabsContent value="subscription" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
+        <TabsContent value="subscription" className="space-y-4 mt-6">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Subscription Details</CardTitle>
+                <CardTitle>Current Plan</CardTitle>
                 <CardDescription>
-                  Manage your subscription plan
+                  Your subscription details
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1">
-                  <Label>Current Plan</Label>
-                  <div className="font-medium">
-                    {userSubscription 
-                      ? (userSubscription.subscriptionType 
-                          ? userSubscription.subscriptionType.charAt(0).toUpperCase() + userSubscription.subscriptionType.slice(1) 
-                          : "Standard") 
-                      : "Free"} Plan
+                  <div className="font-semibold">
+                    {userSubscription ? (
+                      userSubscription.subscriptionType === "standard" ? "Standard Plan" : 
+                      userSubscription.subscriptionType === "pro" ? "Pro Plan" : 
+                      userSubscription.subscriptionType === "ultimate" ? "Ultimate Plan" : 
+                      "Free Plan"
+                    ) : "Free Plan"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {userSubscription ? (
+                      `$${userSubscription.price.toFixed(2)} per month`
+                    ) : "No active subscription"}
                   </div>
                 </div>
+                
+                {subscriptionDate && (
+                  <div className="space-y-1">
+                    <div className="font-semibold">Next Billing Date</div>
+                    <div className="text-sm">
+                      {subscriptionDate.toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="space-y-1">
-                  <Label>Price</Label>
-                  <div className="font-medium">
-                    ${userSubscription?.price?.toFixed(2) || "0.00"} / month
+                  <div className="font-semibold">Included Tokens</div>
+                  <div className="text-sm">
+                    {userSubscription?.includeBaseTokens?.toLocaleString() || 0} tokens per month
                   </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <Label>Included Tokens</Label>
-                  <div className="font-medium">
-                    {userSubscription?.includeBaseTokens?.toLocaleString() || "0"} tokens / month
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <Label>Next Billing Date</Label>
-                  <div className="font-medium">
-                    {subscriptionDate ? subscriptionDate.toLocaleDateString() : "N/A"}
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <Label>Subscription Calendar</Label>
-                  <div className="border rounded-md overflow-hidden">
-                    <Calendar
-                      mode="single"
-                      selected={subscriptionDate || undefined}
-                      classNames={{
-                        day_selected: "bg-green-500 text-primary-foreground hover:bg-green-500 hover:text-primary-foreground focus:bg-green-500 focus:text-primary-foreground",
-                      }}
-                      modifiers={{
-                        subscription: subscriptionDates,
-                      }}
-                      modifiersStyles={{
-                        subscription: {
-                          backgroundColor: "rgba(34, 197, 94, 0.2)",
-                          fontWeight: "bold",
-                          borderRadius: "0",
-                        }
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground italic">
-                    Green dates indicate subscription renewals
-                  </p>
                 </div>
               </CardContent>
-              <CardFooter className="space-x-2">
-                <Button variant="outline">Cancel Plan</Button>
-                <Button>Upgrade Plan</Button>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" size="sm">
+                  Manage Subscription
+                </Button>
+                {userSubscription && (
+                  <Button variant="outline" size="sm">
+                    Cancel
+                  </Button>
+                )}
               </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Billing Calendar</CardTitle>
+                <CardDescription>
+                  View your billing cycle
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={subscriptionDate || undefined}
+                  className="rounded-md border"
+                  disabled={(date) => {
+                    // Disable all dates except subscription dates
+                    return !subscriptionDates.some(
+                      (subDate) => 
+                        date.getDate() === subDate.getDate() && 
+                        date.getMonth() === subDate.getMonth() && 
+                        date.getFullYear() === subDate.getFullYear()
+                    );
+                  }}
+                />
+              </CardContent>
             </Card>
             
             <Card>
@@ -314,11 +259,11 @@ export default async function AccountPage() {
                     </div>
                   </div>
                   
-                  <div className="border rounded-md p-4 hover:bg-accent cursor-pointer bg-accent/50">
+                  <div className="border rounded-md p-4 hover:bg-accent cursor-pointer">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold">Standard Plan</h3>
-                        <p className="text-sm text-muted-foreground">Popular choice</p>
+                        <p className="text-sm text-muted-foreground">For regular users</p>
                       </div>
                       <div className="text-right">
                         <div className="font-bold">$9.99</div>
@@ -332,16 +277,16 @@ export default async function AccountPage() {
                         <li>• Priority support</li>
                       </ul>
                     </div>
-                    <div className="mt-2">
-                      <span className="inline-block px-2 py-1 bg-green-500 text-white text-xs rounded-full">Current Plan</span>
-                    </div>
                   </div>
                   
-                  <div className="border rounded-md p-4 hover:bg-accent cursor-pointer">
+                  <div className="border rounded-md p-4 bg-accent cursor-pointer">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold">Pro Plan</h3>
                         <p className="text-sm text-muted-foreground">For power users</p>
+                        <div className="inline-block bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded mt-1">
+                          POPULAR
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="font-bold">$19.99</div>
@@ -351,7 +296,7 @@ export default async function AccountPage() {
                     <div className="mt-2 text-sm">
                       <ul className="space-y-1">
                         <li>• 3,000,000 tokens included</li>
-                        <li>• All features + exclusive content</li>
+                        <li>• All features + advanced tools</li>
                         <li>• Premium support</li>
                       </ul>
                     </div>
@@ -376,7 +321,7 @@ export default async function AccountPage() {
                 <Input
                   id="email"
                   placeholder="Your email address"
-                  defaultValue={user.email}
+                  defaultValue={session.user.email || ""}
                   disabled
                 />
                 <p className="text-xs text-muted-foreground">
@@ -389,7 +334,7 @@ export default async function AccountPage() {
                 <Input
                   id="name"
                   placeholder="Your name"
-                  defaultValue={user.name || ""}
+                  defaultValue={session.user.name || ""}
                 />
               </div>
               
