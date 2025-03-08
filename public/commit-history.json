@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6320edc",
+      "fullHash": "6320edc34dac78df0b9f5c247985ed5ef8ea04a0",
+      "date": "2025-03-08 20:02:55 +0700",
+      "author": "3obby",
+      "message": "Test commit to verify hook fixes",
+      "category": "bugfix"
+    },
+    {
       "hash": "72d30f5",
       "fullHash": "72d30f5190bc5382499ee6081c29a92568edf219",
       "date": "2025-03-08 19:57:51 +0700",
