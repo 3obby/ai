@@ -120,19 +120,30 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => toast({
+                title: "Provider unavailable",
+                description: "Google login is pending review",
+                variant: "destructive",
+              })}
+              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white opacity-50 cursor-not-allowed"
+              disabled={true}
             >
               <FcGoogle className="h-5 w-5" />
             </Button>
             <Button 
               variant="outline"
-              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => toast({
+                title: "Provider unavailable",
+                description: "GitHub login is pending review",
+                variant: "destructive",
+              })}
+              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white opacity-50 cursor-not-allowed"
+              disabled={true}
             >
               <Github className="h-5 w-5" />
             </Button>
           </div>
+          <p className="text-center text-xs text-white/50 italic">OAuth providers pending review</p>
         </div>
       </div>
     )
