@@ -4,6 +4,10 @@ import OpenAI from "openai"
 import prismadb from "@/lib/prismadb"
 import { Companion } from "@prisma/client"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const XP_PER_MESSAGE = 2
 
 // Replace this with a function to determine if the bot has something meaningful to say

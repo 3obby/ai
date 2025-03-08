@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // Regular server route (not Edge) for database operations
 export async function POST(req: Request) {
   try {

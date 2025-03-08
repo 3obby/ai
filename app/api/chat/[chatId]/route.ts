@@ -9,6 +9,10 @@ import { StreamingTextResponse } from "ai"
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 dotenv.config({ path: `.env` })
 
 const XP_PER_MESSAGE = 2

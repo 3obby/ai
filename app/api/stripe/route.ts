@@ -5,6 +5,10 @@ import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
 import { absoluteUrl } from "@/lib/utils";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const settingsUrl = absoluteUrl("/");
 
 export async function POST(req: Request) {

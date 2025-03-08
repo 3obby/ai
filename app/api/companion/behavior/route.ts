@@ -3,6 +3,10 @@ import OpenAI from "openai";
 import { auth } from "@/lib/auth-helpers";
 import prismadb from "@/lib/prismadb";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const XP_REQUIRED = 15;
 
 const openai = new OpenAI({

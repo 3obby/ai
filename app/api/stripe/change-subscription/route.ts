@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const PRICE_IDS = {
   starter: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID,
   pro: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,

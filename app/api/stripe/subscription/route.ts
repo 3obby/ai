@@ -7,6 +7,10 @@ import { stripe } from "@/lib/stripe"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 import { absoluteUrl } from "@/lib/utils"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const settingsUrl = absoluteUrl("/")
 const subscribeUrl = absoluteUrl("/subscribe")
 

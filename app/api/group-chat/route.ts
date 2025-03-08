@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth-helpers";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const { name, initialCompanionId } = await request.json();

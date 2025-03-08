@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth-helpers";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const IDEA_SUBMISSION_COST = 20000
 
 export async function POST(req: Request) {

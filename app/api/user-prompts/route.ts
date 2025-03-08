@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth-helpers";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // GET - Fetch all prompts for the current user
 export async function GET(req: Request) {
   try {

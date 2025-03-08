@@ -6,6 +6,10 @@ import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // Use the new route segment config format
 export const runtime = "edge"
 export const maxDuration = 60 // Allow more time for webhook processing

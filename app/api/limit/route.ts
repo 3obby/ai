@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth-helpers";
 import { NextResponse } from "next/server";
 import { getUserMessageLimit } from "@/lib/rate-limit";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const session = await auth();

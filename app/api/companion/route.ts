@@ -4,6 +4,10 @@ import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import { checkSubscription } from "@/lib/subscription";
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const XP_REQUIRED_FOR_CREATION = 100;
 
 export async function POST(req: Request) {

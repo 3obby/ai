@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth-options"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // Force Node.js runtime to support jsonwebtoken
 export const runtime = 'nodejs';
 

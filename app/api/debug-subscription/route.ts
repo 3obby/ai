@@ -4,6 +4,10 @@ import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import { checkSubscription } from "@/lib/subscription"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const session = await auth();

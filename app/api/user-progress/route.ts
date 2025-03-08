@@ -8,6 +8,9 @@ import {
 } from "@/lib/level-system"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // Non-subscribed users get this many free tokens
 const FREE_TOKEN_ALLOWANCE = 10000
 const DAY_IN_MS = 86_400_000

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-helpers"
 import prismadb from "@/lib/prismadb"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 const UPVOTE_COST = 10000
 const DOWNVOTE_COST = 3000
 

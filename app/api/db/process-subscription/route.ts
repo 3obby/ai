@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
 
+
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 // Regular server route (not Edge) for database operations
 export async function POST(req: Request) {
   try {
