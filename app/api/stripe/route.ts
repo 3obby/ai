@@ -10,6 +10,7 @@ import { absoluteUrl } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const settingsUrl = absoluteUrl("/");
+const dashboardUrl = absoluteUrl("/dashboard");
 
 export async function POST(req: Request) {
   try {
@@ -22,23 +23,23 @@ const user = session?.user;
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Create a one-time payment session
+    // Create Checkout Session
     const stripeSession = await stripe.checkout.sessions.create({
       success_url: settingsUrl,
-      cancel_url: settingsUrl,
+      cancel_url: dashboardUrl,
       payment_method_types: ["card"],
-      mode: "payment", // Changed from subscription to one-time payment
+      mode: "payment",
       billing_address_collection: "auto",
-      customer_email: user.emailAddresses[0].emailAddress,
+      customer_email: user.email || '',
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "USD",
             product_data: {
               name: `${xpAmount} XP Package`,
               description: `One-time purchase of ${xpAmount} XP`,
             },
-            unit_amount: priceAmount, // Amount in cents
+            unit_amount: Math.round(priceAmount * 100),
           },
           quantity: 1,
         },

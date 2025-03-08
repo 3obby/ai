@@ -27,9 +27,9 @@ const user = session?.user;
       success_url: settingsUrl,
       cancel_url: settingsUrl,
       payment_method_types: ["card"],
-      mode: "payment", // One-time payment
+      mode: "payment", // Changed from subscription to one-time payment
       billing_address_collection: "auto",
-      customer_email: user.emailAddresses[0].emailAddress,
+      customer_email: user.email || '',
       line_items: [
         {
           price_data: {

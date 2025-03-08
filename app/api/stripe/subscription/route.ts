@@ -17,8 +17,8 @@ const subscribeUrl = absoluteUrl("/subscribe")
 export async function POST(req: Request) {
   try {
     const session = await auth();
-const userId = session?.userId;
-const user = session?.user;
+    const userId = session?.userId;
+    const user = session?.user;
     const { priceAmount } = await req.json()
 
     if (!userId || !user) {
@@ -35,8 +35,8 @@ const user = session?.user;
     // If user doesn't have a Stripe customer ID, create one
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
-        email: user.emailAddresses[0].emailAddress,
-        name: `${user.firstName} ${user.lastName}`,
+        email: user.email || '',
+        name: user.name || 'Customer',
         metadata: {
           userId,
         },

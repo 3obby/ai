@@ -73,7 +73,7 @@ export async function POST(
         ]
 
     // Store the user message first
-    await prismadb.message.create({
+    await (prismadb.message as any).create({
       data: {
         content:
           allMessages[allMessages.length - 1]?.content || "(no user input)",
@@ -92,7 +92,7 @@ export async function POST(
       },
     })
 
-    await prismadb.companion.update({
+    await (prismadb.companion as any).update({
       where: { id: params.chatId },
       data: { xpEarned: { increment: XP_PER_MESSAGE } },
     })
@@ -113,7 +113,7 @@ export async function POST(
     const responseContent = completion.choices[0].message.content || "";
 
     // Save the message to the database
-    await prismadb.message.create({
+    await (prismadb.message as any).create({
       data: {
         content: responseContent,
         role: "assistant" as Role,
@@ -144,7 +144,7 @@ export async function DELETE(
     }
 
     // Delete all messages for this chat
-    await prismadb.message.deleteMany({
+    await (prismadb.message as any).deleteMany({
       where: {
         companionId: params.chatId,
         userId: userId,
