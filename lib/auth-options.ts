@@ -108,26 +108,28 @@ export const authOptions: NextAuthOptions = {
 
       return session;
     },
-    async jwt({ token, user }) {
-      // Fix the TypeScript error by adding a type check
-      const email = token.email ? token.email : undefined;
-      
-      const dbUser = user || await prismadb.user.findFirst({
-        where: {
-          email,
-        },
-      });
+    async jwt({ token, user, account, profile }) {
+      // If user object exists, it means this is called after a successful sign-in
+      if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
 
-      if (!dbUser) {
-        return token;
+        // Update image from OAuth provider if available
+        if (account?.provider === 'google' && profile && 'picture' in profile) {
+          const googlePicture = profile.picture as string;
+          token.picture = googlePicture;
+          
+          // Also update in database
+          await prismadb.user.update({
+            where: { id: user.id },
+            data: { image: googlePicture }
+          });
+        }
       }
-
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image,
-      };
+      
+      return token;
     },
   },
 }; 
