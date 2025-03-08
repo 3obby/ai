@@ -1,804 +1,804 @@
 {
   "commits": [
     {
-      "hash": "8332239",
-      "fullHash": "833223977348bcb04f914dc607531b51ec76cbd3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "31042a0",
+      "fullHash": "31042a03e9c6380166f7a06acf56f39ba89506ba",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "5bff78c",
-      "fullHash": "5bff78c6b5a0b1c1d628f68f73c77a3b527f850b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a68d6bb",
+      "fullHash": "a68d6bb3af3d38398645c77d35aff5b74fcc41c7",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "1e97070",
-      "fullHash": "1e970700ed1878f3e97b66929149e4133645b176",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "7c46c68",
+      "fullHash": "7c46c68f4cc531d8491d720b81f368d2f93b85b8",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7c42024",
-      "fullHash": "7c420241136e304fa9599a93f40095ff898562b5",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "c23414e",
+      "fullHash": "c23414eab058dfb5f93a40306dad0eed7e08be7b",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "5cdce5b",
-      "fullHash": "5cdce5b7372668a157dbdafcb0de53459bb384aa",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "438806f",
+      "fullHash": "438806fe2caaed8994ce1fe8d6ca6c9e76187962",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "8550a7e",
-      "fullHash": "8550a7e10d5ca5672c29730f5f1678edf8e43bd7",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "dc74b28",
+      "fullHash": "dc74b287db08970d113b22a8df6ecff7d0a631f5",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "5774126",
-      "fullHash": "57741268f6dbd9a03e0627da64c33d613214739f",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1242eec",
+      "fullHash": "1242eec43a7e68b64ba79dbac3d6ea14d0ff07f6",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "562fbf5",
-      "fullHash": "562fbf5277fe9cbdde7913c308abeebc5898c07d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "cf702b5",
+      "fullHash": "cf702b5e2e7487551cf37ee765b9d085e6f9ddf4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "d8d4dc6",
-      "fullHash": "d8d4dc6320ab448aa5a74ad89de994907ddd6115",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "72529c5",
+      "fullHash": "72529c53c126eadb055f20bfac2fff0536af3b3d",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "d56f4d8",
-      "fullHash": "d56f4d8e1c418f37b4a2c3db1a6574f6c0566988",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "00d1d56",
+      "fullHash": "00d1d562163c7b9fff2686da2b3b84840a1a1bf6",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "40d4761",
-      "fullHash": "40d4761ca3b07964d2a8dc451faa7ca75f227401",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "7209085",
+      "fullHash": "720908515318bc262edc9e5eed8fcdb4b641418a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "b794692",
-      "fullHash": "b794692717b6e2b438e79819c7cace531c0ba435",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "6c33a59",
+      "fullHash": "6c33a595f6149e5a944eaec9fbaf5e3f376da617",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "55ba379",
-      "fullHash": "55ba37982ccae319a8ab4b2c480acc9d198d1b01",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "f9653dd",
+      "fullHash": "f9653dd958b485d6597e534676a12431d4291193",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "a19efa6",
-      "fullHash": "a19efa69697a166993e67efb87b2c87ac4dd1246",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "ce25e36",
+      "fullHash": "ce25e36685f622665049a2e2ab36a3a950363268",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "306dddb",
-      "fullHash": "306dddbe070bbd58639dacba395c6f3b2323a2d9",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "d6a80a7",
+      "fullHash": "d6a80a78734c092462565d4e5686ab4b6a65d46c",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "5531478",
-      "fullHash": "55314783721f42475d865c2e9d9a3ff2d23eb5da",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "3fec345",
+      "fullHash": "3fec345625b440eaeeba883f97fbc3e6458fe239",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "a86d054",
-      "fullHash": "a86d0545701acc839bf078674bd7fad493a5b990",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "ea9eab4",
+      "fullHash": "ea9eab4dadf31df73694ed64270472a5616263f8",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "d28f93b",
-      "fullHash": "d28f93b0b6cf53bc5bbc074d939137bdd8a66f1b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "e8e6e10",
+      "fullHash": "e8e6e10b596c42549bd480c7c2d7acce3d4f94e4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2194568",
-      "fullHash": "21945685a2da7127b2242dcbba2b70b4c159249a",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "abacae2",
+      "fullHash": "abacae2db9ec9c4903784bebb9238c9ee4bb5983",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "647c633",
-      "fullHash": "647c633bbb5729643c681554f7bcd5b1438a92c8",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9af3aae",
+      "fullHash": "9af3aae45249da0fe79dc36f77f82054594150c0",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "54eb803",
-      "fullHash": "54eb8037b562d62353492511f003756c8270d287",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "18ea6c7",
+      "fullHash": "18ea6c7f31514cf4d8fc6679862c01b1d896c447",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "57510f8",
-      "fullHash": "57510f8c5071dd094104792bbf0e182dd0a84e89",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "72e11f2",
+      "fullHash": "72e11f2b9a1962a900a78fc7b145a203a180a6de",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7be9459",
-      "fullHash": "7be945914db9c9ed88c21ff258a59e417724d82b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "92e0bf6",
+      "fullHash": "92e0bf602cff90972f814a7d9bba567ec84f25d2",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2fe592c",
-      "fullHash": "2fe592ca7d93b7581e3f2bb5ffba6e1f7adefec6",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "15ee016",
+      "fullHash": "15ee01609af45a6f3e2df87a2620576194033dcd",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "65539c5",
-      "fullHash": "65539c5e029e7ada7da8c21c14bbe2e7fa51c4b8",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "8d14ac5",
+      "fullHash": "8d14ac5592f82448a026bc80264bbbb925a36015",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "e2c06a1",
-      "fullHash": "e2c06a17b3865dfaf5296a10cabd5f6cf47ed3bf",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "f2be429",
+      "fullHash": "f2be42914fbfc52c6b71896ec697bbac829efc91",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "c6f2ad9",
-      "fullHash": "c6f2ad972a328736dd325e93c7a78c33915940e6",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "667053a",
+      "fullHash": "667053a46a67ab310a903a9164ee9ecce8ea80f2",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "90d36ca",
-      "fullHash": "90d36ca54fd64d906c84afbb0ce2c247ac301726",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "01ef2ff",
+      "fullHash": "01ef2ff1c7e3a5aca95b76f6c35405aaa3ab69c3",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "89c5da8",
-      "fullHash": "89c5da8dd073e4683170139f8b9920efcd230ffe",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "b1bb04e",
+      "fullHash": "b1bb04e1ac3fc5b707328ce5d80ad070fe717ed4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4eaa7b2",
-      "fullHash": "4eaa7b28be6701a656070e5db0cbf32a47e39c84",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "2e7753f",
+      "fullHash": "2e7753f21393a5a4d6b2aa3ac417ba4a19a8d060",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "b27804b",
-      "fullHash": "b27804b03aace59fefb0a0cf6eff97ec7b4cbbc3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "78e8f82",
+      "fullHash": "78e8f82fa28ad691ba9ec4be674d89b5e90ecbc2",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7df643c",
-      "fullHash": "7df643cd66beb4d786748a64dfcafdd42cd7cc9d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9c6cfd2",
+      "fullHash": "9c6cfd232b3fc42ae3740689640320e364a95fe4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "9fa40e1",
-      "fullHash": "9fa40e1b361ae371505c4cc5ccceac975decc8ae",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "26911cf",
+      "fullHash": "26911cf8ffa8e8053796d95525375df80d04eb1a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "f164fec",
-      "fullHash": "f164fec0a0c89ac846978bee54acc488dd214e68",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "d2d9678",
+      "fullHash": "d2d967863b05eb1ad9a58f24809aa8cac3f6b01f",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "81581d2",
-      "fullHash": "81581d21f04eb55cbc4f55f15c738fcc981aa743",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a839f00",
+      "fullHash": "a839f0018db1092d22dd220e0bf53440d2106d22",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "24099e3",
-      "fullHash": "24099e31d42ce858932b17e438d3c96020e28160",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "7ec7828",
+      "fullHash": "7ec78284a0a90bd2e7a46c85f2317d551f652736",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "8a14a12",
-      "fullHash": "8a14a12db0e39058a0a34b4a6af341a9019d6a46",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "62790e2",
+      "fullHash": "62790e22f231a34c733e20b5ae15385b24f3db09",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "f46da91",
-      "fullHash": "f46da91d5a693d9cd4dc86c6ea66c131afab724f",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "fc0d179",
+      "fullHash": "fc0d179384a31ccbbdeb7f4427b52aacd5ddc6bb",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "07106c7",
-      "fullHash": "07106c724ce8022058a4c06018227264422c823f",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "70fce74",
+      "fullHash": "70fce749490a83568b1ce1c69501222305628487",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7181dd7",
-      "fullHash": "7181dd7ac15c1a2c8bd06087812a4dfd7988296e",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "6438f40",
+      "fullHash": "6438f40da336f5cfb006cec77d4bf15a38e077d2",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "207b596",
-      "fullHash": "207b5969db4291af0874ce0742425c3e38f4bb4e",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "346248c",
+      "fullHash": "346248c2e8a467150a3ff05e8bde37a98e806002",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2635e5b",
-      "fullHash": "2635e5ba1343e21b494428086e326c52dc5e9ced",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "310ec29",
+      "fullHash": "310ec295540e01b02e9440aac1baf97a4167cd64",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "e6af26f",
-      "fullHash": "e6af26f37cea3e29444149774a105d4522fe44ae",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "782150c",
+      "fullHash": "782150c4d1a63a138cadc57179f27410082cee39",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "818f831",
-      "fullHash": "818f83187d86cb73fcb83d4aa729f11d820173e2",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a1f35ce",
+      "fullHash": "a1f35ce6db94630e8c191d38ed43bf6a7efb7c12",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4998c44",
-      "fullHash": "4998c4448f5f8d5ee0cf26dbd0d39064ea26fc06",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9655640",
+      "fullHash": "96556403026e1f2daf38408070911b4348cfe914",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "58e2582",
-      "fullHash": "58e2582ed0b27d3b82b6a8d9b81372f70d79d7b7",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1e8006f",
+      "fullHash": "1e8006f07d87e038127adeadcf5991879fdb369a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "0661741",
-      "fullHash": "066174156ded7f8b6224d030deaf56890d5a7918",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "023b9c7",
+      "fullHash": "023b9c7cdb2e5f8aa604dc8d4eda67524213653d",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "285ef61",
-      "fullHash": "285ef61ff50e7af1963111e416e5bedcaea71c8f",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "3accaa9",
+      "fullHash": "3accaa93cbba981ebd64c915f745a11f5609ff16",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7bc8844",
-      "fullHash": "7bc88442be0aae95b6204824f9f2b15441181885",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "e3f5803",
+      "fullHash": "e3f580381ecf6c83c68efa2d26a77a02ffd878ad",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "d4a5455",
-      "fullHash": "d4a54559267a6bb3bc2ceed7691a9be26e09ffa6",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1b28a3d",
+      "fullHash": "1b28a3d89ce380b0c8b6e5aec1049bf2484bf55c",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "e01f6a0",
-      "fullHash": "e01f6a0214505232d3629fd269e81de102386d83",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "bfbaa1f",
+      "fullHash": "bfbaa1f318929d65b0b0275e4507cc9c3698c8f0",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "22a2eb3",
-      "fullHash": "22a2eb331c66c9e71c2545bebf1311d02fdb99cd",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "48cd94b",
+      "fullHash": "48cd94bd78c91f860dbf76d3973d26d22467742a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7b3cc22",
-      "fullHash": "7b3cc222c761e5653a74089c79baab7a4c68be9b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9efb861",
+      "fullHash": "9efb86176edb009bb1b543c3db099e284591033e",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2be405b",
-      "fullHash": "2be405bef66fd4449cebe2db3b11b8da3c2562fb",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1a3306b",
+      "fullHash": "1a3306b20a5e364853866f71516ee1ccef1edee4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "affb7be",
-      "fullHash": "affb7bec900092af3ef69b98e82ad32c41e01437",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "36ecd7e",
+      "fullHash": "36ecd7edd235508248cc89590ea4d4d7479677df",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "42bccaf",
-      "fullHash": "42bccaff77302a48cf0ae6fe1530e033db802d5b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "306f296",
+      "fullHash": "306f296956f88cd23c94301ad894080b50f893d8",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7ebcc9d",
-      "fullHash": "7ebcc9dcf50f1512ecafcf08be085f12d77924b4",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "cdf0dd1",
+      "fullHash": "cdf0dd1c6a351eb699e9736003857be3c7781a3a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "1907c8d",
-      "fullHash": "1907c8d39269b327e45385bafa8ccb58c4039966",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "6be5588",
+      "fullHash": "6be5588cf008c5846fb865b99eab7703111d2b7b",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7513a00",
-      "fullHash": "7513a003ea2651867ca6cdfcbb5f156db6941c19",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "f4284bd",
+      "fullHash": "f4284bd18cab93648e6207957059617b94c2b994",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "f8abfc9",
-      "fullHash": "f8abfc9e17a0e8f4870c9680c55295050b5cd08b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "8167194",
+      "fullHash": "816719489b335cc8fd0c15c294d528784cdff77f",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2d5ee0f",
-      "fullHash": "2d5ee0f2a36649349b871bb3fa8bafdee54e16ac",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "d5d94ce",
+      "fullHash": "d5d94ce1e5f2c0217a69f59820624685952ed480",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "6d8a226",
-      "fullHash": "6d8a226299390132ca78bf3fb8c0906289cb9b91",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "38f6cb5",
+      "fullHash": "38f6cb5fe74244af42476d9538bf54fad63ea68b",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "79556fc",
-      "fullHash": "79556fce457211e9b5228d81e2c15675324b74b3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "040f38b",
+      "fullHash": "040f38b7e190b2d4733b8c8f683eab135552801e",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "259ce61",
-      "fullHash": "259ce616622bea1eb370032b74f5f7e6b50488a0",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "7e53004",
+      "fullHash": "7e530043d6497929504b7a4c6f49b2b23621f837",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "131170f",
-      "fullHash": "131170f28b664281aa3c40e60bcc95724dd0d03f",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "20edcf9",
+      "fullHash": "20edcf9f9f267a0978c6a5942af5e2c29ac69d35",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4762313",
-      "fullHash": "4762313481f7faec8337d29b370ba813b0dd88fa",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "29c4fba",
+      "fullHash": "29c4fba0ce4788f63b27332bd04d154308ed062d",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "505f48f",
-      "fullHash": "505f48ffd3012b3ffaabc0d4b7b6a2c49daeafbd",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "c9fe07b",
+      "fullHash": "c9fe07b02d029a1f635c3476f50ddf9383bc2808",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "1b94a85",
-      "fullHash": "1b94a85327da981aae19dd9d059cf8f9ad223b81",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "df0c91a",
+      "fullHash": "df0c91a091971ce76d19d4627bfbef2df92aa5cc",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "8fe0172",
-      "fullHash": "8fe017286ca7e9a3fb587e2b3307997e1ce5cad3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "5334da0",
+      "fullHash": "5334da091caa73281941d77c4e339c3dc81e7a5e",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "d748220",
-      "fullHash": "d7482202ace0f98f128a5b43d231dad22b241866",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "b63830f",
+      "fullHash": "b63830f4cf38ad5227db33ce88d2130ec836ac6b",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4572b8f",
-      "fullHash": "4572b8f95808d23492007921fdaf3a91b04fea5b",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "88f93c3",
+      "fullHash": "88f93c3e6713f8a7a3f8e55cb90330f108645ac7",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "26514c2",
-      "fullHash": "26514c247b13a4caa71780a1ad35ef5b794e55ad",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "72395ca",
+      "fullHash": "72395ca8938de7c40af9c01ec2e0d8265904a91c",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "9bc5f4f",
-      "fullHash": "9bc5f4f9bcdd8c8993942088a73250619ab46e73",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "922fe00",
+      "fullHash": "922fe0092f12fef7b5b1b035be6abae8f9cfdf09",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "1a72e0f",
-      "fullHash": "1a72e0f3689c8c1f1f56277414444ed471f9b96c",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a278c9f",
+      "fullHash": "a278c9f2238ef987aa37466cf7dd73eec16624dd",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "e2e247f",
-      "fullHash": "e2e247f1ceb2cc86fbd11e5863881a4cb6dc42f0",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "c6ca175",
+      "fullHash": "c6ca175d2836285e4fe094c9f1a34372b3e6545d",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "abc9482",
-      "fullHash": "abc948272801b59364d79473fd4204f05671fc39",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "3749b85",
+      "fullHash": "3749b85162acb3c7a1dbf3ae0ee41004a3a2e6a8",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "6b3d996",
-      "fullHash": "6b3d99676db7a2676b4fce3628d5cac47be9fec3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "135a334",
+      "fullHash": "135a334b1e106174d2d04e39a003ea842006b6d4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "fbe8bdb",
-      "fullHash": "fbe8bdbc4988eb7119eb5070c965af67a4ecc094",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "e97da0b",
+      "fullHash": "e97da0b1b3325c8708eb147add9c7db81944c8fc",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "9154edb",
-      "fullHash": "9154edbd39bfd416f4223bf8e815baa79376e777",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a4af8e7",
+      "fullHash": "a4af8e7aa8f1dd6bd8e2e73ec1ea16ca6b2c8c2e",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "846a428",
-      "fullHash": "846a4285ad47c04eea250dad5ef06515c8ab1696",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "c3a64bc",
+      "fullHash": "c3a64bcb396c37c820bc7a26c89b29d1e3437b1e",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4965af3",
-      "fullHash": "4965af3d7ee4082d9086028d643f0486e693b128",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "02f2b84",
+      "fullHash": "02f2b8440ecc7eff4f47727e26e699531b79539f",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "a6f17ac",
-      "fullHash": "a6f17ac19c1ee7bc8126661cc86e7e0a7a3948f7",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "aefc156",
+      "fullHash": "aefc1562dbdba60525705967231e5b7ecb70a9d8",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "cf72510",
-      "fullHash": "cf725109e349018f906eccf318e4121ebf81557d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "e01836b",
+      "fullHash": "e01836b9ee05ce06942d5750e346c36900be9964",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "a78fc91",
-      "fullHash": "a78fc91981d0d6b045474a6fd760e09c09a27afc",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "131d7c4",
+      "fullHash": "131d7c4eb48350192704b1f7a3e0bcaf3d8a7ae7",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "7870995",
-      "fullHash": "78709957da6fc3801991bd740c51364cd4ffaa96",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "d45fb47",
+      "fullHash": "d45fb4709fda1291351fffba1f6d336b8015ce0a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "81990d2",
-      "fullHash": "81990d20095648b53368554182a8c9f860bb25e3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "fd285ee",
+      "fullHash": "fd285eeb96c3517eee733ff1cdcecc1cb43132c9",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "ec34299",
-      "fullHash": "ec34299f80fc17e458da1badb415fbff173bab57",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1388454",
+      "fullHash": "13884546d28622f15510e55e5bff0344ad49e320",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "14bff5e",
-      "fullHash": "14bff5e03551371b09ac3e1c9f33d5b963aa9868",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "abc95bb",
+      "fullHash": "abc95bb37671ac502a5035d58dff99bf30c488bf",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "67e0c80",
-      "fullHash": "67e0c8045b75009b97b838468dc475a07f18fcc3",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "be9249e",
+      "fullHash": "be9249ec32c9c8486168d3266639d75ee636e992",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "34466b1",
-      "fullHash": "34466b1309f6bb14e2bade40a62fc1fab2c0b71d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9cdea06",
+      "fullHash": "9cdea067980a674aa103b840702163ffd93d46f0",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "e2c281c",
-      "fullHash": "e2c281c01d5e066b4c3eadc3ed2cd988e1d200ef",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "35f931e",
+      "fullHash": "35f931eb94970099affc89cc993ed8091a312533",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "2bf5592",
-      "fullHash": "2bf5592f2cb093b3a7f2bca3f1942633625b10aa",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "6915248",
+      "fullHash": "69152487eb7589c193188edc35efcb0979f9ff51",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "358fabd",
-      "fullHash": "358fabda1385f958c6d0ee9c1a039efa7eb1741a",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "1d51b41",
+      "fullHash": "1d51b41135d43edd2c6b5292aaeaa93392233029",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "b813b37",
-      "fullHash": "b813b37219c16094b839fda5210295ad53a9930d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "c5dfcb8",
+      "fullHash": "c5dfcb8b9e63d714e06cbdf1da480a934f87c7ca",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "a361c94",
-      "fullHash": "a361c94c4144712864017f6f34b0566e82365d30",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "02a27ea",
+      "fullHash": "02a27eaa006b7b4342c45bf69c49d36425bb822a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "b4b238c",
-      "fullHash": "b4b238c15953c081502d1f51f1e3666fe32a4ec0",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "28705cf",
+      "fullHash": "28705cf28eecd63bac9504b5c3d65fad90ea1f78",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "9427870",
-      "fullHash": "9427870e1cc99c16c15e20f024a5df5a7977addd",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "2164982",
+      "fullHash": "216498297093e51d5574f8e170b9b2394d3fece4",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4a1dab5",
-      "fullHash": "4a1dab5ad38aa78ebc759263ec48499f91aee085",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "9f4b7cd",
+      "fullHash": "9f4b7cda1e073b2f931fc82c987f0f65bcdbd763",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "4f7b14f",
-      "fullHash": "4f7b14f5c8cc4ba9529820e74dd79ba99a2b4b1a",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "2936bbd",
+      "fullHash": "2936bbd64299701b22c06e6a08f1b2cbb7adcde6",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     },
     {
-      "hash": "0429077",
-      "fullHash": "04290778de929dfeae7d9eb727de7c2f19fd9b3d",
-      "date": "2025-03-08 19:57:00 +0700",
+      "hash": "a8a14f6",
+      "fullHash": "a8a14f637b9ec912b8850278a6dc71e43fd93f1a",
+      "date": "2025-03-08 19:57:51 +0700",
       "author": "3obby",
-      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
-      "category": "enhancement"
+      "message": "Remove old logo file",
+      "category": "other"
     }
   ]
 }
