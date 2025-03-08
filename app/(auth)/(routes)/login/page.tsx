@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,7 +8,7 @@ import { toast } from "@/components/ui/use-toast"
 import { signIn, useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Mail, Github, Check } from "lucide-react"
+import { ArrowRight, Mail, Github, Check, RefreshCw } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import Image from "next/image"
 
@@ -16,8 +16,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [timeoutProgress, setTimeoutProgress] = useState(0)
+  const progressInterval = useRef<NodeJS.Timeout | null>(null)
+  const resetTimeout = useRef<NodeJS.Timeout | null>(null)
+  const progressDuration = 6000 // 6 seconds
+  const progressStep = 50 // Update every 50ms
+  
   const router = useRouter()
   const { status } = useSession()
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (progressInterval.current) clearInterval(progressInterval.current)
+      if (resetTimeout.current) clearTimeout(resetTimeout.current)
+    }
+  }, [])
+
+  // Reset states and clear timeouts
+  const resetStates = () => {
+    if (progressInterval.current) clearInterval(progressInterval.current)
+    if (resetTimeout.current) clearTimeout(resetTimeout.current)
+    setIsSuccess(false)
+    setIsTimerRunning(false)
+    setTimeoutProgress(0)
+  }
 
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -28,8 +52,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    resetStates()
     setIsLoading(true)
-    setIsSuccess(false)
 
     try {
       await signIn("email", {
@@ -39,28 +63,41 @@ export default function LoginPage() {
       })
       
       // Show success state
+      setIsLoading(false)
       setIsSuccess(true)
+      setIsTimerRunning(true)
+      
+      // Start progress animation
+      let progress = 0
+      progressInterval.current = setInterval(() => {
+        progress += (progressStep / progressDuration) * 100
+        setTimeoutProgress(Math.min(progress, 100))
+        
+        if (progress >= 100) {
+          if (progressInterval.current) clearInterval(progressInterval.current)
+          resetStates()
+        }
+      }, progressStep)
       
       toast({
         title: "Magic link sent",
-        description: "Check your email for a login link",
+        description: "Check your email for a login link. You can retry in a few seconds if needed.",
       })
-      
-      // Keep success state visible for a moment
-      setTimeout(() => {
-        setEmail("")
-      }, 3000)
     } catch (error) {
       console.error(error)
       toast({
-        title: "Error",
-        description: "Something went wrong",
+        title: "Error sending email",
+        description: "Please check your email address and try again.",
         variant: "destructive",
       })
-      setIsSuccess(false)
-    } finally {
+      resetStates()
       setIsLoading(false)
     }
+  }
+
+  const handleRetry = () => {
+    resetStates()
+    setEmail("")
   }
 
   // If still checking authentication status, show loading state
@@ -87,7 +124,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-white/80">v0.3.8</p>
+            <p className="text-white/80">v0.3.9</p>
             <Link 
               href="/updates" 
               className="text-white/60 hover:text-white text-xs underline"
@@ -106,36 +143,58 @@ export default function LoginPage() {
                 placeholder="Email address"
                 type="email"
                 required
-                disabled={isLoading || isSuccess}
+                disabled={isLoading || isTimerRunning}
                 className="bg-white/10 border-white/30 text-white placeholder-white/50"
               />
             </div>
-            <Button 
-              type="submit" 
-              disabled={isLoading || isSuccess} 
-              className={`w-full transition-all duration-300 ${
-                isSuccess 
-                  ? "bg-amber-600/80 hover:bg-amber-600/80 text-white border-amber-500" 
-                  : "bg-white/20 hover:bg-white/30 text-white"
-              }`}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
-                  Sending link...
-                </span>
-              ) : isSuccess ? (
-                <span className="flex items-center gap-2">
-                  <Check className="h-5 w-5" />
-                  Check your email
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Continue with Email
-                </span>
+            <div className="relative">
+              <Button 
+                type="submit" 
+                disabled={isLoading || isTimerRunning} 
+                className={`w-full transition-all duration-300 overflow-hidden ${
+                  isSuccess 
+                    ? "bg-amber-600/80 hover:bg-amber-600/80 text-white border-amber-500" 
+                    : "bg-white/20 hover:bg-white/30 text-white"
+                }`}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
+                    Sending link...
+                  </span>
+                ) : isSuccess ? (
+                  <span className="flex items-center gap-2">
+                    <Check className="h-5 w-5" />
+                    Check your email
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Continue with Email
+                  </span>
+                )}
+              </Button>
+              
+              {/* Progress bar animation */}
+              {isTimerRunning && (
+                <div 
+                  className="absolute top-0 left-0 h-full bg-amber-800/50 transition-all duration-50 ease-linear"
+                  style={{ width: `${timeoutProgress}%` }}
+                ></div>
               )}
-            </Button>
+            </div>
+            {isSuccess && (
+              <div className="flex justify-center mt-1">
+                <button 
+                  type="button"
+                  onClick={handleRetry}
+                  className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retry with a different email
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="relative">
