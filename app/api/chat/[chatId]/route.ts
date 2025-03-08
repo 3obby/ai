@@ -103,42 +103,27 @@ export async function POST(
     // Initialize OpenAI
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
 
-    // Create a streaming response
-    const response = await openai.chat.completions.create({
+    // Get a completion from the API without streaming
+    const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: openAIMessages,
-      stream: true,
-    })
+    });
 
-    // Track the full response to save it after streaming
-    let fullResponseContent = ""
+    // Get the response content
+    const responseContent = completion.choices[0].message.content || "";
 
-    // Create a transform stream to track the full response content
-    const processResponseStream = new TransformStream({
-      transform: (chunk, controller) => {
-        const text = chunk.text ?? ""
-        fullResponseContent += text
-        controller.enqueue(chunk)
+    // Save the message to the database
+    await prismadb.message.create({
+      data: {
+        content: responseContent,
+        role: "assistant" as Role,
+        companionId: params.chatId,
+        userId: userId,
       },
-      flush: async (controller) => {
-        // Save the complete response to the database
-        if (fullResponseContent) {
-          await prismadb.message.create({
-            data: {
-              content: fullResponseContent,
-              role: "assistant" as Role,
-              companionId: params.chatId,
-              userId: userId,
-            },
-          })
-        }
-      },
-    })
+    });
 
-    // Return the streaming response
-    return new StreamingTextResponse(
-      response.toReadableStream().pipeThrough(processResponseStream)
-    )
+    // Return the response content directly
+    return new Response(responseContent);
   } catch (error) {
     console.log("Error in POST route:", error)
     return new NextResponse("Internal Error", { status: 500 })
