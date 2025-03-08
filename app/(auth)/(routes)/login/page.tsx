@@ -62,17 +62,18 @@ export default function LoginPage() {
   // Only show login options if not authenticated
   if (status === "unauthenticated") {
     return (
-      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-6 space-y-8">
+      <div className="flex flex-col items-center justify-center w-full mx-auto p-6 space-y-8 backdrop-blur-sm bg-black/30 rounded-lg shadow-xl">
         <div className="flex flex-col items-center space-y-2 mb-6">
-          <Image 
-            src="/logo.png" 
-            alt="Logo" 
-            width={80} 
-            height={80} 
-            className="mb-4"
-          />
-          <h1 className="text-2xl font-bold text-center">Welcome back</h1>
-          <p className="text-muted-foreground text-center">Sign in to continue</p>
+          <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg mb-4">
+            <Image 
+              src="/robohand.png" 
+              alt="Logo" 
+              fill
+              className="object-cover"
+            />
+          </div>
+          <h1 className="text-2xl font-bold text-center text-white">Welcome back</h1>
+          <p className="text-white/80 text-center">Sign in to continue</p>
         </div>
 
         <div className="w-full space-y-4">
@@ -85,13 +86,13 @@ export default function LoginPage() {
                 type="email"
                 required
                 disabled={isLoading}
-                className="bg-background"
+                className="bg-white/10 border-white/30 text-white placeholder-white/50"
               />
             </div>
             <Button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full"
+              className="w-full bg-white/20 hover:bg-white/30 text-white"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -109,10 +110,10 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700"></div>
+              <div className="w-full border-t border-white/30"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="px-2 text-white/70 bg-black/30">Or continue with</span>
             </div>
           </div>
 
@@ -120,14 +121,14 @@ export default function LoginPage() {
             <Button 
               variant="outline"
               onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="w-full"
+              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white"
             >
               <FcGoogle className="h-5 w-5" />
             </Button>
             <Button 
               variant="outline"
               onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-              className="w-full"
+              className="w-full border-white/30 bg-white/10 hover:bg-white/20 text-white"
             >
               <Github className="h-5 w-5" />
             </Button>

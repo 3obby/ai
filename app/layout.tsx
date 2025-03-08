@@ -16,7 +16,20 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "GroupChatBotBuilder",
-  description: "Create group chats with AI characters",
+  description: "Create and deploy AI bot companions",
+  icons: {
+    icon: [
+      {
+        url: "/robohand.png",
+        href: "/robohand.png",
+      }
+    ],
+    apple: {
+      url: "/robohand.png",
+      sizes: "120x120",
+      type: "image/png"
+    }
+  }
 }
 
 export default async function RootLayout({
@@ -30,7 +43,10 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <link rel="icon" href="/robohand.png" sizes="any" />
+        <link rel="apple-touch-icon" href="/robohand.png" />
+      </head>
       <body className={cn("bg-secondary", inter.className)}>
         <NextAuthProvider>
           <ThemeProvider
