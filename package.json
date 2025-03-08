@@ -50,6 +50,7 @@
     "encoding": "^0.1.13",
     "eslint": "^8.56.0",
     "eslint-config-next": "13.4.11",
+    "framer-motion": "^12.4.10",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.0.92",
     "lucide-react": "^0.263.0",

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "77da679",
+      "fullHash": "77da679b6f251699a82a45171ea5e16de49b0430",
+      "date": "2025-03-08 21:52:13 +0700",
+      "author": "3obby",
+      "message": "Improve UI and UX: Add animated logo, optimize navigation, implement skeleton loading for dashboard, and fix sidebar consistency",
+      "category": "bugfix"
+    },
+    {
       "hash": "1d2d2b0",
       "fullHash": "1d2d2b069020ef100028bd11aa66bed1f2fd0289",
       "date": "2025-03-08 20:14:33 +0700",

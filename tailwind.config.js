@@ -29,6 +29,20 @@ module.exports = {
           950: '#082f49',
           foreground: 'hsl(var(--primary-foreground))'
         },
+        orange: {
+          DEFAULT: '#ff5722',
+          50: '#fff8f5',
+          100: '#ffede6',
+          200: '#ffd6c2',
+          300: '#ffb38c',
+          400: '#ff824d',
+          500: '#ff5722',
+          600: '#f23a14',
+          700: '#ca2a10',
+          800: '#a12513',
+          900: '#821e14',
+          950: '#450c07',
+        },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))'
@@ -104,5 +118,19 @@ module.exports = {
       }
     },
   },
-  plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms'), require('tailwindcss-animate')],
+  plugins: [
+    require('@tailwindcss/typography'), 
+    require('@tailwindcss/forms'), 
+    require('tailwindcss-animate'),
+    // Add custom plugin for clip-rect-0
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.clip-rect-0': {
+          clip: 'rect(0, 0, 0, 0)',
+          clipPath: 'inset(50%)'
+        }
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 }

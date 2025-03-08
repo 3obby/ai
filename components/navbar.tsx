@@ -12,6 +12,7 @@ import { useSettingsModal } from "@/hooks/use-settings-modal"
 import { ChatLimit } from "@/components/chat-limit"
 import { SettingsModal } from "@/components/settings-modal"
 import { UserButton } from "@/components/user-button"
+import { AnimatedLogo } from "@/components/animated-logo"
 
 const font = Poppins({ weight: "600", subsets: ["latin"] })
 
@@ -26,21 +27,16 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
   const settingsModal = useSettingsModal()
 
   return (
-    <div className="fixed top-0 w-full md:w-[calc(100%-4rem)] md:right-0 z-50 border-b border-primary/10 bg-secondary h-16">
+    <div className="fixed top-0 right-0 md:left-20 left-0 z-40 border-b border-primary/10 bg-secondary h-16">
       <div className="h-full px-4 flex items-center">
-        {/* Left side - Mobile only */}
-        <div className="flex items-center md:hidden">
-          <MobileSidebar isPro={isPro} />
-          <Link href="/">
-            <h1
-              className={cn(
-                "text-lg font-bold text-primary ml-2",
-                font.className
-              )}
-            >
-              GChat
-            </h1>
-          </Link>
+        {/* Left side */}
+        <div className="flex items-center">
+          <div className="md:hidden mr-2">
+            <MobileSidebar isPro={isPro} userId={userId} />
+          </div>
+          <div className="flex-shrink-0">
+            <AnimatedLogo />
+          </div>
         </div>
         
         {/* Spacer - pushes right side to edge */}

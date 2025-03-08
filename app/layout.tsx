@@ -8,6 +8,7 @@ import { PromptsProvider } from "@/store/use-prompts"
 import { Toaster } from "@/components/ui/toaster"
 import { auth } from "@/lib/auth"
 import NextAuthProvider from "@/components/providers/session-provider"
+import { NavigationProgress } from "@/components/ui/navigation-progress"
 
 // Force dynamic rendering for authentication
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export default async function RootLayout({
           >
             <PromptsProvider>
               <SettingsModalProvider>
+                <NavigationProgress />
                 {children}
               </SettingsModalProvider>
             </PromptsProvider>

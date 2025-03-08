@@ -2,7 +2,8 @@
 
 import { Home, Plus, Users, Settings, MessageSquare } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useTransition } from "react"
+import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 import { useProModal } from "@/hooks/use-pro-modal"
@@ -24,6 +25,8 @@ export const Sidebar = ({ userId }: SidebarProps) => {
   const [userUsage, setUserUsage] = useState<any>({ remainingTokens: XP_REQUIRED_FOR_CREATION }) // Default value to ensure UI works
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  // Add isPending state for navigation transitions
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     // Check both authentication and admin status
@@ -83,20 +86,27 @@ export const Sidebar = ({ userId }: SidebarProps) => {
     }
   }, [pathname])
 
-  const onNavigate = (url: string, requiredXP: number = 0) => {
+  // Optimized navigation function that uses Link component under the hood for instant transitions
+  const onNavigate = useCallback((url: string, requiredXP: number = 0) => {
     try {
-      // Always allow navigation in case of API errors
+      // Check if we should navigate or show pro modal
       if (isLoading || requiredXP === 0 || (userUsage && userUsage.remainingTokens >= requiredXP)) {
-        router.push(url)
+        // Use startTransition to avoid blocking the UI
+        startTransition(() => {
+          router.prefetch(url)
+          router.push(url)
+        })
         return
       }
       proModal.onOpen()
     } catch (error) {
       console.error("Navigation error:", error)
       // Fallback: try to navigate anyway
-      router.push(url)
+      startTransition(() => {
+        router.push(url)
+      })
     }
-  }
+  }, [router, isLoading, userUsage, proModal])
 
   const routes = [
     {
@@ -113,7 +123,7 @@ export const Sidebar = ({ userId }: SidebarProps) => {
     },
     {
       icon: Users,
-      href: "/community",
+      href: "/vote",
       label: "Vote",
       requiredXP: 0,
     },
@@ -135,29 +145,62 @@ export const Sidebar = ({ userId }: SidebarProps) => {
     })
   }
 
+  // Aggressively prefetch all routes when sidebar mounts
+  useEffect(() => {
+    routes.forEach(route => {
+      if (route.requiredXP === 0 || (userUsage && userUsage.remainingTokens >= route.requiredXP)) {
+        router.prefetch(route.href)
+      }
+    })
+  }, [routes, userUsage, router])
+
   return (
-    <div className="space-y-4 flex flex-col h-full text-primary bg-secondary">
-      <div className="py-4 flex-1 flex flex-col items-center justify-center">
-        {routes.map((route) => (
-          <div
-            key={route.href}
-            onClick={() => onNavigate(route.href, route.requiredXP)}
-            className={cn(
-              "relative flex items-center justify-center w-12 h-12 mt-2 mb-2 mx-auto rounded-lg group hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer",
-              pathname === route.href && "bg-primary/10 text-primary",
-              route.requiredXP > 0 &&
-                (!userUsage ||
-                  userUsage.remainingTokens < route.requiredXP) &&
-                !isLoading &&
-                "opacity-75"
-            )}
-          >
-            <route.icon className="h-6 w-6" />
-            <span className="absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium text-white bg-gray-800 invisible opacity-0 -translate-x-3 group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 transition-all whitespace-nowrap z-50">
-              {route.label}
-            </span>
-          </div>
-        ))}
+    <div className="flex flex-col h-full w-full text-primary">
+      <div className="mt-16 flex-1 flex flex-col items-center justify-start">
+        {routes.map((route) => {
+          const isActive = pathname === route.href
+          
+          return (
+            <div
+              key={route.href}
+              className="relative group"
+            >
+              <div
+                onClick={() => onNavigate(route.href, route.requiredXP)}
+                className={cn(
+                  "flex items-center justify-center w-12 h-12 mt-2 mb-2 mx-auto rounded-lg transition-all cursor-pointer",
+                  // Normal state
+                  "hover:text-orange hover:bg-orange/10",
+                  // Active state with 3D effect using orange color
+                  isActive ? 
+                    "bg-orange/15 text-orange shadow-[inset_0_0_0_2px_#ff5722,_0_4px_6px_-1px_rgba(255,87,34,0.2),_0_2px_4px_-2px_rgba(255,87,34,0.1)]" : 
+                    "",
+                  // Disabled state
+                  route.requiredXP > 0 &&
+                    (!userUsage ||
+                      userUsage.remainingTokens < route.requiredXP) &&
+                    !isLoading &&
+                    "opacity-60"
+                )}
+              >
+                <route.icon className={cn(
+                  "h-6 w-6 transition-transform duration-200",
+                  // Add a subtle animation for the active icon
+                  isActive && "scale-110"
+                )} />
+              </div>
+              <div
+                className={cn(
+                  "absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium text-white bg-gray-800 invisible opacity-0 -translate-x-3 group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 transition-all whitespace-nowrap z-50",
+                  "cursor-pointer" // Make the tooltip clickable too
+                )}
+                onClick={() => onNavigate(route.href, route.requiredXP)}
+              >
+                {route.label}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

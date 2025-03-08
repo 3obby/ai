@@ -64,6 +64,9 @@ const user = session?.user;
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    const userId = session?.userId;
+    const user = session?.user;
 
     if (!user || !userId) {
       return new NextResponse("Unauthorized", { status: 401 });
