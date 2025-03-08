@@ -26,44 +26,58 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
   const settingsModal = useSettingsModal()
 
   return (
-    <div className="fixed w-full z-50 flex items-center py-2 px-2 sm:px-4 h-16 border-b border-primary/10 bg-secondary">
-      <div className="flex items-center w-auto md:w-64 flex-shrink-0">
-        <MobileSidebar isPro={isPro} />
-        <Link href="/">
-          <h1
-            className={cn(
-              "hidden md:block text-xl md:text-3xl font-bold text-primary truncate",
-              font.className
-            )}
-          >
-            GroupChatBotBuilder
-          </h1>
-        </Link>
-      </div>
-      <div className="flex items-center justify-end flex-1 space-x-5 sm:space-x-6 md:space-x-8">
-        <div className="flex-shrink-0">
-          <ChatLimit userId={userId} />
-        </div>
-        {!isPro && (
-          <Link href="/subscribe" className="hidden sm:block flex-shrink-0">
-            <Button size="sm" variant="premium" className="whitespace-nowrap">
-              Upgrade
-              <Sparkles className="h-4 w-4 fill-white text-white ml-2" />
-            </Button>
+    <div className="fixed top-0 w-full md:w-[calc(100%-4rem)] md:right-0 z-50 border-b border-primary/10 bg-secondary h-16">
+      <div className="h-full px-4 flex items-center">
+        {/* Left side - Mobile only */}
+        <div className="flex items-center md:hidden">
+          <MobileSidebar isPro={isPro} />
+          <Link href="/">
+            <h1
+              className={cn(
+                "text-lg font-bold text-primary ml-2",
+                font.className
+              )}
+            >
+              GChat
+            </h1>
           </Link>
-        )}
-        <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
+        </div>
+        
+        {/* Spacer - pushes right side to edge */}
+        <div className="flex-grow"></div>
+        
+        {/* Right side - User profile and controls */}
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <ChatLimit userId={userId} className="hidden lg:flex" />
+          
+          {!isPro && (
+            <Link href="/subscribe" className="hidden md:block">
+              <Button 
+                size="sm" 
+                variant="premium" 
+                className="h-8 px-3 text-xs whitespace-nowrap"
+              >
+                Upgrade
+                <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
+              </Button>
+            </Link>
+          )}
+          
           <Button
             onClick={settingsModal.onOpen}
             size="icon"
             variant="ghost"
-            className="h-8 w-8 sm:h-9 sm:w-9"
+            className="h-8 w-8 rounded-full"
           >
-            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Settings className="h-4 w-4" />
           </Button>
-          <UserButton />
+          
+          <div className="pl-1">
+            <UserButton />
+          </div>
         </div>
       </div>
+      
       <SettingsModal isPro={isPro} />
     </div>
   )

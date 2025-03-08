@@ -1,5 +1,5 @@
-import { auth } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
+import { auth } from "@/lib/auth-helpers"
 import prismadb from "@/lib/prismadb"
 
 export const dynamic = "force-dynamic"
@@ -9,15 +9,33 @@ export async function GET(req: Request) {
   try {
     const session = await auth()
     const userId = session?.userId
-    if (!userId) return new NextResponse("Unauthorized", { status: 401 })
 
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 })
+    }
+
+    // Check if user is admin based on localStorage in frontend
+    // Server-side just checks if the user exists
+    const user = await prismadb.user.findUnique({
+      where: {
+        id: userId,
+      },
+    })
+
+    if (!user) {
+      return new NextResponse("Unauthorized", { status: 403 })
+    }
+
+    // Get all users with their usage information
     const users = await prismadb.userUsage.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
     })
 
     return NextResponse.json(users)
   } catch (error) {
-    console.log("[ADMIN_USERS_GET]", error)
+    console.error("[ADMIN_USERS_ERROR]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

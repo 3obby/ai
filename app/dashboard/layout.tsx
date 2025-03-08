@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/navbar"
 import { Sidebar } from "@/components/sidebar"
-import { auth } from "@/lib/server-auth"
+import { auth } from "@/lib/auth-helpers";
 import { checkSubscription } from "@/lib/subscription"
 import { redirect } from "next/navigation"
 
@@ -23,10 +23,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="h-full relative">
-      <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-[80] bg-gray-900">
+      <div className="hidden h-full md:flex md:w-16 md:flex-col md:fixed md:inset-y-0 z-[80] bg-gray-900">
         <Sidebar userId={session.userId} />
       </div>
-      <main className="md:pl-72 pb-10">
+      <main className="md:pl-16 pb-10">
         <Navbar isPro={isPro} userId={session.userId} />
         {children}
       </main>
