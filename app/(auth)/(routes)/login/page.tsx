@@ -8,7 +8,7 @@ import { toast } from "@/components/ui/use-toast"
 import { signIn, useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Mail, Github, Apple } from "lucide-react"
+import { ArrowRight, Mail, Github } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import Image from "next/image"
 
@@ -116,20 +116,13 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline"
               onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="w-full"
             >
               <FcGoogle className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => signIn("apple", { callbackUrl: "/dashboard" })}
-              className="w-full"
-            >
-              <Apple className="h-5 w-5" />
             </Button>
             <Button 
               variant="outline"
