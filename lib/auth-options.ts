@@ -3,6 +3,9 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import prismadb from "@/lib/prismadb";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
+import GoogleProvider from "next-auth/providers/google";
+import AppleProvider from "next-auth/providers/apple";
+import GitHubProvider from "next-auth/providers/github";
 import { compare } from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 
@@ -32,6 +35,18 @@ export const authOptions: NextAuthOptions = {
         },
       },
       from: process.env.SMTP_FROM || "auth@groupchatbotbuilder.com",
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID || "",
+      clientSecret: process.env.GITHUB_SECRET || "",
+    }),
+    AppleProvider({
+      clientId: process.env.APPLE_ID || "",
+      clientSecret: process.env.APPLE_SECRET || "",
     }),
     CredentialsProvider({
       name: "Credentials",
