@@ -1,412 +1,804 @@
 {
   "commits": [
     {
-      "hash": "a558f60",
-      "fullHash": "a558f60954ee7451458ca0fbae42529961a3eb82",
-      "date": "2025-03-08 19:47:07 +0700",
+      "hash": "8332239",
+      "fullHash": "833223977348bcb04f914dc607531b51ec76cbd3",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "FIX: Update auto-documentation system to work in production environment",
-      "category": "bugfix"
-    },
-    {
-      "hash": "df99ab7",
-      "fullHash": "df99ab7d1ba569699cbd19435c2d355630efd765",
-      "date": "2025-03-08 19:32:14 +0700",
-      "author": "3obby",
-      "message": "Update robobirds.png background image",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "0ff38fc",
-      "fullHash": "0ff38fc25f142edd99d64ab55adc5d1f7096c000",
-      "date": "2025-03-08 19:26:41 +0700",
+      "hash": "5bff78c",
+      "fullHash": "5bff78c6b5a0b1c1d628f68f73c77a3b527f850b",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "FEATURE: Add auto-documentation system with /updates page and version tracking",
-      "category": "feature"
-    },
-    {
-      "hash": "25c1fb9",
-      "fullHash": "25c1fb9745a39ed55a3991b5122a09d9c2c02098",
-      "date": "2025-03-08 14:26:58 +0700",
-      "author": "3obby",
-      "message": "Disable OAuth buttons with pending review message",
-      "category": "other"
-    },
-    {
-      "hash": "715f074",
-      "fullHash": "715f074fb8ed593e392ade9ffbecf85f733751f1",
-      "date": "2025-03-08 14:17:30 +0700",
-      "author": "3obby",
-      "message": "Update login page with app version and add image assets",
-      "category": "feature"
-    },
-    {
-      "hash": "60052e2",
-      "fullHash": "60052e21be4b03da8d05dd43260ba1fa978513e5",
-      "date": "2025-03-08 13:57:26 +0700",
-      "author": "3obby",
-      "message": "Update login page with robobirds background and robohand logo",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "d90d1ef",
-      "fullHash": "d90d1ef8b61ae83ed9964972c4f9b758a6b35b9e",
-      "date": "2025-03-08 13:36:28 +0700",
+      "hash": "1e97070",
+      "fullHash": "1e970700ed1878f3e97b66929149e4133645b176",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Fix subscription and payment routes for NextAuth compatibility and fix linter errors",
-      "category": "bugfix"
-    },
-    {
-      "hash": "7586e1e",
-      "fullHash": "7586e1e57f54770bfba72b0f3a7a5ed7f60c1266",
-      "date": "2025-03-08 13:32:11 +0700",
-      "author": "3obby",
-      "message": "Fix bot chat output - Change to non-streaming mode to prevent raw JSON output",
-      "category": "bugfix"
-    },
-    {
-      "hash": "f34a2e5",
-      "fullHash": "f34a2e5afe81522436fed8382ae59841ac2d2ae0",
-      "date": "2025-03-08 13:27:47 +0700",
-      "author": "3obby",
-      "message": "Enhance OAuth profile picture handling to display Google profile pictures",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "6e35db9",
-      "fullHash": "6e35db97d411e9c8e6027722048ea978e36302d2",
-      "date": "2025-03-08 13:24:44 +0700",
+      "hash": "7c42024",
+      "fullHash": "7c420241136e304fa9599a93f40095ff898562b5",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Enable account linking for Google and GitHub OAuth providers",
-      "category": "other"
-    },
-    {
-      "hash": "3234fa5",
-      "fullHash": "3234fa57ed9637b2c1879cc7305b296e6f2ef3f4",
-      "date": "2025-03-08 13:22:07 +0700",
-      "author": "3obby",
-      "message": "Fix OAuth authentication by adding missing User-Account-Session relations and add logo.png",
-      "category": "bugfix"
-    },
-    {
-      "hash": "acf881b",
-      "fullHash": "acf881b5628697a3a9228cecd0a29fc108442341",
-      "date": "2025-03-08 13:16:58 +0700",
-      "author": "3obby",
-      "message": "Remove Apple OAuth provider and update login UI",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "da372b6",
-      "fullHash": "da372b68d26b30d859dfce3e7f98fd459574a83b",
-      "date": "2025-03-08 13:09:35 +0700",
+      "hash": "5cdce5b",
+      "fullHash": "5cdce5b7372668a157dbdafcb0de53459bb384aa",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Add basic Privacy Policy and Terms of Service pages",
-      "category": "feature"
-    },
-    {
-      "hash": "5d2451a",
-      "fullHash": "5d2451a8ea8f3e30b03434c6b8920de3094d74f8",
-      "date": "2025-03-08 12:55:31 +0700",
-      "author": "3obby",
-      "message": "Add redirect for logged-in users at login page and OAuth provider support",
-      "category": "feature"
-    },
-    {
-      "hash": "be813e9",
-      "fullHash": "be813e92b547a64c4f23d967d2afca4c7c975dc6",
-      "date": "2025-03-08 12:32:11 +0700",
-      "author": "3obby",
-      "message": "Fix deployment errors by forcing dynamic rendering on all API routes",
-      "category": "bugfix"
-    },
-    {
-      "hash": "9c4aa31",
-      "fullHash": "9c4aa31f00f58694e8b24432ec92d6d2d3dafded",
-      "date": "2025-03-08 12:27:28 +0700",
-      "author": "3obby",
-      "message": "Full sync - push all changes including auth migration and API updates",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "02f46ee",
-      "fullHash": "02f46ee1ca44025b59f900154b1ca0407d593078",
-      "date": "2025-03-08 12:26:43 +0700",
+      "hash": "8550a7e",
+      "fullHash": "8550a7e10d5ca5672c29730f5f1678edf8e43bd7",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Fix navbar layout and user display issues; fix admin API routes",
-      "category": "bugfix"
-    },
-    {
-      "hash": "5068e11",
-      "fullHash": "5068e11d776708b2c74cea99e239c6cb1a929eb9",
-      "date": "2025-03-08 01:05:50 +0700",
-      "author": "3obby",
-      "message": "Update Prisma to latest version 6.4.1",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "7fdcf3d",
-      "fullHash": "7fdcf3d820be81286dbee7c1777b90548f2dbb4d",
-      "date": "2025-03-08 01:01:52 +0700",
+      "hash": "5774126",
+      "fullHash": "57741268f6dbd9a03e0627da64c33d613214739f",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Update ESLint to ^8.56.0 to fix dependency conflict with TypeScript ESLint plugin",
-      "category": "bugfix"
-    },
-    {
-      "hash": "b2350cf",
-      "fullHash": "b2350cf2c29d25295c0141173727c6879b418310",
-      "date": "2025-03-08 01:00:15 +0700",
-      "author": "3obby",
-      "message": "Fix routing conflicts and authentication issues in Next.js App Router",
-      "category": "bugfix"
-    },
-    {
-      "hash": "cc4962f",
-      "fullHash": "cc4962f22ae39c2e297ccd7ef679aeae330f48da",
-      "date": "2025-03-08 00:30:05 +0700",
-      "author": "3obby",
-      "message": "Optimize project environment for Life OS platform: add Tailwind plugins, fix TypeScript errors, add Cursor config, and create UI components",
-      "category": "bugfix"
-    },
-    {
-      "hash": "5725adc",
-      "fullHash": "5725adceff04094856dd522ac3236aa0a3506111",
-      "date": "2025-03-08 00:07:00 +0700",
-      "author": "3obby",
-      "message": "Add shadcn/ui components and UI demo page",
-      "category": "feature"
-    },
-    {
-      "hash": "b5f06d8",
-      "fullHash": "b5f06d8a2fe01f4d6e40cdf3eb9a5c9cb72b3a10",
-      "date": "2025-03-08 00:04:49 +0700",
-      "author": "3obby",
-      "message": "Update user dropdown to link to /account page",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "f7e4e86",
-      "fullHash": "f7e4e86b28c6e99aaf6621293fd926b654909897",
-      "date": "2025-03-07 23:58:52 +0700",
+      "hash": "562fbf5",
+      "fullHash": "562fbf5277fe9cbdde7913c308abeebc5898c07d",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Add enhanced account page with subscription details and personalized UI",
-      "category": "feature"
-    },
-    {
-      "hash": "2ae132c",
-      "fullHash": "2ae132c40c68f917e1dc481b615397e2c595879e",
-      "date": "2025-03-07 23:38:21 +0700",
-      "author": "3obby",
-      "message": "Fix React unescaped quotes and update ESLint config",
-      "category": "bugfix"
-    },
-    {
-      "hash": "2164cf9",
-      "fullHash": "2164cf9be7c7fa7e327e776df86ecc8866bc4788",
-      "date": "2025-03-07 23:35:06 +0700",
-      "author": "3obby",
-      "message": "Implement Edge Runtime compatibility for database operations",
-      "category": "other"
-    },
-    {
-      "hash": "f9c7541",
-      "fullHash": "f9c754165ed9f98d2de5885a4b1cfe0f5059ed9c",
-      "date": "2025-03-07 22:55:04 +0700",
-      "author": "3obby",
-      "message": "update gitignore and next config",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "44d3b28",
-      "fullHash": "44d3b28c942ed36897a3ce421e398a8decf7dc4f",
-      "date": "2025-03-06 15:57:17 +0700",
+      "hash": "d8d4dc6",
+      "fullHash": "d8d4dc6320ab448aa5a74ad89de994907ddd6115",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Create script to automate auth updates and fix remaining Clerk dependencies",
-      "category": "bugfix"
-    },
-    {
-      "hash": "f11ebf2",
-      "fullHash": "f11ebf265c085c720dfe91b933496d148d89d802",
-      "date": "2025-03-06 15:53:11 +0700",
-      "author": "3obby",
-      "message": "Update API routes to use custom auth instead of Clerk",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "1634b79",
-      "fullHash": "1634b791736b8e483626cecf2027e4c28c8a6dd4",
-      "date": "2025-03-06 15:39:25 +0700",
+      "hash": "d56f4d8",
+      "fullHash": "d56f4d8e1c418f37b4a2c3db1a6574f6c0566988",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Update remaining components to use custom auth instead of Clerk",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "ef516ad",
-      "fullHash": "ef516adf8553bf7945c795f7f01eb2e81d93b2d0",
-      "date": "2025-03-06 15:34:07 +0700",
+      "hash": "40d4761",
+      "fullHash": "40d4761ca3b07964d2a8dc451faa7ca75f227401",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Fix Clerk dependencies and update components to use custom magic link auth",
-      "category": "bugfix"
-    },
-    {
-      "hash": "36552df",
-      "fullHash": "36552df24acab06902ad66d258cb07bc671864bb",
-      "date": "2025-03-06 15:27:19 +0700",
-      "author": "3obby",
-      "message": "Replace Clerk with magic link authentication using Postmark",
-      "category": "other"
-    },
-    {
-      "hash": "fdf77e0",
-      "fullHash": "fdf77e0c15d905799849ff695cd531339b8e5486",
-      "date": "2025-03-06 14:51:54 +0700",
-      "author": "3obby",
-      "message": "Updated landing page and authentication flow with cleaner URLs",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "9f0ccd1",
-      "fullHash": "9f0ccd1f733d1b9d07dd13d54f61b7ed110bc775",
-      "date": "2025-03-06 14:45:20 +0700",
+      "hash": "b794692",
+      "fullHash": "b794692717b6e2b438e79819c7cace531c0ba435",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "Restored 'looks great' commit with the not-found page",
-      "category": "other"
-    },
-    {
-      "hash": "05fdf64",
-      "fullHash": "05fdf6428d0c56508dc3891f7de6dfdac3dd9578",
-      "date": "2025-03-03 22:30:44 +0700",
-      "author": "3obby",
-      "message": "looks great",
-      "category": "other"
-    },
-    {
-      "hash": "8cc988d",
-      "fullHash": "8cc988d27ccfc28e47b04e530e2c102429e2fe5a",
-      "date": "2025-03-03 21:10:07 +0700",
-      "author": "3obby",
-      "message": "chat ui",
-      "category": "other"
-    },
-    {
-      "hash": "b96459e",
-      "fullHash": "b96459e5124653234b5390896c9f7a6201261cb9",
-      "date": "2025-03-03 19:46:14 +0700",
-      "author": "3obby",
-      "message": "builds",
-      "category": "other"
-    },
-    {
-      "hash": "7742b61",
-      "fullHash": "7742b6194cc4398e7aa8c20c0f9984058aaeb227",
-      "date": "2025-03-03 16:44:58 +0700",
-      "author": "3obby",
-      "message": "updates to emojis/subscriptions",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "e0d96fc",
-      "fullHash": "e0d96fcdbe1aa33f6309130f325181fc96540349",
-      "date": "2025-03-02 23:45:10 +0700",
+      "hash": "55ba379",
+      "fullHash": "55ba37982ccae319a8ab4b2c480acc9d198d1b01",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "maybe fixed subscription",
-      "category": "bugfix"
-    },
-    {
-      "hash": "c8b2116",
-      "fullHash": "c8b211659bd856df522745626173d4ca77810485",
-      "date": "2025-03-02 23:35:28 +0700",
-      "author": "3obby",
-      "message": "fixed stripe redirect",
-      "category": "bugfix"
-    },
-    {
-      "hash": "7fc1377",
-      "fullHash": "7fc13775dd308e589bf7f01ae21c503e0b878f66",
-      "date": "2025-03-02 23:24:38 +0700",
-      "author": "3obby",
-      "message": "updated webhook, added patch scripts",
-      "category": "feature"
-    },
-    {
-      "hash": "dd6e418",
-      "fullHash": "dd6e418dd4ef5b458bd2d7d7e985e0c368317b33",
-      "date": "2025-03-02 23:01:34 +0700",
-      "author": "3obby",
-      "message": "corrected price",
-      "category": "other"
-    },
-    {
-      "hash": "a0b36f6",
-      "fullHash": "a0b36f6458c8c4ee5b3c8034d101a13edd2906f2",
-      "date": "2025-03-02 22:49:32 +0700",
-      "author": "3obby",
-      "message": "fixed voting maybe",
-      "category": "bugfix"
-    },
-    {
-      "hash": "322233d",
-      "fullHash": "322233d07e6bfdfffcdecbc7793853bad0de9ff1",
-      "date": "2025-03-02 22:41:07 +0700",
-      "author": "3obby",
-      "message": "updated voting costs",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
       "category": "enhancement"
     },
     {
-      "hash": "bae7130",
-      "fullHash": "bae713074d7ca44db7cba28f9ea91f9e2d049a51",
-      "date": "2025-03-02 22:36:08 +0700",
+      "hash": "a19efa6",
+      "fullHash": "a19efa69697a166993e67efb87b2c87ac4dd1246",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "monthy to weekly pt 2",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "28d7c17",
-      "fullHash": "28d7c1782a2b267909aab0744e08a11dc7c83654",
-      "date": "2025-03-02 22:26:27 +0700",
+      "hash": "306dddb",
+      "fullHash": "306dddbe070bbd58639dacba395c6f3b2323a2d9",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "changed monthly to weekly sub",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "8d19ff2",
-      "fullHash": "8d19ff2fc4858823a3416a018b7271b2f3794a55",
-      "date": "2025-03-02 22:15:08 +0700",
+      "hash": "5531478",
+      "fullHash": "55314783721f42475d865c2e9d9a3ff2d23eb5da",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "renamed, fixed stripe, edit vote costs",
-      "category": "bugfix"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "ce20232",
-      "fullHash": "ce20232490018cad03db7fdaf8d9c1b1eb583655",
-      "date": "2025-03-02 21:47:57 +0700",
+      "hash": "a86d054",
+      "fullHash": "a86d0545701acc839bf078674bd7fad493a5b990",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "groupchatbotbuilder builds",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "e60c887",
-      "fullHash": "e60c887b3360a304fc1591876acfacf19cb0fea9",
-      "date": "2025-03-02 21:15:38 +0700",
+      "hash": "d28f93b",
+      "fullHash": "d28f93b0b6cf53bc5bbc074d939137bdd8a66f1b",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "freemium 10k creds",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "ac0e954",
-      "fullHash": "ac0e954f8a0dc81e379d7eae9f867a6a72da0d16",
-      "date": "2025-03-02 18:18:28 +0700",
+      "hash": "2194568",
+      "fullHash": "21945685a2da7127b2242dcbba2b70b4c159249a",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "+ vanilla gpt, settings",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     },
     {
-      "hash": "61b1dda",
-      "fullHash": "61b1dda23ffdbc67def4f6d4542b58226e7858f1",
-      "date": "2025-03-02 15:29:10 +0700",
+      "hash": "647c633",
+      "fullHash": "647c633bbb5729643c681554f7bcd5b1438a92c8",
+      "date": "2025-03-08 19:57:00 +0700",
       "author": "3obby",
-      "message": "bots maintain independent personality",
-      "category": "other"
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "54eb803",
+      "fullHash": "54eb8037b562d62353492511f003756c8270d287",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "57510f8",
+      "fullHash": "57510f8c5071dd094104792bbf0e182dd0a84e89",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7be9459",
+      "fullHash": "7be945914db9c9ed88c21ff258a59e417724d82b",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2fe592c",
+      "fullHash": "2fe592ca7d93b7581e3f2bb5ffba6e1f7adefec6",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "65539c5",
+      "fullHash": "65539c5e029e7ada7da8c21c14bbe2e7fa51c4b8",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e2c06a1",
+      "fullHash": "e2c06a17b3865dfaf5296a10cabd5f6cf47ed3bf",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "c6f2ad9",
+      "fullHash": "c6f2ad972a328736dd325e93c7a78c33915940e6",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "90d36ca",
+      "fullHash": "90d36ca54fd64d906c84afbb0ce2c247ac301726",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "89c5da8",
+      "fullHash": "89c5da8dd073e4683170139f8b9920efcd230ffe",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4eaa7b2",
+      "fullHash": "4eaa7b28be6701a656070e5db0cbf32a47e39c84",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "b27804b",
+      "fullHash": "b27804b03aace59fefb0a0cf6eff97ec7b4cbbc3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7df643c",
+      "fullHash": "7df643cd66beb4d786748a64dfcafdd42cd7cc9d",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9fa40e1",
+      "fullHash": "9fa40e1b361ae371505c4cc5ccceac975decc8ae",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "f164fec",
+      "fullHash": "f164fec0a0c89ac846978bee54acc488dd214e68",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "81581d2",
+      "fullHash": "81581d21f04eb55cbc4f55f15c738fcc981aa743",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "24099e3",
+      "fullHash": "24099e31d42ce858932b17e438d3c96020e28160",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "8a14a12",
+      "fullHash": "8a14a12db0e39058a0a34b4a6af341a9019d6a46",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "f46da91",
+      "fullHash": "f46da91d5a693d9cd4dc86c6ea66c131afab724f",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "07106c7",
+      "fullHash": "07106c724ce8022058a4c06018227264422c823f",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7181dd7",
+      "fullHash": "7181dd7ac15c1a2c8bd06087812a4dfd7988296e",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "207b596",
+      "fullHash": "207b5969db4291af0874ce0742425c3e38f4bb4e",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2635e5b",
+      "fullHash": "2635e5ba1343e21b494428086e326c52dc5e9ced",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e6af26f",
+      "fullHash": "e6af26f37cea3e29444149774a105d4522fe44ae",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "818f831",
+      "fullHash": "818f83187d86cb73fcb83d4aa729f11d820173e2",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4998c44",
+      "fullHash": "4998c4448f5f8d5ee0cf26dbd0d39064ea26fc06",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "58e2582",
+      "fullHash": "58e2582ed0b27d3b82b6a8d9b81372f70d79d7b7",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "0661741",
+      "fullHash": "066174156ded7f8b6224d030deaf56890d5a7918",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "285ef61",
+      "fullHash": "285ef61ff50e7af1963111e416e5bedcaea71c8f",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7bc8844",
+      "fullHash": "7bc88442be0aae95b6204824f9f2b15441181885",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "d4a5455",
+      "fullHash": "d4a54559267a6bb3bc2ceed7691a9be26e09ffa6",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e01f6a0",
+      "fullHash": "e01f6a0214505232d3629fd269e81de102386d83",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "22a2eb3",
+      "fullHash": "22a2eb331c66c9e71c2545bebf1311d02fdb99cd",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7b3cc22",
+      "fullHash": "7b3cc222c761e5653a74089c79baab7a4c68be9b",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2be405b",
+      "fullHash": "2be405bef66fd4449cebe2db3b11b8da3c2562fb",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "affb7be",
+      "fullHash": "affb7bec900092af3ef69b98e82ad32c41e01437",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "42bccaf",
+      "fullHash": "42bccaff77302a48cf0ae6fe1530e033db802d5b",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7ebcc9d",
+      "fullHash": "7ebcc9dcf50f1512ecafcf08be085f12d77924b4",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "1907c8d",
+      "fullHash": "1907c8d39269b327e45385bafa8ccb58c4039966",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7513a00",
+      "fullHash": "7513a003ea2651867ca6cdfcbb5f156db6941c19",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "f8abfc9",
+      "fullHash": "f8abfc9e17a0e8f4870c9680c55295050b5cd08b",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2d5ee0f",
+      "fullHash": "2d5ee0f2a36649349b871bb3fa8bafdee54e16ac",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "6d8a226",
+      "fullHash": "6d8a226299390132ca78bf3fb8c0906289cb9b91",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "79556fc",
+      "fullHash": "79556fce457211e9b5228d81e2c15675324b74b3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "259ce61",
+      "fullHash": "259ce616622bea1eb370032b74f5f7e6b50488a0",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "131170f",
+      "fullHash": "131170f28b664281aa3c40e60bcc95724dd0d03f",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4762313",
+      "fullHash": "4762313481f7faec8337d29b370ba813b0dd88fa",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "505f48f",
+      "fullHash": "505f48ffd3012b3ffaabc0d4b7b6a2c49daeafbd",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "1b94a85",
+      "fullHash": "1b94a85327da981aae19dd9d059cf8f9ad223b81",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "8fe0172",
+      "fullHash": "8fe017286ca7e9a3fb587e2b3307997e1ce5cad3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "d748220",
+      "fullHash": "d7482202ace0f98f128a5b43d231dad22b241866",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4572b8f",
+      "fullHash": "4572b8f95808d23492007921fdaf3a91b04fea5b",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "26514c2",
+      "fullHash": "26514c247b13a4caa71780a1ad35ef5b794e55ad",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9bc5f4f",
+      "fullHash": "9bc5f4f9bcdd8c8993942088a73250619ab46e73",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "1a72e0f",
+      "fullHash": "1a72e0f3689c8c1f1f56277414444ed471f9b96c",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e2e247f",
+      "fullHash": "e2e247f1ceb2cc86fbd11e5863881a4cb6dc42f0",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "abc9482",
+      "fullHash": "abc948272801b59364d79473fd4204f05671fc39",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "6b3d996",
+      "fullHash": "6b3d99676db7a2676b4fce3628d5cac47be9fec3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "fbe8bdb",
+      "fullHash": "fbe8bdbc4988eb7119eb5070c965af67a4ecc094",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9154edb",
+      "fullHash": "9154edbd39bfd416f4223bf8e815baa79376e777",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "846a428",
+      "fullHash": "846a4285ad47c04eea250dad5ef06515c8ab1696",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4965af3",
+      "fullHash": "4965af3d7ee4082d9086028d643f0486e693b128",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "a6f17ac",
+      "fullHash": "a6f17ac19c1ee7bc8126661cc86e7e0a7a3948f7",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "cf72510",
+      "fullHash": "cf725109e349018f906eccf318e4121ebf81557d",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "a78fc91",
+      "fullHash": "a78fc91981d0d6b045474a6fd760e09c09a27afc",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7870995",
+      "fullHash": "78709957da6fc3801991bd740c51364cd4ffaa96",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "81990d2",
+      "fullHash": "81990d20095648b53368554182a8c9f860bb25e3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "ec34299",
+      "fullHash": "ec34299f80fc17e458da1badb415fbff173bab57",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "14bff5e",
+      "fullHash": "14bff5e03551371b09ac3e1c9f33d5b963aa9868",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "67e0c80",
+      "fullHash": "67e0c8045b75009b97b838468dc475a07f18fcc3",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "34466b1",
+      "fullHash": "34466b1309f6bb14e2bade40a62fc1fab2c0b71d",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e2c281c",
+      "fullHash": "e2c281c01d5e066b4c3eadc3ed2cd988e1d200ef",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2bf5592",
+      "fullHash": "2bf5592f2cb093b3a7f2bca3f1942633625b10aa",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "358fabd",
+      "fullHash": "358fabda1385f958c6d0ee9c1a039efa7eb1741a",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "b813b37",
+      "fullHash": "b813b37219c16094b839fda5210295ad53a9930d",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "a361c94",
+      "fullHash": "a361c94c4144712864017f6f34b0566e82365d30",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "b4b238c",
+      "fullHash": "b4b238c15953c081502d1f51f1e3666fe32a4ec0",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9427870",
+      "fullHash": "9427870e1cc99c16c15e20f024a5df5a7977addd",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4a1dab5",
+      "fullHash": "4a1dab5ad38aa78ebc759263ec48499f91aee085",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4f7b14f",
+      "fullHash": "4f7b14f5c8cc4ba9529820e74dd79ba99a2b4b1a",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
+    },
+    {
+      "hash": "0429077",
+      "fullHash": "04290778de929dfeae7d9eb727de7c2f19fd9b3d",
+      "date": "2025-03-08 19:57:00 +0700",
+      "author": "3obby",
+      "message": "ENHANCE: Update setup-hooks.js to better handle auto-documentation",
+      "category": "enhancement"
     }
   ]
 }

@@ -16,9 +16,9 @@ function setupPostCommitHook() {
 # Run the version update script after each commit
 node "$(git rev-parse --show-toplevel)/scripts/update-version.js"
 
-# Additional command to stage and commit the version changes if needed
-# git add version.json app/\\(auth\\)/\\(routes\\)/login/page.tsx
-# git commit --amend --no-edit
+# Automatically commit version changes
+git add version.json public/commit-history.json app/\\(auth\\)/\\(routes\\)/login/page.tsx
+git commit --amend --no-edit >/dev/null 2>&1 || true
 `;
 
   // Ensure the hooks directory exists
@@ -46,8 +46,8 @@ function initializeVersion() {
   if (!fs.existsSync(versionFile)) {
     fs.writeFileSync(versionFile, JSON.stringify({
       major: 0,
-      minor: 2,
-      patch: 14,
+      minor: 3,
+      patch: 3,
       lastCommit: '',
     }, null, 2));
     
@@ -73,6 +73,8 @@ Auto-documentation setup complete!
 Every commit will now:
 1. Automatically update the version number based on commit message keywords
 2. Update the version displayed on the login page
+3. Update the commit history file for the updates page
+4. Auto-amend the commit to include these version changes
 
 Important Notes:
 - Include "major" or "breaking" in commit messages for major version bumps
