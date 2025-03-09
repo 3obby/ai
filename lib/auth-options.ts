@@ -7,6 +7,7 @@ import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import { compare } from "bcrypt";
 import { PrismaClient } from "@prisma/client";
+import { sendVerificationRequest } from "@/lib/resend-adapter";
 
 // Use process.env.NODE_ENV to determine the environment
 const isProduction = process.env.NODE_ENV === "production";
@@ -26,14 +27,15 @@ export const authOptions: NextAuthOptions = {
   providers: [
     EmailProvider({
       server: {
-        host: process.env.SMTP_HOST || "smtp.postmarkapp.com", // Corrected hostname
+        host: "unused", // Not used with custom sendVerificationRequest
         port: 587,
         auth: {
-          user: process.env.SMTP_USER || process.env.POSTMARK_API_KEY || "",
-          pass: process.env.SMTP_PASSWORD || process.env.POSTMARK_API_KEY || "",
+          user: "unused",
+          pass: "unused",
         },
       },
       from: process.env.SMTP_FROM || "auth@groupchatbotbuilder.com",
+      sendVerificationRequest, // Use our custom function to send emails with Resend
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",

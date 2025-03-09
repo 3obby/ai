@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c28776d",
+      "fullHash": "c28776dd0644d4e57f5e56cdb2d3bf74ed568451",
+      "date": "2025-03-09 23:41:39 +0700",
+      "author": "3obby",
+      "message": "Replace Postmark with Resend for faster email delivery; Add clean email templates with GCBB branding; Add script to credit all users with 1M tokens",
+      "category": "feature"
+    },
+    {
       "hash": "00c34c7",
       "fullHash": "00c34c75b3f8f7ed5abfa63180305265a58c7059",
       "date": "2025-03-09 22:15:52 +0700",
