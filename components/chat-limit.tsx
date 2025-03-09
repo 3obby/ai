@@ -18,9 +18,9 @@ interface ChatLimitProps {
 }
 
 interface UserProgress {
-  earnedXP: number
+  earnedTokens: number
   level: number
-  nextLevelXP: number
+  nextLevelTokens: number
   progressToNextLevel: number
   usedTokens: number
   remainingTokens: number
@@ -67,9 +67,9 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
       }
 
       setProgress({
-        earnedXP: data.earnedXP || 0,
+        earnedTokens: data.burnedTokens || 0,
         level: data.level || 0,
-        nextLevelXP: data.nextLevelXP || 0,
+        nextLevelTokens: data.nextLevelTokens || 0,
         progressToNextLevel: data.progressToNextLevel || 0,
         usedTokens: data.usedTokens || 0,
         remainingTokens: data.remainingTokens || 0,
@@ -133,32 +133,33 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
     )
   }
 
-  const xpNeededForNextLevel = progress.nextLevelXP - progress.earnedXP
+  const tokensNeededForNextLevel = progress.nextLevelTokens - progress.earnedTokens
 
   const levelInfoText =
-    xpNeededForNextLevel > 0
-      ? `Need ${xpNeededForNextLevel} more XP to reach Level ${
+    tokensNeededForNextLevel > 0
+      ? `Need ${tokensNeededForNextLevel} more tokens to reach Level ${
           progress.level + 1
         }`
       : "Ready to level up!"
 
-  // Function to determine badge color based on level
+  // Function to get level badge colors based on level
   const getLevelBadgeColor = (level: number) => {
-    if (level < 5) return "bg-blue-500"
-    if (level < 10) return "bg-emerald-500"
-    if (level < 20) return "bg-purple-500"
-    if (level < 50) return "bg-amber-500"
-    return "bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"
+    if (level < 5) return "bg-zinc-700"
+    if (level < 10) return "bg-green-600"
+    if (level < 15) return "bg-blue-600"
+    if (level < 20) return "bg-purple-600"
+    if (level < 25) return "bg-amber-500"
+    return "bg-red-600"
   }
 
-  // Function to determine level title
+  // Function to get level titles based on level
   const getLevelTitle = (level: number) => {
-    if (level < 3) return "Novice"
-    if (level < 7) return "Apprentice"
-    if (level < 15) return "Adept"
-    if (level < 25) return "Expert"
-    if (level < 40) return "Master"
-    return "Grandmaster"
+    if (level < 5) return "Novice Burner"
+    if (level < 10) return "Token Torcher"
+    if (level < 15) return "Flame Forger"
+    if (level < 20) return "Inferno Invoker"
+    if (level < 25) return "Blaze Master"
+    return "Pyromancer"
   }
 
   return (
@@ -243,10 +244,10 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
               </div>
               <div className="text-right">
                 <span className="block text-xs text-muted-foreground">
-                  Total XP
+                  Total Tokens Burned
                 </span>
                 <span className="text-lg font-bold">
-                  {progress.earnedXP.toLocaleString()}
+                  {progress.earnedTokens.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -258,8 +259,8 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
                   Progress to Level {progress.level + 1}
                 </span>
                 <span className="text-emerald-500 font-semibold">
-                  {progress.earnedXP.toLocaleString()} /{" "}
-                  {progress.nextLevelXP.toLocaleString()} XP
+                  {progress.earnedTokens.toLocaleString()} /{" "}
+                  {progress.nextLevelTokens.toLocaleString()} tokens
                 </span>
               </div>
 
@@ -271,10 +272,10 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
                 />
               </div>
 
-              {/* XP Needed */}
+              {/* Tokens Needed */}
               <p className="text-xs text-muted-foreground">
-                {xpNeededForNextLevel > 0
-                  ? `${xpNeededForNextLevel.toLocaleString()} XP needed for next level`
+                {tokensNeededForNextLevel > 0
+                  ? `${tokensNeededForNextLevel.toLocaleString()} more tokens to burn for next level`
                   : "Ready to level up!"}
               </p>
             </div>
@@ -295,32 +296,35 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-x-2">
-                  <Star className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs text-muted-foreground">XP Rate</span>
+                  <span className="text-red-500">🔥</span>
+                  <span className="text-xs text-muted-foreground">Burn Rate</span>
                 </div>
-                <p className="text-sm font-semibold">+1 XP / 100 tokens</p>
+                <p className="text-sm font-semibold">+1 token / 100 tokens</p>
               </div>
             </div>
 
             {/* Info Section */}
             <div className="space-y-3 text-sm text-muted-foreground border-t pt-3">
-              <p className="font-semibold text-primary">How it works:</p>
-              <ul className="space-y-2 text-xs">
-                <li className="flex items-center gap-x-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  {progress.isSubscribed
-                    ? "Your subscription includes 1M tokens per month"
-                    : "You have 10,000 free tokens to use"}
-                </li>
-                <li className="flex items-center gap-x-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Earn XP by using the AI features
-                </li>
-                <li className="flex items-center gap-x-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Level up to unlock badges and recognition
-                </li>
-              </ul>
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center gap-x-2">
+                  <span className="text-xs">♟</span>
+                  <span className="text-sm font-medium">How it works:</span>
+                </div>
+                <ul className="text-xs space-y-1.5 text-muted-foreground">
+                  <li className="flex items-center gap-x-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Burn tokens by using the AI features
+                  </li>
+                  <li className="flex items-center gap-x-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Reach new levels as you burn more tokens
+                  </li>
+                  <li className="flex items-center gap-x-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Unlock new features with higher levels
+                  </li>
+                </ul>
+              </div>
               <p className="text-xs font-medium text-emerald-500 pt-2">
                 {levelInfoText}
               </p>

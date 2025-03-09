@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "094bfdd",
+      "fullHash": "094bfdd447be26110c76866934a1dcaf2ef028b7",
+      "date": "2025-03-09 13:00:14 +0700",
+      "author": "3obby",
+      "message": "Change XP to 'tokens burned' terminology and add fire emoji icon",
+      "category": "feature"
+    },
+    {
       "hash": "9e513f8",
       "fullHash": "9e513f8a6e172aa64ec1412d452ca5e1856fae1c",
       "date": "2025-03-09 12:49:15 +0700",

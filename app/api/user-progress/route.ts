@@ -62,9 +62,9 @@ export async function GET(req: Request) {
 
         // Return initial data
         return NextResponse.json({
-          earnedXP: 0,
+          burnedTokens: 0,
           level: 0,
-          nextLevelXP: getXPForNextLevel(0),
+          nextLevelTokens: getXPForNextLevel(0),
           progressToNextLevel: 0,
           usedTokens: 0,
           remainingTokens: FREE_TOKEN_ALLOWANCE,
@@ -86,11 +86,11 @@ export async function GET(req: Request) {
       )
     }
 
-    // Use totalSpent as the XP value
-    const currentXP = userUsage.totalSpent || 0
-    const currentLevel = calculateLevel(currentXP)
-    const nextLevelXP = getXPForNextLevel(currentLevel)
-    const progressToNextLevel = getProgressToNextLevel(currentXP)
+    // Use totalSpent as the tokens burned value
+    const currentTokensBurned = userUsage.totalSpent || 0
+    const currentLevel = calculateLevel(currentTokensBurned)
+    const nextLevelTokens = getXPForNextLevel(currentLevel)
+    const progressToNextLevel = getProgressToNextLevel(currentTokensBurned)
 
     // Check subscription status
     const isSubscribed =
@@ -110,9 +110,9 @@ export async function GET(req: Request) {
     const usedTokens = Math.max(0, baseTokens - remainingTokens)
 
     return NextResponse.json({
-      earnedXP: currentXP,
+      burnedTokens: currentTokensBurned,
       level: currentLevel,
-      nextLevelXP: nextLevelXP,
+      nextLevelTokens: nextLevelTokens,
       progressToNextLevel: progressToNextLevel,
       usedTokens: usedTokens,
       remainingTokens: remainingTokens,
