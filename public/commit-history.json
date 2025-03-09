@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "8064266",
+      "fullHash": "80642664f8a348acbb2bb091a7f72bb9a07983ab",
+      "date": "2025-03-09 12:39:30 +0700",
+      "author": "3obby",
+      "message": "Enhance bot image handling with auto-formatting and fallback mechanism",
+      "category": "enhancement"
+    },
+    {
       "hash": "441b76b",
       "fullHash": "441b76ba0961157ca88f1b2ff2a9e9d4ac583858",
       "date": "2025-03-09 12:27:38 +0700",
