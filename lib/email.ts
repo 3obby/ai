@@ -67,16 +67,10 @@ const createEmailHtml = (message: string): string => {
             border-top: 1px solid #374151;
             padding-top: 20px;
           }
-          .brand-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-          }
           .brand {
             font-size: 18px;
             font-weight: bold;
             color: #f97316;
-            margin-bottom: 2px;
           }
           .version {
             font-size: 12px;
@@ -116,11 +110,9 @@ const createEmailHtml = (message: string): string => {
           
           <!-- Bottom section with logo and branding -->
           <div class="bottom-section">
-            <div class="brand-info">
-              <div class="brand">GCBB</div>
-              <div class="version">${version}</div>
-            </div>
+            <div class="brand">GCBB</div>
             <img src="https://groupchatbotbuilder.com/feather.png" alt="GCBB Logo" class="logo">
+            <div class="version">${version}</div>
           </div>
           
           <div class="footer">

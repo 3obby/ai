@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9ae6766",
+      "fullHash": "9ae6766b5100f5619dac2e579a5ffeb65c440bde",
+      "date": "2025-03-10 00:51:05 +0700",
+      "author": "3obby",
+      "message": "Update IntegratedLogo styling and email template layout",
+      "category": "enhancement"
+    },
+    {
       "hash": "356ad3d",
       "fullHash": "356ad3d6bf39dc2e9afdf04806eb4b43b8d84924",
       "date": "2025-03-10 00:44:13 +0700",
