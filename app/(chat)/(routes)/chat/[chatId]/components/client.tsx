@@ -364,17 +364,14 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
   return (
     <ConfigProvider initialCompanionId={companion.id}>
       <div className="flex flex-col h-full p-1 space-y-1">
-        <div className="flex items-center justify-between">
-          <ChatHeader
-            companion={companion}
-            onClear={onClear}
-            isGroupChat={false}
-            isClearingMessages={isClearingMessages}
-          />
-          <div className="flex items-center space-x-2">
-            <ChatConfigButton companionId={companion.id} />
-          </div>
-        </div>
+        <ChatHeader
+          companion={companion}
+          onClear={onClear}
+          isGroupChat={false}
+          isClearingMessages={isClearingMessages}
+        >
+          <ChatConfigButton companionId={companion.id} />
+        </ChatHeader>
         <ChatMessages
           messages={messages}
           isLoading={isLoading}

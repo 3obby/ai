@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "e3daa93",
+      "fullHash": "e3daa93ef9c8ffc32cb7bbaaea703ad939230388",
+      "date": "2025-03-09 21:15:23 +0700",
+      "author": "3obby",
+      "message": "Fix duplicate Configure Chat button issue",
+      "category": "bugfix"
+    },
+    {
       "hash": "51ddd21",
       "fullHash": "51ddd21d2ee08e4f06a461ad9c4dc9671405b0db",
       "date": "2025-03-09 21:09:39 +0700",

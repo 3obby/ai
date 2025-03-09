@@ -26,7 +26,6 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { ConfirmationModal } from "@/components/modals/confirmation-modal"
 import { CreateGroupChatModal } from "@/components/modals/create-group-chat-modal"
-import { ChatConfigButton } from "@/app/components/chat-config/ChatConfigButton"
 
 interface ChatHeaderProps {
   companion: Companion & {
@@ -38,6 +37,7 @@ interface ChatHeaderProps {
   onClear: (onClose: () => void) => void
   isGroupChat: boolean
   isClearingMessages: boolean
+  children?: React.ReactNode;
 }
 
 export const ChatHeader = ({
@@ -45,6 +45,7 @@ export const ChatHeader = ({
   onClear,
   isGroupChat,
   isClearingMessages,
+  children,
 }: ChatHeaderProps) => {
   const router = useRouter()
   const { user } = useCurrentUser()
@@ -120,7 +121,7 @@ export const ChatHeader = ({
         </div>
 
         <div className="flex items-center gap-x-2">
-          <ChatConfigButton companionId={companion.id} />
+          {children}
           
           <Button
             onClick={() => setShowCreateGroup(true)}
