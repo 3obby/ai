@@ -53,25 +53,20 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
 
   return (
     <Link href="/" className="block">
-      <div className="relative flex items-center justify-start h-10 rounded-md overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/40 to-orange-400/20 hover:from-orange-500/50 hover:to-orange-400/30 dark:from-orange-500/30 dark:to-orange-400/20 transition-all"></div>
-        
-        {/* Token balance */}
-        <div className="ml-3 relative z-10 flex items-center">
-          <div className="flex items-center gap-1.5">
-            <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span className={cn(
-              "text-sm font-semibold text-zinc-800 dark:text-white",
-              font.className,
-              isLoading && "animate-pulse"
-            )}>
-              {tokenBalance}
-            </span>
-          </div>
+      <div className="relative flex items-center justify-end h-10 rounded-md overflow-hidden group">
+        {/* Feather logo - now first */}
+        <div className="relative flex items-center justify-center h-10 w-10 z-10 mr-2">
+          <Image
+            src="/feather.png"
+            alt="Feather Logo"
+            width={26}
+            height={26}
+            className="transform transition-transform duration-700 group-hover:scale-110"
+          />
         </div>
         
-        {/* Divider */}
-        <div className="h-6 mx-2 w-px bg-zinc-300/50 dark:bg-zinc-700/50"></div>
+        {/* Orange gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/40 to-orange-400/20 hover:from-orange-500/50 hover:to-orange-400/30 dark:from-orange-500/30 dark:to-orange-400/20 transition-all"></div>
         
         {/* Text - GCBB */}
         <div className="relative z-10 flex items-center">
@@ -83,15 +78,21 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
           </span>
         </div>
         
-        {/* Feather logo */}
-        <div className="relative flex items-center justify-center h-10 w-10 z-10 ml-2">
-          <Image
-            src="/feather.png"
-            alt="Feather Logo"
-            width={26}
-            height={26}
-            className="transform transition-transform duration-700 group-hover:scale-110"
-          />
+        {/* Divider */}
+        <div className="h-6 mx-2 w-px bg-zinc-300/50 dark:bg-zinc-700/50"></div>
+        
+        {/* Token balance */}
+        <div className="mr-3 relative z-10 flex items-center">
+          <div className="flex items-center gap-1.5">
+            <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className={cn(
+              "text-sm font-semibold text-zinc-800 dark:text-white",
+              font.className,
+              isLoading && "animate-pulse"
+            )}>
+              {tokenBalance}
+            </span>
+          </div>
         </div>
       </div>
     </Link>

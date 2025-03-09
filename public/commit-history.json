@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "db80d9f",
+      "fullHash": "db80d9ff4cb96f75877cda3b90b014ccb3f7e349",
+      "date": "2025-03-10 00:35:01 +0700",
+      "author": "3obby",
+      "message": "Swap navbar elements: Move logo to right side and user controls to left side",
+      "category": "other"
+    },
+    {
       "hash": "cfb5d7a",
       "fullHash": "cfb5d7a78e4cabcf51b796892a380bfa95fccf16",
       "date": "2025-03-10 00:31:49 +0700",

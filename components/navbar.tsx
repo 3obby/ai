@@ -27,53 +27,57 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
 
   return (
     <div className="fixed top-0 right-0 md:left-20 left-0 z-40 border-b border-primary/10 bg-secondary h-16 sm:h-16 md:h-16">
-      <div className="h-full px-4 flex items-center">
-        {/* Left side */}
+      <div className="h-full px-4 flex items-center justify-between">
+        {/* Left side - now contains user controls */}
         <div className="flex items-center">
           <div className="md:hidden mr-2 flex items-center justify-center">
             <MobileSidebar isPro={isPro} userId={userId} />
           </div>
-          <div className="flex-shrink-0">
-            <IntegratedLogo userId={userId} />
+          
+          {/* User avatar and settings moved to left */}
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={settingsModal.onOpen}
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 rounded-full flex items-center justify-center"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            
+            <div>
+              <UserButton />
+            </div>
+          </div>
+          
+          {/* Buy tokens button */}
+          <div className="hidden md:block ml-3">
+            <Link href="/subscribe">
+              <Button 
+                size="sm" 
+                variant={isPro ? "outline" : "premium"}
+                className="h-8 px-3 text-xs whitespace-nowrap"
+              >
+                {isPro ? (
+                  <>
+                    <Coins className="h-3 w-3 text-amber-500 mr-1" />
+                    Buy Tokens
+                  </>
+                ) : (
+                  <>
+                    Upgrade
+                    <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
+                  </>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
         
-        {/* Spacer - pushes right side to edge */}
-        <div className="flex-grow"></div>
-        
-        {/* Right side - User profile and controls */}
-        <div className="flex items-center space-x-2 md:space-x-4">
-          <Link href="/subscribe" className="hidden md:block">
-            <Button 
-              size="sm" 
-              variant={isPro ? "outline" : "premium"}
-              className="h-8 px-3 text-xs whitespace-nowrap"
-            >
-              {isPro ? (
-                <>
-                  <Coins className="h-3 w-3 text-amber-500 mr-1" />
-                  Buy Tokens
-                </>
-              ) : (
-                <>
-                  Upgrade
-                  <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
-                </>
-              )}
-            </Button>
-          </Link>
-          
-          <Button
-            onClick={settingsModal.onOpen}
-            size="icon"
-            variant="ghost"
-            className="h-9 w-9 rounded-full flex items-center justify-center"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-          
-          <div className="pl-1">
-            <UserButton />
+        {/* Right side - now contains the logo */}
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <IntegratedLogo userId={userId} />
           </div>
         </div>
       </div>
@@ -82,3 +86,4 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
     </div>
   )
 }
+
