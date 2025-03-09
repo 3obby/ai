@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Companion } from "@prisma/client"
-import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot, Info } from "lucide-react";
+import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot, Info, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +149,15 @@ export const Companions = ({
                     onLoad={() => handleImageLoaded(item.id)}
                     onError={() => handleImageError(item.id)}
                   />
+                  
+                  {/* Configure button */}
+                  <Link 
+                    href={`/companion/${item.id}/configure`}
+                    className="absolute top-0 right-0 p-1 bg-zinc-800/70 hover:bg-zinc-800 rounded-bl-lg rounded-tr-lg transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Settings className="h-4 w-4 text-zinc-200" />
+                  </Link>
                 </div>
                 {loadingImages[item.id] ? (
                   <Skeleton className="h-5 w-20 mx-auto" />

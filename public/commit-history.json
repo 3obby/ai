@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6014600",
+      "fullHash": "601460074c6a74757d3d24daace9f0a98d276cd6",
+      "date": "2025-03-10 01:32:54 +0700",
+      "author": "3obby",
+      "message": "Add configuration button to companion cards",
+      "category": "feature"
+    },
+    {
       "hash": "6e94c5f",
       "fullHash": "6e94c5ff36e4524d11eec466fcb2088df5059c18",
       "date": "2025-03-10 01:07:37 +0700",
