@@ -43,19 +43,19 @@ export const SearchInput = () => {
 
   return (
     <div className="relative w-full max-w-sm mx-auto">
-      <Search className="absolute h-4 w-4 top-3 left-4 text-muted-foreground" />
+      <Search className="absolute h-4 w-4 top-3.5 left-4 text-muted-foreground" />
       <Input
         onChange={onChange}
         value={value}
         placeholder="Search companions..."
-        className="pl-10 pr-10 bg-primary/10 rounded-full h-10 text-sm focus-visible:ring-1 focus-visible:ring-offset-0"
+        className="pl-10 pr-10 bg-primary/10 rounded-full h-11 text-base sm:text-sm focus-visible:ring-1 focus-visible:ring-offset-0"
       />
       {value && (
         <Button 
           onClick={clearSearch}
           size="sm" 
           variant="ghost" 
-          className="absolute right-1 top-1.5 h-7 w-7 rounded-full p-0 flex items-center justify-center"
+          className="absolute right-1 top-2 h-7 w-7 rounded-full p-0 flex items-center justify-center"
         >
           <X className="h-4 w-4 text-muted-foreground" />
         </Button>

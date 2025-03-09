@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "32d2839",
+      "fullHash": "32d2839a2f0541f09da1971442816178e98faf14",
+      "date": "2025-03-10 00:56:23 +0700",
+      "author": "3obby",
+      "message": "Improve mobile design for dashboard: larger text, icons, and better spacing",
+      "category": "enhancement"
+    },
+    {
       "hash": "9ae6766",
       "fullHash": "9ae6766b5100f5619dac2e579a5ffeb65c440bde",
       "date": "2025-03-10 00:51:05 +0700",

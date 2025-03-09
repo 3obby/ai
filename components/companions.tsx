@@ -127,7 +127,7 @@ export const Companions = ({
 
   return (
     <div className="space-y-4 mb-8 max-w-full overflow-hidden">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-2 md:px-4 max-w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-1 sm:px-2 md:px-4 max-w-full">
         {data.map((item) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
@@ -154,10 +154,10 @@ export const Companions = ({
                   <Skeleton className="h-5 w-20 mx-auto" />
                 ) : (
                   <div className="space-y-0">
-                    <p className="font-semibold text-sm sm:text-base text-zinc-800 dark:text-foreground truncate max-w-[140px]">
+                    <p className="font-semibold text-base sm:text-base text-zinc-800 dark:text-foreground truncate max-w-[200px] sm:max-w-[140px]">
                       {item.name}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium truncate max-w-[140px]">@{item.userName}</p>
+                    <p className="text-sm sm:text-xs text-zinc-600 dark:text-muted-foreground font-medium truncate max-w-[200px] sm:max-w-[140px]">@{item.userName}</p>
                   </div>
                 )}
               </CardHeader>
@@ -173,7 +173,7 @@ export const Companions = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2 text-left">
+                        <p className="text-sm sm:text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2 text-left">
                           {generateTechDescription(item)}
                         </p>
                       </TooltipTrigger>
@@ -189,12 +189,12 @@ export const Companions = ({
                 <div className="flex items-center justify-between w-full">
                   {/* Global tokens burned */}
                   {loadingImages[item.id] ? (
-                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-5 w-16" />
                   ) : (
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs px-2 py-0">
-                      <div className="flex items-center gap-1">
-                        <Globe className="h-3 w-3 text-blue-500" />
-                        <span className="text-[10px] sm:text-xs font-medium truncate">
+                    <Badge variant="secondary" className="text-sm sm:text-xs px-2 py-0.5 h-6 sm:h-5">
+                      <div className="flex items-center gap-1.5">
+                        <Globe className="h-3.5 w-3.5 sm:h-3 sm:w-3 text-blue-500" />
+                        <span className="text-sm sm:text-xs font-medium truncate">
                           {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
                         </span>
                       </div>
@@ -203,10 +203,10 @@ export const Companions = ({
                   
                   {/* User-specific tokens burned - Always show, even if 0 */}
                   {!loadingImages[item.id] && userId && (
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs px-2 py-0">
-                      <div className="flex items-center gap-1">
-                        <Flame className="h-3 w-3 text-red-500" />
-                        <span className="text-[10px] sm:text-xs font-medium truncate">
+                    <Badge variant="secondary" className="text-sm sm:text-xs px-2 py-0.5 h-6 sm:h-5">
+                      <div className="flex items-center gap-1.5">
+                        <Flame className="h-3.5 w-3.5 sm:h-3 sm:w-3 text-red-500" />
+                        <span className="text-sm sm:text-xs font-medium truncate">
                           {(item as any).userBurnedTokens && 
                            (item as any).userBurnedTokens.length > 0 ? 
                            (item as any).userBurnedTokens[0].tokensBurned.toLocaleString() : "0"}
@@ -215,17 +215,17 @@ export const Companions = ({
                     </Badge>
                   )}
                   {loadingImages[item.id] && (
-                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-5 w-16" />
                   )}
                 </div>
                 
                 {/* Message count indicator */}
                 {!loadingImages[item.id] && (
-                  <div className="flex items-center w-full justify-center">
-                    <div className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
-                      <div className="flex items-center gap-1">
-                        <MessagesSquare className="h-3 w-3" />
-                        <span className="text-[10px] sm:text-xs">
+                  <div className="flex items-center w-full justify-center mt-1">
+                    <div className="inline-flex items-center rounded-full px-3 py-1 text-sm sm:text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                      <div className="flex items-center gap-1.5">
+                        <MessagesSquare className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
+                        <span className="text-sm sm:text-xs">
                           {item._count.messages} {item._count.messages === 1 ? 'message' : 'messages'}
                         </span>
                       </div>

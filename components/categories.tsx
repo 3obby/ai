@@ -39,10 +39,10 @@ export const Categories = ({
             items-center 
             justify-center
             whitespace-nowrap
-            text-xs 
+            text-sm 
             md:text-sm 
-            px-3
-            py-1.5
+            px-4
+            py-2
             md:py-2
             rounded-full
             font-medium
@@ -64,10 +64,10 @@ export const Categories = ({
               items-center 
               justify-center
               whitespace-nowrap
-              text-xs 
+              text-sm 
               md:text-sm 
-              px-3
-              py-1.5
+              px-4
+              py-2
               md:py-2
               rounded-full
               font-medium
