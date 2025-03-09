@@ -264,13 +264,13 @@ export default function AdminDashboard() {
                 },
                 {
                   accessorKey: "xpEarned",
-                  header: "XP Earned",
+                  header: "Tokens Burned",
                   sortable: true,
                   cell: ({ row }) => {
                     const bot = row.original as unknown as Companion;
                     return (
                       <Badge variant="secondary">
-                        {bot.xpEarned.toLocaleString()} XP
+                        {bot.xpEarned.toLocaleString()} tokens
                       </Badge>
                     );
                   },

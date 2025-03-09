@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import OpenAI from "openai"
 import prismadb from "@/lib/prismadb"
 import { Companion } from "@prisma/client"
+import { TOKENS_PER_GROUP_MESSAGE } from "@/lib/token-usage"
 
 
 // Force dynamic rendering for API routes
@@ -769,18 +770,18 @@ const userId = session?.userId;
                 // Stream the message immediately
                 await sendMessage(botMessage)
 
-                // Update bot's XP
+                // Update bot's tokens burned count
                 await prismadb.companion.update({
                   where: { id: bot.id },
-                  data: { xpEarned: { increment: XP_PER_MESSAGE } },
+                  data: { xpEarned: { increment: TOKENS_PER_GROUP_MESSAGE } },
                 })
 
                 // Update user's token count
                 await prismadb.userUsage.update({
                   where: { userId },
                   data: {
-                    availableTokens: { decrement: XP_PER_MESSAGE },
-                    totalSpent: { increment: XP_PER_MESSAGE },
+                    availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
+                    totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },
                   },
                 })
               }
@@ -799,17 +800,17 @@ const userId = session?.userId;
               // Stream the emoji immediately
               await sendMessage(emojiMessage)
 
-              // Update bot's XP and user's tokens
+              // Update bot's tokens burned count
               await prismadb.companion.update({
                 where: { id: bot.id },
-                data: { xpEarned: { increment: XP_PER_MESSAGE } },
+                data: { xpEarned: { increment: TOKENS_PER_GROUP_MESSAGE } },
               })
 
               await prismadb.userUsage.update({
                 where: { userId },
                 data: {
-                  availableTokens: { decrement: XP_PER_MESSAGE },
-                  totalSpent: { increment: XP_PER_MESSAGE },
+                  availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
+                  totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },
                 },
               })
             }

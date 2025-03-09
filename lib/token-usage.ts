@@ -2,20 +2,21 @@ import prismadb from "./prismadb"
 import { COMPUTE_COST_PER_TOKEN, SUBSCRIPTION_PLAN } from "./subscription-plans"
 import { stripe } from "./stripe"
 import { calculateXPEarned } from "./level-system"
+import { auth } from "./auth-helpers"
 
 // Free token allowance for non-subscribed users
 export const FREE_TOKEN_ALLOWANCE = 10000
 
-// Keeping these constants for backward compatibility but they are not used for spending anymore
-export const XP_PER_MESSAGE = 2
-export const XP_PER_GROUP_MESSAGE = 2
-export const XP_PER_COMPANION_CREATION = 100
-export const XP_PER_GROUP_CREATION = 50
+// Token burning constants for user actions
+export const TOKENS_PER_MESSAGE = 2
+export const TOKENS_PER_GROUP_MESSAGE = 2
+export const TOKENS_PER_COMPANION_CREATION = 100
+export const TOKENS_PER_GROUP_CREATION = 50
 
 interface UsageResult {
   success: boolean
   remainingTokens: number
-  earnedXP?: number
+  earnedTokens?: number
   error?: string
 }
 
@@ -150,17 +151,17 @@ export async function trackTokenUsage(
       )
     }
 
-    // Calculate the cost and XP for this usage
+    // Calculate the cost and tokens burned for this usage
     const tokenCost = isSubscribed ? tokenAmount * COMPUTE_COST_PER_TOKEN : 0
-    const xpEarned = calculateXPEarned(tokenAmount, tokenCost)
+    const tokensBurned = calculateXPEarned(tokenAmount, tokenCost)
 
-    // Update user's usage - decrement availableTokens and increment totalSpent for XP
+    // Update user's usage - decrement availableTokens and increment totalSpent for tokens burned
     await prismadb.$transaction([
       prismadb.userUsage.update({
         where: { userId },
         data: {
           availableTokens: { decrement: tokenAmount },
-          totalSpent: { increment: xpEarned }, // Use totalSpent for XP
+          totalSpent: { increment: tokensBurned }, // Use totalSpent for tokens burned
           totalMoneySpent: { increment: tokenCost },
         },
       }),
@@ -182,7 +183,7 @@ export async function trackTokenUsage(
     return {
       success: true,
       remainingTokens: updatedUsage?.availableTokens || 0,
-      earnedXP: xpEarned,
+      earnedTokens: tokensBurned,
     }
   } catch (error) {
     console.error("[TOKEN_USAGE_ERROR]", error)

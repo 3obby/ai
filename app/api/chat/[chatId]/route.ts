@@ -8,6 +8,11 @@ import { StreamingTextResponse } from "ai"
 
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
+import {
+  checkSubscription,
+  trackTokenUsage
+} from "@/lib/token-usage"
+import { TOKENS_PER_MESSAGE } from "@/lib/token-usage"
 
 
 // Force dynamic rendering for API routes
@@ -92,9 +97,10 @@ export async function POST(
       },
     })
 
-    await (prismadb.companion as any).update({
+    // Update bot's tokens burned count
+    await prismadb.companion.update({
       where: { id: params.chatId },
-      data: { xpEarned: { increment: XP_PER_MESSAGE } },
+      data: { xpEarned: { increment: TOKENS_PER_MESSAGE } },
     })
 
     // Wait for the delay

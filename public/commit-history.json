@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9e513f8",
+      "fullHash": "9e513f8a6e172aa64ec1412d452ca5e1856fae1c",
+      "date": "2025-03-09 12:49:15 +0700",
+      "author": "3obby",
+      "message": "Change XP terminology to 'tokens burned' across the codebase",
+      "category": "other"
+    },
+    {
       "hash": "8064266",
       "fullHash": "80642664f8a348acbb2bb091a7f72bb9a07983ab",
       "date": "2025-03-09 12:39:30 +0700",
