@@ -8,7 +8,7 @@ import { absoluteUrl } from "@/lib/utils"
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
 
-const settingsUrl = absoluteUrl("/token-shop")
+const settingsUrl = absoluteUrl("/subscribe")
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const { tokenAmount, priceAmount, packageType } = await req.json()
+    const { tokenAmount, priceAmount, packageType, isSubscriber } = await req.json()
 
     if (!tokenAmount || !priceAmount || !packageType) {
       return new NextResponse("Missing required fields", { status: 400 })
@@ -28,6 +28,11 @@ export async function POST(req: Request) {
 
     // Format package name for display
     const packageName = packageType === 'premium' ? 'Premium Tokens' : 'Standard Tokens';
+    
+    // Add subscriber discount info if applicable
+    const packageDescription = isSubscriber 
+      ? `One-time purchase of ${tokenAmount.toLocaleString()} tokens (20% subscriber discount applied)`
+      : `One-time purchase of ${tokenAmount.toLocaleString()} tokens`;
 
     // Create a one-time payment session
     const stripeSession = await stripe.checkout.sessions.create({
@@ -43,7 +48,7 @@ export async function POST(req: Request) {
             currency: "usd",
             product_data: {
               name: `${packageName} (${tokenAmount.toLocaleString()} tokens)`,
-              description: `One-time purchase of ${tokenAmount.toLocaleString()} tokens`,
+              description: packageDescription,
             },
             unit_amount: priceAmount, // Amount in cents
           },
@@ -55,6 +60,7 @@ export async function POST(req: Request) {
         tokenAmount: tokenAmount.toString(),
         packageType,
         paymentType: "token-purchase",
+        isSubscriber: isSubscriber ? "true" : "false"
       },
     })
 

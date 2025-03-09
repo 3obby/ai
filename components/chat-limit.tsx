@@ -187,13 +187,15 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
           </div>
         </div>
         
-        {/* Add token shop button */}
-        <Link href="/token-shop">
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-            <Coins className="h-3 w-3 mr-1 text-amber-500" />
-            Buy Tokens
-          </Button>
-        </Link>
+        {/* Show Buy Tokens button only for subscribers */}
+        {progress.isSubscribed && (
+          <Link href="/subscribe">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+              <Coins className="h-3 w-3 mr-1 text-amber-500" />
+              Buy Tokens
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Mobile view - Already simplified */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Plus, Users, Settings, MessageSquare, Coins } from "lucide-react"
+import { Home, Plus, Users, Settings, MessageSquare } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useTransition } from "react"
 import Link from "next/link"
@@ -131,12 +131,6 @@ export const Sidebar = ({ userId }: SidebarProps) => {
       icon: MessageSquare,
       href: "/groups",
       label: "Groups",
-      requiredXP: 0,
-    },
-    {
-      icon: Coins,
-      href: "/token-shop",
-      label: "Token Shop",
       requiredXP: 0,
     },
   ]

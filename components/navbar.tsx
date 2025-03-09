@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Poppins } from "next/font/google"
-import { Sparkles, Settings } from "lucide-react"
+import { Sparkles, Settings, Coins } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { MobileSidebar } from "@/components/mobile-sidebar"
@@ -46,18 +46,25 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
         <div className="flex items-center space-x-2 md:space-x-4">
           <ChatLimit userId={userId} className="flex" />
           
-          {!isPro && (
-            <Link href="/subscribe" className="hidden md:block">
-              <Button 
-                size="sm" 
-                variant="premium" 
-                className="h-8 px-3 text-xs whitespace-nowrap"
-              >
-                Upgrade
-                <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
-              </Button>
-            </Link>
-          )}
+          <Link href="/subscribe" className="hidden md:block">
+            <Button 
+              size="sm" 
+              variant={isPro ? "outline" : "premium"}
+              className="h-8 px-3 text-xs whitespace-nowrap"
+            >
+              {isPro ? (
+                <>
+                  <Coins className="h-3 w-3 text-amber-500 mr-1" />
+                  Buy Tokens
+                </>
+              ) : (
+                <>
+                  Upgrade
+                  <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
+                </>
+              )}
+            </Button>
+          </Link>
           
           <Button
             onClick={settingsModal.onOpen}

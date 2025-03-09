@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "90be3ce",
+      "fullHash": "90be3ce7ee939079e701207b153ab7e7967f9711",
+      "date": "2025-03-09 15:09:26 +0700",
+      "author": "3obby",
+      "message": "Improve token system: add 20% subscriber discount, consolidate subscription and token purchasing, revise UI with tabs",
+      "category": "feature"
+    },
+    {
       "hash": "3f25c64",
       "fullHash": "3f25c64104290a6bd8e02ecb163b4b7d9c903053",
       "date": "2025-03-09 14:56:01 +0700",
