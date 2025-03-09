@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "00c34c7",
+      "fullHash": "00c34c75b3f8f7ed5abfa63180305265a58c7059",
+      "date": "2025-03-09 22:15:52 +0700",
+      "author": "3obby",
+      "message": "Fix group chat creation to properly import complete chat history",
+      "category": "bugfix"
+    },
+    {
       "hash": "6552bf5",
       "fullHash": "6552bf53191288b337669b882883854aaf80c24e",
       "date": "2025-03-09 21:40:07 +0700",

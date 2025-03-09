@@ -57,19 +57,44 @@ const user = session?.user;
 
     // Import chat history if provided
     if (chatHistory && chatHistory.length > 0) {
+      // Filter to get only the most recent messages (max 20) to import
+      const recentMessages = chatHistory.slice(-20);
+      
       // Create group messages from chat history
-      const groupMessages = chatHistory.map((message: { content: string; role: string }) => ({
-        content: message.content,
-        groupChatId: groupChat.id,
-        isBot: message.role === 'assistant',
-        senderId: message.role === 'assistant' ? initialCompanionId : userId,
-      }));
-
-      // Insert the messages
-      for (const msg of groupMessages) {
-        await prismadb.groupMessage.create({
-          data: msg
-        });
+      await Promise.all(
+        recentMessages.map(async (message: { content: string; role: string }) => {
+          return prismadb.groupMessage.create({
+            data: {
+              groupChatId: groupChat.id,
+              content: message.content,
+              isBot: message.role === "assistant",
+              senderId: message.role === "assistant" ? initialCompanionId : userId,
+            },
+          });
+        })
+      );
+      
+      // Update the group chat to include the newly created messages
+      const updatedGroupChat = await prismadb.groupChat.findUnique({
+        where: {
+          id: groupChat.id,
+        },
+        include: {
+          members: {
+            include: {
+              companion: true,
+            },
+          },
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
+        },
+      });
+      
+      if (updatedGroupChat) {
+        return NextResponse.json(updatedGroupChat);
       }
     }
 

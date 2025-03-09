@@ -72,6 +72,17 @@ class EdgeCompatPrismaClient {
     upsert: () => { throw this.edgeError() },
   }
   
+  // Group message model for edge compatibility
+  groupMessage = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
   // User subscription model for edge compatibility with webhook
   userSubscription = {
     findUnique: () => { throw this.edgeError() },

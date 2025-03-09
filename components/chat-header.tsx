@@ -73,10 +73,16 @@ export const ChatHeader = ({
   const onCreateGroupChat = async (name: string) => {
     try {
       setIsCreatingGroup(true)
+      
+      // First fetch the most recent messages for this companion to ensure we have the latest
+      const messagesResponse = await axios.get(`/api/companion/${companion.id}/messages?limit=20`);
+      const latestMessages = messagesResponse.data;
+      
+      // Then create the group chat with the latest messages
       const response = await axios.post("/api/group-chat", {
         name,
         initialCompanionId: companion.id,
-        chatHistory: companion.messages,
+        chatHistory: latestMessages
       })
 
       toast({
