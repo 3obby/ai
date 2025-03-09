@@ -21,6 +21,35 @@ const calculateLevelIncrease = (xpAmount: number): number => {
   return Math.floor(xpAmount / XP_PER_LEVEL)
 }
 
+// Helper to process a token purchase
+async function processTokenPurchase(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId
+  const tokenAmount = parseInt(session.metadata?.tokenAmount || "0")
+  const amountPaid = session.amount_total ? session.amount_total / 100 : 0 // Convert cents to dollars
+  const packageType = session.metadata?.packageType
+
+  if (!userId || !tokenAmount) {
+    return { error: "Missing metadata", status: 400 }
+  }
+
+  try {
+    // Execute this in a regular serverless function since PrismaClient is not Edge compatible
+    return await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/db/process-token-purchase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        tokenAmount,
+        amountPaid,
+        packageType
+      })
+    }).then(res => res.json())
+  } catch (error: any) {
+    console.error("Error processing token purchase:", error)
+    return { error: error.message, status: 500 }
+  }
+}
+
 // Helper to process a one-time payment
 async function processOneTimePayment(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
@@ -142,8 +171,29 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session
 
+  // Handle token purchases
+  if (event.type === "checkout.session.completed" && 
+      session.mode === "payment" && 
+      session.metadata?.paymentType === "token-purchase") {
+    
+    console.log("⚡ Processing token purchase")
+    const result = await processTokenPurchase(session)
+    
+    if (result.error) {
+      return new NextResponse(result.error, { status: result.status || 500 })
+    }
+    
+    return new NextResponse(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
   // Handle successful one-time payments
-  if (event.type === "checkout.session.completed" && session.mode === "payment") {
+  if (event.type === "checkout.session.completed" && 
+      session.mode === "payment" && 
+      session.metadata?.paymentType !== "token-purchase") {
+    
     const result = await processOneTimePayment(session)
     
     if (result.error) {

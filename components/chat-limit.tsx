@@ -10,6 +10,8 @@ import {
   getXPForNextLevel,
   getProgressToNextLevel,
 } from "@/lib/level-system"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface ChatLimitProps {
   userId: string
@@ -184,6 +186,14 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
             </span>
           </div>
         </div>
+        
+        {/* Add token shop button */}
+        <Link href="/token-shop">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Coins className="h-3 w-3 mr-1 text-amber-500" />
+            Buy Tokens
+          </Button>
+        </Link>
       </div>
 
       {/* Mobile view - Already simplified */}

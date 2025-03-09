@@ -107,19 +107,35 @@ model UserSubscription {
 }
 
 model UserUsage {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  totalSpent      Float    @default(0)
-  availableTokens Int      @default(100)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  email           String   @unique
-  totalMoneySpent Float    @default(0)
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  totalSpent      Float         @default(0)
+  availableTokens Int           @default(100)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  email           String        @unique
+  totalMoneySpent Float         @default(0)
+  transactions    Transaction[]
 
   @@index([userId])
   @@index([email])
   @@index([createdAt])
   @@index([updatedAt])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  amount      Int
+  type        String   // TOKEN_PURCHASE, TOKEN_USAGE, TOKEN_REFILL, etc.
+  description String
+  metadata    String?  // JSON stringified additional metadata
+  createdAt   DateTime @default(now())
+  userUsage   UserUsage @relation(fields: [userUsageId], references: [id])
+  userUsageId String
+
+  @@index([userUsageId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model UsageTransaction {
