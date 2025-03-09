@@ -17,6 +17,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  totalStorage  Int       @default(0)      // Total storage used in bytes
 
   @@index([createdAt])
   @@index([updatedAt])
@@ -277,4 +278,64 @@ enum Role {
   user
   system
   assistant
+}
+
+// File management models
+model File {
+  id           String       @id @default(uuid())
+  userId       String
+  name         String
+  originalName String
+  type         String
+  size         Int
+  url          String
+  storagePath  String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  fileGroups   FileToGroup[]
+  isPublic     Boolean      @default(false)
+  description  String?
+  metadata     Json?        // Additional file metadata
+  status       FileStatus   @default(PROCESSING)
+  tokensCost   Int          @default(0)    // How many tokens this file cost to process
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([isPublic])
+  @@index([status])
+}
+
+model FileGroup {
+  id          String       @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  files       FileToGroup[]
+  color       String?      // Optional color for UI display
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model FileToGroup {
+  fileId      String
+  fileGroupId String
+  addedAt     DateTime @default(now())
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileGroup   FileGroup @relation(fields: [fileGroupId], references: [id], onDelete: Cascade)
+
+  @@id([fileId, fileGroupId])
+  @@index([fileId])
+  @@index([fileGroupId])
+  @@index([addedAt])
+}
+
+enum FileStatus {
+  PROCESSING    // File is being processed/analyzed
+  READY         // File is ready for use
+  ERROR         // Error occurred during processing
+  DELETED       // Soft-deleted but not removed from storage
 }

@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 interface BadgeProps {
   children: React.ReactNode;
   variant?: "default" | "secondary" | "destructive";
+  className?: string;
 }
 
-export function Badge({ children, variant = "default" }: BadgeProps) {
+export function Badge({ children, variant = "default", className }: BadgeProps) {
   return (
     <span
       className={cn(
@@ -14,7 +15,8 @@ export function Badge({ children, variant = "default" }: BadgeProps) {
           "bg-primary text-primary-foreground": variant === "default",
           "bg-secondary text-secondary-foreground": variant === "secondary",
           "bg-destructive text-destructive-foreground": variant === "destructive",
-        }
+        },
+        className
       )}
     >
       {children}

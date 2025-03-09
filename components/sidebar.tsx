@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Plus, Users, Settings, MessageSquare } from "lucide-react"
+import { Home, Plus, Users, Settings, MessageSquare, File } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useTransition } from "react"
 import Link from "next/link"
@@ -131,6 +131,12 @@ export const Sidebar = ({ userId }: SidebarProps) => {
       icon: MessageSquare,
       href: "/groups",
       label: "Groups",
+      requiredXP: 0,
+    },
+    {
+      icon: File,
+      href: "/files",
+      label: "Files",
       requiredXP: 0,
     },
   ]
