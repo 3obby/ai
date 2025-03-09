@@ -39,7 +39,7 @@ interface CompanionsProps {
 // Function to generate a concise technical description
 const generateTechDescription = (companion: Companion): string => {
   // If the name is too long, make the description shorter to fit card
-  const maxLength = companion.name.length > 15 ? 80 : 110;
+  const maxLength = companion.name.length > 15 ? 60 : 80;
   
   // Extract key details from instructions
   let description = companion.instructions || "";
@@ -127,34 +127,34 @@ export const Companions = ({
 
   return (
     <div className="space-y-4 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 px-4">
         {data.map((item) => (
-          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-2xl cursor-pointer border-2 border-zinc-300/50 dark:border-zinc-700 shadow-lg overflow-hidden flex flex-col h-full">
+          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
-              <CardHeader className="flex items-center justify-center text-center p-4 space-y-2">
-                <div className="relative w-32 h-32">
+              <CardHeader className="flex items-center justify-center text-center p-2 pb-1 space-y-1">
+                <div className="relative w-24 h-24">
                   {/* Show loader/placeholder while image is loading */}
                   {loadingImages[item.id] && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-2xl">
-                      <Bot className="h-10 w-10 text-zinc-400 dark:text-zinc-500 mb-2" />
-                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-xl">
+                      <Bot className="h-8 w-8 text-zinc-400 dark:text-zinc-500 mb-1" />
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     </div>
                   )}
                   <Image
                     src={item.src}
                     fill
-                    sizes="(max-width: 768px) 100px, 128px"
-                    className={`rounded-2xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
+                    sizes="(max-width: 768px) 96px, 96px"
+                    className={`rounded-xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
                     alt={item.name}
                     onLoad={() => handleImageLoaded(item.id)}
                     onError={() => handleImageError(item.id)}
                   />
                 </div>
                 {loadingImages[item.id] ? (
-                  <Skeleton className="h-6 w-24 mx-auto" />
+                  <Skeleton className="h-5 w-20 mx-auto" />
                 ) : (
-                  <div className="space-y-1">
-                    <p className="font-semibold text-lg text-zinc-800 dark:text-foreground">
+                  <div className="space-y-0">
+                    <p className="font-semibold text-base text-zinc-800 dark:text-foreground">
                       {item.name}
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
@@ -163,17 +163,17 @@ export const Companions = ({
               </CardHeader>
               
               {/* Technical Description */}
-              <CardContent className="px-4 py-2 flex-grow">
+              <CardContent className="px-3 py-1 flex-grow">
                 {loadingImages[item.id] ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
+                  <div className="space-y-1">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/4" />
                   </div>
                 ) : (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-3 text-left">
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2 text-left">
                           {generateTechDescription(item)}
                         </p>
                       </TooltipTrigger>
@@ -185,11 +185,11 @@ export const Companions = ({
                 )}
               </CardContent>
               
-              <CardFooter className="flex flex-col gap-2 px-4 py-3 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
+              <CardFooter className="flex flex-col gap-1 px-3 py-2 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
                 <div className="flex items-center justify-between w-full">
                   {/* Global tokens burned */}
                   {loadingImages[item.id] ? (
-                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-14" />
                   ) : (
                     <Badge variant="secondary">
                       <div className="flex items-center gap-1">
@@ -216,14 +216,14 @@ export const Companions = ({
                     </Badge>
                   )}
                   {loadingImages[item.id] && (
-                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-14" />
                   )}
                 </div>
                 
                 {/* Message count indicator */}
                 {!loadingImages[item.id] && (
                   <div className="flex items-center w-full justify-center">
-                    <div className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                    <div className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
                       <div className="flex items-center gap-1">
                         <MessagesSquare className="h-3 w-3" />
                         <span className="text-xs">
@@ -239,7 +239,7 @@ export const Companions = ({
         ))}
       </div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-center mt-8 space-x-4">
+        <div className="flex items-center justify-center mt-6 space-x-4">
           <Button
             onClick={() => {
               const searchParams = new URLSearchParams(window.location.search);
