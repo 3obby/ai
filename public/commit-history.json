@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "3356fc5",
+      "fullHash": "3356fc52635c02a309c418591f2ba45e7491b302",
+      "date": "2025-03-10 02:06:19 +0700",
+      "author": "3obby",
+      "message": "Update terminology: replace 'fork' with 'copy' and update README",
+      "category": "enhancement"
+    },
+    {
       "hash": "1e88a6c",
       "fullHash": "1e88a6caf7db0f7515190034ec809f90bf21f729",
       "date": "2025-03-10 01:59:24 +0700",

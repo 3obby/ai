@@ -36,13 +36,13 @@ export const CompanionActions = ({
   const router = useRouter();
   const { toast } = useToast();
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isForking, setIsForking] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
 
   const isOwner = currentUser?.id === companion.userId;
   const isPublic = !companion.private;
   
-  // Check if the companion name already includes "Fork of"
-  const isFork = companion.name.startsWith("Fork of");
+  // Check if the companion name already includes "Copy of"
+  const isACopy = companion.name.startsWith("Copy of");
 
   const handlePublish = async () => {
     try {
@@ -71,31 +71,31 @@ export const CompanionActions = ({
     }
   };
   
-  const handleFork = async () => {
+  const handleCopy = async () => {
     try {
-      setIsForking(true);
+      setIsCopying(true);
       
-      const response = await axios.post(`/api/companion/${companion.id}/fork`);
+      const response = await axios.post(`/api/companion/${companion.id}/copy`);
       
       toast({
         title: "Success!",
-        description: "You've created a fork of this companion. You can now modify it in your collection.",
+        description: "You've created a copy of this companion. You can now modify it in your collection.",
         duration: 5000,
       });
       
-      // Navigate to the forked companion
+      // Navigate to the copied companion
       router.push(`/chat/${response.data.companion.id}`);
     } catch (error: any) {
-      console.error("Error forking companion:", error);
+      console.error("Error copying companion:", error);
       
       toast({
         title: "Error",
-        description: error.response?.data || "Failed to fork companion. Please try again.",
+        description: error.response?.data || "Failed to copy companion. Please try again.",
         variant: "destructive",
         duration: 5000,
       });
     } finally {
-      setIsForking(false);
+      setIsCopying(false);
     }
   };
 
@@ -148,25 +148,25 @@ export const CompanionActions = ({
     );
   }
   
-  // If companion is public and user is not the owner, show fork option
-  if (isPublic && !isOwner && !isFork) {
+  // If companion is public and user is not the owner, show copy option
+  if (isPublic && !isOwner && !isACopy) {
     return (
       <Button 
         size="sm" 
         variant="outline" 
         className="gap-1.5"
-        onClick={handleFork}
-        disabled={isForking}
+        onClick={handleCopy}
+        disabled={isCopying}
       >
-        {isForking ? (
+        {isCopying ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Forking...
+            Copying...
           </>
         ) : (
           <>
             <Copy className="h-4 w-4" />
-            Fork
+            Make a Copy
           </>
         )}
       </Button>

@@ -48,6 +48,13 @@ model Companion {
   sendMultipleMessages Boolean            @default(true)
   customIntroduction   String?
   xpEarned             Int                @default(0)
+  
+  // New customization fields
+  personalityConfig    Json?              // Stores personality settings
+  knowledgeConfig      Json?              // Stores knowledge settings
+  interactionConfig    Json?              // Stores interaction settings
+  toolConfig           Json?              // Stores tool integration settings
+  
   category             Category           @relation(fields: [categoryId], references: [id])
   groupChats           GroupChatMember[]
   messages             Message[]
