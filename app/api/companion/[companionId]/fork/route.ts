@@ -26,7 +26,7 @@ export async function POST(
     const originalCompanion = await prismadb.companion.findFirst({
       where: {
         id: params.companionId,
-        private: false, // Can only fork public companions
+        private: false, // Can only copy public companions
       },
       include: {
         category: true,
@@ -39,32 +39,32 @@ export async function POST(
       });
     }
 
-    // Check if user already has a fork of this companion
-    const existingFork = await prismadb.companion.findFirst({
+    // Check if user already has a copy of this companion
+    const existingCopy = await prismadb.companion.findFirst({
       where: {
         userId,
         name: {
-          contains: `Fork of ${originalCompanion.name}`,
+          contains: `Copy of ${originalCompanion.name}`,
         },
       },
     });
 
-    if (existingFork) {
+    if (existingCopy) {
       return new NextResponse(
-        "You already have a fork of this companion",
+        "You already have a copy of this companion",
         { status: 409 }
       );
     }
 
-    // Create a new companion as a fork
-    const forkedCompanion = await prismadb.companion.create({
+    // Create a new companion as a copy
+    const copiedCompanion = await prismadb.companion.create({
       data: {
         userId,
         userName: user.name || "User",
         src: originalCompanion.src,
-        name: `Fork of ${originalCompanion.name}`,
+        name: `Copy of ${originalCompanion.name}`,
         instructions: originalCompanion.instructions,
-        private: true, // Forked companions are private by default
+        private: true, // Copied companions are private by default
         categoryId: originalCompanion.categoryId,
         isFree: originalCompanion.isFree,
         messageDelay: originalCompanion.messageDelay,
@@ -79,11 +79,11 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      companion: forkedCompanion,
-      message: "Companion forked successfully",
+      companion: copiedCompanion,
+      message: "Companion copied successfully",
     });
   } catch (error) {
-    console.error("[COMPANION_FORK]", error);
+    console.error("[COMPANION_COPY]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 } 

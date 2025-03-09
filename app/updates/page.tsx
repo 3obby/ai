@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { format } from "date-fns";
 import fs from "fs";
 import path from "path";
+import Link from "next/link";
+import { FileText, LayoutDashboard, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Updates | GroupChatBotBuilder",
@@ -86,6 +88,23 @@ export default async function UpdatesPage() {
   
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="flex flex-wrap gap-4 mb-8">
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center px-4 py-2 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+        >
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Dashboard
+        </Link>
+        <Link 
+          href="/readme" 
+          className="inline-flex items-center px-4 py-2 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          Documentation
+        </Link>
+      </div>
+      
       <h1 className="text-3xl font-bold mb-2">Updates</h1>
       <p className="text-lg text-muted-foreground mb-8">
         Current version: <span className="font-mono">{currentVersion}</span>

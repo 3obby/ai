@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9f1c88e",
+      "fullHash": "9f1c88e0e4d269f0178feea54bedfd1b66fb13b7",
+      "date": "2025-03-10 02:10:54 +0700",
+      "author": "3obby",
+      "message": "Add navigation links to README and dashboard on updates page",
+      "category": "feature"
+    },
+    {
       "hash": "3356fc5",
       "fullHash": "3356fc52635c02a309c418591f2ba45e7491b302",
       "date": "2025-03-10 02:06:19 +0700",
