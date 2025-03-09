@@ -9,10 +9,9 @@ import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Button } from "@/components/ui/button"
 import { useProModal } from "@/hooks/use-pro-modal"
 import { useSettingsModal } from "@/hooks/use-settings-modal"
-import { ChatLimit } from "@/components/chat-limit"
 import { SettingsModal } from "@/components/settings-modal"
 import { UserButton } from "@/components/user-button"
-import { AnimatedLogo } from "@/components/animated-logo"
+import { IntegratedLogo } from "@/components/integrated-logo"
 
 const font = Poppins({ weight: "600", subsets: ["latin"] })
 
@@ -35,7 +34,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
             <MobileSidebar isPro={isPro} userId={userId} />
           </div>
           <div className="flex-shrink-0">
-            <AnimatedLogo />
+            <IntegratedLogo userId={userId} />
           </div>
         </div>
         
@@ -44,8 +43,6 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
         
         {/* Right side - User profile and controls */}
         <div className="flex items-center space-x-2 md:space-x-4">
-          <ChatLimit userId={userId} className="hidden xs:flex" />
-          
           <Link href="/subscribe" className="hidden md:block">
             <Button 
               size="sm" 
@@ -79,11 +76,6 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
             <UserButton />
           </div>
         </div>
-      </div>
-      
-      {/* Mobile-only token display */}
-      <div className="md:hidden flex justify-center -mt-1 pb-1">
-        <ChatLimit userId={userId} className="flex text-sm" />
       </div>
       
       <SettingsModal isPro={isPro} />
