@@ -27,10 +27,10 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
 
   return (
     <div className="fixed top-0 right-0 md:left-20 left-0 z-40 border-b border-primary/10 bg-secondary h-16 sm:h-16 md:h-16">
-      <div className="h-full px-4 flex items-center justify-between">
+      <div className="h-full pl-4 flex items-center justify-between">
         {/* Left side - now contains user controls */}
         <div className="flex items-center">
-          <div className="md:hidden mr-2 flex items-center justify-center">
+          <div className="md:hidden mr-3 flex items-center justify-center">
             <MobileSidebar isPro={isPro} userId={userId} />
           </div>
           
@@ -74,11 +74,9 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
           </div>
         </div>
         
-        {/* Right side - now contains the logo */}
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <IntegratedLogo userId={userId} />
-          </div>
+        {/* Right side - logo with no padding on right */}
+        <div className="flex items-center h-full">
+          <IntegratedLogo userId={userId} />
         </div>
       </div>
       
