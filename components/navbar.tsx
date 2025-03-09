@@ -27,11 +27,11 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
   const settingsModal = useSettingsModal()
 
   return (
-    <div className="fixed top-0 right-0 md:left-20 left-0 z-40 border-b border-primary/10 bg-secondary h-16">
+    <div className="fixed top-0 right-0 md:left-20 left-0 z-40 border-b border-primary/10 bg-secondary h-16 sm:h-16 md:h-16">
       <div className="h-full px-4 flex items-center">
         {/* Left side */}
         <div className="flex items-center">
-          <div className="md:hidden mr-2">
+          <div className="md:hidden mr-2 flex items-center justify-center">
             <MobileSidebar isPro={isPro} userId={userId} />
           </div>
           <div className="flex-shrink-0">
@@ -44,7 +44,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
         
         {/* Right side - User profile and controls */}
         <div className="flex items-center space-x-2 md:space-x-4">
-          <ChatLimit userId={userId} className="flex" />
+          <ChatLimit userId={userId} className="hidden xs:flex" />
           
           <Link href="/subscribe" className="hidden md:block">
             <Button 
@@ -70,15 +70,20 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
             onClick={settingsModal.onOpen}
             size="icon"
             variant="ghost"
-            className="h-8 w-8 rounded-full"
+            className="h-9 w-9 rounded-full flex items-center justify-center"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-5 w-5" />
           </Button>
           
           <div className="pl-1">
             <UserButton />
           </div>
         </div>
+      </div>
+      
+      {/* Mobile-only token display */}
+      <div className="md:hidden flex justify-center -mt-1 pb-1">
+        <ChatLimit userId={userId} className="flex text-sm" />
       </div>
       
       <SettingsModal isPro={isPro} />

@@ -127,12 +127,12 @@ export const Companions = ({
 
   return (
     <div className="space-y-4 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-2 md:px-4">
         {data.map((item) => (
-          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full">
+          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full w-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
               <CardHeader className="flex items-center justify-center text-center p-2 pb-1 space-y-1">
-                <div className="relative w-24 h-24">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   {/* Show loader/placeholder while image is loading */}
                   {loadingImages[item.id] && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-xl">
@@ -143,7 +143,7 @@ export const Companions = ({
                   <Image
                     src={item.src}
                     fill
-                    sizes="(max-width: 768px) 96px, 96px"
+                    sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, 96px"
                     className={`rounded-xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
                     alt={item.name}
                     onLoad={() => handleImageLoaded(item.id)}
@@ -154,10 +154,10 @@ export const Companions = ({
                   <Skeleton className="h-5 w-20 mx-auto" />
                 ) : (
                   <div className="space-y-0">
-                    <p className="font-semibold text-base text-zinc-800 dark:text-foreground">
+                    <p className="font-semibold text-sm sm:text-base text-zinc-800 dark:text-foreground truncate max-w-[150px]">
                       {item.name}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium truncate max-w-[150px]">@{item.userName}</p>
                   </div>
                 )}
               </CardHeader>
@@ -191,11 +191,10 @@ export const Companions = ({
                   {loadingImages[item.id] ? (
                     <Skeleton className="h-4 w-14" />
                   ) : (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs px-2 py-0">
                       <div className="flex items-center gap-1">
                         <Globe className="h-3 w-3 text-blue-500" />
-                        <span className="text-xs font-medium">
-                          {/* Handle both field names for backward compatibility */}
+                        <span className="text-[10px] sm:text-xs font-medium truncate">
                           {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
                         </span>
                       </div>
@@ -204,10 +203,10 @@ export const Companions = ({
                   
                   {/* User-specific tokens burned - Always show, even if 0 */}
                   {!loadingImages[item.id] && userId && (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs px-2 py-0">
                       <div className="flex items-center gap-1">
                         <Flame className="h-3 w-3 text-red-500" />
-                        <span className="text-xs font-medium">
+                        <span className="text-[10px] sm:text-xs font-medium truncate">
                           {(item as any).userBurnedTokens && 
                            (item as any).userBurnedTokens.length > 0 ? 
                            (item as any).userBurnedTokens[0].tokensBurned.toLocaleString() : "0"}
@@ -223,10 +222,10 @@ export const Companions = ({
                 {/* Message count indicator */}
                 {!loadingImages[item.id] && (
                   <div className="flex items-center w-full justify-center">
-                    <div className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                    <div className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
                       <div className="flex items-center gap-1">
                         <MessagesSquare className="h-3 w-3" />
-                        <span className="text-xs">
+                        <span className="text-[10px] sm:text-xs">
                           {item._count.messages} {item._count.messages === 1 ? 'message' : 'messages'}
                         </span>
                       </div>
@@ -248,13 +247,16 @@ export const Companions = ({
             }}
             disabled={currentPage <= 1}
             variant="outline"
-            className="flex items-center"
+            size="sm"
+            className="flex items-center gap-1 h-8 px-2"
           >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Previous</span>
           </Button>
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
+          <div className="text-sm text-center">
+            <span className="font-medium">{currentPage}</span>
+            <span className="mx-1 text-muted-foreground">/</span>
+            <span>{totalPages}</span>
           </div>
           <Button
             onClick={() => {
@@ -264,10 +266,11 @@ export const Companions = ({
             }}
             disabled={currentPage >= totalPages}
             variant="outline"
-            className="flex items-center"
+            size="sm"
+            className="flex items-center gap-1 h-8 px-2"
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}

@@ -3,10 +3,11 @@
 import qs from "query-string";
 import { ChangeEventHandler, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
 
 export const SearchInput = () => {
   const router = useRouter();
@@ -18,9 +19,12 @@ export const SearchInput = () => {
   const [value, setValue] = useState(name || "");
   const debouncedValue = useDebounce<string>(value, 500);
 
-
   const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setValue(e.target.value);
+  };
+  
+  const clearSearch = () => {
+    setValue("");
   };
 
   useEffect(() => {
@@ -38,14 +42,24 @@ export const SearchInput = () => {
   }, [debouncedValue, router, categoryId])
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-sm mx-auto">
       <Search className="absolute h-4 w-4 top-3 left-4 text-muted-foreground" />
       <Input
         onChange={onChange}
         value={value}
-        placeholder="Search..."
-        className="pl-10 bg-primary/10"
+        placeholder="Search companions..."
+        className="pl-10 pr-10 bg-primary/10 rounded-full h-10 text-sm focus-visible:ring-1 focus-visible:ring-offset-0"
       />
+      {value && (
+        <Button 
+          onClick={clearSearch}
+          size="sm" 
+          variant="ghost" 
+          className="absolute right-1 top-1.5 h-7 w-7 rounded-full p-0 flex items-center justify-center"
+        >
+          <X className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      )}
     </div>
   )
 };

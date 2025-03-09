@@ -14,10 +14,10 @@ export const MobileSidebar = ({
 }: MobileSidebarProps) => {
   return (
     <Sheet>
-      <SheetTrigger className="md:hidden">
-        <Menu />
+      <SheetTrigger className="md:hidden p-1.5 rounded-md hover:bg-gray-500/10 transition-colors">
+        <Menu className="h-5 w-5" />
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 bg-secondary pt-10 w-64">
+      <SheetContent side="left" className="p-0 bg-secondary pt-10 w-72">
         <Sidebar userId={userId} />
       </SheetContent>
     </Sheet>
