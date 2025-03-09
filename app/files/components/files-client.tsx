@@ -167,26 +167,55 @@ const FilesClient = ({
         }
         
         // Step 2: Upload file to signed URL
-        await axios.put(uploadUrl, file, {
-          headers: {
-            'Content-Type': file.type,
-          },
-          onUploadProgress: (progressEvent) => {
-            const percentComplete = progressEvent.total 
-              ? Math.round((progressEvent.loaded * 100) / progressEvent.total) 
-              : 0;
-            
-            // Scale to 50-90% of total progress
-            setUploadProgress(50 + Math.round(percentComplete * 0.4));
-          },
-        });
-        
-        // Step 3: Confirm upload and update file record
-        await axios.post('/api/files/confirm-upload', {
-          fileId,
-        });
-        
-        setUploadProgress(90 + Math.round((i / acceptedFiles.length) * 10));
+        try {
+          // Check if this is a mock URL (development environment)
+          const isMockUrl = uploadUrl.includes('mock-upload') || uploadUrl.includes('mock-bucket');
+          
+          if (isMockUrl) {
+            console.log('Development mode: Skipping actual file upload to mock URL');
+            // Simulate progress for development environment
+            for (let p = 0; p <= 100; p += 10) {
+              setUploadProgress(50 + Math.round((p / 100) * 40));
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          } else {
+            // Real upload in production
+            await axios.put(uploadUrl, file, {
+              headers: {
+                'Content-Type': file.type,
+              },
+              onUploadProgress: (progressEvent) => {
+                const percentComplete = progressEvent.total 
+                  ? Math.round((progressEvent.loaded * 100) / progressEvent.total) 
+                  : 0;
+                
+                // Scale to 50-90% of total progress
+                setUploadProgress(50 + Math.round(percentComplete * 0.4));
+              },
+            });
+          }
+          
+          // Step 3: Confirm upload and update file record
+          await axios.post('/api/files/confirm-upload', {
+            fileId,
+          });
+          
+          setUploadProgress(90 + Math.round((i / acceptedFiles.length) * 10));
+        } catch (error) {
+          console.error('Error during file upload:', error);
+          toast({
+            title: "Upload Error",
+            description: "There was an error uploading the file. The file record will still be created for development purposes.",
+            variant: "destructive",
+          });
+          
+          // In development, continue with confirmation to create the file record
+          if (process.env.NODE_ENV !== 'production') {
+            await axios.post('/api/files/confirm-upload', {
+              fileId,
+            });
+          }
+        }
       }
       
       // Final step: Reload files from server

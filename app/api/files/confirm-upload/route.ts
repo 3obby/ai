@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth-helpers";
 import { getSignedDownloadUrl } from "@/lib/google-cloud-storage";
 import prismadb from "@/lib/prismadb";
 
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -33,8 +36,21 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
-    // Generate a signed download URL
-    const downloadUrl = await getSignedDownloadUrl(file.storagePath);
+    // Generate a signed download URL or use a mock URL in development
+    let downloadUrl;
+    try {
+      downloadUrl = await getSignedDownloadUrl(file.storagePath);
+    } catch (error) {
+      console.error("Error generating download URL:", error);
+      if (isDevelopment) {
+        // Use a mock URL in development
+        downloadUrl = `https://storage.googleapis.com/mock-download/${file.storagePath}?mock=true`;
+        console.log("Using mock download URL in development:", downloadUrl);
+      } else {
+        // In production, propagate the error
+        throw error;
+      }
+    }
     
     // Update the file record with the download URL and set status to READY
     const updatedFile = await prismadb.file.update({
@@ -56,23 +72,38 @@ export async function POST(req: Request) {
     });
     
     // Create a transaction record
-    await prismadb.transaction.create({
-      data: {
+    // In development, we'll just log the transaction details
+    if (isDevelopment) {
+      console.log("Would create transaction:", {
         amount: -file.tokensCost,
         type: "FILE_STORAGE",
         description: `File storage: ${file.originalName}`,
-        metadata: JSON.stringify({
+        metadata: {
           fileId: file.id,
           fileName: file.originalName,
           fileSize: file.size,
-        }),
-        userUsage: {
-          connect: {
-            userId,
+        },
+        userId,
+      });
+    } else {
+      await prismadb.transaction.create({
+        data: {
+          amount: -file.tokensCost,
+          type: "FILE_STORAGE",
+          description: `File storage: ${file.originalName}`,
+          metadata: JSON.stringify({
+            fileId: file.id,
+            fileName: file.originalName,
+            fileSize: file.size,
+          }),
+          userUsage: {
+            connect: {
+              userId,
+            },
           },
         },
-      },
-    });
+      });
+    }
     
     // Update user's total storage
     await prismadb.user.update({
