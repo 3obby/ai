@@ -78,6 +78,7 @@ export const Companions = ({
           />
         </div>
         <p className="text-sm text-muted-foreground">No companions found.</p>
+        <p className="text-xs text-muted-foreground">There may be an issue with the database. Try refreshing the page.</p>
       </div>
     )
   }
@@ -111,17 +112,20 @@ export const Companions = ({
                   <Badge variant="secondary">
                     <div className="flex items-center gap-1">
                       <Globe className="h-3 w-3 text-blue-500" />
-                      <span className="text-xs font-medium">{(item as any).tokensBurned?.toLocaleString() || "0"}</span>
+                      <span className="text-xs font-medium">
+                        {/* Handle both field names for backward compatibility */}
+                        {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
+                      </span>
                     </div>
                   </Badge>
                   
-                  {/* User-specific tokens burned */}
-                  {userId && item.userBurnedTokens && item.userBurnedTokens.length > 0 && (
+                  {/* User-specific tokens burned - hidden for now until we add data migration */}
+                  {false && userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
                     <Badge variant="secondary">
                       <div className="flex items-center gap-1">
                         <Flame className="h-3 w-3 text-red-500" />
                         <span className="text-xs font-medium">
-                          {item.userBurnedTokens[0].tokensBurned.toLocaleString()}
+                          {(item as any).userBurnedTokens[0].tokensBurned.toLocaleString()}
                         </span>
                       </div>
                     </Badge>

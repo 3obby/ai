@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c92c4d7",
+      "fullHash": "c92c4d79f3e74bff484b3c3f9a9c038ef4f4cdda",
+      "date": "2025-03-09 13:33:19 +0700",
+      "author": "3obby",
+      "message": "Import companions and restore database",
+      "category": "other"
+    },
+    {
       "hash": "6350e59",
       "fullHash": "6350e59ef50eb3399fdc127bf16e719a37f54605",
       "date": "2025-03-09 13:19:58 +0700",

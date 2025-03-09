@@ -38,51 +38,60 @@ async function CompanionsWrapper({
 }) {
   // Add a small artificial delay for UX testing if needed
   // await new Promise(resolve => setTimeout(resolve, 2000));
-  const data = await prismadb.companion.findMany({
-    where: {
-      AND: [
-        {
-          categoryId: searchParams.categoryId || undefined,
-          name: searchParams.name
-            ? {
-                contains: searchParams.name,
-                mode: "insensitive",
-              }
-            : undefined,
-        },
-        {
-          OR: [
-            { private: false },
-            {
-              AND: [
-                { private: true },
-                { userId: userId },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      _count: {
-        select: {
-          messages: true,
+  
+  try {
+    console.log("Fetching companions for dashboard...");
+    
+    const data = await prismadb.companion.findMany({
+      where: {
+        AND: [
+          {
+            categoryId: searchParams.categoryId || undefined,
+            name: searchParams.name
+              ? {
+                  contains: searchParams.name,
+                  mode: "insensitive",
+                }
+              : undefined,
+          },
+          {
+            OR: [
+              { private: false },
+              {
+                AND: [
+                  { private: true },
+                  { userId: userId },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        _count: {
+          select: {
+            messages: true,
+          },
         },
       },
-      // Include user-specific burned tokens for the current user
-      userBurnedTokens: {
-        where: {
-          userId: userId
-        },
-        take: 1
-      }
-    },
-  });
-  
-  return <Companions userId={userId} data={data} />;
+    });
+    
+    console.log(`Found ${data.length} companions`);
+    
+    // Just to debug what's happening
+    if (data.length > 0) {
+      console.log("Sample companion fields:", Object.keys(data[0]));
+    }
+    
+    return <Companions userId={userId} data={data} />;
+  } catch (error) {
+    console.error("Error fetching companions:", error);
+    // Return an empty list as fallback
+    return <Companions userId={userId} data={[]} />;
+  }
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
