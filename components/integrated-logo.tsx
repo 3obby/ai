@@ -4,18 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
-import { Coins } from "lucide-react";
+import { Coins, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatLargeNumber } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 const font = Poppins({ weight: "600", subsets: ["latin"] });
 
 interface IntegratedLogoProps {
   userId: string;
+  isPro?: boolean;
 }
 
-export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
+export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,13 +147,13 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
   }, [userId]);
 
   return (
-    <Link href="/" className="h-full block">
-      <div 
-        ref={containerRef} 
-        className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group"
-      >
-        {/* GCBB Text first - using navbar gray color */}
-        <div className="relative z-10 mx-3">
+    <div 
+      ref={containerRef} 
+      className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group"
+    >
+      {/* GCBB Text first - using navbar gray color */}
+      <Link href="/" className="h-full block">
+        <div className="relative z-10 mx-3 h-full flex items-center">
           <span className={cn(
             "text-lg font-bold text-white", // Using white text instead of text-secondary
             font.className
@@ -159,8 +161,10 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
             GCBB
           </span>
         </div>
-        
-        {/* Feather Logo Second - removed white border */}
+      </Link>
+      
+      {/* Feather Logo Second - removed white border */}
+      <Link href="/" className="h-full flex items-center">
         <div className="relative flex items-center justify-center w-10 h-10 z-10">
           <Image
             src="/feather.png"
@@ -170,21 +174,44 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
             className="transform transition-transform duration-700 group-hover:scale-110"
           />
         </div>
-        
-        {/* Token Balance Last */}
-        <div className="relative z-10 mr-3 ml-3 flex items-center border-l pl-3 border-white/20">
-          {isLoading ? (
-            <div className="h-4 w-12 bg-white/20 animate-pulse rounded-sm"></div>
-          ) : (
-            <div className="flex items-center text-white">
-              <Coins className="h-3.5 w-3.5 mr-1.5 text-white/90" />
-              <span className="text-sm font-medium">
-                {tokenBalance !== null ? formatLargeNumber(tokenBalance) : '0'}
-              </span>
-            </div>
-          )}
-        </div>
+      </Link>
+      
+      {/* Token Balance */}
+      <div className="relative z-10 pl-3 ml-3 flex items-center border-l border-white/20">
+        {isLoading ? (
+          <div className="h-4 w-12 bg-white/20 animate-pulse rounded-sm"></div>
+        ) : (
+          <div className="flex items-center text-white">
+            <Coins className="h-3.5 w-3.5 mr-1.5 text-white/90" />
+            <span className="text-sm font-medium">
+              {tokenBalance !== null ? formatLargeNumber(tokenBalance) : '0'}
+            </span>
+          </div>
+        )}
       </div>
-    </Link>
+      
+      {/* Buy Tokens Button - integrated right after token balance */}
+      <div className="relative z-10 ml-3 mr-3">
+        <Link href="/subscribe">
+          <Button 
+            size="sm" 
+            variant={isPro ? "outline" : "premium"}
+            className="h-7 px-2 text-xs whitespace-nowrap bg-amber-500/20 hover:bg-amber-500/30 text-white border-amber-400/30"
+          >
+            {isPro ? (
+              <>
+                <Coins className="h-3 w-3 text-amber-400 mr-1" />
+                Buy
+              </>
+            ) : (
+              <>
+                Upgrade
+                <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
+              </>
+            )}
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }; 

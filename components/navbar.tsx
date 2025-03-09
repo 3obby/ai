@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Poppins } from "next/font/google"
-import { Sparkles, Settings, Coins } from "lucide-react"
+import { Settings } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { MobileSidebar } from "@/components/mobile-sidebar"
@@ -49,34 +49,11 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
               <UserButton />
             </div>
           </div>
-          
-          {/* Buy tokens button */}
-          <div className="hidden md:block ml-3">
-            <Link href="/subscribe">
-              <Button 
-                size="sm" 
-                variant={isPro ? "outline" : "premium"}
-                className="h-8 px-3 text-xs whitespace-nowrap"
-              >
-                {isPro ? (
-                  <>
-                    <Coins className="h-3 w-3 text-amber-500 mr-1" />
-                    Buy Tokens
-                  </>
-                ) : (
-                  <>
-                    Upgrade
-                    <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
-                  </>
-                )}
-              </Button>
-            </Link>
-          </div>
         </div>
         
         {/* Right side - logo with no padding on right */}
         <div className="flex items-center h-full">
-          <IntegratedLogo userId={userId} />
+          <IntegratedLogo userId={userId} isPro={isPro} />
         </div>
       </div>
       
