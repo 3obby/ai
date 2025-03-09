@@ -126,10 +126,10 @@ export const Companions = ({
   }
 
   return (
-    <div className="space-y-4 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-2 md:px-4">
+    <div className="space-y-4 mb-8 max-w-full overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-2 md:px-4 max-w-full">
         {data.map((item) => (
-          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full w-full">
+          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
               <CardHeader className="flex items-center justify-center text-center p-2 pb-1 space-y-1">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24">
@@ -154,10 +154,10 @@ export const Companions = ({
                   <Skeleton className="h-5 w-20 mx-auto" />
                 ) : (
                   <div className="space-y-0">
-                    <p className="font-semibold text-sm sm:text-base text-zinc-800 dark:text-foreground truncate max-w-[150px]">
+                    <p className="font-semibold text-sm sm:text-base text-zinc-800 dark:text-foreground truncate max-w-[140px]">
                       {item.name}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium truncate max-w-[150px]">@{item.userName}</p>
+                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium truncate max-w-[140px]">@{item.userName}</p>
                   </div>
                 )}
               </CardHeader>
