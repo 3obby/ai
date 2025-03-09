@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Upload, manage, and organize your files for AI companions",
 };
 
+// 5GB storage limit per user (in bytes)
+const MAX_STORAGE_PER_USER = 5 * 1024 * 1024 * 1024;
+
 const FilesPage = async () => {
   const session = await auth();
   const userId = session?.userId;
@@ -66,6 +69,10 @@ const FilesPage = async () => {
     select: { totalStorage: true }
   });
 
+  const totalStorage = user?.totalStorage || 0;
+  const storageLimit = MAX_STORAGE_PER_USER;
+  const storagePercentage = Math.min(100, Math.round((totalStorage / storageLimit) * 100));
+
   return (
     <div className="h-full p-4 space-y-2">
       <FilesClient 
@@ -73,7 +80,9 @@ const FilesPage = async () => {
         fileGroups={JSON.parse(JSON.stringify(fileGroups))}
         userId={userId}
         availableTokens={userUsage.availableTokens}
-        totalStorage={user?.totalStorage || 0}
+        totalStorage={totalStorage}
+        storageLimit={storageLimit}
+        storagePercentage={storagePercentage}
       />
     </div>
   );

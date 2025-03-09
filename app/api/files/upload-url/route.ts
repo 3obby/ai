@@ -3,8 +3,11 @@ import { auth } from "@/lib/auth-helpers";
 import { getSignedUploadUrl, generateUniqueFilename, calculateTokenCost } from "@/lib/google-cloud-storage";
 import prismadb from "@/lib/prismadb";
 
-// Max file size: 50MB
+// Max file size: 50MB for individual files
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+// Max storage per user: 5GB
+const MAX_STORAGE_PER_USER = 5 * 1024 * 1024 * 1024;
 
 // Allowed file types
 const ALLOWED_FILE_TYPES = [
@@ -69,6 +72,19 @@ export async function POST(req: Request) {
     
     if (!userUsage || userUsage.availableTokens < tokenCost) {
       return new NextResponse("Not enough tokens. Please purchase more tokens.", { status: 403 });
+    }
+    
+    // Get current user storage usage
+    const user = await prismadb.user.findUnique({
+      where: { id: userId },
+      select: { totalStorage: true }
+    });
+    
+    // Check if the user has enough storage allowance
+    const currentStorage = user?.totalStorage || 0;
+    
+    if (currentStorage + size > MAX_STORAGE_PER_USER) {
+      return new NextResponse(`Storage limit exceeded. You have ${((MAX_STORAGE_PER_USER - currentStorage) / (1024 * 1024)).toFixed(2)}MB remaining.`, { status: 403 });
     }
     
     // Generate a unique filename

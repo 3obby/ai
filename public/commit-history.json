@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "7a75a4f",
+      "fullHash": "7a75a4f0ae7893256a1993291bb333286ecb7cbe",
+      "date": "2025-03-09 18:52:11 +0700",
+      "author": "3obby",
+      "message": "Move Files page to (root)/(routes), add left sidebar/navbar, implement 5GB storage limit",
+      "category": "feature"
+    },
+    {
       "hash": "e40fb45",
       "fullHash": "e40fb45329554d0e16396445ac2ff4be3dce37ef",
       "date": "2025-03-09 17:16:16 +0700",

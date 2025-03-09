@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useDropzone, FileRejection, DropEvent } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { File as FileIcon, Upload, FolderPlus, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { File as FileIcon, Upload, FolderPlus, Trash2, Loader2, AlertTriangle, HardDrive } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,8 @@ interface FilesClientProps {
   userId: string;
   availableTokens: number;
   totalStorage: number;
+  storageLimit: number;
+  storagePercentage: number;
 }
 
 // Helper functions
@@ -118,6 +120,8 @@ const FilesClient = ({
   userId,
   availableTokens,
   totalStorage,
+  storageLimit,
+  storagePercentage,
 }: FilesClientProps) => {
   const router = useRouter();
   
@@ -133,9 +137,25 @@ const FilesClient = ({
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
   
+  // Remaining storage
+  const remainingStorage = storageLimit - totalStorage;
+  
   // Upload functionality with react-dropzone
   const onDrop = useCallback(async (acceptedFiles: File[], _: FileRejection[], __: DropEvent) => {
     if (acceptedFiles.length === 0) return;
+    
+    // Calculate total size of files being uploaded
+    const totalUploadSize = acceptedFiles.reduce((sum, file) => sum + file.size, 0);
+    
+    // Check if total upload exceeds remaining storage
+    if (totalUploadSize > remainingStorage) {
+      toast({
+        title: "Storage Limit Exceeded",
+        description: `You have ${formatBytes(remainingStorage)} remaining storage. These files require ${formatBytes(totalUploadSize)}.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsUploading(true);
     setUploadProgress(0);
@@ -153,6 +173,7 @@ const FilesClient = ({
           filename: file.name,
           contentType: file.type,
           size: file.size,
+          remainingStorage, // Send remaining storage for server-side validation
         });
         
         const { uploadUrl, fileId, tokenCost } = urlResponse.data;
@@ -239,11 +260,11 @@ const FilesClient = ({
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [router]);
+  }, [router, remainingStorage]);
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    disabled: isUploading,
+    disabled: isUploading || remainingStorage <= 0,
     accept: {
       'application/pdf': ['.pdf'],
       'application/msword': ['.doc'],
@@ -264,7 +285,7 @@ const FilesClient = ({
       'application/zip': ['.zip'],
       'application/x-zip-compressed': ['.zip'],
     },
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 50 * 1024 * 1024, // 50MB max for individual files
   });
   
   // Handle creating a new file group
@@ -390,6 +411,9 @@ const FilesClient = ({
         title: "File Deleted",
         description: "File has been deleted successfully.",
       });
+      
+      // Refresh the page to update storage data
+      router.refresh();
     } catch (error) {
       console.error("Delete file error:", error);
       toast({
@@ -425,13 +449,29 @@ const FilesClient = ({
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
             <Badge className="text-xs">
-              {formatBytes(totalStorage)} used
+              {formatBytes(totalStorage)} used of {formatBytes(storageLimit)}
             </Badge>
             <Badge variant="secondary" className="text-xs">
               {availableTokens.toLocaleString()} tokens available
             </Badge>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Storage Meter */}
+          <div className="w-full max-w-md mt-1">
+            <div className="flex justify-between text-xs mb-1">
+              <span>{storagePercentage}% used</span>
+              <span>{formatBytes(remainingStorage)} remaining</span>
+            </div>
+            <Progress 
+              value={storagePercentage} 
+              className="h-2"
+              color={storagePercentage > 90 ? 'bg-red-500' : 
+                    storagePercentage > 75 ? 'bg-yellow-500' : 
+                    'bg-primary'}
+            />
+          </div>
+          
+          <div className="flex gap-2 mt-2">
             <Button
               size="sm"
               onClick={() => setIsCreatingGroup(true)}
@@ -459,27 +499,46 @@ const FilesClient = ({
         
         <div className="mt-4 flex-1 flex flex-col">
           {/* Upload area */}
-          <div {...getRootProps()} className={`
-            border-2 border-dashed rounded-lg p-6 mb-6 transition-colors
-            ${isDragActive 
-              ? 'border-primary bg-primary/5' 
-              : 'border-border hover:border-primary/50 hover:bg-accent/50'
-            }
-            ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          `}>
+          <div 
+            {...getRootProps()} 
+            className={`
+              border-2 border-dashed rounded-lg p-6 mb-6 transition-colors
+              ${isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary/50 hover:bg-accent/50'
+              }
+              ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${remainingStorage <= 0 ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
+          >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center justify-center text-center">
-              <Upload className="h-10 w-10 mb-2 text-muted-foreground" />
-              <h3 className="text-lg font-medium">
-                {isDragActive 
-                  ? "Drop files here..." 
-                  : "Drag & drop files or click to upload"
-                }
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-md">
-                Upload documents, images, and other files to use with your AI companions.
-                Max file size: 50MB.
-              </p>
+              {remainingStorage <= 0 ? (
+                <>
+                  <AlertTriangle className="h-10 w-10 mb-2 text-red-500" />
+                  <h3 className="text-lg font-medium text-red-500">
+                    Storage Limit Reached (5GB)
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                    Please delete some files to free up space before uploading new files.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-10 w-10 mb-2 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">
+                    {isDragActive 
+                      ? "Drop files here..." 
+                      : "Drag & drop files or click to upload"
+                    }
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                    Upload documents, images, and other files to use with your AI companions.
+                    Max file size: 50MB. Max total storage: 5GB.
+                  </p>
+                </>
+              )}
+              
               {isUploading && (
                 <div className="w-full max-w-md mt-4">
                   <Progress value={uploadProgress} className="h-2" />
@@ -493,7 +552,7 @@ const FilesClient = ({
           
           {/* File display area */}
           <TabsContent value="all-files" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-[calc(100vh-300px)]">
+            <ScrollArea className="h-[calc(100vh-420px)]">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {files.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
