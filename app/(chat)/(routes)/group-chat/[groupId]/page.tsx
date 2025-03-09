@@ -27,6 +27,11 @@ const GroupChatIdPage = async ({ params }: GroupChatIdPageProps) => {
           companion: true,
         },
       },
+      messages: {
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
     },
   })
 

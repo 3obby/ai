@@ -150,13 +150,13 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   return (
     <>
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={() => setOpen(true)}
-        className="gap-2"
+        className="gap-2 text-orange-500 hover:text-orange-600 hover:bg-orange-100/20"
       >
         <Settings className="h-4 w-4" />
-        Configure Chat
+        Chat
       </Button>
       
       <Dialog open={open} onOpenChange={setOpen}>

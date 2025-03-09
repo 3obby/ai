@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6552bf5",
+      "fullHash": "6552bf53191288b337669b882883854aaf80c24e",
+      "date": "2025-03-09 21:40:07 +0700",
+      "author": "3obby",
+      "message": "Improve UX: Import chat history when creating group chats and style chat config button",
+      "category": "enhancement"
+    },
+    {
       "hash": "e3daa93",
       "fullHash": "e3daa93ef9c8ffc32cb7bbaaea703ad939230388",
       "date": "2025-03-09 21:15:23 +0700",

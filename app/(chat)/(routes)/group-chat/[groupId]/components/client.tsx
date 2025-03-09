@@ -274,8 +274,12 @@ export const GroupChatClient = ({
 
   // Initialize state with messages from the database
   useEffect(() => {
-    if (groupChat.messages.length > 0) {
+    if (groupChat.messages && groupChat.messages.length > 0) {
       setMessages(groupChat.messages)
+      setIsInitializing(false)
+    } else {
+      // Initialize with empty array if messages is undefined or empty
+      setMessages([])
       setIsInitializing(false)
     }
   }, [groupChat.messages])

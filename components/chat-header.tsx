@@ -76,6 +76,7 @@ export const ChatHeader = ({
       const response = await axios.post("/api/group-chat", {
         name,
         initialCompanionId: companion.id,
+        chatHistory: companion.messages,
       })
 
       toast({

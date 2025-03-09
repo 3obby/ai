@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const { name, initialCompanionId } = await request.json();
+    const { name, initialCompanionId, chatHistory } = await request.json();
     const session = await auth();
 const userId = session?.userId;
 const user = session?.user;
@@ -54,6 +54,24 @@ const user = session?.user;
         totalSpent: userUsage.totalSpent + 50,
       },
     });
+
+    // Import chat history if provided
+    if (chatHistory && chatHistory.length > 0) {
+      // Create group messages from chat history
+      const groupMessages = chatHistory.map((message: { content: string; role: string }) => ({
+        content: message.content,
+        groupChatId: groupChat.id,
+        isBot: message.role === 'assistant',
+        senderId: message.role === 'assistant' ? initialCompanionId : userId,
+      }));
+
+      // Insert the messages
+      for (const msg of groupMessages) {
+        await prismadb.groupMessage.create({
+          data: msg
+        });
+      }
+    }
 
     return NextResponse.json(groupChat);
   } catch (error) {
