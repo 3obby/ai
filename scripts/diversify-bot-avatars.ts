@@ -3,25 +3,39 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Avatar style options from DiceBear
-const AVATAR_STYLES = [
-  'adventurer', 
-  'adventurer-neutral', 
-  'avataaars', 
-  'big-ears', 
-  'big-ears-neutral', 
-  'big-smile', 
-  'bottts', 
-  'croodles', 
-  'croodles-neutral', 
-  'fun-emoji',
-  'lorelei', 
-  'micah', 
-  'miniavs', 
-  'notionists', 
-  'open-peeps', 
-  'personas', 
-  'pixel-art'
+// Bot-themed avatar style options from DiceBear
+const BOT_AVATAR_STYLES = [
+  'bottts',           // Classic robots
+  'pixel-art',        // Pixel art style (can be robot-themed)
+  'shapes',           // Abstract shapes
+  'identicon',        // Unique pattern identifiers
+  'cells',            // Cell-like patterns
+  'thumbs',           // Thumb-style avatars (can be made to look tech-y)
+  'rings',            // Abstract ring patterns
+  'initials'          // For initializing with bot name initials
+];
+
+// Available modifier options for bottts style
+const BOTTTS_MODIFIERS = [
+  '&mouthProbability=100&sidesMultiProbability=100&topProbability=100&textureProbability=80', // Complex robots
+  '&mouthProbability=100&sidesMultiProbability=0&topProbability=100&textureProbability=50',   // Cleaner robots
+  '&mouthProbability=100&sidesMultiProbability=0&topProbability=100&textureProbability=0',    // Simple robots
+  '&mouthProbability=100&sidesMultiProbability=100&topProbability=0&textureProbability=80',   // No antenna bots
+  '&mouthProbability=100&sidesMultiProbability=100&topProbability=50&textureProbability=100', // High texture robots
+];
+
+// Fun background color options
+const BACKGROUND_COLORS = [
+  'b6e3f4',   // Light blue
+  'c0aede',   // Light purple
+  'd1d4f9',   // Light lavender
+  'ffd5dc',   // Light pink
+  'c8f7c5',   // Light green
+  'ffeaa7',   // Light yellow
+  'fab1a0',   // Light coral
+  'a29bfe',   // Periwinkle
+  '81ecec',   // Cyan
+  '74b9ff',   // Blue
 ];
 
 // Generate a seed based on name or random if no name
@@ -37,88 +51,79 @@ function generateSeed(name: string): string {
 }
 
 // Generate a DiceBear avatar URL
-function generateAvatarUrl(name: string, style?: string): string {
-  const selectedStyle = style || AVATAR_STYLES[Math.floor(Math.random() * AVATAR_STYLES.length)];
-  const seed = generateSeed(name);
+function generateAvatarUrl(name: string): string {
+  // Weighted selection - bottts should be most common
+  const styleWeights = [
+    { style: 'bottts', weight: 70 },    // 70% chance for bottts
+    { style: 'pixel-art', weight: 15 }, // 15% chance for pixel-art
+    { style: 'shapes', weight: 5 },     // 5% chance for shapes
+    { style: 'identicon', weight: 3 },  // 3% chance for identicon
+    { style: 'cells', weight: 3 },      // 3% chance for cells
+    { style: 'thumbs', weight: 2 },     // 2% chance for thumbs
+    { style: 'rings', weight: 1 },      // 1% chance for rings
+    { style: 'initials', weight: 1 }    // 1% chance for initials
+  ];
   
-  // Select colors based on style
-  let backgroundColor = '';
+  // Weighted random selection
+  const totalWeight = styleWeights.reduce((sum, item) => sum + item.weight, 0);
+  let random = Math.random() * totalWeight;
   
-  if (['bottts', 'avataaars', 'personas'].includes(selectedStyle)) {
-    // Pastel background for robot/character styles
-    backgroundColor = '&backgroundColor=b6e3f4,c0aede,d1d4f9';
+  let selectedStyle = 'bottts'; // Default fallback
+  for (const { style, weight } of styleWeights) {
+    if (random < weight) {
+      selectedStyle = style;
+      break;
+    }
+    random -= weight;
   }
   
-  return `https://api.dicebear.com/7.x/${selectedStyle}/png?seed=${seed}&size=200${backgroundColor}`;
+  const seed = generateSeed(name);
+  
+  // Random background color
+  const backgroundColor = BACKGROUND_COLORS[Math.floor(Math.random() * BACKGROUND_COLORS.length)];
+  
+  // Add bottts-specific modifiers if bottts style is selected
+  let modifiers = '';
+  if (selectedStyle === 'bottts') {
+    modifiers = BOTTTS_MODIFIERS[Math.floor(Math.random() * BOTTTS_MODIFIERS.length)];
+  }
+  
+  return `https://api.dicebear.com/7.x/${selectedStyle}/png?seed=${seed}&size=200&backgroundColor=${backgroundColor}${modifiers}`;
 }
 
 async function main() {
-  console.log('Starting bot avatar diversification...');
+  console.log('Starting bot avatar regeneration with robot styles...');
   
   // Get all companions
   const companions = await prisma.companion.findMany();
   console.log(`Found ${companions.length} companions`);
   
+  let updatedCount = 0;
+  
   for (const companion of companions) {
     try {
-      // Generate a style that fits the character name
-      // We'll use a character-appropriate style when possible
-      let style;
+      // Generate new robot avatar URL
+      const newAvatarUrl = generateAvatarUrl(companion.name);
       
-      // Choose style based on character type/name
-      const nameLower = companion.name.toLowerCase();
+      // Update all avatars to bot styles
+      await prisma.companion.update({
+        where: { id: companion.id },
+        data: { src: newAvatarUrl }
+      });
       
-      if (nameLower.includes('robot') || nameLower.includes('ai') || 
-          nameLower.includes('bot') || nameLower.includes('tech')) {
-        style = 'bottts';
-      } else if (nameLower.includes('pixel') || nameLower.includes('game') || 
-                 nameLower.includes('fortnite') || nameLower.includes('duty')) {
-        style = 'pixel-art';
-      } else if (nameLower.includes('cat') || nameLower.includes('dog') || 
-                 nameLower.includes('animal')) {
-        style = 'big-smile';
-      } else if (companion.categoryId === '35e89cd6-7e12-4383-86d2-c5465ddb4f2e') {
-        // Philosophy category
-        style = 'personas';
-      } else if (companion.categoryId === '392bdce3-7e7c-4e8c-91cf-114c5ddf8e6b') {
-        // Scientists category
-        style = 'micah';
-      } else if (companion.categoryId === 'dd5748a7-6e52-4a57-925d-92af7a149f7a' ||
-                 companion.categoryId === 'be9f47a1-70d9-4af9-9e17-87c9713fbde6') {
-        // Musicians or Famous People
-        style = 'avataaars';
-      } else {
-        // Random style for others
-        style = AVATAR_STYLES[Math.floor(Math.random() * AVATAR_STYLES.length)];
-      }
-      
-      // Only update if src is empty or using default avatar
-      if (!companion.src || 
-          companion.src.includes('placeholder') || 
-          companion.src === 'https://api.dicebear.com/7.x/bottts/png?seed=1234') {
-        
-        const newAvatarUrl = generateAvatarUrl(companion.name, style);
-        
-        await prisma.companion.update({
-          where: { id: companion.id },
-          data: { src: newAvatarUrl }
-        });
-        
-        console.log(`Updated avatar for "${companion.name}" with style: ${style}`);
-      } else {
-        console.log(`Skipping avatar update for "${companion.name}" - already has custom avatar`);
-      }
+      updatedCount++;
+      console.log(`Updated avatar for "${companion.name}" to robot style`);
     } catch (error) {
       console.error(`Error updating avatar for companion ${companion.name}:`, error);
     }
   }
   
-  console.log('Bot avatar diversification completed successfully!');
+  console.log(`Bot avatar regeneration completed successfully! Updated ${updatedCount} avatars.`);
 }
 
 main()
   .catch((e) => {
-    console.error('Error during avatar diversification:', e);
+    console.error('Error during avatar regeneration:', e);
     process.exit(1);
   })
   .finally(async () => {

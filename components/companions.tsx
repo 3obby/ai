@@ -3,10 +3,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Companion } from "@prisma/client"
-import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame } from "lucide-react";
+import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
 
@@ -41,6 +42,33 @@ export const Companions = ({
   pageSize
 }: CompanionsProps) => {
   const [isMobile, setIsMobile] = React.useState(false);
+  // Keep track of images that are loading
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  
+  // Initialize all images as loading when the component mounts
+  useEffect(() => {
+    const initialLoadingState: Record<string, boolean> = {};
+    data.forEach(item => {
+      initialLoadingState[item.id] = true;
+    });
+    setLoadingImages(initialLoadingState);
+  }, [data]);
+  
+  // Handle image load completion
+  const handleImageLoaded = (id: string) => {
+    setLoadingImages(prev => ({
+      ...prev,
+      [id]: false
+    }));
+  };
+  
+  // Handle image load error
+  const handleImageError = (id: string) => {
+    setLoadingImages(prev => ({
+      ...prev,
+      [id]: false
+    }));
+  };
   
   React.useEffect(() => {
     setIsMobile(window.innerWidth < 640);
@@ -81,36 +109,57 @@ export const Companions = ({
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
               <CardHeader className="flex items-center justify-center text-center p-4 space-y-3">
                 <div className="relative w-32 h-32">
+                  {/* Show loader/placeholder while image is loading */}
+                  {loadingImages[item.id] && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-2xl">
+                      <Bot className="h-10 w-10 text-zinc-400 dark:text-zinc-500 mb-2" />
+                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    </div>
+                  )}
                   <Image
                     src={item.src}
                     fill
                     sizes="(max-width: 768px) 100px, 128px"
-                    className="rounded-2xl object-cover shadow-md"
-                    alt="Character"
+                    className={`rounded-2xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
+                    alt={item.name}
+                    onLoad={() => handleImageLoaded(item.id)}
+                    onError={() => handleImageError(item.id)}
                   />
                 </div>
-                <p className="font-semibold text-lg text-zinc-800 dark:text-foreground">
-                  {item.name}
-                </p>
+                {loadingImages[item.id] ? (
+                  <Skeleton className="h-6 w-24 mx-auto" />
+                ) : (
+                  <p className="font-semibold text-lg text-zinc-800 dark:text-foreground">
+                    {item.name}
+                  </p>
+                )}
               </CardHeader>
               <CardFooter className="flex flex-col gap-2 px-4 py-3 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
                 <div className="flex items-center justify-between w-full">
-                  <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+                  {loadingImages[item.id] ? (
+                    <Skeleton className="h-4 w-20" />
+                  ) : (
+                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+                  )}
                 </div>
                 <div className="flex items-center justify-between w-full">
                   {/* Global tokens burned */}
-                  <Badge variant="secondary">
-                    <div className="flex items-center gap-1">
-                      <Globe className="h-3 w-3 text-blue-500" />
-                      <span className="text-xs font-medium">
-                        {/* Handle both field names for backward compatibility */}
-                        {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  </Badge>
+                  {loadingImages[item.id] ? (
+                    <Skeleton className="h-5 w-16" />
+                  ) : (
+                    <Badge variant="secondary">
+                      <div className="flex items-center gap-1">
+                        <Globe className="h-3 w-3 text-blue-500" />
+                        <span className="text-xs font-medium">
+                          {/* Handle both field names for backward compatibility */}
+                          {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </Badge>
+                  )}
                   
                   {/* User-specific tokens burned */}
-                  {userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
+                  {!loadingImages[item.id] && userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
                     <Badge variant="secondary">
                       <div className="flex items-center gap-1">
                         <Flame className="h-3 w-3 text-red-500" />
@@ -119,6 +168,9 @@ export const Companions = ({
                         </span>
                       </div>
                     </Badge>
+                  )}
+                  {loadingImages[item.id] && (
+                    <Skeleton className="h-5 w-16" />
                   )}
                 </div>
               </CardFooter>

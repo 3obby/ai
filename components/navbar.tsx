@@ -44,7 +44,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
         
         {/* Right side - User profile and controls */}
         <div className="flex items-center space-x-2 md:space-x-4">
-          <ChatLimit userId={userId} className="hidden lg:flex" />
+          <ChatLimit userId={userId} className="flex" />
           
           {!isPro && (
             <Link href="/subscribe" className="hidden md:block">

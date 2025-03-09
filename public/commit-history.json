@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "ac2f560",
+      "fullHash": "ac2f56044e7e7166562cf87cce038d3a2098a8f9",
+      "date": "2025-03-09 13:57:24 +0700",
+      "author": "3obby",
+      "message": "UI improvements: switch to robot avatars, show tokens on smaller screens, add loading states for bot cards",
+      "category": "feature"
+    },
+    {
       "hash": "23bc073",
       "fullHash": "23bc0739f967b7655fb933d8a8c86337241e0743",
       "date": "2025-03-09 13:47:19 +0700",
