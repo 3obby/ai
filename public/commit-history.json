@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "21bd86c",
+      "fullHash": "21bd86ca9dbd26954cf715c5744dbcdc3a38d02a",
+      "date": "2025-03-09 21:04:12 +0700",
+      "author": "3obby",
+      "message": "Restore original chat API route to fix compilation errors",
+      "category": "bugfix"
+    },
+    {
       "hash": "496cd49",
       "fullHash": "496cd49748534656fb14a860e258b4664f8491f8",
       "date": "2025-03-09 20:57:46 +0700",
