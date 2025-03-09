@@ -12,13 +12,7 @@ import { ChatHeader } from "@/components/chat-header"
 import { ChatMessages } from "@/components/chat-messages"
 import { ChatMessageProps } from "@/components/chat-message"
 import { ConfigProvider } from "@/components/chat-config/config-provider"
-import { ConfigPanel } from "@/components/chat-config/config-panel"
-import { AIWizard } from "@/components/chat-config/ai-wizard"
-import { 
-  ResponseOrderingType, 
-  SessionPersistenceType, 
-  InputConsiderationType 
-} from "@/types/chat-config"
+import { ChatConfigButton } from "@/app/components/chat-config/ChatConfigButton"
 
 interface ChatClientProps {
   companion: Companion & {
@@ -378,8 +372,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
             isClearingMessages={isClearingMessages}
           />
           <div className="flex items-center space-x-2">
-            <AIWizard companionId={companion.id} />
-            <ConfigPanel companionId={companion.id} />
+            <ChatConfigButton companionId={companion.id} />
           </div>
         </div>
         <ChatMessages

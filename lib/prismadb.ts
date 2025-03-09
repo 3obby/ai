@@ -98,12 +98,15 @@ class EdgeCompatPrismaClient {
   companion = { 
     findUnique: () => { throw this.edgeError() },
     findFirst: () => { throw this.edgeError() },
-    findMany: () => { throw this.edgeError() }
+    findMany: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() }
   }
   
   message = { 
     findUnique: () => { throw this.edgeError() },
-    findMany: () => { throw this.edgeError() }
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    deleteMany: () => { throw this.edgeError() }
   }
   
   // Add category model for Edge compatibility
@@ -158,6 +161,17 @@ class EdgeCompatPrismaClient {
     update: () => { throw this.edgeError() },
     delete: () => { throw this.edgeError() },
     count: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
+  // Add userBurnedTokens model for edge compatibility
+  userBurnedTokens = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
     upsert: () => { throw this.edgeError() },
   }
   

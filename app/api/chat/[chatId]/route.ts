@@ -159,17 +159,18 @@ export async function POST(
     
     // Update both global and user-specific token burning metrics
     try {
-      await prismadb.$transaction([
+      // Use the updated transaction syntax with a callback function
+      await prismadb.$transaction(async (tx) => {
         // Update global tokens burned counter for the bot
-        prismadb.$executeRaw`
+        await tx.$executeRaw`
           UPDATE "Companion" 
           SET "tokensBurned" = "tokensBurned" + ${tokensToDeduct},
               "xpEarned" = "xpEarned" + ${tokensToDeduct}
           WHERE "id" = ${params.chatId}
-        `,
+        `;
         
         // Upsert user-specific token burning record
-        prismadb.$executeRaw`
+        await tx.$executeRaw`
           INSERT INTO "UserBurnedTokens" ("id", "userId", "companionId", "tokensBurned", "createdAt", "updatedAt")
           VALUES (
             gen_random_uuid(), 
@@ -183,8 +184,8 @@ export async function POST(
           DO UPDATE SET 
             "tokensBurned" = "UserBurnedTokens"."tokensBurned" + ${tokensToDeduct},
             "updatedAt" = NOW()
-        `
-      ]);
+        `;
+      });
       
       console.log(`Updated token metrics: ${tokensToDeduct} tokens burned by interaction with ${params.chatId}`);
     } catch (error) {
