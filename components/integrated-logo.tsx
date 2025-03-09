@@ -148,12 +148,12 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
     <Link href="/" className="h-full block">
       <div 
         ref={containerRef} 
-        className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/80 to-orange-400/70 group"
+        className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group"
       >
         {/* GCBB Text first - using thematic orange */}
         <div className="relative z-10 mx-3">
           <span className={cn(
-            "text-lg font-bold text-white", // Use white for better contrast on orange bg
+            "text-lg font-bold text-orange-500 dark:text-orange-400",
             font.className
           )}>
             GCBB
@@ -161,7 +161,7 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
         </div>
         
         {/* Feather Logo Second */}
-        <div className="relative flex items-center justify-center w-10 h-10 z-10">
+        <div className="relative flex items-center justify-center w-10 h-10 z-10 border-b-2 border-white/80">
           <Image
             src="/feather.png"
             alt="Feather Logo"
