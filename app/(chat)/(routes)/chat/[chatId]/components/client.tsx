@@ -11,6 +11,14 @@ import { ChatForm } from "@/components/chat-form"
 import { ChatHeader } from "@/components/chat-header"
 import { ChatMessages } from "@/components/chat-messages"
 import { ChatMessageProps } from "@/components/chat-message"
+import { ConfigProvider } from "@/components/chat-config/config-provider"
+import { ConfigPanel } from "@/components/chat-config/config-panel"
+import { AIWizard } from "@/components/chat-config/ai-wizard"
+import { 
+  ResponseOrderingType, 
+  SessionPersistenceType, 
+  InputConsiderationType 
+} from "@/types/chat-config"
 
 interface ChatClientProps {
   companion: Companion & {
@@ -196,235 +204,178 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
       }
 
       const assistantMessage: ChatMessageProps = {
-        role: "system",
+        role: "assistant",
         content: "",
-        isLoading: true,
         src: companion.src,
-        activeTypingBot: {
-          name: companion.name,
-          src: companion.src,
-        },
+        name: companion.name,
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
-
-      let accumulatedContent = ""
+      setMessages((prevMessages) => [...prevMessages, assistantMessage])
 
       const decoder = new TextDecoder()
+      let done = false
+      let sentInitialMessageId = false
 
-      while (true) {
-        const { done, value } = await reader.read()
+      while (!done) {
+        const { value, done: doneReading } = await reader.read()
+        done = doneReading
 
-        if (done) {
-          break
-        }
+        const chunkValue = decoder.decode(value, { stream: true })
 
-        const chunk = decoder.decode(value, { stream: true })
-        accumulatedContent += chunk
-
-        setMessages((prevMessages) => {
-          const updatedMessages = [...prevMessages]
-          const lastMessageIndex = updatedMessages.length - 1
-          if (
-            lastMessageIndex >= 0 &&
-            updatedMessages[lastMessageIndex].role === "system" &&
-            updatedMessages[lastMessageIndex].isLoading
-          ) {
-            updatedMessages[lastMessageIndex] = {
-              ...updatedMessages[lastMessageIndex],
-              content: accumulatedContent,
-            }
-          }
-          return updatedMessages
-        })
-      }
-
-      setMessages((prevMessages) => {
-        const updatedMessages = [...prevMessages]
-        const lastMessageIndex = updatedMessages.length - 1
-        if (
-          lastMessageIndex >= 0 &&
-          updatedMessages[lastMessageIndex].role === "system" &&
-          updatedMessages[lastMessageIndex].isLoading
-        ) {
-          updatedMessages[lastMessageIndex] = {
-            role: "assistant",
-            content: accumulatedContent,
-            src: companion.src,
-            name: companion.name,
-          }
-        }
-        return updatedMessages
-      })
-
-      decrementRemaining()
-
-      if (companion.sendMultipleMessages) {
-        console.log("📱 Multiple messages enabled for this companion")
-        const doubleMessageRoll = Math.random() * 100
-        console.log(
-          `🎲 Double message roll: ${doubleMessageRoll.toFixed(
-            2
-          )}% (needs ≤ 15%)`
-        )
-
-        if (doubleMessageRoll <= 15) {
-          console.log("🎯 Triggering second message...")
-          setMessages((current) => [
-            ...current,
-            {
-              role: "system",
-              content: "",
-              isLoading: true,
-              src: companion.src,
-            },
-          ])
-
+        if (chunkValue) {
           try {
-            let followUpPrompt = `Reply in a short, casual style—like texting—with a friendly tone.`
+            const parsedChunks = chunkValue
+              .split("\n")
+              .filter(Boolean)
+              .map((chunk) => JSON.parse(chunk))
 
-            if (activePrompts.length > 0) {
-              const promptsText = activePrompts
-                .map((prompt) => `- ${prompt.text}`)
-                .join("\n")
-              followUpPrompt += `\n\nAdditional instructions:\n${promptsText}`
-            }
-
-            followUpPrompt += `\n\nHere's my previous message:\n"${accumulatedContent}"`
-
-            const followUpResponse = await fetch(`/api/chat/${companion.id}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                prompt: followUpPrompt,
-                isFollowUp: true,
-              }),
-            })
-
-            const secondMessage = await followUpResponse.text()
-            console.log("🤖 Second message received")
-
-            setMessages((current) => {
-              const messages = current.filter((message) => !message.isLoading)
-              return [
-                ...messages,
-                {
-                  role: "system",
-                  content: secondMessage,
-                  src: companion.src,
-                },
-              ]
-            })
-            decrementRemaining()
-
-            const tripleMessageRoll = Math.random() * 100
-            console.log(
-              `🎲 Triple message roll: ${tripleMessageRoll.toFixed(
-                2
-              )}% (needs ≤ 5%)`
-            )
-
-            if (tripleMessageRoll <= 5) {
-              console.log("🎯 Triggering third message...")
-              setMessages((current) => [
-                ...current,
-                {
-                  role: "system",
-                  content: "",
-                  isLoading: true,
-                  src: companion.src,
-                },
-              ])
-
-              let thirdPrompt = accumulatedContent + "\n\n" + secondMessage
-
-              if (activePrompts.length > 0) {
-                const promptsText = activePrompts
-                  .map((prompt) => `- ${prompt.text}`)
-                  .join("\n")
-                thirdPrompt = `Additional instructions:\n${promptsText}\n\n${thirdPrompt}`
-              }
-
-              const thirdResponse = await fetch(`/api/chat/${companion.id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  prompt: thirdPrompt,
-                  isFollowUp: true,
-                }),
-              })
-
-              const thirdMessage = await thirdResponse.text()
-              console.log("🤖 Third message received")
-
-              setMessages((current) => {
-                const messages = current.filter((message) => !message.isLoading)
-                return [
-                  ...messages,
+            for (const parsedChunk of parsedChunks) {
+              if (parsedChunk.message && !sentInitialMessageId) {
+                // First message, set the ID on the assistant message
+                assistantMessage.id = parsedChunk.message.id
+                sentInitialMessageId = true
+              } else if (parsedChunk.message) {
+                // Another message, add it as a new message
+                setMessages((prevMessages) => [
+                  ...prevMessages.slice(0, -1),
                   {
-                    role: "system",
-                    content: thirdMessage,
-                    src: companion.src,
+                    ...prevMessages[prevMessages.length - 1],
+                    content:
+                      prevMessages[prevMessages.length - 1].content +
+                      parsedChunk.message.content,
                   },
-                ]
-              })
-              decrementRemaining()
+                ])
+              } else if (parsedChunk.content) {
+                // Stream chunk for the current message
+                setMessages((prevMessages) => [
+                  ...prevMessages.slice(0, -1),
+                  {
+                    ...prevMessages[prevMessages.length - 1],
+                    content:
+                      prevMessages[prevMessages.length - 1].content +
+                      parsedChunk.content,
+                  },
+                ])
+              }
             }
           } catch (error) {
-            console.error("Error in follow-up message:", error)
+            console.error("Error parsing chunk", chunkValue, error)
           }
         }
       }
+
+      // After receiving the full message, mark it as delivered
+      setTimeout(() => {
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg, index) => {
+            if (index === prevMessages.length - 1) {
+              return { ...msg, messageStatus: "delivered" }
+            }
+            return msg
+          })
+        })
+      }, 1000)
+
+      // After a delay, mark the last assistant message as read
+      setTimeout(() => {
+        setMessages((prevMessages) => {
+          return prevMessages.map((msg, index) => {
+            if (index === prevMessages.length - 1) {
+              return {
+                ...msg,
+                messageStatus: "read",
+                readBy: [{ name: "You", src: "/placeholder-user.jpg" }],
+              }
+            }
+            return msg
+          })
+        })
+      }, 2000)
+
+      // Occasionally add a random reaction to the assistant's message
+      setTimeout(() => {
+        if (Math.random() < 0.4) {
+          const emojis = ["👍", "❤️", "😄", "🙌", "👏", "🤔", "💡", "✨"]
+          const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
+
+          setMessages((prevMessages) => {
+            return prevMessages.map((msg, index) => {
+              if (index === prevMessages.length - 1) {
+                return {
+                  ...msg,
+                  reactions: [
+                    ...(msg.reactions || []),
+                    {
+                      emoji: randomEmoji,
+                      from: "You",
+                      userSrc: "/placeholder-user.jpg",
+                    },
+                  ],
+                }
+              }
+              return msg
+            })
+          })
+        }
+      }, 4000)
     } catch (error) {
-      console.error("Error in handleSubmit:", error)
+      console.error(error)
     } finally {
+      decrementRemaining?.()
       setIsLoading(false)
-      router.refresh()
     }
   }
 
   const onClear = async (onClose: () => void) => {
     try {
       setIsClearingMessages(true)
-      await fetch(`/api/chat/${companion.id}`, {
+      const cleared = await fetch(`/api/chat/${companion.id}/clear`, {
         method: "DELETE",
       })
-
-      setMessages([])
-      router.refresh()
+      setMessages([
+        {
+          role: "system",
+          content: `Hi there! I'm ${companion.name}. 👋`,
+          src: companion.src,
+        },
+      ])
       onClose()
     } catch (error) {
-      console.error("Failed to clear chat:", error)
+      console.error(error)
     } finally {
       setIsClearingMessages(false)
     }
   }
 
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth",
-      })
-    }, 100)
-  }
+  const handleInputFocus = () => {}
 
   return (
-    <div className="flex flex-col h-full p-2 md:p-4 space-y-2 max-w-5xl mx-auto">
-      <ChatHeader
-        companion={companion}
-        onClear={onClear}
-        isGroupChat={false}
-        isClearingMessages={isClearingMessages}
-      />
-      <ChatMessages isLoading={isLoading} messages={messages} />
-      <ChatForm
-        isLoading={isLoading}
-        input={input}
-        handleInputChange={handleInputChange}
-        onSubmit={handleSubmit}
-        onFocus={handleInputFocus}
-      />
-    </div>
+    <ConfigProvider initialCompanionId={companion.id}>
+      <div className="flex flex-col h-full p-1 space-y-1">
+        <div className="flex items-center justify-between">
+          <ChatHeader
+            companion={companion}
+            onClear={onClear}
+            isGroupChat={false}
+            isClearingMessages={isClearingMessages}
+          />
+          <div className="flex items-center space-x-2">
+            <AIWizard companionId={companion.id} />
+            <ConfigPanel companionId={companion.id} />
+          </div>
+        </div>
+        <ChatMessages
+          messages={messages}
+          isLoading={isLoading}
+        />
+        <ChatForm
+          input={input}
+          handleInputChange={handleInputChange}
+          onSubmit={handleSubmit}
+          isLoading={isLoading}
+          onFocus={handleInputFocus}
+        />
+      </div>
+    </ConfigProvider>
   )
 }

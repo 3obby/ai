@@ -125,6 +125,42 @@ class EdgeCompatPrismaClient {
     upsert: () => { throw this.edgeError() },
   }
   
+  // Add ChatConfig model for Edge compatibility
+  chatConfig = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    count: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
+  // Add File model for Edge compatibility
+  file = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    count: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
+  // Add FileGroup model for Edge compatibility
+  fileGroup = {
+    findUnique: () => { throw this.edgeError() },
+    findFirst: () => { throw this.edgeError() },
+    findMany: () => { throw this.edgeError() },
+    create: () => { throw this.edgeError() },
+    update: () => { throw this.edgeError() },
+    delete: () => { throw this.edgeError() },
+    count: () => { throw this.edgeError() },
+    upsert: () => { throw this.edgeError() },
+  }
+  
   // Add minimal compatibility with PrismaClient methods
   $executeRaw() { throw this.edgeError() }
   $executeRawUnsafe() { throw this.edgeError() }

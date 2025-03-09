@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "904cd6e",
+      "fullHash": "904cd6e211a749dbdecefe402100877fe4129b9f",
+      "date": "2025-03-09 20:43:06 +0700",
+      "author": "3obby",
+      "message": "Add Structured Group Chat Configuration system with AI-assisted setup and templates",
+      "category": "feature"
+    },
+    {
       "hash": "a22b7ed",
       "fullHash": "a22b7ed11687ad54b61311c56b9dcbf95ca44689",
       "date": "2025-03-09 19:18:37 +0700",

@@ -12,6 +12,7 @@ import {
   X,
   Edit,
   Loader2,
+  Settings,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCurrentUser } from "@/lib/hooks/use-current-user"
@@ -36,6 +37,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { ConfirmationModal } from "@/components/modals/confirmation-modal"
 import { AddCompanionModal } from "@/components/modals/add-companion-modal"
 import { BotAvatar } from "@/components/bot-avatar"
+import { ChatConfigButton } from "@/app/components/chat-config/ChatConfigButton"
 
 interface GroupChatHeaderProps {
   groupChat: {
@@ -233,6 +235,8 @@ export const GroupChatHeader = ({
         </div>
 
         <div className="flex items-center gap-x-2">
+          <ChatConfigButton groupChatId={groupChat.id} />
+          
           <Button
             onClick={() => setShowAddCompanion(true)}
             size="sm"

@@ -52,6 +52,7 @@ model Companion {
   groupChats           GroupChatMember[]
   messages             Message[]
   userBurnedTokens     UserBurnedTokens[]
+  chatConfigs          ChatConfig[]
 
   @@index([categoryId])
   @@index([userId])
@@ -173,6 +174,7 @@ model GroupChat {
   creatorId String
   members   GroupChatMember[]
   messages  GroupMessage[]
+  configs   ChatConfig[]
 
   @@index([creatorId])
   @@index([createdAt])
@@ -338,4 +340,41 @@ enum FileStatus {
   READY         // File is ready for use
   ERROR         // Error occurred during processing
   DELETED       // Soft-deleted but not removed from storage
+}
+
+model ChatConfig {
+  id                 String   @id @default(uuid())
+  name               String
+  description        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  userId             String
+  isTemplate         Boolean  @default(false)
+  templateCategory   String?
+  
+  // Chat dynamics as JSON
+  dynamics           Json
+  
+  // Input handling as JSON
+  inputHandling      Json
+  
+  // Execution rules as JSON
+  executionRules     Json
+  
+  // UI configuration as JSON
+  uiConfig           Json?
+  
+  // Associated entities
+  companionId        String?  // For single bot chats
+  groupChatId        String?  // For group chats
+  
+  // Relations
+  companion          Companion? @relation(fields: [companionId], references: [id], onDelete: SetNull)
+  groupChat          GroupChat? @relation(fields: [groupChatId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([isTemplate])
+  @@index([templateCategory])
+  @@index([companionId])
+  @@index([groupChatId])
 }
