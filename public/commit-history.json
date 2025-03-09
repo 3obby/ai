@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6906c4f",
+      "fullHash": "6906c4fbede61a1a22ba5cd686aaf7a4c9db77dc",
+      "date": "2025-03-10 01:42:02 +0700",
+      "author": "3obby",
+      "message": "Fix hydration errors and add missing radio-group component",
+      "category": "bugfix"
+    },
+    {
       "hash": "f2ce619",
       "fullHash": "f2ce619d0f0790349bf36d5a7acf556f354c9e7e",
       "date": "2025-03-10 01:38:52 +0700",
