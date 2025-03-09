@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "a22b7ed",
+      "fullHash": "a22b7ed11687ad54b61311c56b9dcbf95ca44689",
+      "date": "2025-03-09 19:18:37 +0700",
+      "author": "3obby",
+      "message": "Update README with file management details and structured group chat configuration roadmap",
+      "category": "enhancement"
+    },
+    {
       "hash": "7a75a4f",
       "fullHash": "7a75a4f0ae7893256a1993291bb333286ecb7cbe",
       "date": "2025-03-09 18:52:11 +0700",

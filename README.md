@@ -12,6 +12,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - **Payments**: Stripe integration with subscription tiers and token purchases
 - **AI Integration**: OpenAI API (GPT-3.5 & GPT-4)
 - **Styling**: Tailwind CSS with dark/light mode support
+- **Storage**: Google Cloud Storage for file management
 - **Deployment**: Compatible with Vercel, Netlify, or any Node.js hosting
 
 ### Key Components
@@ -19,6 +20,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - **Server Components**: Optimized for Next.js server components and server actions
 - **Real-time Chat**: WebSocket-enabled real-time messaging
 - **Group Chat**: Multi-bot conversation capabilities
+- **File Management**: Upload, organize, and share files with AI companions
 - **API Routes**: Comprehensive REST API for all platform functions
 - **Data Models**: Advanced schema design with Prisma for companion data, user data, chat history, and transactions
 
@@ -35,6 +37,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - **Community Features**: User voting on feature requests and community ideas
 - **Progress System**: Token burning tracking with detailed statistics
 - **Customization**: Extensive options for personalizing companions and interactions
+- **File Sharing**: Upload and share documents, images, and other files with AI companions
 
 ## 🚀 Operational Features
 
@@ -43,6 +46,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - **Profile Management**: User settings and preferences
 - **Token Management**: Token balance, purchase history, and usage tracking
 - **Subscription Management**: Manage subscription status, billing, and renewal
+- **Storage Limits**: 5GB storage limit per user account with usage tracking
 
 ### Admin Capabilities
 - **Companion Management**: Create, edit, and delete companions
@@ -53,6 +57,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 ### Content Management
 - **Categories**: Organize companions by categories
 - **Bot Templates**: Pre-made templates for quick companion creation
+- **File Management**: Upload, organize, and share files with AI companions
 - **Moderation**: Content filtering and safety mechanisms
 
 ## 🔧 Technical Implementation Details
@@ -77,6 +82,42 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - **Personality Framework**: Structured approach to defining personalities
 - **Response Formatting**: Control over response style and length
 
+### File Management System
+- **Storage Limits**: 5GB total storage per user account
+- **File Size Limits**: Maximum 50MB per individual file upload
+- **Supported Formats**: Documents (PDF, DOCX, TXT, CSV), Images (JPG, PNG, GIF, WEBP), and more
+- **Organization**: Group files into collections for better management
+- **Drag & Drop**: Intuitive drag and drop interface for uploads and organization
+- **Token Costs**: File uploads and storage consume tokens based on file size and type
+- **Security**: Files stored securely with Google Cloud Storage and accessed via signed URLs
+- **Integration**: Files can be referenced and used by AI companions during conversations
+
+### Structured Group Chat Configuration (Coming Soon)
+- **Chat Dynamics**
+  - Response ordering (round-robin, custom-order, parallel, conditional-branching)
+  - Session persistence (persistent, one-time, scheduled recurrence)
+  - Message formatting and display preferences
+  - Timing and flow control between messages
+
+- **Input Handling**
+  - Input visibility configuration (user-only, user + bot interactions, selected-participants)
+  - Input preprocessing and validation rules
+  - Context window management for long conversations
+  - File access permissions and reference mechanisms
+
+- **Execution Rules**
+  - Custom instructions injected before/after each bot's input/output
+  - Tool access permissions (web search, external APIs, vector DB lookups)
+  - Rate limiting and token usage management
+  - Allowed and disallowed behaviors for each participant
+  - Error handling and fallback mechanisms
+
+- **UI Configuration**
+  - Debugging panel for monitoring bot reasoning
+  - Real-time editing of chat configuration
+  - Save and load configuration templates
+  - Visual design customization options
+
 ## 📚 API Reference
 
 ### Core Endpoints
@@ -85,6 +126,8 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - `/api/companion/[companionId]` - Get, create, update companions
 - `/api/stripe/token-purchase` - Purchase additional tokens
 - `/api/user-progress` - Get user token and usage stats
+- `/api/files` - Manage user files and storage
+- `/api/files/groups` - Manage file groups and organization
 
 ### Authentication Endpoints
 - `/api/auth/[...nextauth]` - NextAuth.js authentication routes
@@ -97,6 +140,7 @@ An advanced AI companion platform built with Next.js 13 App Router, TypeScript, 
 - PostgreSQL database
 - OpenAI API key
 - Stripe account (for payments)
+- Google Cloud Storage bucket (for file storage)
 
 ### Environment Variables
 Required environment variables include:
@@ -119,6 +163,12 @@ DATABASE_URL=
 STRIPE_API_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_STANDARD_PRICE_ID=
+
+# Google Cloud Storage
+GCS_BUCKET_NAME=
+GOOGLE_APPLICATION_CREDENTIALS_JSON=
+# or
+GOOGLE_APPLICATION_CREDENTIALS=
 ```
 
 ### Installation
@@ -135,7 +185,7 @@ This project includes an automatic version tracking and documentation system tha
 - Categorizes changes based on semantics (major, minor, patch)
 - Provides an updates page at `/updates`
 
-Current version: 0.3.22
+Current version: 0.3.27
 
 ## 📱 Mobile & Responsive Design
 
@@ -148,6 +198,7 @@ Key mobile features include:
 - Touch-optimized interface
 - Mobile-friendly chat experience
 - Adaptive layout for different screen sizes
+- Responsive file management interface
 
 ## 🤝 Integration Capabilities
 
@@ -157,5 +208,6 @@ The platform can integrate with:
 - **Third-party Auth Providers**: Google, GitHub, etc.
 - **Webhook Systems**: For event-driven architecture
 - **Analytics Platforms**: For detailed usage tracking
+- **Google Cloud Storage**: For secure file storage and retrieval
 
 This documentation provides a comprehensive overview of the AI Companion Platform's capabilities and implementation details.
