@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6e94c5f",
+      "fullHash": "6e94c5ff36e4524d11eec466fcb2088df5059c18",
+      "date": "2025-03-10 01:07:37 +0700",
+      "author": "3obby",
+      "message": "UI improvements: Make GCBB text white in navbar and enhance token cost visibility on vote page",
+      "category": "enhancement"
+    },
+    {
       "hash": "32d2839",
       "fullHash": "32d2839a2f0541f09da1971442816178e98faf14",
       "date": "2025-03-10 00:56:23 +0700",

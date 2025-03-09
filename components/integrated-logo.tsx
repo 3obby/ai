@@ -153,7 +153,7 @@ export const IntegratedLogo = ({ userId }: IntegratedLogoProps) => {
         {/* GCBB Text first - using navbar gray color */}
         <div className="relative z-10 mx-3">
           <span className={cn(
-            "text-lg font-bold text-secondary", // Using secondary color to match navbar
+            "text-lg font-bold text-white", // Using white text instead of text-secondary
             font.className
           )}>
             GCBB

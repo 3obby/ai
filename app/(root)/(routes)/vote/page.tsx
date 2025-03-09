@@ -207,7 +207,7 @@ const CommunityPage = () => {
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Submit Idea
-              <span className="text-xs text-muted-foreground ml-1">
+              <span className="text-xs text-white/90 font-medium ml-1">
                 ({IDEA_SUBMISSION_COST} tokens)
               </span>
             </Button>
@@ -322,7 +322,7 @@ const CommunityPage = () => {
                     )}
                     <span className="flex items-center gap-1">
                       <span>{idea.upvotes}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-primary-foreground/90 font-medium">
                         ({UPVOTE_COST} tokens)
                       </span>
                     </span>
@@ -340,7 +340,7 @@ const CommunityPage = () => {
                     )}
                     <span className="flex items-center gap-1">
                       <span>{idea.downvotes}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-primary-foreground/90 font-medium">
                         ({DOWNVOTE_COST} tokens)
                       </span>
                     </span>
