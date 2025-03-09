@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "348a45c",
+      "fullHash": "348a45c2ce4f772e0e43c82dcc89511d5f25fa21",
+      "date": "2025-03-10 01:47:52 +0700",
+      "author": "3obby",
+      "message": "Fix companion configuration routing and add error handling",
+      "category": "bugfix"
+    },
+    {
       "hash": "6906c4f",
       "fullHash": "6906c4fbede61a1a22ba5cd686aaf7a4c9db77dc",
       "date": "2025-03-10 01:42:02 +0700",

@@ -85,17 +85,23 @@ export async function GET(
   { params }: { params: { companionId: string } }
 ) {
   try {
+    if (!params.companionId) {
+      return new NextResponse("Companion ID required", { status: 400 });
+    }
+
     const companion = await prismadb.companion.findFirst({
       where: {
         id: params.companionId,
       },
-    })
+    });
 
-    const categories = await prismadb.category.findMany()
+    if (!companion) {
+      return new NextResponse("Companion not found", { status: 404 });
+    }
 
-    return NextResponse.json({ companion, categories })
+    return NextResponse.json(companion);
   } catch (error) {
-    console.log("[COMPANION_GET]", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    console.log("[COMPANION_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

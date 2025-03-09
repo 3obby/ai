@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 import { Card, CardFooter, CardHeader, CardContent } from "@/components/ui/card"
 
@@ -65,6 +66,7 @@ export const Companions = ({
   totalCompanions,
   pageSize
 }: CompanionsProps) => {
+  const router = useRouter();
   const [isMobile, setIsMobile] = React.useState(false);
   // Keep track of images that are loading
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
@@ -131,14 +133,16 @@ export const Companions = ({
         {data.map((item) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full">
             <div className="relative flex flex-col h-full">
-              {/* Configure button - Moved outside the Link */}
-              <Link 
-                href={`/companion/${item.id}/configure`}
+              {/* Configure button - Outside the Link */}
+              <button 
                 className="absolute top-2 right-2 z-10 p-1 bg-zinc-800/70 hover:bg-zinc-800 rounded-lg transition-colors"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/companion/${item.id}/configure`);
+                }}
               >
                 <Settings className="h-4 w-4 text-zinc-200" />
-              </Link>
+              </button>
               
               <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
                 <CardHeader className="flex items-center justify-center text-center p-2 pb-1 space-y-1">
