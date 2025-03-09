@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "d9c7ff4",
+      "fullHash": "d9c7ff4764c36a4cdca150f6c345bde59c15c975",
+      "date": "2025-03-09 15:28:20 +0700",
+      "author": "3obby",
+      "message": "Add /readme route, sitemap.xml and robots.txt for improved SEO",
+      "category": "feature"
+    },
+    {
       "hash": "90be3ce",
       "fullHash": "90be3ce7ee939079e701207b153ab7e7967f9711",
       "date": "2025-03-09 15:09:26 +0700",

@@ -1,253 +1,161 @@
-## GroupChatBotBuilder
+# AI Companion Platform
 
-GroupChatBotBuilder is a Next.js toolbox gpt wrapper
+An advanced AI companion platform built with Next.js 13 App Router, TypeScript, Prisma, and PostgreSQL. This platform enables users to create, customize, and interact with AI companions powered by OpenAI's GPT models.
 
-### Key Features
+## 🧠 Technical Architecture
 
-- **AI Companion Generation & Chat**
+### Core Technologies
+- **Framework**: Next.js 13.4.11 with App Router
+- **Language**: TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js with Magic Link Email
+- **Payments**: Stripe integration with subscription tiers and token purchases
+- **AI Integration**: OpenAI API (GPT-3.5 & GPT-4)
+- **Styling**: Tailwind CSS with dark/light mode support
+- **Deployment**: Compatible with Vercel, Netlify, or any Node.js hosting
 
-  - Create and customize AI companions with unique personalities
-  - Engage in individual or group chats with companions
-  - Companions are generated using OpenAI's API and stored in your database
+### Key Components
+- **Token System**: Proactive token purchasing with subscriber discounts
+- **Server Components**: Optimized for Next.js server components and server actions
+- **Real-time Chat**: WebSocket-enabled real-time messaging
+- **Group Chat**: Multi-bot conversation capabilities
+- **API Routes**: Comprehensive REST API for all platform functions
+- **Data Models**: Advanced schema design with Prisma for companion data, user data, chat history, and transactions
 
-- **Personalized Prompts**
+## 💼 Business Capabilities
 
-  - Store and manage custom prompts via the settings menu
-  - Toggle prompts on/off to customize companion behavior
-  - Prompts persist across sessions using local storage
+### Monetization
+- **Subscription Model**: Weekly subscription ($4.99) with 200,000 tokens included
+- **Token Purchases**: Two-tier token pricing with subscriber discounts (20% off)
+- **Usage Analytics**: Track token consumption, user engagement, and revenue
+- **Retention Strategies**: Combining subscriptions with token purchases for optimal user retention
 
-- **Subscription Tiers**
+### User Engagement
+- **Companion Creation**: Users can create unlimited AI companions with unique personalities
+- **Community Features**: User voting on feature requests and community ideas
+- **Progress System**: Token burning tracking with detailed statistics
+- **Customization**: Extensive options for personalizing companions and interactions
 
-  - Starter: Basic access with limited daily messages
-  - Pro: Increased message limits and companion creation
-  - Ultimate: Unlimited messages and companions
+## 🚀 Operational Features
 
-- **User Experience**
-  - Modern UI with dark/light mode support
-  - Mobile-responsive design
-  - Progress tracking and XP system
+### User Management
+- **Registration/Login**: Email-based magic link authentication
+- **Profile Management**: User settings and preferences
+- **Token Management**: Token balance, purchase history, and usage tracking
+- **Subscription Management**: Manage subscription status, billing, and renewal
+
+### Admin Capabilities
+- **Companion Management**: Create, edit, and delete companions
+- **User Management**: View and manage user accounts
+- **Analytics Dashboard**: Track platform usage, revenue, and engagement
+- **Token Economy Management**: Adjust token pricing and allocation
+
+### Content Management
+- **Categories**: Organize companions by categories
+- **Bot Templates**: Pre-made templates for quick companion creation
+- **Moderation**: Content filtering and safety mechanisms
+
+## 🔧 Technical Implementation Details
+
+### AI Conversation Pipeline
+1. User submits message
+2. Message is processed through middleware
+3. OpenAI API is called with companion-specific context
+4. Response is processed and enhanced
+5. Tokens are calculated and deducted from user balance
+6. Response is returned to user and stored in database
+
+### Token Economy
+- **Token Calculation**: Dynamic calculation based on input and output tokens
+- **Token Top-ups**: User-initiated token purchases
+- **Subscription Tokens**: Automatic weekly token allocation
+- **Token Burning**: Track global and user-specific token consumption
+
+### Companion Generation
+- **Custom Instructions**: Unique instruction sets for each companion
+- **Memory System**: Companions remember conversation history
+- **Personality Framework**: Structured approach to defining personalities
+- **Response Formatting**: Control over response style and length
+
+## 📚 API Reference
+
+### Core Endpoints
+- `/api/chat/[chatId]` - Manage conversations with companions
+- `/api/companions` - List and filter available companions
+- `/api/companion/[companionId]` - Get, create, update companions
+- `/api/stripe/token-purchase` - Purchase additional tokens
+- `/api/user-progress` - Get user token and usage stats
+
+### Authentication Endpoints
+- `/api/auth/[...nextauth]` - NextAuth.js authentication routes
+- `/api/me` - Get current user information
+
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js
-- OpenAI API key
-- NextAuth.js for authentication with Magic Link Email
-- Stripe for payments (optional)
+- Node.js 16+
 - PostgreSQL database
+- OpenAI API key
+- Stripe account (for payments)
 
-### Environment Setup
+### Environment Variables
+Required environment variables include:
+```
+# Authentication
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
+NEXTAUTH_URL_PRODUCTION=
 
-Create a `.env` file with:
-
-```bash
-# Authentication (NextAuth)
-NEXTAUTH_SECRET=your_secret_here
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_URL_PRODUCTION=https://yourdomain.com
-
-# Email provider (Postmark)
-POSTMARK_API_KEY=your_postmark_api_key
+# Email provider
+POSTMARK_API_KEY=
 
 # OpenAI
-OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_KEY=
 
-# Database (PostgreSQL)
-DATABASE_URL=your_database_connection_string
+# Database
+DATABASE_URL=
 
-# Stripe (Optional)
-STRIPE_API_KEY=your_stripe_api_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID=price_id_for_starter
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_id_for_pro
-NEXT_PUBLIC_STRIPE_ULTIMATE_PRICE_ID=price_id_for_ultimate
+# Stripe
+STRIPE_API_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_STANDARD_PRICE_ID=
 ```
 
 ### Installation
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Set up your environment variables
+4. Run database migrations: `npx prisma migrate dev`
+5. Start the development server: `npx next dev`
 
-1. Clone the repository:
+## 🔄 Version Control & Updates
 
-   ```bash
-   git clone https://github.com/yourusername/GroupChatBotBuilder.git
-   ```
+This project includes an automatic version tracking and documentation system that:
+- Updates version numbers automatically based on commit messages
+- Categorizes changes based on semantics (major, minor, patch)
+- Provides an updates page at `/updates`
 
-2. Install dependencies:
+Current version: 0.3.22
 
-   ```bash
-   npm install
-   ```
+## 📱 Mobile & Responsive Design
 
-3. Set up the database:
+The platform is fully responsive and works on:
+- Desktop browsers
+- Tablets
+- Mobile devices
 
-   ```bash
-   npx prisma db push
-   ```
+Key mobile features include:
+- Touch-optimized interface
+- Mobile-friendly chat experience
+- Adaptive layout for different screen sizes
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## 🤝 Integration Capabilities
 
-### Project Structure
+The platform can integrate with:
+- **LangChain**: For advanced AI workflows
+- **Vector Databases**: For enhanced memory capabilities
+- **Third-party Auth Providers**: Google, GitHub, etc.
+- **Webhook Systems**: For event-driven architecture
+- **Analytics Platforms**: For detailed usage tracking
 
-```text
-.
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   └── (routes)/          # Page routes
-├── components/            # React components
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions
-├── prisma/              # Database schema
-└── store/               # State management
-```
-
-### Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### License
-
-This project is licensed under the terms specified in the LICENSE file.
-
-### Features
-
-- **AI Companion Generation**  
-  In `companions/copm.py`, the script uses OpenAI's API to generate descriptions, instructions, and seed conversations for various personas, storing them in `companions/Generated_Companions.json`.
-
-- **Category Management**  
-  A separate `Category.json` maps category names to IDs, allowing companions to be organized and filtered by category.
-
-- **API Endpoint**  
-  In `app/api/companion/behavior/route.ts`, an API route processes user messages, interacts with GPT (e.g., model `gpt-4`), and returns a summarized or expanded response from the companion persona.
-
-### Generating Companions
-
-1. Update `people` in `companions/copm.py` with your desired personas.
-2. Run the script:
-   ```bash
-   python companions/copm.py
-   ```
-   This generates or updates companion data in `companions/Generated_Companions.json`.
-
-### Running the Application
-
-1. **Development Server**:
-
-   ```bash
-   npm run dev
-   ```
-
-   This starts a local Next.js server, including the `/api/companion/behavior` endpoint for chat functionality.
-
-2. Check logs or console output to see responses and debug information.
-
-### Usage
-
-- Interact with AI companions via the Next.js API route.
-- Each request can specify which companion to emulate, or multiple for group chats.
-
-### File Structure Highlights
-
-```text
-.
-├── companions/
-│   ├── copm.py               # Script to generate companion data
-│   ├── Generated_Companions.json
-│   └── Category.json
-├── app/
-│   └── api/
-│       └── companion/
-│           └── behavior/
-│               └── route.ts  # Next.js /api endpoint for companion behaviors
-├── README.md
-├── package.json
-└── ...
-```
-
-Below is an example **Character Creation** workflow you can add to the README, showing **how data is generated and loaded** into GroupChatBotBuilder. Adjust as needed for your setup:
-
----
-
-## Character Creation & Sync Process
-
-1. **Add Your Character to `copm.py`**  
-   In `companions/copm.py`, add an entry to the `people` list (e.g., `{ "name": "Billy Brainstormer", "category": "General" }`).
-
-2. **Generate Companion Data**  
-   Run:
-
-   ```bash
-   python companions/copm.py
-   ```
-
-   This calls OpenAI to build a short description, instructions, and a seed conversation. The results are saved to `companions/Generated_Companions.json`.
-
-3. **Sync to the Database or UI**  
-   By default, `copm.py` just writes to `Generated_Companions.json`. You have two main approaches to making that data appear in the UI:
-
-   - **(Option A) Manual DB Insertion**  
-     Import or parse `companions/Generated_Companions.json` and then insert the new companion record(s) into your `Companion` table via Prisma (or your chosen DB).
-
-     ```typescript
-     // Example pseudocode
-     const generatedCompanions = require("../../companions/Generated_Companions.json")
-
-     for (const companion of generatedCompanions) {
-       await prismadb.companion.create({ data: companion })
-     }
-     ```
-
-   - **(Option B) Use the CompanionForm / Behavior Endpoint**  
-     You can also create or edit companions in the UI. For instance, the script in  
-     `app/(root)/(routes)/companion/[companionId]/components/companion-form.tsx` uses an Axios POST or PATCH to `/api/companion`. That route stores data in the database, making the companion available for chat.
-
-4. **Run/Restart Your App**
-
-   ```bash
-   npx next dev
-   ```
-
-   Your new characters should now appear in the companion list. Selecting them in the UI or referencing them by ID will start a conversation with their unique personality.
-
-5. **Verification**
-   - In your Next.js logs or browser console, verify that Billy Brainstormer (or any new companion) is visible.
-   - If you see errors, confirm your data was pushed to the DB or that your front end is correctly referencing the new companion's ID.
-
-That's it! You can now create, generate, and sync new AI companions seamlessly into GroupChatBotBuilder.
-
-## Auto-Documentation System
-
-This project includes an automatic version tracking and documentation system.
-
-### Features
-
-- **Automatic Version Updates**: The version number is automatically incremented based on commit messages
-- **Updates Page**: View all project changes at `/updates`
-- **Git Integration**: Uses Git history to generate documentation
-
-### How it Works
-
-- All Git commits are automatically documented and categorized
-- The version number on the login page is automatically updated
-- Categories are determined by keywords in commit messages:
-  - **Major Version**: Include "major" or "breaking" in commit message
-  - **Minor Version**: Include "minor" or "feature" in commit message
-  - **Patch Version**: All other commits
-
-### Setup for Developers
-
-If you're setting up the project for the first time, run:
-
-```bash
-node scripts/setup-hooks.js
-```
-
-This sets up the necessary Git hooks to keep the documentation updated.
-
-### Manual Version Update
-
-To manually update the version, run:
-
-```bash
-node scripts/update-version.js
-```
+This documentation provides a comprehensive overview of the AI Companion Platform's capabilities and implementation details.
