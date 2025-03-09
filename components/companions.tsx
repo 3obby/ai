@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { CompanionActions } from "@/components/companion-actions";
 
 import { Card, CardFooter, CardHeader, CardContent } from "@/components/ui/card"
 
@@ -108,6 +109,25 @@ export const Companions = ({
   }, []);
 
   const totalPages = Math.ceil(totalCompanions / pageSize);
+
+  const [userTokens, setUserTokens] = useState<number>(0);
+  
+  // Fetch user token balance
+  useEffect(() => {
+    if (!userId) return;
+    
+    const fetchUserTokens = async () => {
+      try {
+        const response = await fetch(`/api/user-progress?userId=${userId}`);
+        const data = await response.json();
+        setUserTokens(data.availableTokens || 0);
+      } catch (error) {
+        console.error("Failed to fetch user tokens:", error);
+      }
+    };
+    
+    fetchUserTokens();
+  }, [userId]);
 
   if (data.length === 0) {
     return (
@@ -248,6 +268,15 @@ export const Companions = ({
                   )}
                 </CardFooter>
               </Link>
+              
+              {/* Add companion actions component */}
+              <div className="px-3 py-2">
+                <CompanionActions 
+                  companion={item}
+                  currentUser={userId ? { id: userId } : null}
+                  availableTokens={userTokens}
+                />
+              </div>
             </div>
           </Card>
         ))}
