@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://aichatbot.dev/sitemap.xml 
+Sitemap: https://groupchatbotbuilder.com/sitemap.xml 

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "b146653",
+      "fullHash": "b14665345cdb7d82f9730ba45cef460a133bb76a",
+      "date": "2025-03-09 15:34:45 +0700",
+      "author": "3obby",
+      "message": "Update domain references to groupchatbotbuilder.com and fix README page component",
+      "category": "bugfix"
+    },
+    {
       "hash": "d9c7ff4",
       "fullHash": "d9c7ff4764c36a4cdca150f6c345bde59c15c975",
       "date": "2025-03-09 15:28:20 +0700",
