@@ -17,6 +17,7 @@ interface DashboardPageProps {
   searchParams: {
     categoryId: string
     name: string
+    page: string
   }
 }
 
@@ -28,20 +29,51 @@ async function CategoriesWrapper() {
   return <Categories data={categories} />;
 }
 
-// Separate async component for loading companions
+// Separate async component for loading companions with pagination
 async function CompanionsWrapper({ 
   searchParams, 
   userId 
 }: { 
-  searchParams: { categoryId: string; name: string }; 
+  searchParams: { categoryId: string; name: string; page: string }; 
   userId: string 
 }) {
-  // Add a small artificial delay for UX testing if needed
-  // await new Promise(resolve => setTimeout(resolve, 2000));
-  
   try {
     console.log("Fetching companions for dashboard...");
     
+    // Parse page number and set default if not provided
+    const page = parseInt(searchParams.page || "1", 10);
+    const pageSize = 10; // Number of companions per page
+    const skip = (page - 1) * pageSize;
+    
+    // Get the total count for pagination
+    const totalCount = await prismadb.companion.count({
+      where: {
+        AND: [
+          {
+            categoryId: searchParams.categoryId || undefined,
+            name: searchParams.name
+              ? {
+                  contains: searchParams.name,
+                  mode: "insensitive",
+                }
+              : undefined,
+          },
+          {
+            OR: [
+              { private: false },
+              {
+                AND: [
+                  { private: true },
+                  { userId: userId },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    
+    // Get paginated companions
     const data = await prismadb.companion.findMany({
       where: {
         AND: [
@@ -76,21 +108,31 @@ async function CompanionsWrapper({
             messages: true,
           },
         },
+        // Include user-specific burned tokens for the current user
+        userBurnedTokens: {
+          where: {
+            userId: userId,
+          },
+          take: 1,
+        },
       },
+      skip,
+      take: pageSize,
     });
     
-    console.log(`Found ${data.length} companions`);
+    console.log(`Found ${data.length} companions (page ${page}, total ${totalCount})`);
     
-    // Just to debug what's happening
-    if (data.length > 0) {
-      console.log("Sample companion fields:", Object.keys(data[0]));
-    }
-    
-    return <Companions userId={userId} data={data} />;
+    return <Companions 
+             userId={userId} 
+             data={data} 
+             currentPage={page} 
+             totalCompanions={totalCount} 
+             pageSize={pageSize} 
+           />;
   } catch (error) {
     console.error("Error fetching companions:", error);
     // Return an empty list as fallback
-    return <Companions userId={userId} data={[]} />;
+    return <Companions userId={userId} data={[]} currentPage={1} totalCompanions={0} pageSize={10} />;
   }
 }
 

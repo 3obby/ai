@@ -140,6 +140,57 @@ export async function POST(
       messages: openAIMessages,
     });
 
+    // Calculate tokens used from the API response
+    const promptTokens = completion.usage?.prompt_tokens || 0;
+    const completionTokens = completion.usage?.completion_tokens || 0;
+    const totalTokens = promptTokens + completionTokens;
+    
+    // Default minimum tokens if API doesn't return usage
+    const tokensToDeduct = Math.max(totalTokens, TOKENS_PER_MESSAGE);
+    
+    // Deduct tokens from user's allocation based on actual usage
+    await prismadb.userUsage.update({
+      where: { userId: userId },
+      data: {
+        availableTokens: { decrement: tokensToDeduct },
+        totalSpent: { increment: tokensToDeduct },
+      },
+    });
+    
+    // Update both global and user-specific token burning metrics
+    try {
+      await prismadb.$transaction([
+        // Update global tokens burned counter for the bot
+        prismadb.$executeRaw`
+          UPDATE "Companion" 
+          SET "tokensBurned" = "tokensBurned" + ${tokensToDeduct},
+              "xpEarned" = "xpEarned" + ${tokensToDeduct}
+          WHERE "id" = ${params.chatId}
+        `,
+        
+        // Upsert user-specific token burning record
+        prismadb.$executeRaw`
+          INSERT INTO "UserBurnedTokens" ("id", "userId", "companionId", "tokensBurned", "createdAt", "updatedAt")
+          VALUES (
+            gen_random_uuid(), 
+            ${userId}, 
+            ${params.chatId}, 
+            ${tokensToDeduct}, 
+            NOW(), 
+            NOW()
+          )
+          ON CONFLICT ("userId", "companionId") 
+          DO UPDATE SET 
+            "tokensBurned" = "UserBurnedTokens"."tokensBurned" + ${tokensToDeduct},
+            "updatedAt" = NOW()
+        `
+      ]);
+      
+      console.log(`Updated token metrics: ${tokensToDeduct} tokens burned by interaction with ${params.chatId}`);
+    } catch (error) {
+      console.error("Failed to update token burning records:", error);
+    }
+
     // Get the response content
     const responseContent = completion.choices[0].message.content || "";
 

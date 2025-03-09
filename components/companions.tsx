@@ -28,15 +28,19 @@ interface CompanionsProps {
     userBurnedTokens?: UserBurnedTokens[]
   })[];
   userId?: string;
+  currentPage: number;
+  totalCompanions: number;
+  pageSize: number;
 }
 
 export const Companions = ({
   data,
-  userId
+  userId,
+  currentPage,
+  totalCompanions,
+  pageSize
 }: CompanionsProps) => {
-  const [currentPage, setCurrentPage] = React.useState(1);
   const [isMobile, setIsMobile] = React.useState(false);
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   
   React.useEffect(() => {
     setIsMobile(window.innerWidth < 640);
@@ -49,21 +53,7 @@ export const Companions = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Add useEffect for scroll to top when page changes
-  React.useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  }, [currentPage]);
-
-  const companionsPerPage = isMobile ? 7 : 10;
-
-  // No more filtering needed here since it's handled in the database query
-  const indexOfLastCompanion = currentPage * companionsPerPage;
-  const indexOfFirstCompanion = indexOfLastCompanion - companionsPerPage;
-  const currentCompanions = data.slice(indexOfFirstCompanion, indexOfLastCompanion);
-  const totalPages = Math.ceil(data.length / companionsPerPage);
+  const totalPages = Math.ceil(totalCompanions / pageSize);
 
   if (data.length === 0) {
     return (
@@ -86,7 +76,7 @@ export const Companions = ({
   return (
     <div className="space-y-4 mb-8">
       <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
-        {currentCompanions.map((item) => (
+        {data.map((item) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-2xl cursor-pointer border-2 border-zinc-300/50 dark:border-zinc-700 shadow-lg overflow-hidden flex flex-col h-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
               <CardHeader className="flex items-center justify-center text-center p-4 space-y-3">
@@ -119,8 +109,8 @@ export const Companions = ({
                     </div>
                   </Badge>
                   
-                  {/* User-specific tokens burned - hidden for now until we add data migration */}
-                  {false && userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
+                  {/* User-specific tokens burned */}
+                  {userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
                     <Badge variant="secondary">
                       <div className="flex items-center gap-1">
                         <Flame className="h-3 w-3 text-red-500" />
@@ -137,39 +127,36 @@ export const Companions = ({
         ))}
       </div>
       {totalPages > 1 && (
-        <div className="flex justify-center gap-4 pt-4">
-          {currentPage > 1 && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="rounded-full w-10 h-10 p-2 bg-[#C0C1C3] hover:bg-[#B0B1B3] dark:bg-[#505052] dark:hover:bg-[#606062]"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <div className="flex items-center gap-4">
-            {[...Array(totalPages)].map((_, index) => (
-              <Button
-                key={index + 1}
-                variant={currentPage === index + 1 ? "default" : "outline"}
-                className="rounded-full w-10 h-10 p-0"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </Button>
-            ))}
+        <div className="flex items-center justify-center mt-8 space-x-4">
+          <Button
+            onClick={() => {
+              const searchParams = new URLSearchParams(window.location.search);
+              searchParams.set('page', String(currentPage - 1));
+              window.location.search = searchParams.toString();
+            }}
+            disabled={currentPage <= 1}
+            variant="outline"
+            className="flex items-center"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
           </div>
-          {currentPage < totalPages && (
-            <Button
-              variant="secondary"
-              size="icon"
-              className="rounded-full w-10 h-10 p-2 bg-[#C0C1C3] hover:bg-[#B0B1B3] dark:bg-[#505052] dark:hover:bg-[#606062]"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            onClick={() => {
+              const searchParams = new URLSearchParams(window.location.search);
+              searchParams.set('page', String(currentPage + 1));
+              window.location.search = searchParams.toString();
+            }}
+            disabled={currentPage >= totalPages}
+            variant="outline"
+            className="flex items-center"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
         </div>
       )}
     </div>
