@@ -3,13 +3,15 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Companion } from "@prisma/client"
-import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot } from "lucide-react";
+import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-import { Card, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardFooter, CardHeader, CardContent } from "@/components/ui/card"
 
 // Define the UserBurnedTokens interface since it may not be exported yet
 interface UserBurnedTokens {
@@ -33,6 +35,28 @@ interface CompanionsProps {
   totalCompanions: number;
   pageSize: number;
 }
+
+// Function to generate a concise technical description
+const generateTechDescription = (companion: Companion): string => {
+  // If the name is too long, make the description shorter to fit card
+  const maxLength = companion.name.length > 15 ? 80 : 110;
+  
+  // Extract key details from instructions
+  let description = companion.instructions || "";
+  
+  // If description is too long, truncate and add ellipsis
+  if (description.length > maxLength) {
+    // Try to find a reasonable breakpoint
+    const breakpoint = description.substring(0, maxLength).lastIndexOf('. ');
+    if (breakpoint > maxLength / 2) {
+      description = description.substring(0, breakpoint + 1);
+    } else {
+      description = description.substring(0, maxLength) + '...';
+    }
+  }
+  
+  return description;
+};
 
 export const Companions = ({
   data,
@@ -103,11 +127,11 @@ export const Companions = ({
 
   return (
     <div className="space-y-4 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4">
         {data.map((item) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-2xl cursor-pointer border-2 border-zinc-300/50 dark:border-zinc-700 shadow-lg overflow-hidden flex flex-col h-full">
             <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
-              <CardHeader className="flex items-center justify-center text-center p-4 space-y-3">
+              <CardHeader className="flex items-center justify-center text-center p-4 space-y-2">
                 <div className="relative w-32 h-32">
                   {/* Show loader/placeholder while image is loading */}
                   {loadingImages[item.id] && (
@@ -129,19 +153,39 @@ export const Companions = ({
                 {loadingImages[item.id] ? (
                   <Skeleton className="h-6 w-24 mx-auto" />
                 ) : (
-                  <p className="font-semibold text-lg text-zinc-800 dark:text-foreground">
-                    {item.name}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="font-semibold text-lg text-zinc-800 dark:text-foreground">
+                      {item.name}
+                    </p>
+                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+                  </div>
                 )}
               </CardHeader>
+              
+              {/* Technical Description */}
+              <CardContent className="px-4 py-2 flex-grow">
+                {loadingImages[item.id] ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-3 text-left">
+                          {generateTechDescription(item)}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-xs">{item.instructions}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </CardContent>
+              
               <CardFooter className="flex flex-col gap-2 px-4 py-3 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
-                <div className="flex items-center justify-between w-full">
-                  {loadingImages[item.id] ? (
-                    <Skeleton className="h-4 w-20" />
-                  ) : (
-                    <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
-                  )}
-                </div>
                 <div className="flex items-center justify-between w-full">
                   {/* Global tokens burned */}
                   {loadingImages[item.id] ? (
@@ -158,13 +202,15 @@ export const Companions = ({
                     </Badge>
                   )}
                   
-                  {/* User-specific tokens burned */}
-                  {!loadingImages[item.id] && userId && (item as any).userBurnedTokens && (item as any).userBurnedTokens.length > 0 && (
+                  {/* User-specific tokens burned - Always show, even if 0 */}
+                  {!loadingImages[item.id] && userId && (
                     <Badge variant="secondary">
                       <div className="flex items-center gap-1">
                         <Flame className="h-3 w-3 text-red-500" />
                         <span className="text-xs font-medium">
-                          {(item as any).userBurnedTokens[0].tokensBurned.toLocaleString()}
+                          {(item as any).userBurnedTokens && 
+                           (item as any).userBurnedTokens.length > 0 ? 
+                           (item as any).userBurnedTokens[0].tokensBurned.toLocaleString() : "0"}
                         </span>
                       </div>
                     </Badge>
@@ -173,6 +219,20 @@ export const Companions = ({
                     <Skeleton className="h-5 w-16" />
                   )}
                 </div>
+                
+                {/* Message count indicator */}
+                {!loadingImages[item.id] && (
+                  <div className="flex items-center w-full justify-center">
+                    <div className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold bg-transparent text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                      <div className="flex items-center gap-1">
+                        <MessagesSquare className="h-3 w-3" />
+                        <span className="text-xs">
+                          {item._count.messages} {item._count.messages === 1 ? 'message' : 'messages'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardFooter>
             </Link>
           </Card>

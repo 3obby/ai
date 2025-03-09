@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "a2f69f9",
+      "fullHash": "a2f69f9356e343dd927c9141d273302e7fb34978",
+      "date": "2025-03-09 14:17:29 +0700",
+      "author": "3obby",
+      "message": "Add technical descriptions and user token burn indicators to bot cards",
+      "category": "feature"
+    },
+    {
       "hash": "ac2f560",
       "fullHash": "ac2f56044e7e7166562cf87cce038d3a2098a8f9",
       "date": "2025-03-09 13:57:24 +0700",
