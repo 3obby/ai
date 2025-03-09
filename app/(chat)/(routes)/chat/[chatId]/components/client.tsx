@@ -224,10 +224,18 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
 
         if (chunkValue) {
           try {
+            // First try to parse as JSON
             const parsedChunks = chunkValue
               .split("\n")
               .filter(Boolean)
-              .map((chunk) => JSON.parse(chunk))
+              .map((chunk) => {
+                try {
+                  return JSON.parse(chunk)
+                } catch (e) {
+                  // If parsing fails, treat as raw text
+                  return { content: chunk }
+                }
+              })
 
             for (const parsedChunk of parsedChunks) {
               if (parsedChunk.message && !sentInitialMessageId) {
@@ -260,6 +268,16 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
             }
           } catch (error) {
             console.error("Error parsing chunk", chunkValue, error)
+            
+            // Fallback: treat entire chunk as plain text content
+            setMessages((prevMessages) => [
+              ...prevMessages.slice(0, -1),
+              {
+                ...prevMessages[prevMessages.length - 1],
+                content:
+                  prevMessages[prevMessages.length - 1].content + chunkValue,
+              },
+            ])
           }
         }
       }

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "496cd49",
+      "fullHash": "496cd49748534656fb14a860e258b4664f8491f8",
+      "date": "2025-03-09 20:57:46 +0700",
+      "author": "3obby",
+      "message": "Fix chat configuration UI and JSON parsing in chat client",
+      "category": "bugfix"
+    },
+    {
       "hash": "904cd6e",
       "fullHash": "904cd6e211a749dbdecefe402100877fe4129b9f",
       "date": "2025-03-09 20:43:06 +0700",

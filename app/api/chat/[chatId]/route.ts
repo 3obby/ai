@@ -1,10 +1,10 @@
 import dotenv from "dotenv"
 import { auth } from "@/lib/auth-helpers"
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
+import { OpenAI } from "openai"
 import prismadb from "@/lib/prismadb"
 import { Role } from "@prisma/client"
-import { StreamingTextResponse } from "ai"
+import { StreamingTextResponse, OpenAIStream } from "ai"
 
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
@@ -13,6 +13,9 @@ import {
 } from "@/lib/token-usage"
 import { TOKENS_PER_MESSAGE } from "@/lib/token-usage"
 
+import { processPrompt } from "@/lib/utils/prompt-utils"
+import { getSystemPromptForCompanion } from "@/lib/utils/ai-helpers"
+import { getUserXP } from "@/lib/utils/user-utils"
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
@@ -20,6 +23,11 @@ export const dynamic = "force-dynamic";
 dotenv.config({ path: `.env` })
 
 const XP_PER_MESSAGE = 2
+
+// Delay params
+const typingDelay = 1000 // ms standard delay for typing indicator for slow typists
+const minResponseDelay = 800 // ms min additional delay
+const maxResponseDelay = 2500 // ms max additional delay - should be higher for slow bots
 
 export async function POST(
   request: Request,
@@ -58,54 +66,40 @@ export async function POST(
       return new NextResponse("Companion not found", { status: 404 })
     }
 
-    // Calculate a random delay
-    const baseDelay = companion.messageDelay * 1000
-    const randomDelay = Math.floor(Math.random() * 3000)
-    const totalDelay = baseDelay + randomDelay
+    // Pre-process the prompt if not a follow-up
+    let prompt = isFollowUp ? null : allMessages[allMessages.length - 1].content
+    const processedPrompt = isFollowUp
+      ? null
+      : await processPrompt(prompt as string, companion.name)
 
-    // Prepare your messages for OpenAI
-    // If you have special instructions for the system or the first user message,
-    // you can still insert them at the beginning
-    const openAIMessages = isFollowUp
-      ? allMessages
-      : [
-          {
-            role: "system",
-            content: `${companion.instructions}\n\nYou are ${companion.name}, \n\nSeed personality: `,
-          },
-          ...allMessages,
-        ]
+    // If there's a processed prompt and it's not a follow-up, replace it
+    if (processedPrompt && !isFollowUp) {
+      allMessages[allMessages.length - 1].content = processedPrompt
+      console.log("Processed prompt:", processedPrompt)
+    }
 
-    // Store the user message first
-    await prismadb.message.create({
-      data: {
-        content:
-          allMessages[allMessages.length - 1]?.content || "(no user input)",
-        role: isFollowUp ? "system" : "user",
-        companionId: params.chatId,
-        userId: userId,
-      },
-    })
+    // Wait for a delay based on companion settings or defaults
+    const botDelay = companion.messageDelay || 0
+    const randomAdditional = Math.floor(
+      Math.random() * (maxResponseDelay - minResponseDelay + 1) + minResponseDelay
+    )
+    const totalDelay = typingDelay + botDelay + randomAdditional
 
-    // Deduct tokens from user's allocation
-    await prismadb.userUsage.update({
-      where: { userId: userId },
-      data: {
-        availableTokens: { decrement: TOKENS_PER_MESSAGE },
-        totalSpent: { increment: TOKENS_PER_MESSAGE },
-      },
-    })
+    // Format messages for OpenAI
+    const systemPrompt = getSystemPromptForCompanion(companion)
+    const openAIMessages = [
+      { role: "system", content: systemPrompt },
+      ...allMessages.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+        name: msg.role === "user" ? "user" : undefined // Only include name for user messages
+      })),
+    ]
 
-    // Run a Prisma transaction to update both bot's global tokens burned 
-    // and the user-specific tokens burned for this bot
+    // Update token burning counters
     try {
       await prismadb.$transaction([
-        // Update global tokens burned counter for the bot
-        prismadb.companion.update({
-          where: { id: params.chatId },
-          data: { tokensBurned: { increment: TOKENS_PER_MESSAGE } },
-        }),
-        // Create or update the user-specific tokens burned record
+        // Update user-specific token burning counter for this bot
         prismadb.userBurnedTokens.upsert({
           where: {
             userId_companionId: {
@@ -134,81 +128,21 @@ export async function POST(
     // Initialize OpenAI
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
 
-    // Get a completion from the API without streaming
-    const completion = await openai.chat.completions.create({
+    // Get a completion from the API with streaming
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: openAIMessages,
+      stream: true
     });
 
-    // Calculate tokens used from the API response
-    const promptTokens = completion.usage?.prompt_tokens || 0;
-    const completionTokens = completion.usage?.completion_tokens || 0;
-    const totalTokens = promptTokens + completionTokens;
-    
-    // Default minimum tokens if API doesn't return usage
-    const tokensToDeduct = Math.max(totalTokens, TOKENS_PER_MESSAGE);
-    
-    // Deduct tokens from user's allocation based on actual usage
-    await prismadb.userUsage.update({
-      where: { userId: userId },
-      data: {
-        availableTokens: { decrement: tokensToDeduct },
-        totalSpent: { increment: tokensToDeduct },
-      },
-    });
-    
-    // Update both global and user-specific token burning metrics
-    try {
-      await prismadb.$transaction([
-        // Update global tokens burned counter for the bot
-        prismadb.$executeRaw`
-          UPDATE "Companion" 
-          SET "tokensBurned" = "tokensBurned" + ${tokensToDeduct},
-              "xpEarned" = "xpEarned" + ${tokensToDeduct}
-          WHERE "id" = ${params.chatId}
-        `,
-        
-        // Upsert user-specific token burning record
-        prismadb.$executeRaw`
-          INSERT INTO "UserBurnedTokens" ("id", "userId", "companionId", "tokensBurned", "createdAt", "updatedAt")
-          VALUES (
-            gen_random_uuid(), 
-            ${userId}, 
-            ${params.chatId}, 
-            ${tokensToDeduct}, 
-            NOW(), 
-            NOW()
-          )
-          ON CONFLICT ("userId", "companionId") 
-          DO UPDATE SET 
-            "tokensBurned" = "UserBurnedTokens"."tokensBurned" + ${tokensToDeduct},
-            "updatedAt" = NOW()
-        `
-      ]);
-      
-      console.log(`Updated token metrics: ${tokensToDeduct} tokens burned by interaction with ${params.chatId}`);
-    } catch (error) {
-      console.error("Failed to update token burning records:", error);
-    }
+    // Create a stream
+    const stream = OpenAIStream(response);
 
-    // Get the response content
-    const responseContent = completion.choices[0].message.content || "";
-
-    // Save the message to the database
-    await prismadb.message.create({
-      data: {
-        content: responseContent,
-        role: "assistant" as Role,
-        companionId: params.chatId,
-        userId: userId,
-      },
-    });
-
-    // Return the response content directly
-    return new Response(responseContent);
-  } catch (error) {
-    console.log("Error in POST route:", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    // Respond with the stream
+    return new StreamingTextResponse(stream);
+  } catch (error: any) {
+    console.error("Error in POST route:", error)
+    return new NextResponse(`Error: ${error.message}`, { status: 500 })
   }
 }
 
@@ -225,17 +159,17 @@ export async function DELETE(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    // Delete all messages for this chat
-    await prismadb.message.deleteMany({
+    // Clear all messages for this companion
+    const clearResult = await prismadb.message.deleteMany({
       where: {
         companionId: params.chatId,
         userId: userId,
       },
     })
 
-    return new NextResponse("Chat deleted successfully", { status: 200 })
+    return NextResponse.json(clearResult)
   } catch (error) {
-    console.log("[CHAT_DELETE]", error)
+    console.error("[CHAT_DELETE]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }
