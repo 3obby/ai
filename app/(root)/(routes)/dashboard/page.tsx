@@ -72,6 +72,13 @@ async function CompanionsWrapper({
           messages: true,
         },
       },
+      // Include user-specific burned tokens for the current user
+      userBurnedTokens: {
+        where: {
+          userId: userId
+        },
+        take: 1
+      }
     },
   });
   

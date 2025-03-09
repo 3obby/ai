@@ -9,7 +9,6 @@ import { StreamingTextResponse } from "ai"
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
 import {
-  checkSubscription,
   trackTokenUsage
 } from "@/lib/token-usage"
 import { TOKENS_PER_MESSAGE } from "@/lib/token-usage"
@@ -36,19 +35,19 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    // Check if user has enough XP
+    // Check if user has enough tokens
     const userUsage = await prismadb.userUsage.findUnique({
       where: { userId: userId },
     })
     if (!userUsage) {
       return new NextResponse("User usage record not found", { status: 404 })
     }
-    if (userUsage.availableTokens < XP_PER_MESSAGE) {
-      return new NextResponse("Please purchase more XP to continue chatting", {
+    if (userUsage.availableTokens < TOKENS_PER_MESSAGE) {
+      return new NextResponse("Please purchase more tokens to continue chatting", {
         status: 402,
         statusText: `Need ${
-          XP_PER_MESSAGE - userUsage.availableTokens
-        } more XP`,
+          TOKENS_PER_MESSAGE - userUsage.availableTokens
+        } more tokens`,
       })
     }
 
@@ -78,7 +77,7 @@ export async function POST(
         ]
 
     // Store the user message first
-    await (prismadb.message as any).create({
+    await prismadb.message.create({
       data: {
         content:
           allMessages[allMessages.length - 1]?.content || "(no user input)",
@@ -88,20 +87,46 @@ export async function POST(
       },
     })
 
-    // Deduct XP
+    // Deduct tokens from user's allocation
     await prismadb.userUsage.update({
       where: { userId: userId },
       data: {
-        availableTokens: { decrement: XP_PER_MESSAGE },
-        totalSpent: { increment: XP_PER_MESSAGE },
+        availableTokens: { decrement: TOKENS_PER_MESSAGE },
+        totalSpent: { increment: TOKENS_PER_MESSAGE },
       },
     })
 
-    // Update bot's tokens burned count
-    await prismadb.companion.update({
-      where: { id: params.chatId },
-      data: { xpEarned: { increment: TOKENS_PER_MESSAGE } },
-    })
+    // Run a Prisma transaction to update both bot's global tokens burned 
+    // and the user-specific tokens burned for this bot
+    try {
+      await prismadb.$transaction([
+        // Update global tokens burned counter for the bot
+        prismadb.companion.update({
+          where: { id: params.chatId },
+          data: { tokensBurned: { increment: TOKENS_PER_MESSAGE } },
+        }),
+        // Create or update the user-specific tokens burned record
+        prismadb.userBurnedTokens.upsert({
+          where: {
+            userId_companionId: {
+              userId: userId,
+              companionId: params.chatId,
+            },
+          },
+          create: {
+            userId: userId,
+            companionId: params.chatId,
+            tokensBurned: TOKENS_PER_MESSAGE,
+          },
+          update: {
+            tokensBurned: { increment: TOKENS_PER_MESSAGE },
+          },
+        })
+      ]);
+    } catch (error) {
+      console.error("Failed to update token burning records:", error);
+      // Proceed anyway since this isn't critical to message functionality
+    }
 
     // Wait for the delay
     await new Promise((resolve) => setTimeout(resolve, totalDelay))
@@ -119,7 +144,7 @@ export async function POST(
     const responseContent = completion.choices[0].message.content || "";
 
     // Save the message to the database
-    await (prismadb.message as any).create({
+    await prismadb.message.create({
       data: {
         content: responseContent,
         role: "assistant" as Role,
@@ -150,7 +175,7 @@ export async function DELETE(
     }
 
     // Delete all messages for this chat
-    await (prismadb.message as any).deleteMany({
+    await prismadb.message.deleteMany({
       where: {
         companionId: params.chatId,
         userId: userId,

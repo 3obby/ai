@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6350e59",
+      "fullHash": "6350e59ef50eb3399fdc127bf16e719a37f54605",
+      "date": "2025-03-09 13:19:58 +0700",
+      "author": "3obby",
+      "message": "Implement 1:1 token burning system with global and user-specific tracking",
+      "category": "other"
+    },
+    {
       "hash": "094bfdd",
       "fullHash": "094bfdd447be26110c76866934a1dcaf2ef028b7",
       "date": "2025-03-09 13:00:14 +0700",

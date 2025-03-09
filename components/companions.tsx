@@ -3,17 +3,29 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Companion } from "@prisma/client"
-import { MessagesSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
+
+// Define the UserBurnedTokens interface since it may not be exported yet
+interface UserBurnedTokens {
+  id: string;
+  userId: string;
+  companionId: string;
+  tokensBurned: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface CompanionsProps {
   data: (Companion & {
     _count: {
       messages: number
     },
+    userBurnedTokens?: UserBurnedTokens[]
   })[];
   userId?: string;
 }
@@ -90,8 +102,31 @@ export const Companions = ({
                   {item.name}
                 </p>
               </CardHeader>
-              <CardFooter className="flex items-center justify-between px-4 py-3 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
-                <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+              <CardFooter className="flex flex-col gap-2 px-4 py-3 border-t border-zinc-300/50 dark:border-zinc-700 bg-[#BDBDBD] dark:bg-zinc-900/50 mt-auto">
+                <div className="flex items-center justify-between w-full">
+                  <p className="text-xs text-zinc-600 dark:text-muted-foreground font-medium">@{item.userName}</p>
+                </div>
+                <div className="flex items-center justify-between w-full">
+                  {/* Global tokens burned */}
+                  <Badge variant="secondary">
+                    <div className="flex items-center gap-1">
+                      <Globe className="h-3 w-3 text-blue-500" />
+                      <span className="text-xs font-medium">{(item as any).tokensBurned?.toLocaleString() || "0"}</span>
+                    </div>
+                  </Badge>
+                  
+                  {/* User-specific tokens burned */}
+                  {userId && item.userBurnedTokens && item.userBurnedTokens.length > 0 && (
+                    <Badge variant="secondary">
+                      <div className="flex items-center gap-1">
+                        <Flame className="h-3 w-3 text-red-500" />
+                        <span className="text-xs font-medium">
+                          {item.userBurnedTokens[0].tokensBurned.toLocaleString()}
+                        </span>
+                      </div>
+                    </Badge>
+                  )}
+                </div>
               </CardFooter>
             </Link>
           </Card>

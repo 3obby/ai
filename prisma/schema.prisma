@@ -43,13 +43,14 @@ model Companion {
   updatedAt            DateTime          @updatedAt
   categoryId           String
   isFree               Boolean           @default(false)
-  xpEarned             Int               @default(0)
+  tokensBurned         Int               @default(0)
   messageDelay         Int               @default(0)
   sendMultipleMessages Boolean           @default(true)
   customIntroduction   String?
   category             Category          @relation(fields: [categoryId], references: [id])
   groupChats           GroupChatMember[]
   messages             Message[]
+  userBurnedTokens     UserBurnedTokens[]
 
   @@index([categoryId])
   @@index([userId])
@@ -246,4 +247,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// New model to track user-specific token burning per companion
+model UserBurnedTokens {
+  id          String    @id @default(uuid())
+  userId      String
+  companionId String
+  tokensBurned Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companionId])
+  @@index([userId])
+  @@index([companionId])
+  @@index([tokensBurned])
 }

@@ -67,7 +67,7 @@ export const getLevelThresholds = (
 }
 
 /**
- * Calculate tokens burned from token usage
+ * Calculate tokens burned from token usage - using a 1:1 ratio for simplicity
  * @param tokenAmount The number of tokens used
  * @param computeCost The cost in USD of compute for this request
  */
@@ -75,10 +75,11 @@ export const calculateXPEarned = (
   tokenAmount: number,
   computeCost: number
 ): number => {
-  // Base tokens from token usage (1 token per 100 tokens)
-  const tokenXP = Math.ceil(tokenAmount / 100)
-
-  // Additional tokens from compute cost (1000 tokens per $1 spent)
+  // 1:1 ratio for token burning - each token used equals one token burned
+  const tokenXP = tokenAmount
+  
+  // Additional tokens from compute cost can remain the same
+  // (1000 tokens per $1 spent)
   const computeXP = Math.ceil(computeCost * 1000)
 
   return tokenXP + computeXP
