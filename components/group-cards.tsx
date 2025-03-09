@@ -14,6 +14,7 @@ export const GroupCards = ({ data }: GroupCardsProps) => {
         <div className="relative w-60 h-60">
           <Image
             fill
+            sizes="(max-width: 768px) 240px, 240px"
             className="grayscale"
             src="/empty.png"
             alt="Empty"
@@ -35,6 +36,7 @@ export const GroupCards = ({ data }: GroupCardsProps) => {
                   <Image
                     src="https://label-engine.com/news/wp-content/uploads/2021/04/groupchat.png"
                     fill
+                    sizes="(max-width: 768px) 100px, 128px"
                     className="rounded-2xl object-cover shadow-md"
                     alt="Group"
                   />

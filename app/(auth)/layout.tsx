@@ -13,6 +13,7 @@ const AuthLayout = ({
           src="/robobirds.png" 
           alt="Background" 
           fill 
+          sizes="100vw"
           priority
           className="object-cover opacity-80" 
         />

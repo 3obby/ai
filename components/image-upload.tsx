@@ -73,6 +73,7 @@ export const ImageUpload = ({
             <div className="relative w-40 h-40">
               <Image
                 fill
+                sizes="(max-width: 768px) 120px, 160px"
                 alt="Bot Avatar"
                 src={previewUrl}
                 className="rounded-lg object-cover"
@@ -108,6 +109,7 @@ export const ImageUpload = ({
               <div className="relative w-40 h-40">
                 <Image
                   fill
+                  sizes="(max-width: 768px) 120px, 160px"
                   alt="upload"
                   src={previewUrl}
                   className="rounded-lg object-cover"

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "441b76b",
+      "fullHash": "441b76ba0961157ca88f1b2ff2a9e9d4ac583858",
+      "date": "2025-03-09 12:27:38 +0700",
+      "author": "3obby",
+      "message": "Fix image issues: Add sizes prop to all Image components with fill, optimize large companion images",
+      "category": "bugfix"
+    },
+    {
       "hash": "77da679",
       "fullHash": "77da679b6f251699a82a45171ea5e16de49b0430",
       "date": "2025-03-08 21:52:13 +0700",
