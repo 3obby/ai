@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "2414acc",
+      "fullHash": "2414accbac810537ec346d3012bb9d0dc60a7bb7",
+      "date": "2025-03-11 01:04:01 +0700",
+      "author": "3obby",
+      "message": "Fix ScrollingTraits component to properly use companion data",
+      "category": "bugfix"
+    },
+    {
       "hash": "67f1dc2",
       "fullHash": "67f1dc2db728b36ce0a158e374ddf9a3b43696f8",
       "date": "2025-03-11 01:01:23 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "updated webhook, added patch scripts",
       "category": "feature"
-    },
-    {
-      "hash": "dd6e418",
-      "fullHash": "dd6e418dd4ef5b458bd2d7d7e985e0c368317b33",
-      "date": "2025-03-02 23:01:34 +0700",
-      "author": "3obby",
-      "message": "corrected price",
-      "category": "other"
     }
   ]
 }

@@ -22,51 +22,138 @@ export const ScrollingTraits = ({ companion, className }: ScrollingTraitsProps) 
   const [isVisible, setIsVisible] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isTextOverflowing, setIsTextOverflowing] = useState(false);
+  const [traits, setTraits] = useState<TraitItem[]>([]);
   
   // All useRef hooks
   const textContainerRef = useRef<HTMLDivElement>(null);
   const textContentRef = useRef<HTMLDivElement>(null);
   
-  // Direct sample traits for testing
-  const [traits, setTraits] = useState<TraitItem[]>([
-    { label: 'Dominant trait', value: 'Curious', displayValue: 'Curious' },
-    { label: 'Dominant trait', value: 'Tactile', displayValue: 'Tactile' },
-    { label: 'Dominant trait', value: 'Adaptable', displayValue: 'Adaptable' },
-    { label: 'Secondary trait', value: 'Playful', displayValue: 'Playful' },
-    { label: 'Secondary trait', value: 'Patient', displayValue: 'Patient' },
-    { label: 'Secondary trait', value: 'Resourceful', displayValue: 'Resourceful' },
-    { label: 'Situational trait', value: 'Territorial', displayValue: 'Territorial' },
-    { label: 'Situational trait', value: 'Reclusive', displayValue: 'Reclusive' },
-    { label: 'Situational trait', value: 'Intensely focused', displayValue: 'Intensely focused' },
-    { label: 'Value', value: 'Knowledge acquisition', displayValue: 'Knowledge acquisition' },
-    { label: 'Value', value: 'Sensory experiences', displayValue: 'Sensory experiences' },
-    { label: 'Value', value: 'Environmental preservation', displayValue: 'Environmental preservation' },
-    { label: 'Value', value: 'Freedom of movement', displayValue: 'Freedom of movement' },
-    { label: 'Value', value: 'Puzzle-solving', displayValue: 'Puzzle-solving' },
-    { label: 'Thinking style', value: 'Distributed consciousness, parallel processing, strong spatial reasoning', 
-      displayValue: 'Distributed consciousness, parallel processing, strong spatial reasoning' },
-    { label: 'Decision making', value: 'Risk-assessment based on multiple simultaneous inputs, highly adaptable', 
-      displayValue: 'Risk-assessment based on multiple simultaneous inputs, highly adaptable' },
-    { label: 'Attention', value: 'Capable of divided attention across multiple arms and tasks', 
-      displayValue: 'Capable of divided attention across multiple arms and tasks' }
-  ]);
-  
-  // Current trait to display - this is a computed value, not state
-  const currentTrait = traits[currentIndex];
+  // Extract traits from the companion object when component mounts
+  useEffect(() => {
+    // Set of traits to extract from companion
+    const extractedTraits: TraitItem[] = [];
+    
+    try {
+      // Extract traits from description - fallback
+      if (companion.description) {
+        extractedTraits.push({
+          label: 'Description',
+          value: companion.description,
+          displayValue: companion.description.slice(0, 100) + (companion.description.length > 100 ? '...' : '')
+        });
+      }
+      
+      // Extract from personalityConfig if available
+      if (companion.personalityConfig) {
+        const personalityConfig = typeof companion.personalityConfig === 'string' 
+          ? JSON.parse(companion.personalityConfig) 
+          : companion.personalityConfig;
+        
+        // Extract traits if they exist
+        if (personalityConfig.traits) {
+          // Dominant traits
+          if (personalityConfig.traits.dominant && personalityConfig.traits.dominant.length > 0) {
+            extractedTraits.push({
+              label: 'Dominant traits',
+              value: personalityConfig.traits.dominant,
+              displayValue: `Dominant: ${personalityConfig.traits.dominant.join(', ')}`
+            });
+          }
+          
+          // Secondary traits
+          if (personalityConfig.traits.secondary && personalityConfig.traits.secondary.length > 0) {
+            extractedTraits.push({
+              label: 'Secondary traits',
+              value: personalityConfig.traits.secondary,
+              displayValue: `Secondary: ${personalityConfig.traits.secondary.join(', ')}`
+            });
+          }
+        }
+        
+        // Extract response length if available
+        if (personalityConfig.responseLength) {
+          extractedTraits.push({
+            label: 'Response style',
+            value: personalityConfig.responseLength,
+            displayValue: `Response style: ${personalityConfig.responseLength}`
+          });
+        }
+        
+        // Extract writing style if available
+        if (personalityConfig.writingStyle) {
+          extractedTraits.push({
+            label: 'Writing style',
+            value: personalityConfig.writingStyle,
+            displayValue: `Writing style: ${personalityConfig.writingStyle}`
+          });
+        }
+      }
+      
+      // Extract from knowledgeConfig if available
+      if (companion.knowledgeConfig) {
+        const knowledgeConfig = typeof companion.knowledgeConfig === 'string'
+          ? JSON.parse(companion.knowledgeConfig)
+          : companion.knowledgeConfig;
+        
+        // Extract primary expertise
+        if (knowledgeConfig.primaryExpertise) {
+          extractedTraits.push({
+            label: 'Expertise',
+            value: knowledgeConfig.primaryExpertise,
+            displayValue: `Expert in: ${knowledgeConfig.primaryExpertise}`
+          });
+        }
+        
+        // Extract secondary expertise areas
+        if (knowledgeConfig.secondaryExpertise && knowledgeConfig.secondaryExpertise.length > 0) {
+          extractedTraits.push({
+            label: 'Secondary expertise',
+            value: knowledgeConfig.secondaryExpertise,
+            displayValue: `Knowledgeable about: ${knowledgeConfig.secondaryExpertise.join(', ')}`
+          });
+        }
+      }
+      
+      // If we still don't have any traits, use the description as a fallback
+      if (extractedTraits.length === 0 && companion.instructions) {
+        // Take the first sentence or two from instructions as a fallback
+        const firstSentences = companion.instructions.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ');
+        extractedTraits.push({
+          label: 'About',
+          value: firstSentences,
+          displayValue: firstSentences
+        });
+      }
+      
+      // If still empty, add a generic trait
+      if (extractedTraits.length === 0) {
+        extractedTraits.push({
+          label: 'AI Companion',
+          value: companion.name,
+          displayValue: `${companion.name} - AI Companion`
+        });
+      }
+      
+      // Update state with the extracted traits
+      setTraits(extractedTraits);
+      
+    } catch (error) {
+      console.error('Error extracting traits from companion:', error);
+      // Fallback
+      setTraits([{
+        label: 'Name',
+        value: companion.name,
+        displayValue: companion.name
+      }]);
+    }
+  }, [companion]);
 
   // Initialize to handle overflow detection - must be called in the same order every render
   useEffect(() => {
     setIsInitialized(true);
   }, []);
   
-  // Log current trait when it changes - must be AFTER the initialization useEffect
-  useEffect(() => {
-    if (currentTrait) {
-      // console.log("Currently displayed trait:", currentTrait);
-    }
-  }, [currentIndex, currentTrait]);
-  
-  // Check if text is overflowing and needs marquee effect - must be AFTER the logging useEffect
+  // Check if text is overflowing and needs marquee effect
   useEffect(() => {
     const checkOverflow = () => {
       if (textContainerRef.current && textContentRef.current) {
@@ -103,15 +190,15 @@ export const ScrollingTraits = ({ companion, className }: ScrollingTraitsProps) 
   // Animation effect to cycle through traits - must be the last useEffect
   useEffect(() => {
     if (traits.length === 0) return;
-
-    // Set as initialized since we're using hardcoded traits
-    setIsInitialized(true);
     
     // Reset to first trait and make visible
     setCurrentIndex(0);
     setIsVisible(true);
 
     const intervalId = setInterval(() => {
+      // If only one trait, don't bother cycling
+      if (traits.length <= 1) return;
+      
       // Fade out
       setIsVisible(false);
       
@@ -131,10 +218,14 @@ export const ScrollingTraits = ({ companion, className }: ScrollingTraitsProps) 
     return () => clearInterval(intervalId);
   }, [traits.length]);
 
+  // Show loading state while waiting for traits to be processed
   if (!isInitialized || traits.length === 0) {
-    return <div className={cn("h-5 text-sm text-zinc-500 dark:text-zinc-400", className)}>Loading...</div>;
+    return <div className={cn("h-5 text-sm text-zinc-500 dark:text-zinc-400", className)}>Loading traits...</div>;
   }
 
+  // Get current trait to display
+  const currentTrait = traits[currentIndex];
+  
   return (
     <div className={cn("h-5 relative overflow-hidden text-sm", className)}>
       <TooltipProvider>
@@ -161,12 +252,12 @@ export const ScrollingTraits = ({ companion, className }: ScrollingTraitsProps) 
                     })
                   }}
                 >
-                  {currentTrait?.displayValue || 'Test Data Active - Curious, Tactile, Adaptable'}
+                  {currentTrait?.displayValue || companion.name}
                   {/* Add duplicate for continuous scrolling when needed */}
                   {isTextOverflowing && (
                     <>
                       <span className="px-4">•</span>
-                      <span>{currentTrait?.displayValue || 'Test Data Active'}</span>
+                      <span>{currentTrait?.displayValue || companion.name}</span>
                     </>
                   )}
                 </div>
@@ -175,10 +266,13 @@ export const ScrollingTraits = ({ companion, className }: ScrollingTraitsProps) 
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <div>
-              <p className="text-xs font-bold mb-1">Debug Info:</p>
-              <p className="text-xs">Total Traits: {traits.length}</p>
-              <p className="text-xs">Current Index: {currentIndex}</p>
-              <p className="text-xs">Current Trait: {traits[currentIndex]?.label}: {traits[currentIndex]?.displayValue}</p>
+              <p className="text-xs font-bold mb-1">{companion.name}</p>
+              <p className="text-xs">Trait: {currentTrait?.label}</p>
+              {Array.isArray(currentTrait?.value) ? (
+                <p className="text-xs">{currentTrait?.value.join(', ')}</p>
+              ) : (
+                <p className="text-xs">{String(currentTrait?.value).substring(0, 100)}{String(currentTrait?.value).length > 100 ? '...' : ''}</p>
+              )}
             </div>
           </TooltipContent>
         </Tooltip>
