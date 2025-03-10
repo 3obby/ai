@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "03de308",
+      "fullHash": "03de3086f0e52445345689701a8b814edadd630f",
+      "date": "2025-03-11 00:57:57 +0700",
+      "author": "3obby",
+      "message": "Fix navbar mobile responsiveness issues: optimize top-right section alignment, adjust spacing, remove visual gaps",
+      "category": "bugfix"
+    },
+    {
       "hash": "f81798e",
       "fullHash": "f81798e553c1ad5cff11c2cb07956960907f73b7",
       "date": "2025-03-11 00:45:35 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "fixed voting maybe",
       "category": "bugfix"
-    },
-    {
-      "hash": "322233d",
-      "fullHash": "322233d07e6bfdfffcdecbc7793853bad0de9ff1",
-      "date": "2025-03-02 22:41:07 +0700",
-      "author": "3obby",
-      "message": "updated voting costs",
-      "category": "enhancement"
     }
   ]
 }

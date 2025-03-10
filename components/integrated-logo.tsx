@@ -15,9 +15,10 @@ const font = Poppins({ weight: "600", subsets: ["latin"] });
 interface IntegratedLogoProps {
   userId: string;
   isPro?: boolean;
+  isMobile?: boolean;
 }
 
-export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) => {
+export const IntegratedLogo = ({ userId, isPro = false, isMobile = false }: IntegratedLogoProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +31,25 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
     const container = containerRef.current;
     let animationFrameId: number;
     
+    // Function to set canvas dimensions
+    const setCanvasDimensions = () => {
+      if (!container || !canvas) return;
+      
+      // Add 1px extra width to prevent any gap
+      canvas.width = container.offsetWidth + 1;
+      canvas.height = container.offsetHeight;
+    };
+    
     // Create and append the canvas
     const canvas = document.createElement('canvas');
-    canvas.width = container.offsetWidth;
-    canvas.height = container.offsetHeight;
     canvas.className = "absolute inset-0 z-0 opacity-75";
     container.appendChild(canvas);
+    
+    // Set initial dimensions
+    setCanvasDimensions();
+    
+    // Update canvas dimensions on resize
+    window.addEventListener('resize', setCanvasDimensions);
     
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -69,7 +83,7 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
         0, 
         canvas.width * 0.6, // Expand toward right side
         canvas.height * 0.4, 
-        canvas.width
+        canvas.width * 1.1 // Extra 10% to ensure full coverage at right edge
       );
       gradient.addColorStop(0, 'rgba(255, 210, 170, 0.1)'); // Warm light
       gradient.addColorStop(0.5, 'rgba(255, 250, 230, 0.05)'); // Soft glow
@@ -115,6 +129,7 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
     // Cleanup
     return () => {
       cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', setCanvasDimensions);
       if (container.contains(canvas)) {
         container.removeChild(canvas);
       }
@@ -149,40 +164,29 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
   return (
     <div 
       ref={containerRef} 
-      className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group"
+      className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group overflow-hidden"
     >
-      {/* GCBB Text first - using navbar gray color */}
-      <Link href="/" className="h-full hidden sm:block">
-        <div className="relative z-10 mx-3 h-full flex items-center">
-          <span className={cn(
-            "text-lg font-bold text-white", // Using white text instead of text-secondary
-            font.className
-          )}>
-            GCBB
-          </span>
-        </div>
-      </Link>
-      
-      {/* Feather Logo Second - removed white border */}
-      <Link href="/" className="h-full flex items-center">
-        <div className="relative flex items-center justify-center w-8 sm:w-10 h-8 sm:h-10 z-10">
-          <Image
-            src="/feather.png"
-            alt="Feather Logo"
-            width={28}
-            height={28}
-            className="transform transition-transform duration-700 group-hover:scale-110 sm:w-8 sm:h-8"
-          />
-        </div>
-      </Link>
+      {/* GCBB Text - hidden on mobile screens */}
+      {!isMobile && (
+        <Link href="/" className="h-full hidden sm:block">
+          <div className="relative z-10 mx-3 h-full flex items-center">
+            <span className={cn(
+              "text-lg font-bold text-white", 
+              font.className
+            )}>
+              GCBB
+            </span>
+          </div>
+        </Link>
+      )}
       
       {/* Token Balance */}
-      <div className="relative z-10 pl-2 sm:pl-3 ml-2 sm:ml-3 flex items-center border-l border-white/20">
+      <div className="relative z-10 pl-2 flex items-center border-l border-white/20">
         {isLoading ? (
           <div className="h-4 w-12 bg-white/20 animate-pulse rounded-sm"></div>
         ) : (
           <div className="flex items-center text-white">
-            <Coins className="h-3.5 w-3.5 mr-1.5 text-white/90" />
+            <Coins className="h-3.5 w-3.5 mr-1 text-white/90" />
             <span className="text-sm font-medium">
               {tokenBalance !== null ? formatLargeNumber(tokenBalance) : '0'}
             </span>
@@ -190,13 +194,16 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
         )}
       </div>
       
-      {/* Buy Tokens Button - integrated right after token balance */}
-      <div className="relative z-10 ml-2 sm:ml-3 mr-2 sm:mr-3">
+      {/* Upgrade/Buy Button - optimized for mobile */}
+      <div className="relative z-10 ml-2 mr-1">
         <Link href="/subscribe">
           <Button 
             size="sm" 
             variant={isPro ? "outline" : "premium"}
-            className="h-7 px-2 text-xs whitespace-nowrap bg-amber-500/20 hover:bg-amber-500/30 text-white border-amber-400/30"
+            className={cn(
+              "h-7 whitespace-nowrap bg-amber-500/20 hover:bg-amber-500/30 text-white border-amber-400/30",
+              isMobile ? "px-1.5 text-xs" : "px-2 text-xs"
+            )}
           >
             {isPro ? (
               <>
@@ -205,8 +212,8 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
               </>
             ) : (
               <>
-                <span className="hidden xs:inline">Upgrade</span>
-                <Sparkles className="h-3 w-3 fill-white text-white xs:ml-1" />
+                <span className="inline">Upgrade</span>
+                <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
               </>
             )}
           </Button>
