@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { CldUploadButton } from "next-cloudinary"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertTriangle, RefreshCw } from "lucide-react"
+import { AlertTriangle, RefreshCw, Upload } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface ImageUploadFormProps {
@@ -28,6 +27,8 @@ export const ImageUpload = ({
     value || "/placeholder.svg"
   )
   const [isError, setIsError] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export const ImageUpload = ({
       return;
     }
 
-    const img = new window.Image();
+    const img = document.createElement('img');
     img.onerror = () => {
       console.warn("Image failed to load:", url);
       setIsError(true);
@@ -98,36 +99,165 @@ export const ImageUpload = ({
     setIsError(false);
   }
 
-  // Handle Cloudinary upload
-  const handleCloudinaryUpload = (result: any) => {
-    try {
-      if (result.event !== "success" || !result.info) {
-        throw new Error("Upload failed");
-      }
-
-      // Get the secure URL from the upload
-      let uploadedUrl = result.info.secure_url;
-
-      // Apply auto-formatting transformations if it's a Cloudinary URL
-      if (uploadedUrl.includes('cloudinary.com')) {
-        // Extract the base URL and add transformations:
-        // c_fill: crop to fill
-        // g_face: focus on face if detected
-        // w_400,h_400: resize to 400x400
-        // q_auto: automatic quality optimization
-        const baseUrlParts = uploadedUrl.match(/(.*\/upload\/)(v\d+\/)?([^/]+)$/);
+  // Process image file uploads
+  const processImageFile = (file: File) => {
+    setIsUploading(true);
+    
+    // Check file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 5MB",
+        variant: "destructive"
+      });
+      setIsUploading(false);
+      return;
+    }
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      setIsUploading(false);
+      return;
+    }
+    
+    // Create a FileReader to read the file
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      // Get the data URL from the event result
+      const dataUrl = event.target?.result as string;
+      
+      // Process the image - resize it to max 500x500
+      const img = document.createElement('img');
+      img.onload = () => {
+        // Create a canvas to resize the image
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
         
-        if (baseUrlParts && baseUrlParts.length >= 3) {
-          uploadedUrl = `${baseUrlParts[1]}c_fill,g_face,w_400,h_400,q_auto/${baseUrlParts[3]}`;
+        // Calculate the new dimensions, maintaining aspect ratio
+        if (width > height) {
+          if (width > 500) {
+            height = Math.round((height * 500) / width);
+            width = 500;
+          }
+        } else {
+          if (height > 500) {
+            width = Math.round((width * 500) / height);
+            height = 500;
+          }
         }
-      }
+        
+        // Set canvas size
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw the resized image on the canvas
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get the resized image as a data URL
+          const resizedDataUrl = canvas.toDataURL(file.type, 0.92); // 0.92 quality
+          
+          // Create a thumbnail version (200x200)
+          const thumbCanvas = document.createElement('canvas');
+          let thumbWidth = width;
+          let thumbHeight = height;
+          
+          // Calculate thumbnail dimensions
+          if (thumbWidth > thumbHeight) {
+            if (thumbWidth > 200) {
+              thumbHeight = Math.round((thumbHeight * 200) / thumbWidth);
+              thumbWidth = 200;
+            }
+          } else {
+            if (thumbHeight > 200) {
+              thumbWidth = Math.round((thumbWidth * 200) / thumbHeight);
+              thumbHeight = 200;
+            }
+          }
+          
+          thumbCanvas.width = thumbWidth;
+          thumbCanvas.height = thumbHeight;
+          
+          // Draw the thumbnail
+          const thumbCtx = thumbCanvas.getContext('2d');
+          if (thumbCtx) {
+            thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight);
+            
+            // Log the thumbnail URL for potential use elsewhere
+            console.log("Thumbnail available as separate image");
+          }
+          
+          // Update the UI with the resized image
+          setPreviewUrl(resizedDataUrl);
+          onChange(resizedDataUrl);
+          setIsError(false);
+        }
+        setIsUploading(false);
+      };
+      
+      img.onerror = () => {
+        toast({
+          title: "Image processing failed",
+          description: "Could not process the selected image",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        applyFallbackImage("Image processing failed");
+      };
+      
+      img.src = dataUrl;
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: "Error reading file",
+        description: "Could not read the selected file",
+        variant: "destructive"
+      });
+      setIsUploading(false);
+      applyFallbackImage("Error reading file");
+    };
+    
+    // Read the file as a data URL
+    reader.readAsDataURL(file);
+  };
 
-      setPreviewUrl(uploadedUrl);
-      onChange(uploadedUrl);
-      setIsError(false);
-    } catch (error) {
-      console.error("Error during upload:", error);
-      applyFallbackImage("Image upload failed");
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  // Handle file drop
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  // Trigger file input click
+  const handleUploadClick = () => {
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -142,8 +272,8 @@ export const ImageUpload = ({
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="random">Random Avatar</TabsTrigger>
-          <TabsTrigger value="upload">Upload Image</TabsTrigger>
+          <TabsTrigger value="random">Random</TabsTrigger>
+          <TabsTrigger value="upload">Upload</TabsTrigger>
         </TabsList>
 
         <TabsContent
@@ -179,47 +309,61 @@ export const ImageUpload = ({
             className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            Generate New Avatar
+            New Random
           </Button>
         </TabsContent>
 
         <TabsContent value="upload">
-          <CldUploadButton
-            onUpload={handleCloudinaryUpload}
-            options={{
-              maxFiles: 1,
-              maxFileSize: 5000000, // 5MB max
-              resourceType: 'image',
-              clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-              sources: ['local', 'url'], // Allow upload from device and URL
-            }}
-            uploadPreset="GroupChatBotBuilderai"
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            onChange={handleFileInputChange}
+            disabled={disabled || isUploading}
+          />
+          
+          <div 
+            className="flex flex-col items-center justify-center p-4 space-y-2 transition border-4 border-dashed rounded-lg border-primary/10 hover:border-primary/30 cursor-pointer"
+            onClick={handleUploadClick}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
-            <div className="flex flex-col items-center justify-center p-4 space-y-2 transition border-4 border-dashed rounded-lg border-primary/10 hover:opacity-75">
-              <div className="relative w-40 h-40">
-                <Image
-                  fill
-                  sizes="(max-width: 768px) 120px, 160px"
-                  alt="upload"
-                  src={previewUrl}
-                  className={`rounded-lg object-cover ${isError ? 'opacity-50' : ''}`}
-                  unoptimized
-                  onError={() => {
-                    setIsError(true);
-                    applyFallbackImage("Failed to load image");
-                  }}
-                />
-                {isError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-                    <AlertTriangle className="h-10 w-10 text-yellow-500" />
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Click to upload an image (max 5MB)
+            <div className="relative w-40 h-40">
+              {isUploading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
+                <>
+                  <Image
+                    fill
+                    sizes="(max-width: 768px) 120px, 160px"
+                    alt="upload"
+                    src={previewUrl}
+                    className={`rounded-lg object-cover ${isError ? 'opacity-50' : ''}`}
+                    unoptimized
+                    onError={() => {
+                      setIsError(true);
+                      applyFallbackImage("Failed to load image");
+                    }}
+                  />
+                  {isError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                      <AlertTriangle className="h-10 w-10 text-yellow-500" />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <Upload className="h-6 w-6 mb-2 text-muted-foreground" />
+              <p className="text-xs text-center text-muted-foreground">
+                Click or drag to upload<br />(max 5MB)
               </p>
             </div>
-          </CldUploadButton>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

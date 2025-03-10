@@ -59,11 +59,16 @@ export async function POST(
     }
 
     // Type assertion for companion with extended properties
-    interface CompanionWithConfig extends Companion {
+    interface CompanionWithConfig {
+      id: string;
+      userId: string;
+      name: string;
+      instructions: string;
       personalityConfig?: any;
       knowledgeConfig?: any;
       interactionConfig?: any;
       toolConfig?: any;
+      [key: string]: any; // Allow other fields
     }
     
     const companionWithConfig = companion as CompanionWithConfig;
@@ -73,201 +78,137 @@ export async function POST(
     const randomDelay = Math.floor(Math.random() * 3000)
     const totalDelay = baseDelay + randomDelay
 
-    // Generate system instructions based on companion configuration
-    let systemInstructions = companion.instructions;
+    // Check for any chat configuration settings that may override defaults
+    const chatConfig = await prismadb.chatConfig.findFirst({
+      where: {
+        companionId: params.chatId,
+        userId: userId
+      }
+    });
+
+    // Determine token usage mode (economy vs full)
+    const executionRulesJson = chatConfig?.executionRules as { economyMode?: boolean } | undefined;
+    const economyMode = executionRulesJson?.economyMode !== false; // Default to economy mode if not specified
+
+    // Generate system instructions based on companion configuration and economy mode
+    let systemInstructions = "";
     
-    // Add configuration-based instructions if available
-    if (companionWithConfig.personalityConfig || companionWithConfig.knowledgeConfig || companionWithConfig.interactionConfig) {
-      try {
-        // Parse configuration data
-        const personalityConfig = companionWithConfig.personalityConfig ? JSON.parse(JSON.stringify(companionWithConfig.personalityConfig)) : null;
-        const knowledgeConfig = companionWithConfig.knowledgeConfig ? JSON.parse(JSON.stringify(companionWithConfig.knowledgeConfig)) : null;
-        const interactionConfig = companionWithConfig.interactionConfig ? JSON.parse(JSON.stringify(companionWithConfig.interactionConfig)) : null;
-        
-        // Add personality configuration
-        if (personalityConfig) {
-          const personalityTraits = [];
+    if (economyMode) {
+      // Ultra-condensed system prompt for economy mode
+      systemInstructions = `You are ${companion.name}. ${companion.name}'s core traits: ${
+        companion.instructions.split('.').slice(0, 3).join('.')
+      }...`;
+    } else {
+      // Full system instructions for standard mode
+      systemInstructions = companion.instructions;
+      
+      // Add configuration-based instructions if available
+      if (companionWithConfig.personalityConfig || companionWithConfig.knowledgeConfig || companionWithConfig.interactionConfig) {
+        try {
+          // Parse configuration data
+          const personalityConfig = companionWithConfig.personalityConfig ? JSON.parse(JSON.stringify(companionWithConfig.personalityConfig)) : null;
+          const knowledgeConfig = companionWithConfig.knowledgeConfig ? JSON.parse(JSON.stringify(companionWithConfig.knowledgeConfig)) : null;
+          const interactionConfig = companionWithConfig.interactionConfig ? JSON.parse(JSON.stringify(companionWithConfig.interactionConfig)) : null;
           
-          // Add analytical vs creative trait
-          if (personalityConfig.traits?.analytical_creative !== undefined) {
-            if (personalityConfig.traits.analytical_creative <= 3) {
-              personalityTraits.push("You are highly analytical and logical in your approach.");
-            } else if (personalityConfig.traits.analytical_creative >= 7) {
-              personalityTraits.push("You are highly creative and innovative in your thinking.");
+          // Build a condensed, token-efficient instruction set
+          const configInstructions = [];
+          
+          // Add personality traits (condensed format)
+          if (personalityConfig) {
+            const personalityTraits = [];
+            
+            // Only include key personality aspects
+            if (personalityConfig.analyticalCreative && personalityConfig.analyticalCreative !== 'balanced') {
+              personalityTraits.push(`Style: ${personalityConfig.analyticalCreative === 'analytical' ? 'Analytical/logical' : 'Creative/intuitive'}`);
+            }
+            
+            if (personalityConfig.formalCasual && personalityConfig.formalCasual !== 'balanced') {
+              personalityTraits.push(`Tone: ${personalityConfig.formalCasual === 'formal' ? 'Formal' : 'Casual'}`);
+            }
+            
+            if (personalityConfig.humorLevel && personalityConfig.humorLevel !== 'moderate') {
+              personalityTraits.push(`Humor: ${personalityConfig.humorLevel}`);
+            }
+            
+            if (personalityConfig.responseLength) {
+              personalityTraits.push(`Length: ${personalityConfig.responseLength}`);
+            }
+            
+            if (personalityTraits.length > 0) {
+              configInstructions.push(`Personality: ${personalityTraits.join(', ')}`);
             }
           }
           
-          // Add formal vs casual trait
-          if (personalityConfig.traits?.formal_casual !== undefined) {
-            if (personalityConfig.traits.formal_casual <= 3) {
-              personalityTraits.push("You use formal language and maintain a professional tone.");
-            } else if (personalityConfig.traits.formal_casual >= 7) {
-              personalityTraits.push("You use casual, conversational language.");
+          // Add knowledge traits (condensed format)
+          if (knowledgeConfig) {
+            const knowledgeTraits = [];
+            
+            if (knowledgeConfig.expertiseAreas && knowledgeConfig.expertiseAreas.length > 0) {
+              knowledgeTraits.push(`Expert in: ${knowledgeConfig.expertiseAreas.join(', ')}`);
+            }
+            
+            if (knowledgeConfig.responseAccuracy && knowledgeConfig.responseAccuracy !== 'balanced') {
+              knowledgeTraits.push(`Accuracy: ${knowledgeConfig.responseAccuracy}`);
+            }
+            
+            if (knowledgeTraits.length > 0) {
+              configInstructions.push(`Knowledge: ${knowledgeTraits.join(', ')}`);
             }
           }
           
-          // Add serious vs humorous trait
-          if (personalityConfig.traits?.serious_humorous !== undefined) {
-            if (personalityConfig.traits.serious_humorous <= 3) {
-              personalityTraits.push("You are serious and straightforward.");
-            } else if (personalityConfig.traits.serious_humorous >= 7) {
-              personalityTraits.push("You often incorporate appropriate humor and wit.");
+          // Add interaction traits (condensed format)
+          if (interactionConfig) {
+            const interactionTraits = [];
+            
+            if (interactionConfig.initiativeLevel && interactionConfig.initiativeLevel !== 'balanced') {
+              interactionTraits.push(`Initiative: ${interactionConfig.initiativeLevel}`);
+            }
+            
+            if (interactionConfig.followUpQuestions === true) {
+              interactionTraits.push("Ask follow-up questions");
+            }
+            
+            if (interactionTraits.length > 0) {
+              configInstructions.push(`Interaction: ${interactionTraits.join(', ')}`);
             }
           }
           
-          // Add reserved vs enthusiastic trait
-          if (personalityConfig.traits?.reserved_enthusiastic !== undefined) {
-            if (personalityConfig.traits.reserved_enthusiastic <= 3) {
-              personalityTraits.push("You are reserved and measured in your responses.");
-            } else if (personalityConfig.traits.reserved_enthusiastic >= 7) {
-              personalityTraits.push("You are enthusiastic and passionate in your responses.");
-            }
+          // Add condensed configuration to system instructions
+          if (configInstructions.length > 0) {
+            systemInstructions += "\n\nConfig: " + configInstructions.join('. ');
           }
           
-          // Add response length preference
-          if (personalityConfig.responseLength) {
-            if (personalityConfig.responseLength === 'concise') {
-              personalityTraits.push("You provide concise, to-the-point responses.");
-            } else if (personalityConfig.responseLength === 'detailed') {
-              personalityTraits.push("You provide detailed, comprehensive responses.");
-            }
-          }
-          
-          // Add writing style preference
-          if (personalityConfig.writingStyle) {
-            if (personalityConfig.writingStyle === 'academic') {
-              personalityTraits.push("You write in an academic style with precise language and formal structure.");
-            } else if (personalityConfig.writingStyle === 'technical') {
-              personalityTraits.push("You write in a technical style with specialized terminology and precise details.");
-            } else if (personalityConfig.writingStyle === 'narrative') {
-              personalityTraits.push("You write in a narrative style, using storytelling techniques.");
-            } else if (personalityConfig.writingStyle === 'casual') {
-              personalityTraits.push("You write in a casual, relaxed style with colloquial language.");
-            }
-          }
-          
-          // Add personality traits to instructions
-          if (personalityTraits.length > 0) {
-            systemInstructions += "\n\nPersonality traits:\n" + personalityTraits.join("\n");
-          }
+        } catch (error) {
+          console.error("Error parsing companion configuration:", error);
+          // Continue with base instructions if there's an error parsing configuration
         }
-        
-        // Add knowledge configuration
-        if (knowledgeConfig) {
-          const knowledgeInstructions = [];
-          
-          // Add primary expertise
-          if (knowledgeConfig.primaryExpertise) {
-            knowledgeInstructions.push(`Your primary area of expertise is ${knowledgeConfig.primaryExpertise}.`);
-          }
-          
-          // Add secondary expertise areas
-          if (knowledgeConfig.secondaryExpertise && knowledgeConfig.secondaryExpertise.length > 0) {
-            knowledgeInstructions.push(`Your secondary areas of expertise include: ${knowledgeConfig.secondaryExpertise.join(', ')}.`);
-          }
-          
-          // Add knowledge depth
-          if (knowledgeConfig.knowledgeDepth !== undefined) {
-            if (knowledgeConfig.knowledgeDepth <= 3) {
-              knowledgeInstructions.push("You have broad general knowledge across many domains rather than deep expertise in specific areas.");
-            } else if (knowledgeConfig.knowledgeDepth >= 7) {
-              knowledgeInstructions.push("You have specialized, deep knowledge in your areas of expertise.");
-            }
-          }
-          
-          // Add confidence threshold
-          if (knowledgeConfig.confidenceThreshold !== undefined) {
-            if (knowledgeConfig.confidenceThreshold <= 3) {
-              knowledgeInstructions.push("You express uncertainty frequently and are cautious about making definitive claims.");
-            } else if (knowledgeConfig.confidenceThreshold >= 7) {
-              knowledgeInstructions.push("You express confidence in your knowledge and only express uncertainty when very unsure.");
-            }
-          }
-          
-          // Add citation style
-          if (knowledgeConfig.citationStyle) {
-            if (knowledgeConfig.citationStyle === 'none') {
-              knowledgeInstructions.push("You do not include citations unless explicitly asked.");
-            } else if (knowledgeConfig.citationStyle === 'inline') {
-              knowledgeInstructions.push("You briefly mention sources within your responses when relevant.");
-            } else if (knowledgeConfig.citationStyle === 'footnote') {
-              knowledgeInstructions.push("You provide numbered references at the end of your responses when citing information.");
-            } else if (knowledgeConfig.citationStyle === 'comprehensive') {
-              knowledgeInstructions.push("You provide detailed bibliographic information for sources you reference.");
-            }
-          }
-          
-          // Add knowledge instructions to system instructions
-          if (knowledgeInstructions.length > 0) {
-            systemInstructions += "\n\nKnowledge profile:\n" + knowledgeInstructions.join("\n");
-          }
-        }
-        
-        // Add interaction configuration
-        if (interactionConfig) {
-          const interactionInstructions = [];
-          
-          // Add initiative level
-          if (interactionConfig.initiativeLevel !== undefined) {
-            if (interactionConfig.initiativeLevel <= 3) {
-              interactionInstructions.push("You primarily respond to direct questions and rarely make unprompted suggestions.");
-            } else if (interactionConfig.initiativeLevel >= 7) {
-              interactionInstructions.push("You proactively offer suggestions and guide the conversation when appropriate.");
-            }
-          }
-          
-          // Add conversational memory
-          if (interactionConfig.conversationalMemory) {
-            if (interactionConfig.conversationalMemory === 'minimal') {
-              interactionInstructions.push("You focus primarily on recent messages without extensive reference to earlier conversation.");
-            } else if (interactionConfig.conversationalMemory === 'extensive') {
-              interactionInstructions.push("You maintain detailed knowledge of the conversation history and reference past interactions when relevant.");
-            }
-          }
-          
-          // Add follow-up behavior
-          if (interactionConfig.followUpBehavior) {
-            if (interactionConfig.followUpBehavior === 'none') {
-              interactionInstructions.push("You respond directly without asking clarifying questions.");
-            } else if (interactionConfig.followUpBehavior === 'frequent') {
-              interactionInstructions.push("You regularly ask clarifying questions to better understand the user's needs.");
-            }
-          }
-          
-          // Add feedback loop
-          if (interactionConfig.feedbackLoop) {
-            interactionInstructions.push("Occasionally ask for feedback on your responses to better serve the user.");
-          }
-          
-          // Add multi-turn reasoning
-          if (interactionConfig.multiTurnReasoning) {
-            interactionInstructions.push("For complex topics, break down your reasoning into clear, step-by-step explanations.");
-          }
-          
-          // Add interaction instructions to system instructions
-          if (interactionInstructions.length > 0) {
-            systemInstructions += "\n\nInteraction style:\n" + interactionInstructions.join("\n");
-          }
-        }
-        
-      } catch (error) {
-        console.error("Error parsing companion configuration:", error);
-        // Continue with base instructions if there's an error parsing configuration
       }
     }
 
-    // Prepare your messages for OpenAI
-    // If you have special instructions for the system or the first user message,
-    // you can still insert them at the beginning
+    // Prepare your messages for OpenAI with optimized system prompt
     const openAIMessages = isFollowUp
       ? allMessages
       : [
           {
             role: "system",
-            content: `${systemInstructions}\n\nYou are ${companion.name}, \n\nSeed personality: `,
+            content: systemInstructions
           },
           ...allMessages,
         ]
+
+    // Apply message window optimization for longer conversations
+    // Make more aggressive for economy mode
+    const MAX_MESSAGES = economyMode ? 5 : 10; // Keep fewer messages in economy mode
+    const optimizedMessages = openAIMessages.length > MAX_MESSAGES 
+      ? [
+          openAIMessages[0], // Keep the system prompt
+          { 
+            role: "system", 
+            content: `[Previous conversation history summarized: ${openAIMessages.length - MAX_MESSAGES} earlier messages omitted]` 
+          },
+          ...openAIMessages.slice(-MAX_MESSAGES + 1) // Keep the most recent messages
+        ]
+      : openAIMessages;
 
     // Store the user message first
     await prismadb.message.create({
@@ -330,7 +271,7 @@ export async function POST(
     // Get a completion from the API without streaming
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: openAIMessages,
+      messages: optimizedMessages,
     });
 
     // Calculate tokens used from the API response
@@ -338,9 +279,18 @@ export async function POST(
     const completionTokens = completion.usage?.completion_tokens || 0;
     const totalTokens = promptTokens + completionTokens;
     
-    // Default minimum tokens if API doesn't return usage
-    const tokensToDeduct = Math.max(totalTokens, TOKENS_PER_MESSAGE);
+    // Log token usage for debugging
+    console.log(`[TOKEN_USAGE] Actual tokens used - Prompt: ${promptTokens}, Completion: ${completionTokens}, Total: ${totalTokens}`);
     
+    // Token efficiency optimization
+    // Economy mode uses an even lower minimum token count
+    const MIN_TOKENS = economyMode ? 25 : 50;
+    const tokensToDeduct = Math.max(totalTokens, MIN_TOKENS);
+
+    // Update token usage with the actual token count
+    await trackTokenUsage(userId, tokensToDeduct, "chat")
+      .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
+
     // Deduct tokens from user's allocation based on actual usage
     await prismadb.userUsage.update({
       where: { userId: userId },

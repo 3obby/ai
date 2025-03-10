@@ -76,6 +76,7 @@ export const executionRulesSchema = z.object({
   disallowedBehaviors: z.string().optional(),
   computeIntensity: z.number().min(1).max(10).default(5), // 1-10 scale for compute intensity
   tokenBudgetCeiling: z.number().optional(), // Max tokens to spend per session
+  economyMode: z.boolean().default(true), // Default to economy mode to save tokens
 });
 
 // UI Configuration Schema
@@ -135,7 +136,8 @@ export const CHAT_CONFIG_TEMPLATES: Record<TemplateCategoryType, ChatConfig> = {
       computeIntensity: 8,
       tokenBudgetCeiling: 5000,
       allowedBehaviors: "Market analysis, business strategy, financial planning, growth hacking",
-      disallowedBehaviors: "Legal advice, investment recommendations"
+      disallowedBehaviors: "Legal advice, investment recommendations",
+      economyMode: true
     },
     uiConfig: {
       showDebugPanel: false,
@@ -169,7 +171,8 @@ export const CHAT_CONFIG_TEMPLATES: Record<TemplateCategoryType, ChatConfig> = {
       preInputInstructions: "Remember character attributes and previous storyline elements",
       postOutputInstructions: "Always maintain character consistency and world rules",
       allowedBehaviors: "Storytelling, character role-playing, world-building, game mechanics",
-      disallowedBehaviors: "Breaking character, meta-gaming"
+      disallowedBehaviors: "Breaking character, meta-gaming",
+      economyMode: true
     },
     uiConfig: {
       showDebugPanel: false,
@@ -201,7 +204,8 @@ export const CHAT_CONFIG_TEMPLATES: Record<TemplateCategoryType, ChatConfig> = {
       computeIntensity: 7,
       preInputInstructions: "Focus on quantity of ideas over quality initially",
       allowedBehaviors: "Creative thinking, challenging assumptions, building on others' ideas",
-      disallowedBehaviors: "Early criticism, fixation on single solutions"
+      disallowedBehaviors: "Early criticism, fixation on single solutions",
+      economyMode: true
     },
     uiConfig: {
       showDebugPanel: true,
@@ -234,7 +238,8 @@ export const CHAT_CONFIG_TEMPLATES: Record<TemplateCategoryType, ChatConfig> = {
       computeIntensity: 9,
       tokenBudgetCeiling: 4000,
       allowedBehaviors: "Code analysis, error diagnostics, solution proposal, testing strategies",
-      disallowedBehaviors: "Introducing security vulnerabilities, untested solutions"
+      disallowedBehaviors: "Introducing security vulnerabilities, untested solutions",
+      economyMode: true
     },
     uiConfig: {
       showDebugPanel: true,
@@ -263,7 +268,8 @@ export const CHAT_CONFIG_TEMPLATES: Record<TemplateCategoryType, ChatConfig> = {
     },
     executionRules: {
       toolPermissions: [],
-      computeIntensity: 5
+      computeIntensity: 5,
+      economyMode: true
     },
     uiConfig: {
       showDebugPanel: false,

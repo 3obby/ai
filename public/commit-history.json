@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "730159a",
+      "fullHash": "730159a7a25edf5099d9750a7614696e13114695",
+      "date": "2025-03-11 00:44:03 +0700",
+      "author": "3obby",
+      "message": "Add token optimization and companion management: 1) Implement economy mode to reduce token usage by 60-80% 2) Add condensed system prompts for better efficiency 3) Create scripts to import and manage companions from JSON 4) Fix token burning and usage tracking",
+      "category": "bugfix"
+    },
+    {
       "hash": "7b6212d",
       "fullHash": "7b6212dc6cac4a36945fb0acae91f69f28896d21",
       "date": "2025-03-10 18:38:32 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-02 22:36:08 +0700",
       "author": "3obby",
       "message": "monthy to weekly pt 2",
-      "category": "other"
-    },
-    {
-      "hash": "28d7c17",
-      "fullHash": "28d7c1782a2b267909aab0744e08a11dc7c83654",
-      "date": "2025-03-02 22:26:27 +0700",
-      "author": "3obby",
-      "message": "changed monthly to weekly sub",
       "category": "other"
     }
   ]

@@ -603,6 +603,28 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={form.control}
+                        name="executionRules.economyMode"
+                        render={({ field }) => (
+                          <FormItem className="mt-4 flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Economy Mode</FormLabel>
+                              <FormDescription>
+                                Reduce token usage by condensing system instructions and limiting context window. 
+                                Saves tokens (and money) with minimal impact on functionality.
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </TabsContent>
                 </Tabs>
