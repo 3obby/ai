@@ -151,7 +151,7 @@ export const Companions = ({
     <div className="space-y-4 mb-8 max-w-full overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-1 sm:px-2 md:px-4 max-w-full">
         {data.map((item) => (
-          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full">
+          <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full w-full">
             <div className="relative flex flex-col h-full">
               {/* Configure button - Now in top left corner */}
               <button 
@@ -167,8 +167,8 @@ export const Companions = ({
               <Link href={`/chat/${item.id}`} className="flex flex-col h-full">
                 {/* Top section with image on left and stats on right */}
                 <div className="flex flex-row p-3 items-center justify-between">
-                  {/* Left side: Avatar - now much larger */}
-                  <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex-shrink-0 ml-6">
+                  {/* Left side: Avatar - now much larger but responsive */}
+                  <div className="relative w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 flex-shrink-0 ml-2 xs:ml-4 sm:ml-6">
                     {/* Show loader/placeholder while image is loading */}
                     {loadingImages[item.id] && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-xl">
@@ -179,7 +179,7 @@ export const Companions = ({
                     <Image
                       src={item.src}
                       fill
-                      sizes="(max-width: 640px) 128px, 144px"
+                      sizes="(max-width: 480px) 96px, (max-width: 640px) 112px, 128px"
                       className={`rounded-xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
                       alt={item.name}
                       onLoad={() => handleImageLoaded(item.id)}

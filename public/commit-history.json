@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "5411db5",
+      "fullHash": "5411db5c4c446775594791913fd274dfb45f8094",
+      "date": "2025-03-11 01:07:39 +0700",
+      "author": "3obby",
+      "message": "Improve mobile responsiveness for dashboard and companion cards",
+      "category": "enhancement"
+    },
+    {
       "hash": "2414acc",
       "fullHash": "2414accbac810537ec346d3012bb9d0dc60a7bb7",
       "date": "2025-03-11 01:04:01 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "fixed stripe redirect",
       "category": "bugfix"
-    },
-    {
-      "hash": "7fc1377",
-      "fullHash": "7fc13775dd308e589bf7f01ae21c503e0b878f66",
-      "date": "2025-03-02 23:24:38 +0700",
-      "author": "3obby",
-      "message": "updated webhook, added patch scripts",
-      "category": "feature"
     }
   ]
 }

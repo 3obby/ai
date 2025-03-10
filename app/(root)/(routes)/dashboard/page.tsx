@@ -146,7 +146,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   return (
-    <div className="h-full pt-2 pb-16 px-1 sm:px-2 md:p-4 space-y-2 sm:space-y-4 overflow-hidden max-w-[100vw]">
+    <div className="h-full pt-2 pb-16 px-1 sm:px-2 md:p-4 space-y-2 sm:space-y-4 overflow-x-hidden max-w-[100vw]">
       <Suspense fallback={<SearchInputSkeleton />}>
         <SearchInput />
       </Suspense>
