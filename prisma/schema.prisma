@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Shadow database for migrations
 }
 
 model User {
@@ -18,6 +19,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   totalStorage  Int       @default(0)      // Total storage used in bytes
+  metadata      Json?     // Add new metadata field for testing migrations
 
   @@index([createdAt])
   @@index([updatedAt])
@@ -36,12 +38,14 @@ model Companion {
   userId               String
   userName             String
   src                  String
-  name                 String
-  instructions         String
+  name                 String @db.VarChar(255)
+  description          String
+  instructions         String @db.Text
+  seed                 String @db.Text
   private              Boolean            @default(false)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
-  categoryId           String
+  categoryId           String?
   isFree               Boolean            @default(false)
   tokensBurned         Int                @default(0)
   messageDelay         Int                @default(0)
@@ -55,12 +59,21 @@ model Companion {
   interactionConfig    Json?              // Stores interaction settings
   toolConfig           Json?              // Stores tool integration settings
   
-  category             Category           @relation(fields: [categoryId], references: [id])
+  category             Category?          @relation(fields: [categoryId], references: [id])
   groupChats           GroupChatMember[]
   messages             Message[]
   userBurnedTokens     UserBurnedTokens[]
   chatConfigs          ChatConfig[]
 
+  global               Boolean            @default(false)
+  views                Int                @default(0)
+  votes                Int                @default(0)
+  
+  // Add new fields for enhanced companion configuration
+  personality          Json?              @default("{}")
+  toolAccess           String[]           @default([])
+  version              Int                @default(1)
+  
   @@index([categoryId])
   @@index([userId])
   @@index([name])
@@ -68,6 +81,7 @@ model Companion {
   @@index([updatedAt])
   @@index([isFree])
   @@index([private])
+  @@index([global])
 }
 
 model Message {

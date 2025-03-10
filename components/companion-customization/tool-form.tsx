@@ -49,7 +49,20 @@ export const ToolForm = ({
   const [values, setValues] = useState<ToolConfigType>(initialValues);
 
   useEffect(() => {
-    setValues(initialValues);
+    // Ensure we have default values for nested objects
+    const ensureCompleteValues = (values: ToolConfigType): ToolConfigType => {
+      return {
+        ...values,
+        webSearch: values.webSearch || { enabled: false },
+        codeExecution: values.codeExecution || { enabled: false },
+        dataVisualization: values.dataVisualization || { enabled: false },
+        documentAnalysis: values.documentAnalysis || { enabled: false },
+        calculationTools: values.calculationTools || { enabled: false },
+        otherTools: values.otherTools || {}
+      };
+    };
+    
+    setValues(ensureCompleteValues(initialValues));
   }, [initialValues]);
 
   const handleChange = <K extends keyof ToolConfigType>(
@@ -130,17 +143,17 @@ export const ToolForm = ({
                       </p>
                     </div>
                     <Switch 
-                      checked={values.webSearch.enabled}
+                      checked={values.webSearch?.enabled || false}
                       onCheckedChange={(checked) => handleWebSearchChange('enabled', checked)}
                     />
                   </div>
 
-                  {values.webSearch.enabled && (
+                  {values.webSearch?.enabled && (
                     <div className="mt-4 space-y-4">
                       <div className="space-y-2">
                         <Label>Search Provider</Label>
                         <Select 
-                          value={values.webSearch.searchProvider || 'google'}
+                          value={values.webSearch?.searchProvider || 'google'}
                           onValueChange={(value) => 
                             handleWebSearchChange('searchProvider', value)
                           }
@@ -159,7 +172,7 @@ export const ToolForm = ({
                       <div className="space-y-2">
                         <Label>Max Results</Label>
                         <Select 
-                          value={String(values.webSearch.maxResults || 5)}
+                          value={String(values.webSearch?.maxResults || 5)}
                           onValueChange={(value) => 
                             handleWebSearchChange('maxResults', parseInt(value))
                           }

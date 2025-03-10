@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "f81798e",
+      "fullHash": "f81798e553c1ad5cff11c2cb07956960907f73b7",
+      "date": "2025-03-11 00:45:35 +0700",
+      "author": "3obby",
+      "message": "Major platform update: Token optimization, companion management, and schema improvements",
+      "category": "enhancement"
+    },
+    {
       "hash": "730159a",
       "fullHash": "730159a7a25edf5099d9750a7614696e13114695",
       "date": "2025-03-11 00:44:03 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "updated voting costs",
       "category": "enhancement"
-    },
-    {
-      "hash": "bae7130",
-      "fullHash": "bae713074d7ca44db7cba28f9ea91f9e2d049a51",
-      "date": "2025-03-02 22:36:08 +0700",
-      "author": "3obby",
-      "message": "monthy to weekly pt 2",
-      "category": "other"
     }
   ]
 }

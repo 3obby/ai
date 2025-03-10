@@ -103,4 +103,9 @@ body,
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+
+  /* Custom utility for pausing animations on hover */
+  .hover\:pause:hover {
+    animation-play-state: paused;
+  }
 }

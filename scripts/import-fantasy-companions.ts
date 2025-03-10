@@ -1,4 +1,4 @@
-// Script to import updated fantasy companions from JSON file
+// Script to import ONLY the fantasy companions from JSON file
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,8 +21,22 @@ interface CompanionJson {
   categoryId: string;
 }
 
-async function importCompanions() {
-  console.log('🤖 Starting fantasy companion import...');
+// Create category names based on ID for better readability
+function getCategoryName(categoryId: string): string {
+  const categories: Record<string, string> = {
+    '392bdce3-7e7c-4e8c-91cf-114c5ddf8e6b': 'Sci-Fi Characters',
+    '35e89cd6-7e12-4383-86d2-c5465ddb4f2e': 'Mystic Characters',
+    '9e43f0d4-deee-4152-badc-7b2cb5bd9272': 'Cyberpunk Characters',
+    'a0a6e91a-8623-4cea-9108-6252e43d3f0f': 'Fantasy Characters',
+    'b4ce8c8b-8d06-4b3c-bb04-faec3d4a0d03': 'Celebrity Characters',
+    'dd5748a7-6e52-4a57-925d-92af7a149f7a': 'Music Artists'
+  };
+  
+  return categories[categoryId] || `Category ${categoryId.substring(0, 6)}`;
+}
+
+async function importFantasyCompanions() {
+  console.log('🚀 Starting FANTASY companion import...');
   
   try {
     // Read the JSON file
@@ -36,13 +50,13 @@ async function importCompanions() {
     const categoryMap = new Map<string, any>();
     const uniqueCategoryIds = [...new Set(companions.map(c => c.categoryId).filter(Boolean))];
     
-    console.log(`🏷️ Creating ${uniqueCategoryIds.length} categories...`);
+    console.log(`🏷️ Creating ${uniqueCategoryIds.length} categories with proper names...`);
     
-    // Create placeholder categories with unique names
+    // Create categories with proper names
     for (const categoryId of uniqueCategoryIds) {
       if (!categoryId) continue;
       
-      const categoryName = `Category ${categoryId.substring(0, 6)}`;
+      const categoryName = getCategoryName(categoryId);
       try {
         const category = await prisma.category.create({
           data: {
@@ -58,7 +72,7 @@ async function importCompanions() {
     }
     
     // Import companions
-    console.log('🔄 Importing fantasy companions...');
+    console.log('🧙‍♂️ Importing fantasy companions...');
     let successCount = 0;
     
     for (const companion of companions) {
@@ -67,7 +81,7 @@ async function importCompanions() {
         const createdAt = new Date(companion.createdAt);
         const updatedAt = new Date(companion.updatedAt);
         
-        // Create the companion - use type assertion to bypass TypeScript errors
+        // Create the companion
         // @ts-ignore - This is a one-time import script
         await prisma.companion.create({
           data: {
@@ -93,7 +107,7 @@ async function importCompanions() {
             knowledgeConfig: {},
             interactionConfig: {},
             toolConfig: {},
-            global: false,
+            global: true, // Make them visible to everyone!
             views: 0,
             votes: 0,
             personality: {},
@@ -103,7 +117,7 @@ async function importCompanions() {
         });
         
         successCount++;
-        console.log(`✅ Imported companion: ${companion.name}`);
+        console.log(`✨ Imported companion: ${companion.name}`);
       } catch (error) {
         console.error(`❌ Failed to import companion ${companion.name}:`, error);
       }
@@ -118,7 +132,7 @@ async function importCompanions() {
 }
 
 // Run the import
-importCompanions().catch(error => {
+importFantasyCompanions().catch(error => {
   console.error('Fatal error during import:', error);
   process.exit(1);
 }); 

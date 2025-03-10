@@ -1,11 +1,11 @@
 # AI Companion Platform
 
-An advanced AI companion platform built with Next.js 13 App Router, TypeScript, Prisma, and PostgreSQL. This platform enables users to create, customize, and interact with AI companions powered by OpenAI's GPT models.
+An advanced AI companion platform built with Next.js 14 App Router, TypeScript, Prisma, and PostgreSQL. This platform enables users to create, customize, and interact with AI companions powered by OpenAI's GPT models.
 
 ## 🧠 Technical Architecture
 
 ### Core Technologies
-- **Framework**: Next.js 13.4.11 with App Router
+- **Framework**: Next.js 14 with App Router
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js with Magic Link Email

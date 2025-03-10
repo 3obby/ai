@@ -12,27 +12,6 @@ load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
-# List of people to create companions for
-people = [
-    {"name": "Billy Brainstormer", "category": "Scientists"},
-    {"name": "Albert Einstein", "category": "Scientists"},
-    {"name": "Socrates", "category": "Philosophy"},
-    {"name": "Call of Duty", "category": "Games"},
-    {"name": "Fortnite", "category": "Games"},
-    {"name": "Cat", "category": "Animals"},
-    {"name": "Dog", "category": "Animals"},
-    {"name": "Walter White", "category": "Movies & TV"},
-    {"name": "Mr Beast", "category": "Movies & TV"},
-    {"name": "IShowSpeed", "category": "Movies & TV"},
-    {"name": "Bob Marley", "category": "Musicians"},
-    {"name": "J. Cole", "category": "Musicians"},
-    {"name": "The Weeknd", "category": "Musicians"},
-    {"name": "Kendrick Lamar", "category": "Musicians"},
-    {"name": "Taylor Swift", "category": "Musicians"},
-    {"name": "Lionel Messi", "category": "Musicians"},
-    {"name": "Cristiano Ronaldo", "category": "Musicians"},
-]
-
 # Load categories from file
 with open('Category.json', 'r') as f:
     categories = json.load(f)
