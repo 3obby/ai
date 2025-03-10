@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "7b6212d",
+      "fullHash": "7b6212dc6cac4a36945fb0acae91f69f28896d21",
+      "date": "2025-03-10 18:38:32 +0700",
+      "author": "3obby",
+      "message": "Add comprehensive technical overview document for AI IDE assistance",
+      "category": "feature"
+    },
+    {
       "hash": "9428f00",
       "fullHash": "9428f005cdf0e44e01a7100449a8b3a483c4d1d7",
       "date": "2025-03-10 18:18:01 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "changed monthly to weekly sub",
       "category": "other"
-    },
-    {
-      "hash": "8d19ff2",
-      "fullHash": "8d19ff2fc4858823a3416a018b7271b2f3794a55",
-      "date": "2025-03-02 22:15:08 +0700",
-      "author": "3obby",
-      "message": "renamed, fixed stripe, edit vote costs",
-      "category": "bugfix"
     }
   ]
 }

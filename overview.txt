@@ -1,0 +1,152 @@
+# GCBB AI Companion Platform - Technical Overview
+
+## Core Architecture
+- Next.js 14 App Router with TypeScript
+- PostgreSQL database with Prisma ORM
+- OpenAI integration (GPT-3.5/4)
+- Serverless functions via API routes
+- Token-based economy with subscription tiers
+- File storage via Google Cloud Storage
+- Tailwind CSS with dark mode theming
+- Authentication via NextAuth
+
+## Key Components
+
+### Data Models
+- User: Authentication, preferences, token balance
+- Companion: AI persona with configurable traits
+- Chat: Conversation threads between users and companions
+- Message: Individual exchanges with metadata and token counts
+- CategoryRelation: For organizing companions
+- UserSubscription: Subscription status and management
+- CompanionConfiguration: 
+  - Personality traits (analytical vs. creative, formal vs. casual)
+  - Knowledge profile (expertise areas, confidence levels)
+  - Interaction styles (chattiness, response length, initiative level)
+  - Tool permissions (web search, code execution, etc.)
+
+### Token Economy System
+- Token balance tracking (global and per-user)
+- Token consumption metrics
+- Subscription discounts
+- Token purchase flow
+- Access control based on token availability
+
+### API Architecture
+- `/api/chat/[chatId]`: Message exchange endpoint
+- `/api/companions`: List and filter companions
+- `/api/companion/[companionId]`: CRUD operations for companions
+- `/api/user-progress`: Token usage statistics
+- `/api/stripe`: Payment processing
+
+## Group Chat Extension Framework
+
+### Core Group Chat Capabilities
+- Multiple participants (human and AI)
+- Custom instruction injection
+- Message routing and visibility controls
+- Context window optimization
+- Tool access configuration per participant
+
+### Extending for Custom Experiences
+
+#### Technical Implementation Requirements
+
+1. **Session Architecture**
+   - State management for specialized contexts
+   - Dynamic participant loading
+   - Custom metadata fields for experience-specific data
+   - Session persistence options (ephemeral vs. permanent)
+
+2. **Message Processing Pipeline**
+   - Pre-processing hooks for message transformation
+   - Custom validation rules for specific contexts
+   - Post-processing for special formatting
+   - Message type specification (game action, dialogue, meta-command)
+
+3. **Role-Based Access System**
+   - Participant type definitions (player, GM, spectator, NPC)
+   - Permission sets for different roles
+   - Dynamic role assignment and changes
+   - State-dependent capability adjustments
+
+4. **Tool Integration Framework**
+   - Plugin architecture for custom tools
+   - Scoped API access by participant and role
+   - Context-aware tool visibility
+   - Result formatting specifications
+
+5. **State Management**
+   - Shared state objects accessible to all participants
+   - Private state scoped to individual participants
+   - Conditional state transitions based on messages or events
+   - State persistence between sessions
+
+6. **UI Configuration**
+   - Dynamic layout adaptation based on experience type
+   - Custom component injection for specialized displays
+   - Theme switching for different experiences
+   - Mobile-responsive specialized interfaces
+
+### Specialized Experience Examples
+
+#### Poker Room Implementation
+- **State Management**: Card deck, hands, pot amount, player chips, turn order
+- **API Extensions**: Card dealing function, betting validation, hand comparison
+- **UI Components**: Card display, chip stacks, betting interface
+- **Participant Roles**: Dealer bot, player bots, human players, spectators
+- **Companion Configuration**: Adjust risk tolerance, bluffing frequency, strategic depth
+- **Message Types**: Betting actions, table talk, private thoughts, dealer announcements
+
+#### DnD Game Engine
+- **State Management**: Character sheets, game world state, combat status, inventory
+- **API Extensions**: Dice rolling, combat resolution, movement tracking, spell effects
+- **UI Components**: Character sheet display, battle map, initiative tracker
+- **Participant Roles**: GM bot, character bots, human players
+- **Companion Configuration**: Character personality, knowledge of game rules, roleplay depth
+- **Message Types**: Character actions, GM narration, dice rolls, out-of-character discussion
+
+#### Collaborative Workspace
+- **State Management**: Shared document state, task assignments, project timeline
+- **API Extensions**: Document editing, version control, task status updates
+- **UI Components**: Document preview, kanban board, timeline visualization
+- **Participant Roles**: Project manager bot, specialist bots, human collaborators
+- **Companion Configuration**: Expertise areas, collaboration style, initiative level
+- **Message Types**: Ideas, critiques, questions, document edits, task updates
+
+## Technical Implementation Path
+
+1. **Core Extension Framework**
+   - Create base classes for specialized chat sessions
+   - Implement plugin architecture for custom tools
+   - Develop state management system for session types
+
+2. **API Enhancements**
+   - Extend chat API to handle specialized message types
+   - Create routes for experience-specific actions
+   - Implement state transition hooks
+
+3. **Database Schema Updates**
+   - Add tables for session types and configurations
+   - Create relationships to specialized state objects
+   - Enable complex query patterns for game state retrieval
+
+4. **UI Component Library**
+   - Build adaptable layouts for different experiences
+   - Create specialized display components
+   - Implement responsive design patterns
+
+5. **Companion Configuration Extensions**
+   - Add context-specific personality parameters
+   - Implement role-based instruction sets
+   - Create specialized knowledge profiles
+
+## Development Approach
+- Modular architecture with clear separation of concerns
+- Strong typing for all specialized interfaces
+- Server components for efficient rendering of complex states
+- Progressive enhancement for feature detection
+- Extensive use of React Context for state management
+- Custom hooks for experience-specific behaviors
+- Documentation-driven development for plugin creators
+- Test cases for all specialized scenarios 
