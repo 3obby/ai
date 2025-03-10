@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9428f00",
+      "fullHash": "9428f005cdf0e44e01a7100449a8b3a483c4d1d7",
+      "date": "2025-03-10 18:18:01 +0700",
+      "author": "3obby",
+      "message": "Mobile optimization: Hide GCBB text and optimize logo layout on small screens",
+      "category": "other"
+    },
+    {
       "hash": "5f7dc21",
       "fullHash": "5f7dc21110a7732503e6cbb98856274a10930486",
       "date": "2025-03-10 02:19:53 +0700",

@@ -152,7 +152,7 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
       className="relative flex items-center justify-end h-full bg-gradient-to-tr from-orange-500/40 to-orange-400/20 group"
     >
       {/* GCBB Text first - using navbar gray color */}
-      <Link href="/" className="h-full block">
+      <Link href="/" className="h-full hidden sm:block">
         <div className="relative z-10 mx-3 h-full flex items-center">
           <span className={cn(
             "text-lg font-bold text-white", // Using white text instead of text-secondary
@@ -165,19 +165,19 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
       
       {/* Feather Logo Second - removed white border */}
       <Link href="/" className="h-full flex items-center">
-        <div className="relative flex items-center justify-center w-10 h-10 z-10">
+        <div className="relative flex items-center justify-center w-8 sm:w-10 h-8 sm:h-10 z-10">
           <Image
             src="/feather.png"
             alt="Feather Logo"
-            width={32}
-            height={32}
-            className="transform transition-transform duration-700 group-hover:scale-110"
+            width={28}
+            height={28}
+            className="transform transition-transform duration-700 group-hover:scale-110 sm:w-8 sm:h-8"
           />
         </div>
       </Link>
       
       {/* Token Balance */}
-      <div className="relative z-10 pl-3 ml-3 flex items-center border-l border-white/20">
+      <div className="relative z-10 pl-2 sm:pl-3 ml-2 sm:ml-3 flex items-center border-l border-white/20">
         {isLoading ? (
           <div className="h-4 w-12 bg-white/20 animate-pulse rounded-sm"></div>
         ) : (
@@ -191,7 +191,7 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
       </div>
       
       {/* Buy Tokens Button - integrated right after token balance */}
-      <div className="relative z-10 ml-3 mr-3">
+      <div className="relative z-10 ml-2 sm:ml-3 mr-2 sm:mr-3">
         <Link href="/subscribe">
           <Button 
             size="sm" 
@@ -201,12 +201,12 @@ export const IntegratedLogo = ({ userId, isPro = false }: IntegratedLogoProps) =
             {isPro ? (
               <>
                 <Coins className="h-3 w-3 text-amber-400 mr-1" />
-                Buy
+                <span className="hidden xs:inline">Buy</span>
               </>
             ) : (
               <>
-                Upgrade
-                <Sparkles className="h-3 w-3 fill-white text-white ml-1" />
+                <span className="hidden xs:inline">Upgrade</span>
+                <Sparkles className="h-3 w-3 fill-white text-white xs:ml-1" />
               </>
             )}
           </Button>
