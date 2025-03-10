@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "67f1dc2",
+      "fullHash": "67f1dc2db728b36ce0a158e374ddf9a3b43696f8",
+      "date": "2025-03-11 01:01:23 +0700",
+      "author": "3obby",
+      "message": "Complete navbar redesign: fixed mobile overflow, better space utilization, and simplified layout",
+      "category": "bugfix"
+    },
+    {
       "hash": "03de308",
       "fullHash": "03de3086f0e52445345689701a8b814edadd630f",
       "date": "2025-03-11 00:57:57 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "corrected price",
       "category": "other"
-    },
-    {
-      "hash": "a0b36f6",
-      "fullHash": "a0b36f6458c8c4ee5b3c8034d101a13edd2906f2",
-      "date": "2025-03-02 22:49:32 +0700",
-      "author": "3obby",
-      "message": "fixed voting maybe",
-      "category": "bugfix"
     }
   ]
 }
