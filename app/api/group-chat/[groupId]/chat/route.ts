@@ -633,9 +633,16 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-const userId = session?.userId;
+    const userId = session?.userId;
+    
+    // Get the userId from query params
+    const url = new URL(request.url);
+    const anonymousUserId = url.searchParams.get('userId');
+    
+    // Use authenticated user ID or anonymous user ID
+    const effectiveUserId = userId || anonymousUserId;
 
-    if (!userId) {
+    if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -647,7 +654,7 @@ const userId = session?.userId;
     }
 
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId },
+      where: { userId: effectiveUserId },
     })
 
     if (!userUsage || userUsage.availableTokens <= 0) {
@@ -675,6 +682,11 @@ const userId = session?.userId;
     if (!groupChat) {
       return new NextResponse("Group chat not found", { status: 404 })
     }
+    
+    // Check if the user has access to this group chat
+    if (groupChat.creatorId !== effectiveUserId) {
+      return new NextResponse("Unauthorized access to group chat", { status: 403 })
+    }
 
     // Create a TransformStream for streaming responses
     const stream = new TransformStream()
@@ -696,7 +708,7 @@ const userId = session?.userId;
             content: prompt,
             groupChatId: params.groupId,
             isBot: false,
-            senderId: userId,
+            senderId: effectiveUserId,
           },
         })
 
@@ -778,7 +790,7 @@ const userId = session?.userId;
 
                 // Update user's token count
                 await prismadb.userUsage.update({
-                  where: { userId },
+                  where: { userId: effectiveUserId },
                   data: {
                     availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
                     totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },
@@ -807,7 +819,7 @@ const userId = session?.userId;
               })
 
               await prismadb.userUsage.update({
-                where: { userId },
+                where: { userId: effectiveUserId },
                 data: {
                   availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
                   totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },

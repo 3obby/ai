@@ -15,8 +15,9 @@ const baseUrl = isProduction
   ? (process.env.NEXTAUTH_URL_PRODUCTION || "https://groupchatbotbuilder.com")
   : (process.env.NEXTAUTH_URL || "http://localhost:3000");
 
+// Use @ts-ignore for the adapter issue since it's a type compatibility issue between packages
 export const authOptions: NextAuthOptions = {
-  // Type assertion to fix the TypeScript error with EdgeCompatPrismaClient
+  // @ts-ignore - PrismaAdapter has known type compatibility issues
   adapter: PrismaAdapter(prismadb as PrismaClient),
   session: {
     strategy: "jwt",
@@ -25,6 +26,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   providers: [
+    // Standard authentication methods
     EmailProvider({
       server: {
         host: "unused", // Not used with custom sendVerificationRequest
@@ -53,7 +55,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -78,9 +80,9 @@ export const authOptions: NextAuthOptions = {
             });
             return {
               id: newUser.id,
-              name: newUser.name,
+              name: newUser.name || "",
               email: newUser.email,
-              image: newUser.image,
+              image: newUser.image || "",
             };
           }
           return null;
@@ -92,9 +94,9 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          name: user.name,
+          name: user.name || "",
           email: user.email,
-          image: user.image,
+          image: user.image || "",
         };
       },
     }),
@@ -106,6 +108,9 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture as string | null;
+        
+        // Add isAnonymous flag to session
+        session.user.isAnonymous = token.isAnonymous as boolean || false;
       }
 
       return session;
@@ -117,6 +122,7 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.picture = user.image;
+        token.isAnonymous = user.isAnonymous || false;
 
         // Update image from OAuth provider if available
         if (account?.provider === 'google' && profile && 'picture' in profile) {

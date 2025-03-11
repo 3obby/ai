@@ -18,7 +18,7 @@ const font = Poppins({ weight: "600", subsets: ["latin"] })
 
 interface NavbarProps {
   isPro: boolean
-  userId: string
+  userId?: string
   stripePriceId?: string
 }
 
@@ -33,13 +33,19 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
     const fetchTokenBalance = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/user-progress?userId=${userId}`)
+        // For anonymous users, still make the request but handle errors gracefully
+        const response = await fetch(`/api/user-progress${userId ? `?userId=${userId}` : ''}`)
+        
         if (response.ok) {
           const data = await response.json()
           setTokenBalance(data.remainingTokens || 0)
+        } else {
+          console.warn("Unable to fetch token balance, using default values")
+          setTokenBalance(0)
         }
       } catch (error) {
         console.error("Failed to fetch token balance:", error)
+        setTokenBalance(0)
       } finally {
         setIsLoading(false)
       }

@@ -14,8 +14,12 @@ export async function GET(
     const user = session?.user;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "20");
+    const anonymousUserId = searchParams.get("userId");
+    
+    // Use anonymous user ID if provided and no authenticated user
+    const effectiveUserId = userId || anonymousUserId;
 
-    if (!user || !userId) {
+    if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -23,7 +27,7 @@ export async function GET(
     const messages = await prismadb.message.findMany({
       where: {
         companionId: params.companionId,
-        userId: userId,
+        userId: effectiveUserId,
       },
       orderBy: {
         createdAt: "desc",

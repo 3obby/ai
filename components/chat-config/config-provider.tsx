@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 import { ChatConfig, CHAT_CONFIG_TEMPLATES, TemplateCategoryType } from "@/types/chat-config";
 
@@ -12,7 +13,7 @@ interface ConfigContextType {
   activeConfig: ChatConfig | null;
   isLoading: boolean;
   error: string | null;
-  fetchConfigs: (companionId?: string, groupChatId?: string) => Promise<void>;
+  fetchConfigs: (companionId?: string, groupChatId?: string, userId?: string) => Promise<void>;
   createConfig: (config: ChatConfig) => Promise<ChatConfig | null>;
   updateConfig: (id: string, config: ChatConfig) => Promise<ChatConfig | null>;
   deleteConfig: (id: string) => Promise<boolean>;
@@ -34,33 +35,47 @@ interface ConfigProviderProps {
   children: ReactNode;
   initialCompanionId?: string;
   initialGroupChatId?: string;
+  userId?: string;
 }
 
 export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   children,
   initialCompanionId,
   initialGroupChatId,
+  userId: propUserId,
 }) => {
+  const { data: session } = useSession();
   const [configs, setConfigs] = useState<ChatConfig[]>([]);
   const [templates, setTemplates] = useState<ChatConfig[]>([]);
   const [activeConfig, setActiveConfig] = useState<ChatConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Get userId from session or props
+  const userId = session?.user?.id || propUserId;
 
-  const fetchConfigs = async (companionId?: string, groupChatId?: string) => {
+  const fetchConfigs = async (companionId?: string, groupChatId?: string, overrideUserId?: string) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use provided userId or fall back to the userId from session/props
+      const effectiveUserId = overrideUserId || userId;
+      
       // Build query parameters
       const params = new URLSearchParams();
       if (companionId) params.append("companionId", companionId);
       if (groupChatId) params.append("groupChatId", groupChatId);
+      if (effectiveUserId) params.append("userId", effectiveUserId);
 
       // Fetch user configs
       const userConfigsResponse = await axios.get(`/api/chat-config?${params.toString()}`);
       
       // Fetch template configs
-      const templateConfigsResponse = await axios.get(`/api/chat-config?templateOnly=true`);
+      const templateParams = new URLSearchParams();
+      templateParams.append("templateOnly", "true");
+      if (effectiveUserId) templateParams.append("userId", effectiveUserId);
+      
+      const templateConfigsResponse = await axios.get(`/api/chat-config?${templateParams.toString()}`);
       
       setConfigs(userConfigsResponse.data.filter((config: ChatConfig) => !config.isTemplate));
       setTemplates(templateConfigsResponse.data);
@@ -87,7 +102,10 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
     } catch (err) {
       console.error("Error fetching chat configs:", err);
       setError("Failed to load configurations");
-      toast.error("Failed to load chat configurations");
+      // Don't show toast errors for anonymous users
+      if (session?.user) {
+        toast.error("Failed to load chat configurations");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +114,10 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   const createConfig = async (config: ChatConfig): Promise<ChatConfig | null> => {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/chat-config", config);
+      const params = new URLSearchParams();
+      if (userId) params.append("userId", userId);
+      
+      const response = await axios.post(`/api/chat-config?${params.toString()}`, config);
       setConfigs((prev) => [response.data, ...prev]);
       setActiveConfig(response.data);
       toast.success("Configuration saved");
@@ -113,7 +134,10 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   const updateConfig = async (id: string, config: ChatConfig): Promise<ChatConfig | null> => {
     setIsLoading(true);
     try {
-      const response = await axios.patch(`/api/chat-config/${id}`, config);
+      const params = new URLSearchParams();
+      if (userId) params.append("userId", userId);
+      
+      const response = await axios.patch(`/api/chat-config/${id}?${params.toString()}`, config);
       setConfigs((prev) =>
         prev.map((c) => (c.id === id ? response.data : c))
       );
@@ -134,7 +158,10 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   const deleteConfig = async (id: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      await axios.delete(`/api/chat-config/${id}`);
+      const params = new URLSearchParams();
+      if (userId) params.append("userId", userId);
+      
+      await axios.delete(`/api/chat-config/${id}?${params.toString()}`);
       setConfigs((prev) => prev.filter((c) => c.id !== id));
       if (activeConfig?.id === id) {
         setActiveConfig(null);
@@ -167,7 +194,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   // Load configs on initial mount
   useEffect(() => {
     fetchConfigs(initialCompanionId, initialGroupChatId);
-  }, [initialCompanionId, initialGroupChatId]);
+  }, [initialCompanionId, initialGroupChatId, userId]);
 
   const value: ConfigContextType = {
     configs,

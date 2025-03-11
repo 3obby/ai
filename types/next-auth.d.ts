@@ -7,6 +7,16 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      isAnonymous?: boolean;
     } & DefaultSession["user"];
+  }
+  
+  // Add isAnonymous to User interface
+  interface User {
+    id: string;
+    isAnonymous?: boolean;
+    name?: string;
+    email?: string;
+    image?: string;
   }
 } 

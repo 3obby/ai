@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth-helpers"
-import { redirect } from "next/navigation"
 
 import { Navbar } from "@/components/navbar"
 import { Sidebar } from "@/components/sidebar"
@@ -7,13 +6,15 @@ import { checkSubscription } from "@/lib/subscription"
 import { ContentTransition } from "@/components/ui/content-transition"
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  const isPro = await checkSubscription()
+  // Check if user is authenticated, but don't redirect
   const session = await auth()
   const userId = session?.userId
+  
+  // For debugging
+  console.log('Root layout rendering with userId:', userId);
 
-  if (!userId) {
-    return redirect("/login")
-  }
+  // Check subscription only if user is authenticated
+  const isPro = userId ? await checkSubscription() : false
 
   return (
     <div className="h-full relative">

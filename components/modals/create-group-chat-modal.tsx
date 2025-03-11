@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react"
 import {
   Dialog,
@@ -10,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useProModal } from "@/hooks/use-pro-modal"
+import Cookies from 'js-cookie';
 
 interface CreateGroupChatModalProps {
   isOpen: boolean
@@ -17,6 +20,7 @@ interface CreateGroupChatModalProps {
   onConfirm: (name: string) => void
   companionName: string
   isLoading?: boolean
+  userId?: string;
 }
 
 export const CreateGroupChatModal = ({
@@ -25,6 +29,7 @@ export const CreateGroupChatModal = ({
   onConfirm,
   companionName,
   isLoading = false,
+  userId,
 }: CreateGroupChatModalProps) => {
   const [name, setName] = useState(`${companionName}'s Group`)
   const [userXP, setUserXP] = useState(0)
@@ -33,15 +38,19 @@ export const CreateGroupChatModal = ({
   useEffect(() => {
     const fetchUserXP = async () => {
       try {
-        const response = await fetch("/api/user-progress")
-        const data = await response.json()
-        setUserXP(data.remainingTokens)
+        // Check for anonymous user ID in props or cookies
+        const anonymousUserId = userId || Cookies.get('anonymousUserId');
+        const url = anonymousUserId ? `/api/user-progress?userId=${anonymousUserId}` : '/api/user-progress';
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        setUserXP(data.remainingTokens);
       } catch (error) {
         console.error("Error fetching user XP:", error)
       }
     }
     fetchUserXP()
-  }, [])
+  }, [userId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

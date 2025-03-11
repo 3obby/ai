@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { useProModal } from "@/hooks/use-pro-modal"
 
 interface SidebarProps {
-  userId: string
+  userId?: string
 }
 
 interface UserUsage {
@@ -57,22 +57,26 @@ export const Sidebar = ({ userId }: SidebarProps) => {
     const fetchUserUsage = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch("/api/user-progress")
+        // For anonymous users, still make the request but handle errors gracefully
+        const response = await fetch(`/api/user-progress${userId ? `?userId=${userId}` : ''}`)
+        
         if (response.ok) {
           const data = await response.json()
           setUserUsage(data)
         } else {
           console.warn("Unable to fetch user progress, using default values")
+          setUserUsage({ remainingTokens: XP_REQUIRED_FOR_CREATION })
         }
       } catch (error) {
         console.error("Error fetching user usage:", error)
+        setUserUsage({ remainingTokens: XP_REQUIRED_FOR_CREATION })
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchUserUsage()
-  }, [])
+  }, [userId])
 
   // Check both conditions on route change
   useEffect(() => {

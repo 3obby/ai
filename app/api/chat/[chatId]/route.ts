@@ -29,15 +29,21 @@ export async function POST(
     const { allMessages, isFollowUp } = await request.json()
     const session = await auth()
     const userId = session?.userId
-    const user = session?.user
+    
+    // Get the userId from the query if passed
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 })
     }
 
     // Check if user has enough tokens
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: userId },
+      where: { userId: effectiveUserId },
     })
     if (!userUsage) {
       return new NextResponse("User usage record not found", { status: 404 })
@@ -82,7 +88,7 @@ export async function POST(
     const chatConfig = await prismadb.chatConfig.findFirst({
       where: {
         companionId: params.chatId,
-        userId: userId
+        userId: effectiveUserId
       }
     });
 
@@ -217,13 +223,13 @@ export async function POST(
           allMessages[allMessages.length - 1]?.content || "(no user input)",
         role: isFollowUp ? "system" : "user",
         companionId: params.chatId,
-        userId: userId,
+        userId: effectiveUserId,
       },
     })
 
     // Deduct tokens from user's allocation
     await prismadb.userUsage.update({
-      where: { userId: userId },
+      where: { userId: effectiveUserId },
       data: {
         availableTokens: { decrement: TOKENS_PER_MESSAGE },
         totalSpent: { increment: TOKENS_PER_MESSAGE },
@@ -243,23 +249,37 @@ export async function POST(
         prismadb.userBurnedTokens.upsert({
           where: {
             userId_companionId: {
-              userId: userId,
+              userId: effectiveUserId,
               companionId: params.chatId,
             },
           },
           create: {
-            userId: userId,
+            userId: effectiveUserId,
             companionId: params.chatId,
             tokensBurned: TOKENS_PER_MESSAGE,
           },
           update: {
             tokensBurned: { increment: TOKENS_PER_MESSAGE },
           },
-        })
-      ]);
-    } catch (error) {
-      console.error("Failed to update token burning records:", error);
-      // Proceed anyway since this isn't critical to message functionality
+        }),
+      ])
+
+      // Only award XP for regular users, not for anonymous users
+      if (userId) {
+        // Attempt to create XP record - this is a non-critical operation
+        try {
+          await prismadb.companion.update({
+            where: { id: params.chatId },
+            data: { xpEarned: { increment: XP_PER_MESSAGE } }
+          })
+        } catch (xpError) {
+          console.error("Failed to award XP:", xpError)
+          // Continue even if XP award fails
+        }
+      }
+    } catch (txError) {
+      console.error("Transaction error:", txError)
+      // Continue even if the transaction fails - we don't want to block the chat
     }
 
     // Wait for the delay
@@ -288,12 +308,12 @@ export async function POST(
     const tokensToDeduct = Math.max(totalTokens, MIN_TOKENS);
 
     // Update token usage with the actual token count
-    await trackTokenUsage(userId, tokensToDeduct, "chat")
+    await trackTokenUsage(effectiveUserId, tokensToDeduct, "chat")
       .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
 
     // Deduct tokens from user's allocation based on actual usage
     await prismadb.userUsage.update({
-      where: { userId: userId },
+      where: { userId: effectiveUserId },
       data: {
         availableTokens: { decrement: tokensToDeduct },
         totalSpent: { increment: tokensToDeduct },
@@ -317,7 +337,7 @@ export async function POST(
           INSERT INTO "UserBurnedTokens" ("id", "userId", "companionId", "tokensBurned", "createdAt", "updatedAt")
           VALUES (
             gen_random_uuid(), 
-            ${userId}, 
+            ${effectiveUserId}, 
             ${params.chatId}, 
             ${tokensToDeduct}, 
             NOW(), 
@@ -344,7 +364,7 @@ export async function POST(
         content: responseContent,
         role: "assistant" as Role,
         companionId: params.chatId,
-        userId: userId,
+        userId: effectiveUserId,
       },
     });
 
@@ -364,22 +384,29 @@ export async function DELETE(
   try {
     const session = await auth()
     const userId = session?.userId
+    
+    // Get the userId from the query if passed
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 })
     }
 
     // Delete all messages for this chat
     await prismadb.message.deleteMany({
       where: {
         companionId: params.chatId,
-        userId: userId,
+        userId: effectiveUserId,
       },
     })
 
     return new NextResponse("Chat deleted successfully", { status: 200 })
   } catch (error) {
-    console.log("[CHAT_DELETE]", error)
+    console.log("Error in DELETE route:", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

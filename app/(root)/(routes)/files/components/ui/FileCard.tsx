@@ -18,6 +18,8 @@ interface FileCardProps {
   isDragging?: boolean
   isInGroup?: boolean
   showActions?: boolean
+  isSelected?: boolean
+  onSelect?: (e: React.MouseEvent) => void
 }
 
 export const FileCard = ({
@@ -27,7 +29,9 @@ export const FileCard = ({
   className,
   isDragging = false,
   isInGroup = false,
-  showActions = true
+  showActions = true,
+  isSelected = false,
+  onSelect
 }: FileCardProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(file.description || "")
@@ -36,110 +40,129 @@ export const FileCard = ({
   const isTextFile = file.type.includes("text") || 
                      /\.(txt|md|csv|json)$/i.test(file.originalName);
   
-  const handleSaveEdit = () => {
-    onEdit?.(file, editText)
+  const handleEdit = () => {
+    setIsEditing(true)
+    setEditText(file.description || "")
+  }
+  
+  const handleSave = () => {
+    if (onEdit) {
+      onEdit(file, editText)
+    }
     setIsEditing(false)
   }
   
-  const handleCancelEdit = () => {
-    setEditText(file.description || "")
+  const handleCancel = () => {
     setIsEditing(false)
+    setEditText(file.description || "")
   }
+  
+  const fileTypeColor = getColorForFileType(file.type)
+  const formattedType = formatFileType(file.type)
+  const formattedSize = formatBytes(file.size)
   
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1,
-        boxShadow: isDragging ? "0 10px 25px -5px rgba(0, 0, 0, 0.2)" : "none",
-        zIndex: isDragging ? 50 : 1
-      }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={cn("touch-manipulation", className)}
+    <Card 
+      className={cn(
+        "overflow-hidden transition-all hover:shadow-md",
+        isDragging && "opacity-50",
+        isSelected && "ring-2 ring-primary",
+        className
+      )}
+      onClick={onSelect}
     >
-      <Card className={cn(
-        "overflow-hidden border-2 transition-colors", 
-        isDragging ? "border-primary shadow-lg" : "border-border",
-        isInGroup ? "bg-primary/5" : ""
-      )}>
-        <div className="p-3">
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex items-center flex-1 min-w-0">
-              <div className="flex-shrink-0">
-                <div className={`w-10 h-10 rounded-md flex items-center justify-center text-white ${getColorForFileType(file.type)}`}>
-                  <span className="text-xs font-bold">{formatFileType(file.type)}</span>
-                </div>
-              </div>
-              <div className="ml-2 truncate flex-1 min-w-0">
-                <h3 className="text-sm font-medium truncate">{file.originalName}</h3>
-                <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
-              </div>
+      <div className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-2">
+            <div 
+              className={cn(
+                "w-8 h-8 rounded flex items-center justify-center text-white",
+                fileTypeColor
+              )}
+            >
+              {formattedType.slice(0, 2).toUpperCase()}
             </div>
-            
-            {showActions && (
-              <div className="flex gap-1 flex-shrink-0">
-                {isTextFile && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <PenIcon className="h-4 w-4" />
-                  </Button>
-                )}
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
-                  onClick={() => onDelete?.(file)}
+            <div className="truncate">
+              <h3 className="font-medium truncate">{file.name}</h3>
+              <p className="text-xs text-muted-foreground">
+                {formattedType} • {formattedSize}
+              </p>
+            </div>
+          </div>
+          
+          {showActions && !isEditing && (
+            <div className="flex space-x-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7" 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEdit()
+                }}
+              >
+                <PenIcon className="h-4 w-4" />
+              </Button>
+              {onDelete && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 text-destructive" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(file)
+                  }}
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
-              </div>
-            )}
-          </div>
-          
-          {isEditing ? (
-            <div className="mt-2 space-y-2">
-              <Textarea
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="w-full h-24 text-sm resize-none"
-                placeholder="Add a description..."
-              />
-              <div className="flex justify-end gap-2">
-                <Button 
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCancelEdit}
-                >
-                  <XIcon className="h-3 w-3 mr-1" />
-                  Cancel
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={handleSaveEdit}
-                >
-                  <CheckIcon className="h-3 w-3 mr-1" />
-                  Save
-                </Button>
-              </div>
+              )}
             </div>
-          ) : (
-            file.description && (
-              <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
-                {file.description}
-              </p>
-            )
+          )}
+          
+          {isEditing && (
+            <div className="flex space-x-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 text-green-500" 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSave()
+                }}
+              >
+                <CheckIcon className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 text-destructive" 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCancel()
+                }}
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
-      </Card>
-    </motion.div>
+        
+        {isEditing ? (
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="mt-2 text-sm"
+            placeholder="Add a description..."
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          file.description && (
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+              {file.description}
+            </p>
+          )
+        )}
+      </div>
+    </Card>
   )
 } 

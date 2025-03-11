@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { auth } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation";
-import NewFilesClient from "./components/NewFilesClient";
 import prismadb from "@/lib/prismadb";
 import { Prisma } from "@prisma/client";
+import { ModularFilesClient } from "./components/ModularFilesClient";
 
 export const metadata: Metadata = {
   title: "Files | GroupChatBotBuilder",
@@ -85,7 +85,7 @@ const FilesPage = async () => {
 
   return (
     <div className="h-full p-4 space-y-2">
-      <NewFilesClient 
+      <ModularFilesClient 
         files={JSON.parse(JSON.stringify(files))} 
         fileGroups={JSON.parse(JSON.stringify(fileGroups))}
         userId={userId}

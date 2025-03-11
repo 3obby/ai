@@ -10,16 +10,22 @@ export async function POST(request: Request) {
   try {
     const { name, initialCompanionId, chatHistory } = await request.json();
     const session = await auth();
-const userId = session?.userId;
-const user = session?.user;
+    const userId = session?.userId;
+    
+    // Get the userId from the query params or body
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!user || !userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 });
     }
 
     // Fetch user usage
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: userId },
+      where: { userId: effectiveUserId },
     });
 
     if (!userUsage || userUsage.availableTokens < 50) {
@@ -30,7 +36,7 @@ const user = session?.user;
     const groupChat = await prismadb.groupChat.create({
       data: {
         name,
-        creatorId: userId,
+        creatorId: effectiveUserId,
         members: {
           create: {
             companionId: initialCompanionId,
@@ -48,7 +54,7 @@ const user = session?.user;
 
     // Update user usage
     await prismadb.userUsage.update({
-      where: { userId: userId },
+      where: { userId: effectiveUserId },
       data: {
         availableTokens: userUsage.availableTokens - 50,
         totalSpent: userUsage.totalSpent + 50,
@@ -68,7 +74,7 @@ const user = session?.user;
               groupChatId: groupChat.id,
               content: message.content,
               isBot: message.role === "assistant",
-              senderId: message.role === "assistant" ? initialCompanionId : userId,
+              senderId: message.role === "assistant" ? initialCompanionId : effectiveUserId,
             },
           });
         })
@@ -109,17 +115,24 @@ export async function GET(request: Request) {
   try {
     const session = await auth();
     const userId = session?.userId;
-    const user = session?.user;
+    
+    // Get the userId from the query if passed
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!user || !userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!effectiveUserId) {
+      // Return empty array instead of error for anonymous users without ID
+      return NextResponse.json([]);
     }
 
     // Get paginated group chats where the user is the creator
     const [groupChats, totalCount] = await Promise.all([
       prismadb.groupChat.findMany({
         where: {
-          creatorId: userId,
+          creatorId: effectiveUserId,
         },
         include: {
           members: {
@@ -134,7 +147,7 @@ export async function GET(request: Request) {
       }),
       prismadb.groupChat.count({
         where: {
-          creatorId: userId,
+          creatorId: effectiveUserId,
         },
       }),
     ]);

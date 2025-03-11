@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9967920",
+      "fullHash": "99679208bf54f3a621cf6ad7883d66fd2d78805e",
+      "date": "2025-03-12 00:22:17 +0700",
+      "author": "3obby",
+      "message": "Update chat components, file management system, and API routes",
+      "category": "enhancement"
+    },
+    {
       "hash": "2fa6019",
       "fullHash": "2fa601906906af32b8c782951270642e6908f678",
       "date": "2025-03-11 18:39:30 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-03 22:30:44 +0700",
       "author": "3obby",
       "message": "looks great",
-      "category": "other"
-    },
-    {
-      "hash": "8cc988d",
-      "fullHash": "8cc988d27ccfc28e47b04e530e2c102429e2fe5a",
-      "date": "2025-03-03 21:10:07 +0700",
-      "author": "3obby",
-      "message": "chat ui",
       "category": "other"
     }
   ]

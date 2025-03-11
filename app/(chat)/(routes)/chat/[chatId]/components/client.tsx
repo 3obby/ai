@@ -21,9 +21,15 @@ interface ChatClientProps {
       messages: number
     }
   }
+  userId?: string
+  isAnonymous?: boolean
 }
 
-export const ChatClient = ({ companion }: ChatClientProps) => {
+export const ChatClient = ({ 
+  companion, 
+  userId,
+  isAnonymous = false
+}: ChatClientProps) => {
   const router = useRouter()
   const { prompts } = usePrompts()
   const activePrompts = prompts.filter((prompt) => prompt.isActive)
@@ -179,7 +185,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
         }
       }
 
-      const response = await fetch(`/api/chat/${companion.id}`, {
+      const response = await fetch(`/api/chat/${companion.id}${userId ? `?userId=${userId}` : ''}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -341,7 +347,7 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
   const onClear = async (onClose: () => void) => {
     try {
       setIsClearingMessages(true)
-      const cleared = await fetch(`/api/chat/${companion.id}/clear`, {
+      const cleared = await fetch(`/api/chat/${companion.id}/clear${userId ? `?userId=${userId}` : ''}`, {
         method: "DELETE",
       })
       setMessages([
@@ -362,13 +368,14 @@ export const ChatClient = ({ companion }: ChatClientProps) => {
   const handleInputFocus = () => {}
 
   return (
-    <ConfigProvider initialCompanionId={companion.id}>
+    <ConfigProvider initialCompanionId={companion.id} userId={userId}>
       <div className="flex flex-col h-full p-1 space-y-1">
         <ChatHeader
           companion={companion}
           onClear={onClear}
           isGroupChat={false}
           isClearingMessages={isClearingMessages}
+          userId={userId}
         >
           <ChatConfigButton companionId={companion.id} />
         </ChatHeader>

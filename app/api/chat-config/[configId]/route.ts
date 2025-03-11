@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth-helpers";
 import prismadb from "@/lib/prismadb";
-import { chatConfigManifestSchema } from "@/app/components/chat-config/ChatConfigTypes";
+import { chatConfigSchema } from "@/types/chat-config";
 
 interface ConfigIdRouteParams {
   params: {
@@ -16,8 +16,11 @@ export async function GET(
 ) {
   try {
     const { userId } = await auth();
+    const searchParams = req.nextUrl.searchParams;
+    const anonymousUserId = searchParams.get("userId");
+    const effectiveUserId = userId || anonymousUserId;
     
-    if (!userId) {
+    if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
@@ -39,7 +42,7 @@ export async function GET(
     }
     
     // Check ownership or if it's a template
-    if (config.userId !== userId && !config.isTemplate) {
+    if (config.userId !== effectiveUserId && !config.isTemplate) {
       return new NextResponse("Access denied", { status: 403 });
     }
     
@@ -57,8 +60,11 @@ export async function PATCH(
 ) {
   try {
     const { userId } = await auth();
+    const searchParams = req.nextUrl.searchParams;
+    const anonymousUserId = searchParams.get("userId");
+    const effectiveUserId = userId || anonymousUserId;
     
-    if (!userId) {
+    if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
@@ -80,14 +86,14 @@ export async function PATCH(
     }
     
     // Check ownership
-    if (existingConfig.userId !== userId) {
+    if (existingConfig.userId !== effectiveUserId) {
       return new NextResponse("Access denied", { status: 403 });
     }
     
     const body = await req.json();
     
     // Validate the request body
-    const validationResult = chatConfigManifestSchema.partial().safeParse(body);
+    const validationResult = chatConfigSchema.partial().safeParse(body);
     
     if (!validationResult.success) {
       return new NextResponse(JSON.stringify(validationResult.error), { status: 400 });
@@ -117,8 +123,11 @@ export async function DELETE(
 ) {
   try {
     const { userId } = await auth();
+    const searchParams = req.nextUrl.searchParams;
+    const anonymousUserId = searchParams.get("userId");
+    const effectiveUserId = userId || anonymousUserId;
     
-    if (!userId) {
+    if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
@@ -140,7 +149,7 @@ export async function DELETE(
     }
     
     // Check ownership
-    if (existingConfig.userId !== userId) {
+    if (existingConfig.userId !== effectiveUserId) {
       return new NextResponse("Access denied", { status: 403 });
     }
     

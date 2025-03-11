@@ -38,6 +38,7 @@ interface ChatHeaderProps {
   isGroupChat: boolean
   isClearingMessages: boolean
   children?: React.ReactNode;
+  userId?: string;
 }
 
 export const ChatHeader = ({
@@ -46,6 +47,7 @@ export const ChatHeader = ({
   isGroupChat,
   isClearingMessages,
   children,
+  userId,
 }: ChatHeaderProps) => {
   const router = useRouter()
   const { user } = useCurrentUser()
@@ -75,11 +77,19 @@ export const ChatHeader = ({
       setIsCreatingGroup(true)
       
       // First fetch the most recent messages for this companion to ensure we have the latest
-      const messagesResponse = await axios.get(`/api/companion/${companion.id}/messages?limit=20`);
+      const url = userId ? 
+        `/api/companion/${companion.id}/messages?limit=20&userId=${userId}` : 
+        `/api/companion/${companion.id}/messages?limit=20`;
+      
+      const messagesResponse = await axios.get(url);
       const latestMessages = messagesResponse.data;
       
       // Then create the group chat with the latest messages
-      const response = await axios.post("/api/group-chat", {
+      const groupUrl = userId ? 
+        `/api/group-chat?userId=${userId}` : 
+        `/api/group-chat`;
+      
+      const response = await axios.post(groupUrl, {
         name,
         initialCompanionId: companion.id,
         chatHistory: latestMessages
@@ -189,6 +199,7 @@ export const ChatHeader = ({
         onConfirm={onCreateGroupChat}
         companionName={companion.name}
         isLoading={isCreatingGroup}
+        userId={userId}
       />
     </>
   )

@@ -17,6 +17,14 @@ export async function PATCH(
     const session = await auth()
     const userId = session?.userId
     const user = session?.user
+    
+    // Get the userId from the query if passed
+    const url = new URL(req.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
+    const effectiveUserName = user?.name || "Anonymous User";
 
     const { src, name, instructions, categoryId, private: isPrivate } = body
 
@@ -24,8 +32,8 @@ export async function PATCH(
       return new NextResponse("Companion ID required", { status: 400 })
     }
 
-    if (!userId || !user) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 })
     }
 
     if (!src || !name || !instructions || !categoryId) {
@@ -38,8 +46,8 @@ export async function PATCH(
       },
       data: {
         categoryId,
-        userId: userId,
-        userName: user.name || "User",
+        userId: effectiveUserId,
+        userName: effectiveUserName,
         src,
         name,
         instructions,
@@ -61,14 +69,21 @@ export async function DELETE(
   try {
     const session = await auth()
     const userId = session?.userId
+    
+    // Get the userId from the query if passed
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 })
     }
 
     const companion = await prismadb.companion.delete({
       where: {
-        userId,
+        userId: effectiveUserId,
         id: params.companionId,
       },
     })

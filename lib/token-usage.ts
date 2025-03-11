@@ -7,6 +7,9 @@ import { auth } from "./auth-helpers"
 // Free token allowance for non-subscribed users
 export const FREE_TOKEN_ALLOWANCE = 10000
 
+// Free token allowance for anonymous users
+export const ANONYMOUS_TOKEN_ALLOWANCE = 1000
+
 // Token burning constants for user actions
 export const TOKENS_PER_MESSAGE = 2
 export const TOKENS_PER_GROUP_MESSAGE = 2
@@ -192,5 +195,57 @@ export async function trackTokenUsage(
       remainingTokens: 0,
       error: "Error tracking token usage",
     }
+  }
+}
+
+/**
+ * Allocates free tokens to an anonymous user
+ */
+export async function allocateAnonymousTokens(userId: string): Promise<boolean> {
+  try {
+    // Check if user already has a usage record
+    const existingUsage = await prismadb.userUsage.findUnique({
+      where: { userId },
+    });
+
+    if (existingUsage) {
+      // User already exists, just make sure they have the anonymous tokens
+      if (existingUsage.availableTokens < ANONYMOUS_TOKEN_ALLOWANCE) {
+        await prismadb.userUsage.update({
+          where: { userId },
+          data: {
+            availableTokens: ANONYMOUS_TOKEN_ALLOWANCE,
+          },
+        });
+      }
+      return true;
+    }
+
+    // Get user info to get the email
+    const user = await prismadb.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.error(`[ANONYMOUS_TOKENS_ERROR] User ${userId} not found`);
+      return false;
+    }
+
+    // Create a new user usage record for the anonymous user
+    await prismadb.userUsage.create({
+      data: {
+        userId,
+        email: user.email,
+        availableTokens: ANONYMOUS_TOKEN_ALLOWANCE,
+        totalSpent: 0,
+        totalMoneySpent: 0,
+      },
+    });
+
+    console.log(`[ANONYMOUS_TOKENS] Allocated ${ANONYMOUS_TOKEN_ALLOWANCE} tokens for anonymous user ${userId}`);
+    return true;
+  } catch (error) {
+    console.error("[ANONYMOUS_TOKENS_ERROR]", error);
+    return false;
   }
 }

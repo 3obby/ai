@@ -53,11 +53,13 @@ interface GroupChatHeaderProps {
     }[]
   }
   onClear: () => void
+  userId?: string
 }
 
 export const GroupChatHeader = ({
   groupChat,
   onClear,
+  userId,
 }: GroupChatHeaderProps) => {
   const router = useRouter()
   const { user } = useCurrentUser()
@@ -77,7 +79,11 @@ export const GroupChatHeader = ({
   const onDelete = async () => {
     try {
       setIsDeleting(true)
-      await axios.delete(`/api/group-chat/${groupChat.id}`)
+      const url = userId ? 
+        `/api/group-chat/${groupChat.id}?userId=${userId}` : 
+        `/api/group-chat/${groupChat.id}`;
+      
+      await axios.delete(url);
 
       toast({
         description: "Group chat deleted successfully.",
@@ -98,12 +104,13 @@ export const GroupChatHeader = ({
   const onAddCompanion = async (companionId: string) => {
     try {
       setIsAdding(true)
-      const response = await axios.post(
-        `/api/group-chat/${groupChat.id}/members`,
-        {
-          companionId,
-        }
-      )
+      const url = userId ? 
+        `/api/group-chat/${groupChat.id}/members?userId=${userId}` : 
+        `/api/group-chat/${groupChat.id}/members`;
+      
+      const response = await axios.post(url, {
+        companionId,
+      });
 
       toast({
         description: "Companion added to group!",
@@ -135,9 +142,11 @@ export const GroupChatHeader = ({
 
     try {
       setIsDeleting(true)
-      await axios.delete(
-        `/api/group-chat/${groupChat.id}/members/${companionToRemove}`
-      )
+      const url = userId ? 
+        `/api/group-chat/${groupChat.id}/members/${companionToRemove}?userId=${userId}` : 
+        `/api/group-chat/${groupChat.id}/members/${companionToRemove}`;
+      
+      await axios.delete(url);
 
       toast({
         description: "Companion removed from group",
@@ -158,9 +167,13 @@ export const GroupChatHeader = ({
   const onEdit = async () => {
     try {
       setIsEditing(true)
-      await axios.patch(`/api/group-chat/${groupChat.id}`, {
+      const url = userId ? 
+        `/api/group-chat/${groupChat.id}?userId=${userId}` : 
+        `/api/group-chat/${groupChat.id}`;
+      
+      await axios.patch(url, {
         name: newGroupName,
-      })
+      });
 
       toast({
         description: "Group name updated successfully.",
@@ -235,7 +248,7 @@ export const GroupChatHeader = ({
         </div>
 
         <div className="flex items-center gap-x-2">
-          <ChatConfigButton groupChatId={groupChat.id} />
+          <ChatConfigButton groupChatId={groupChat.id} userId={userId} />
           
           <Button
             onClick={() => setShowAddCompanion(true)}

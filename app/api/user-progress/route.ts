@@ -13,24 +13,44 @@ export const dynamic = "force-dynamic";
 
 // Non-subscribed users get this many free tokens
 const FREE_TOKEN_ALLOWANCE = 10000
+const ANONYMOUS_TOKEN_ALLOWANCE = 1000
 const DAY_IN_MS = 86_400_000
 
 export async function GET(req: Request) {
   try {
     const session = await auth()
     const userId = session?.userId
+    
+    // Get the userId from the query if passed (useful for anonymous users)
+    const url = new URL(req.url);
+    const queryUserId = url.searchParams.get('userId');
+    
+    // Use query userId if provided and no session userId exists
+    const effectiveUserId = userId || queryUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
+    if (!effectiveUserId) {
+      // Return default values for anonymous users instead of 401 error
+      return NextResponse.json({
+        burnedTokens: 0,
+        level: 0,
+        nextLevelTokens: getXPForNextLevel(0),
+        progressToNextLevel: 0,
+        usedTokens: 0,
+        remainingTokens: ANONYMOUS_TOKEN_ALLOWANCE,
+        baseTokenAllocation: ANONYMOUS_TOKEN_ALLOWANCE,
+        isSubscribed: false,
+        totalMoneySpent: 0,
+        isAnonymous: true,
+      });
     }
 
     // Get both user usage and subscription data
     const [userUsage, userSubscription] = await Promise.all([
       prismadb.userUsage.findUnique({
-        where: { userId },
+        where: { userId: effectiveUserId },
       }),
       prismadb.userSubscription.findUnique({
-        where: { userId },
+        where: { userId: effectiveUserId },
         select: {
           stripeSubscriptionId: true,
           stripeCurrentPeriodEnd: true,
@@ -42,15 +62,15 @@ export async function GET(req: Request) {
 
     // If user doesn't have a usage record yet, create one with initial tokens
     if (!userUsage) {
-      console.log("Creating new user usage record for:", userId)
+      console.log("Creating new user usage record for:", effectiveUserId)
       try {
         // For this quick fix, we'll use a temporary email since we can't easily get it
-        const tempEmail = `${userId}@tempmail.com`
+        const tempEmail = `${effectiveUserId}@tempmail.com`
 
         // Create new user usage record with initial tokens
         const newUserUsage = await prismadb.userUsage.create({
           data: {
-            userId,
+            userId: effectiveUserId,
             email: tempEmail,
             availableTokens: FREE_TOKEN_ALLOWANCE, // Give free tokens to start
             totalSpent: 0,

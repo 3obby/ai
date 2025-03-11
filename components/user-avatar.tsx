@@ -5,10 +5,16 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useMemo } from "react"
 import { User } from "next-auth"
 import { cn } from "@/lib/utils"
+import { QuestionMarkIcon } from "@radix-ui/react-icons"
+
+// Extend the User interface to include isAnonymous property
+interface ExtendedUser extends User {
+  isAnonymous?: boolean;
+}
 
 interface UserAvatarProps {
   src?: string
-  user?: User
+  user?: ExtendedUser
   className?: string
 }
 
@@ -25,34 +31,51 @@ const generateAvatarUrl = (input: string) => {
 
 export const UserAvatar = ({ src, user: propUser, className }: UserAvatarProps) => {
   const { user: contextUser } = useCurrentUser()
-  const user = propUser || contextUser
+  const user = propUser || (contextUser as ExtendedUser | undefined)
+  
+  // Check if this is an anonymous user
+  const isAnonymous = user?.isAnonymous || (user?.email && user.email.startsWith('anon-'));
   
   const avatarUrl = useMemo(() => {
+    // For anonymous users, don't generate an avatar
+    if (isAnonymous) return "";
+    
     if (src) return src;
     if (user?.image) return user.image;
     
     // If no image, generate one based on email or name
     const baseIdentifier = user?.email || user?.name || "user";
     return generateAvatarUrl(baseIdentifier);
-  }, [src, user]);
+  }, [src, user, isAnonymous]);
   
   // Get username for display
   const username = useMemo(() => {
-    if (!user) return null;
+    if (!user) return "U";
+    
+    // For anonymous users, return "?" for the avatar fallback
+    if (isAnonymous) return "?";
     
     if (user.email && user.email.includes('@')) {
       return user.email.split('@')[0];
     }
     
     return user.name?.split(' ')[0] || "User";
-  }, [user]);
+  }, [user, isAnonymous]);
 
   return (
     <Avatar className={cn(className || "h-8 w-8", "flex-shrink-0")}>
-      <AvatarImage src={avatarUrl} />
-      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-        {username ? username.substring(0, 2).toUpperCase() : "U"}
-      </AvatarFallback>
+      {isAnonymous ? (
+        <AvatarFallback className="bg-muted text-muted-foreground">
+          <QuestionMarkIcon className="h-4 w-4" />
+        </AvatarFallback>
+      ) : (
+        <>
+          <AvatarImage src={avatarUrl} />
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            {username.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </>
+      )}
     </Avatar>
   )
 }

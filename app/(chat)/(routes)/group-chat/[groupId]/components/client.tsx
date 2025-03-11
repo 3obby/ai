@@ -4,6 +4,7 @@ import { FormEvent, useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useChatLimit } from "@/store/use-chat-limit"
 import { usePrompts } from "@/store/use-prompts"
+import { toast } from "react-hot-toast"
 
 import { ChatForm } from "@/components/chat-form"
 import { ChatMessages } from "@/components/chat-messages"
@@ -53,6 +54,7 @@ interface GroupChat {
 interface GroupChatClientProps {
   groupChat: any
   initialLoad: boolean
+  userId?: string
 }
 
 interface BotResponse {
@@ -73,11 +75,13 @@ interface GroupChatHeaderProps {
   groupChat: GroupChat
   onClear: () => void
   isGroupChat: boolean
+  userId?: string
 }
 
 export const GroupChatClient = ({
   groupChat,
   initialLoad,
+  userId,
 }: GroupChatClientProps) => {
   const router = useRouter()
   const { decrementRemaining } = useChatLimit()
@@ -184,93 +188,96 @@ export const GroupChatClient = ({
 
   // Ensure all hooks are called at the top level
   const onSubmit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      
+      if (!input.trim() || isLoading) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Create a new user message
+        const userMessage: ChatMessageProps = {
+          role: "user",
+          content: input,
+          isLoading: false,
+        };
+        
+        // Add the user message to the chat
+        setMessages((prevMessages) => [...prevMessages, {
+          id: Date.now().toString(),
+          content: input,
+          isBot: false,
+          senderId: "user",
+          createdAt: new Date(),
+          messageStatus: "sent",
+          reactions: [],
+          readBy: [],
+        }]);
+        setInput("");
+        
+        // Send the message to the server to get bot responses
+        const url = userId ? 
+          `/api/group-chat/${groupChat.id}/chat?userId=${userId}` : 
+          `/api/group-chat/${groupChat.id}/chat`;
+        
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: input,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to send message");
+        }
 
-      // Add user message to state immediately
-      setIsLoading(true)
-      const userMessage: GroupMessage = {
-        id: Date.now().toString(),
-        content: input,
-        isBot: false,
-        senderId: "user",
-        createdAt: new Date(),
-        messageStatus: "sent",
-        reactions: [],
-        readBy: [],
+        if (!response.body) {
+          throw new Error("No response body");
+        }
+
+        // Set up the reader
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        // Read the stream
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          // Decode the stream chunk and parse the JSON
+          const chunk = decoder.decode(value);
+          const botMessage = JSON.parse(chunk);
+
+          // Add the message to the state
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              id: botMessage.id,
+              content: botMessage.content,
+              isBot: true,
+              senderId: botMessage.senderId,
+              createdAt: new Date(botMessage.createdAt),
+            },
+          ]);
+        }
+
+        decrementRemaining();
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          console.log("Request was aborted");
+        } else {
+          console.error("Error sending message:", error);
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setMessages((prev) => [...prev, userMessage])
-
-      // Update message status to delivered after a short delay
-      setTimeout(() => {
-        setMessages((prevMessages) => {
-          return prevMessages.map((msg) => {
-            if (msg.id === userMessage.id) {
-              return { ...msg, messageStatus: "delivered" }
-            }
-            return msg
-          })
-        })
-      }, 500)
-
-      // Update message as read by bots and add random emoji reactions
-      setTimeout(() => {
-        // Get all bots from the group chat
-        const bots = groupChat.members.map((member: any) => member.companion)
-        const botReadReceipts = bots.map((bot: any) => ({
-          name: bot.name as string,
-          src: bot.src as string,
-        }))
-
-        // Update message to read and add read receipts
-        setMessages((prevMessages) => {
-          return prevMessages.map((msg) => {
-            if (msg.id === userMessage.id) {
-              return {
-                ...msg,
-                messageStatus: "read",
-                readBy: botReadReceipts,
-              }
-            }
-            return msg
-          })
-        })
-
-        // Randomly select bots to react with emojis (at least one bot will react)
-        const emojis = ["👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉"]
-        const reactingBots = bots.filter(() => Math.random() < 0.7)
-
-        // Make sure at least one bot reacts
-        const botsToUse = reactingBots.length > 0 ? reactingBots : [bots[0]]
-
-        // Add emoji reactions from selected bots
-        botsToUse.forEach((bot: any) => {
-          const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)]
-          setMessages((prevMessages) => {
-            return prevMessages.map((msg) => {
-              if (msg.id === userMessage.id) {
-                return {
-                  ...msg,
-                  reactions: [
-                    ...(msg.reactions || []),
-                    {
-                      emoji: randomEmoji,
-                      from: bot.name,
-                      botSrc: bot.src,
-                    },
-                  ],
-                }
-              }
-              return msg
-            })
-          })
-        })
-      }, 1500)
-
-      handleSubmit(e)
     },
-    [handleSubmit, input, groupChat.members]
-  )
+    [input, activePrompts, groupChat.id, userId]
+  );
 
   // Initialize state with messages from the database
   useEffect(() => {
@@ -285,24 +292,26 @@ export const GroupChatClient = ({
   }, [groupChat.messages])
 
   const handleClearGroupChat = async () => {
-    setIsClearing(true)
     try {
-      const response = await fetch(`/api/group-chat/${groupChat.id}/chat`, {
+      setIsLoading(true);
+      
+      const url = userId ? 
+        `/api/group-chat/${groupChat.id}/chat/clear?userId=${userId}` : 
+        `/api/group-chat/${groupChat.id}/chat/clear`;
+      
+      await fetch(url, {
         method: "DELETE",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to clear messages")
-      }
-
-      setMessages([])
-      console.log("Group chat messages cleared")
+      });
+      
+      setMessages([]);
+      toast.success("Chat cleared");
     } catch (error) {
-      console.error("Error clearing messages:", error)
+      console.error("Error clearing chat:", error);
+      toast.error("Failed to clear chat");
     } finally {
-      setIsClearing(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (isInitializing) {
     return (
@@ -338,18 +347,23 @@ export const GroupChatClient = ({
       Clearing chat messages...
     </div>
   ) : (
-    <div className="flex flex-col h-full p-2 md:p-4 space-y-4 bg-transparent max-w-5xl mx-auto">
-      <GroupChatHeader groupChat={groupChat} onClear={handleClearGroupChat} />
+    <div className="flex flex-col h-full p-4 space-y-2">
+      <GroupChatHeader
+        groupChat={groupChat}
+        onClear={handleClearGroupChat}
+        userId={userId}
+      />
       <div className="flex-1 overflow-y-auto">
         <ChatMessages messages={transformedMessages} isLoading={isLoading} />
       </div>
-      <ChatForm
-        isLoading={isLoading}
-        input={input}
-        handleInputChange={handleInputChange}
-        onSubmit={onSubmit}
-        placeholder="Type a message..."
-      />
+      <div className="mt-4">
+        <ChatForm
+          input={input}
+          handleInputChange={handleInputChange}
+          onSubmit={onSubmit}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   )
 }

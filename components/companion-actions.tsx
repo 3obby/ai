@@ -18,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Globe, Copy, Loader2 } from "lucide-react";
+import { Globe, Loader2 } from "lucide-react";
 
 interface CompanionActionsProps {
   companion: Companion;
@@ -36,7 +36,6 @@ export const CompanionActions = ({
   const router = useRouter();
   const { toast } = useToast();
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isCopying, setIsCopying] = useState(false);
 
   const isOwner = currentUser?.id === companion.userId;
   const isPublic = !companion.private;
@@ -68,34 +67,6 @@ export const CompanionActions = ({
       });
     } finally {
       setIsPublishing(false);
-    }
-  };
-  
-  const handleCopy = async () => {
-    try {
-      setIsCopying(true);
-      
-      const response = await axios.post(`/api/companion/${companion.id}/copy`);
-      
-      toast({
-        title: "Success!",
-        description: "You've created a copy of this companion. You can now modify it in your collection.",
-        duration: 5000,
-      });
-      
-      // Navigate to the copied companion
-      router.push(`/chat/${response.data.companion.id}`);
-    } catch (error: any) {
-      console.error("Error copying companion:", error);
-      
-      toast({
-        title: "Error",
-        description: error.response?.data || "Failed to copy companion. Please try again.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    } finally {
-      setIsCopying(false);
     }
   };
 
@@ -145,31 +116,6 @@ export const CompanionActions = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    );
-  }
-  
-  // If companion is public and user is not the owner, show copy option
-  if (isPublic && !isOwner && !isACopy) {
-    return (
-      <Button 
-        size="sm" 
-        variant="outline" 
-        className="gap-1.5"
-        onClick={handleCopy}
-        disabled={isCopying}
-      >
-        {isCopying ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Copying...
-          </>
-        ) : (
-          <>
-            <Copy className="h-4 w-4" />
-            Make a Copy
-          </>
-        )}
-      </Button>
     );
   }
   

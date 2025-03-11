@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth-helpers";
 
 import prismadb from "@/lib/prismadb";
 import { authOptions } from "@/lib/auth-options";
@@ -11,12 +12,18 @@ export async function GET(req: Request) {
     const templateOnly = queryParams.get("templateOnly") === "true";
     const companionId = queryParams.get("companionId");
     const groupChatId = queryParams.get("groupChatId");
+    const anonymousUserId = queryParams.get("userId");
     
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.email;
+    // Use auth-helpers to get session
+    const session = await auth();
+    const userId = session?.userId;
+    
+    // Use either the authenticated user ID or the anonymous user ID from the query
+    const effectiveUserId = userId || anonymousUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!effectiveUserId) {
+      // Return default empty config for anonymous users
+      return NextResponse.json([]);
     }
 
     // Use direct SQL query since we don't have the ChatConfig model in EdgeCompatPrismaClient
@@ -29,7 +36,7 @@ export async function GET(req: Request) {
       ORDER BY "updatedAt" DESC
     `;
 
-    const params = [userId];
+    const params = [effectiveUserId];
     if (companionId) params.push(companionId);
     if (groupChatId) params.push(groupChatId);
 
@@ -46,11 +53,18 @@ export async function GET(req: Request) {
 // POST /api/chat-config - Create a new chat configuration
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.email;
+    const queryParams = new URL(req.url).searchParams;
+    const anonymousUserId = queryParams.get("userId");
+    
+    // Use auth-helpers to get session
+    const session = await auth();
+    const userId = session?.userId;
+    
+    // Use either the authenticated user ID or the anonymous user ID from the query
+    const effectiveUserId = userId || anonymousUserId;
 
-    if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!effectiveUserId) {
+      return new NextResponse("User ID is required", { status: 400 });
     }
 
     const body = await req.json();
@@ -75,7 +89,7 @@ export async function POST(req: Request) {
       insertQuery,
       body.name,
       body.description || '',
-      userId,
+      effectiveUserId,
       body.isTemplate || false,
       body.templateCategory || null,
       JSON.stringify(body.dynamics),

@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 
 interface MobileSidebarProps {
   isPro: boolean;
-  userId: string;
+  userId?: string;
 }
 
 export const MobileSidebar = ({

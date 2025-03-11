@@ -6,6 +6,8 @@ import { ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { PageSkeleton } from "@/components/ui/page-skeleton"
+import { useSession } from "next-auth/react"
+import { v4 as uuidv4 } from 'uuid';
 
 const GroupPage = () => {
   const [groupChats, setGroupChats] = useState([])
@@ -13,13 +15,40 @@ const GroupPage = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null)
+  const { data: session } = useSession()
   const itemsPerPage = 10 // Number of groups to display per page
+
+  // Handle anonymous user identification
+  useEffect(() => {
+    // Check if we have a session, if not we'll use anonymous ID
+    if (!session?.user) {
+      // Try to get anonymous ID from localStorage
+      let storedAnonymousId = null;
+      
+      if (typeof window !== 'undefined') {
+        storedAnonymousId = localStorage.getItem('anonymousUserId');
+        
+        // If no ID exists, create one and store it
+        if (!storedAnonymousId) {
+          storedAnonymousId = uuidv4();
+          localStorage.setItem('anonymousUserId', storedAnonymousId);
+        }
+        
+        setAnonymousUserId(storedAnonymousId);
+      }
+    }
+  }, [session]);
 
   useEffect(() => {
     const fetchGroupChats = async () => {
       setLoading(true)
       try {
-        const response = await fetch(`/api/group-chat`)
+        // Include the anonymous user ID in the request if needed
+        const userId = session?.user?.id || anonymousUserId;
+        const userIdParam = userId ? `?userId=${userId}` : '';
+        
+        const response = await fetch(`/api/group-chat${userIdParam}`)
         const data = await response.json()
 
         // Set the total number of pages based on the actual number of group chats
@@ -43,8 +72,11 @@ const GroupPage = () => {
       }
     }
 
-    fetchGroupChats()
-  }, [currentPage])
+    // Only fetch when we have either a session or an anonymous ID
+    if (session?.user || anonymousUserId) {
+      fetchGroupChats()
+    }
+  }, [currentPage, session, anonymousUserId])
 
   const handlePageChange = (pageNum: number) => {
     setCurrentPage(pageNum)
@@ -66,6 +98,11 @@ const GroupPage = () => {
                 <p className="text-muted-foreground">
                   You don&apos;t have any group chats yet.
                 </p>
+                <Button 
+                  className="mt-4 bg-orange-500 hover:bg-orange-600 text-white" 
+                  onClick={() => window.location.href = '/group-chat-start'}>
+                  Start a group chat
+                </Button>
               </div>
             ) : (
               <GroupCards data={groupChats} />

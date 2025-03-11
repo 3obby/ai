@@ -16,7 +16,8 @@ import {
   Card, 
   CardContent, 
   CardFooter, 
-  CardHeader 
+  CardHeader, 
+  CardTitle
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { 
@@ -34,6 +35,8 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { FileData, FileGroup } from "../../types"
 import { FileCard } from "../ui/FileCard"
+import { useFileManagement } from "../../hooks/useFileManagement"
+import { useFilesContext } from "../../context/FilesContext"
 
 interface FileGroupCardProps {
   group: FileGroup
@@ -45,6 +48,9 @@ interface FileGroupCardProps {
   onChatConfigChange?: (groupId: string, injectAtStart: boolean, injectWithEveryPrompt: boolean) => void
   className?: string
   isDraggable?: boolean
+  isActive?: boolean
+  isDragging?: boolean
+  onClick?: () => void
 }
 
 export const FileGroupCard = ({
@@ -56,7 +62,10 @@ export const FileGroupCard = ({
   allFiles = [],
   onChatConfigChange,
   className,
-  isDraggable = true
+  isDraggable = true,
+  isActive = false,
+  isDragging = false,
+  onClick
 }: FileGroupCardProps) => {
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -65,6 +74,12 @@ export const FileGroupCard = ({
   const [showChatConfig, setShowChatConfig] = useState(false)
   const [injectAtStart, setInjectAtStart] = useState(true)
   const [injectWithEveryPrompt, setInjectWithEveryPrompt] = useState(false)
+  
+  const { activeTab } = useFilesContext()
+  const { updateFileGroup, deleteFileGroup } = useFileManagement()
+  
+  const fileCount = group.files?.length || 0
+  const isCurrentTab = activeTab === group.id
   
   const handleSaveEdit = () => {
     if (editName.trim()) {
@@ -89,6 +104,33 @@ export const FileGroupCard = ({
     file => !group.files.some(groupFile => groupFile.fileId === file.id)
   ) || []
   
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditing(true)
+    setEditName(group.name)
+    setEditDescription(group.description || "")
+  }
+  
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (editName.trim()) {
+      await updateFileGroup(group.id, {
+        name: editName.trim(),
+        description: editDescription.trim() || undefined,
+      })
+    }
+    
+    setIsEditing(false)
+  }
+  
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    await deleteFileGroup(group.id)
+  }
+  
+  const groupColor = group.color || "bg-primary"
+  
   return (
     <>
       <motion.div
@@ -96,13 +138,19 @@ export const FileGroupCard = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className={cn("w-full", className)}
+        className={cn(
+          "w-full",
+          className,
+          isActive && "ring-2 ring-primary",
+          isDragging && "opacity-50"
+        )}
+        onClick={onClick}
       >
         <Card className="overflow-hidden border-2 transition-all hover:shadow-md">
           <CardHeader className="p-4 pb-0">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white ${group.color || 'bg-primary'}`}>
+                <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white ${groupColor}`}>
                   <FolderIcon className="h-4 w-4" />
                 </div>
                 
@@ -115,11 +163,11 @@ export const FileGroupCard = ({
                     autoFocus
                   />
                 ) : (
-                  <h3 className="text-base font-semibold">{group.name}</h3>
+                  <CardTitle className="text-base font-semibold">{group.name}</CardTitle>
                 )}
                 
                 <Badge variant="secondary" className="ml-2">
-                  {group.files.length} {group.files.length === 1 ? 'file' : 'files'}
+                  {fileCount} {fileCount === 1 ? 'file' : 'files'}
                 </Badge>
               </div>
               
@@ -147,13 +195,9 @@ export const FileGroupCard = ({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => setExpanded(!expanded)}
+                      onClick={handleEdit}
                     >
-                      {expanded ? (
-                        <ChevronUpIcon className="h-4 w-4" />
-                      ) : (
-                        <ChevronDownIcon className="h-4 w-4" />
-                      )}
+                      <PenIcon className="h-4 w-4" />
                     </Button>
                     
                     <DropdownMenu>
@@ -173,7 +217,7 @@ export const FileGroupCard = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-red-600"
-                          onClick={() => onDelete?.(group.id)}
+                          onClick={handleDelete}
                         >
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Delete group
