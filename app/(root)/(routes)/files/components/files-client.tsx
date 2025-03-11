@@ -305,7 +305,13 @@ const FilesClient = ({
         description: newGroupDescription,
       });
       
-      setFileGroups([...fileGroups, response.data]);
+      // Add empty files array to the new group
+      const newGroup = {
+        ...response.data,
+        files: []
+      };
+      
+      setFileGroups([...fileGroups, newGroup]);
       setNewGroupName("");
       setNewGroupDescription("");
       setIsCreatingGroup(false);
@@ -553,7 +559,7 @@ const FilesClient = ({
           {/* File display area */}
           <TabsContent value="all-files" className="flex-1 overflow-hidden">
             <ScrollArea className="h-[calc(100vh-420px)]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
                 {files.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
                     <FileIcon className="h-10 w-10 mb-2 text-muted-foreground" />
@@ -660,8 +666,8 @@ const FilesClient = ({
               </div>
               
               <ScrollArea className="h-[calc(100vh-420px)]">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {group.files.length === 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                  {!group.files || group.files.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
                       <FileIcon className="h-10 w-10 mb-2 text-muted-foreground" />
                       <h3 className="text-lg font-medium">No files in this group</h3>

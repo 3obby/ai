@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "46f3f49",
+      "fullHash": "46f3f49789632687ba6e6a13d31a6a2aab164171",
+      "date": "2025-03-11 15:08:38 +0700",
+      "author": "3obby",
+      "message": "feat: Replace metered billing with 250k token bundle product in Stripe",
+      "category": "other"
+    },
+    {
       "hash": "97e8b49",
       "fullHash": "97e8b4944f0d2baf1f61b3bf32a1d042ff572d52",
       "date": "2025-03-11 13:19:44 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "updates to emojis/subscriptions",
       "category": "enhancement"
-    },
-    {
-      "hash": "e0d96fc",
-      "fullHash": "e0d96fcdbe1aa33f6309130f325181fc96540349",
-      "date": "2025-03-02 23:45:10 +0700",
-      "author": "3obby",
-      "message": "maybe fixed subscription",
-      "category": "bugfix"
     }
   ]
 }

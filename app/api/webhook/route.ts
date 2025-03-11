@@ -27,6 +27,7 @@ async function processTokenPurchase(session: Stripe.Checkout.Session) {
   const tokenAmount = parseInt(session.metadata?.tokenAmount || "0")
   const amountPaid = session.amount_total ? session.amount_total / 100 : 0 // Convert cents to dollars
   const packageType = session.metadata?.packageType
+  const quantity = parseInt(session.metadata?.quantity || "1")
 
   if (!userId || !tokenAmount) {
     return { error: "Missing metadata", status: 400 }
@@ -41,7 +42,8 @@ async function processTokenPurchase(session: Stripe.Checkout.Session) {
         userId,
         tokenAmount,
         amountPaid,
-        packageType
+        packageType,
+        quantity
       })
     }).then(res => res.json())
   } catch (error: any) {

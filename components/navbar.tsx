@@ -91,7 +91,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
         </div>
         
         {/* Right section - Tokens and upgrade button */}
-        <div className="flex items-center h-full bg-gradient-to-r from-transparent to-orange-500/30 pl-4 pr-2">
+        <div className="flex items-center h-full bg-gradient-to-r from-transparent to-orange-500/30 pl-4 pr-2 absolute right-0">
           {/* Token balance */}
           <div className="flex items-center mr-2">
             {isLoading ? (
@@ -110,7 +110,7 @@ export const Navbar = ({ isPro, userId }: NavbarProps) => {
           <Link href="/subscribe">
             <Button 
               size="sm" 
-              variant={isPro ? "outline" : "default"}
+              variant={isPro ? "outline" : "purple"}
               className="h-7 px-2 py-0 text-xs whitespace-nowrap"
             >
               {isPro ? (

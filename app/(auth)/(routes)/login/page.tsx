@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { signIn, useSession } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRight, Mail, Github, Check, RefreshCw } from "lucide-react"
 import { FcGoogle } from "react-icons/fc"
 import Image from "next/image"
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const progressStep = 50 // Update every 50ms
   
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnUrl = searchParams.get('returnUrl') || "/dashboard"
   const { status } = useSession()
 
   // Cleanup timeouts on unmount
@@ -46,9 +48,9 @@ export default function LoginPage() {
   // Redirect if user is already authenticated
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard")
+      router.push(returnUrl)
     }
-  }, [status, router])
+  }, [status, router, returnUrl])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,7 +60,7 @@ export default function LoginPage() {
     try {
       await signIn("email", {
         email,
-        callbackUrl: "/dashboard",
+        callbackUrl: returnUrl,
         redirect: false, // Prevent redirect to check-email page
       })
       
@@ -125,7 +127,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-white/80">v1.0.5</p>
+            <p className="text-white/80">v1.0.6</p>
             <Link 
               href="/updates" 
               className="text-white/60 hover:text-white text-xs underline"

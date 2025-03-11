@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { userId, tokenAmount, amountPaid, packageType, isSubscriber } = await req.json()
+    const { userId, tokenAmount, amountPaid, packageType, isSubscriber, quantity = 1 } = await req.json()
 
     if (!userId || !tokenAmount) {
       return new NextResponse(JSON.stringify({ 
@@ -14,7 +14,13 @@ export async function POST(req: Request) {
       }), { status: 400 })
     }
 
-    console.log(`Processing token purchase for user ${userId}: ${tokenAmount.toLocaleString()} tokens ($${amountPaid})${isSubscriber ? ' with subscriber discount' : ''}`)
+    const quantityNum = parseInt(quantity.toString()) || 1;
+    const tokenAmountNum = parseInt(tokenAmount.toString());
+    const amountPaidNum = parseFloat(amountPaid.toString());
+
+    const singlePackageTokens = Math.floor(tokenAmountNum / quantityNum);
+    
+    console.log(`Processing token purchase for user ${userId}: ${tokenAmountNum.toLocaleString()} tokens ($${amountPaidNum}) - ${quantityNum}x packages of ${singlePackageTokens.toLocaleString()} tokens each`)
 
     // Get the current user usage record
     const userUsage = await prismadb.userUsage.findUnique({
@@ -30,15 +36,15 @@ export async function POST(req: Request) {
 
     // Calculate the new token balance
     const currentTokens = userUsage.availableTokens || 0
-    const newTokenBalance = currentTokens + parseInt(tokenAmount.toString())
-    const newTotalMoneySpent = (userUsage.totalMoneySpent || 0) + parseFloat(amountPaid.toString())
+    const newTokenBalance = currentTokens + tokenAmountNum
+    const newTotalMoneySpent = (userUsage.totalMoneySpent || 0) + amountPaidNum
 
     console.log(`Updating token balance: ${currentTokens.toLocaleString()} -> ${newTokenBalance.toLocaleString()}`)
 
-    // Create transaction description with discount info if applicable
-    const transactionDescription = isSubscriber
-      ? `Purchased ${tokenAmount.toLocaleString()} ${packageType === 'premium' ? 'premium' : 'standard'} tokens with 20% subscriber discount`
-      : `Purchased ${tokenAmount.toLocaleString()} ${packageType === 'premium' ? 'premium' : 'standard'} tokens`;
+    // Create transaction description with quantity info
+    const packageLabel = packageType === 'premium' ? 'premium' : 'standard';
+    const quantityLabel = quantityNum > 1 ? `${quantityNum}x ` : '';
+    const transactionDescription = `Purchased ${quantityLabel}${tokenAmountNum.toLocaleString()} ${packageLabel} tokens`;
 
     // First, update the user's token balance in the database
     const updatedUsage = await prismadb.userUsage.update({
@@ -52,13 +58,15 @@ export async function POST(req: Request) {
     // Create transaction manually without relying on a direct relation
     const transactionData = {
       id: crypto.randomUUID(),
-      amount: parseInt(tokenAmount.toString()),
+      amount: tokenAmountNum,
       type: "TOKEN_PURCHASE",
       description: transactionDescription,
       metadata: JSON.stringify({
         packageType,
-        amountPaid,
-        isSubscriber: isSubscriber ? true : false
+        amountPaid: amountPaidNum,
+        quantity: quantityNum,
+        singlePackageTokens,
+        isSubscriber: true
       }),
       userUsageId: userUsage.id,
       createdAt: new Date()

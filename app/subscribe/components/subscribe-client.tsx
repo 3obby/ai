@@ -14,6 +14,8 @@ import {
   Coins,
   Diamond,
   Flame,
+  MinusCircle,
+  PlusCircle
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
@@ -41,41 +43,58 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString();
 }
 
+// Define an interface for token packages
+interface TokenPackage {
+  name: string;
+  tokens: number;
+  price: number;
+  valueText: string;
+  description: string;
+  features: string[];
+  icon: any; // LucideIcon type
+  color: string;
+  savePercentage: number;
+  pricePerToken: number;
+  priceId?: string;
+}
+
 // Token package options
-const TOKEN_PACKAGES = {
+const TOKEN_PACKAGES: Record<string, TokenPackage> = {
   standard: {
     name: "Standard Tokens",
-    tokens: 200_000,
-    price: 4.99,
-    valueText: "Basic Value",
-    description: "Perfect for casual conversations",
+    tokens: 250_000,
+    price: 5.00,
+    valueText: "Subscriber Exclusive",
+    description: "Available only for active subscribers",
     features: [
-      "200,000 tokens (≈ 100 conversations)",
+      "250,000 tokens (≈ 125 conversations)",
       "Quick top-up when running low",
       "No waiting for weekly refresh",
       "Never expires"
     ],
     icon: Coins,
-    color: "blue",
+    color: "accent",
     savePercentage: 0,
-    pricePerToken: (4.99 / 200_000),
+    pricePerToken: (5.00 / 250_000),
+    priceId: process.env.NEXT_PUBLIC_STRIPE_TOKEN_BUNDLE_PRICE_ID,
   },
   premium: {
     name: "Premium Tokens",
-    tokens: 500_000,
-    price: 9.99,
-    valueText: "Best Value! 20% More Tokens",
-    description: "For power users who need more tokens",
+    tokens: 625_000,
+    price: 10.00,
+    valueText: "Best Value! 25% More Tokens",
+    description: "Available only for active subscribers",
     features: [
-      "500,000 tokens (≈ 250 conversations)",
-      "20% more value than standard",
+      "625,000 tokens (≈ 312 conversations)",
+      "25% more value than standard",
       "Perfect for heavy usage",
       "Ideal for complex AI interactions"
     ],
     icon: Diamond,
-    color: "purple",
-    savePercentage: 20,
-    pricePerToken: (9.99 / 500_000),
+    color: "accent",
+    savePercentage: 25,
+    pricePerToken: (10.00 / 625_000),
+    // Premium package would need its own price ID if you create one
   }
 }
 
@@ -84,6 +103,10 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
   const [tokenLoading, setTokenLoading] = useState<Record<string, boolean>>({})
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [remainingTokens, setRemainingTokens] = useState<number>(0)
+  const [tokenQuantities, setTokenQuantities] = useState<Record<string, number>>({
+    'standard': 1,
+    'premium': 1
+  })
   const router = useRouter()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("subscription")
@@ -144,25 +167,50 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
     }
   }
   
+  // Handler for changing token quantities
+  const changeTokenQuantity = (packageKey: string, delta: number) => {
+    setTokenQuantities(prev => {
+      const newValue = Math.max(1, (prev[packageKey] || 1) + delta);
+      return {
+        ...prev,
+        [packageKey]: newValue
+      };
+    });
+  };
+  
   // Handler for token purchases
   const handlePurchaseTokens = async (packageKey: string) => {
     if (!userId) {
-      return router.push("/login")
+      // Redirect to login with a returnUrl to come back to the subscribe page
+      return router.push("/login?returnUrl=/subscribe")
+    }
+    
+    if (!isSubscribed) {
+      toast({
+        title: "Subscription required",
+        description: "You need an active subscription to purchase token packages.",
+        variant: "destructive",
+      })
+      setActiveTab("subscription")
+      return
     }
     
     setTokenLoading(prev => ({ ...prev, [packageKey]: true }))
     
     try {
       const selectedPackage = TOKEN_PACKAGES[packageKey as keyof typeof TOKEN_PACKAGES]
-      const price = isSubscribed 
-        ? selectedPackage.price * 0.8 // 20% discount for subscribers
-        : selectedPackage.price
+      const quantity = tokenQuantities[packageKey] || 1;
+      
+      // Use the specific priceId if available, otherwise use a default
+      const priceId = selectedPackage.priceId || process.env.STRIPE_TOKEN_BUNDLE_PRICE_ID;
       
       const response = await axios.post("/api/stripe/token-purchase", {
-        tokenAmount: selectedPackage.tokens,
-        priceAmount: Math.round(price * 100), // Convert to cents
+        tokenAmount: selectedPackage.tokens * quantity,
+        priceAmount: Math.round(selectedPackage.price * 100), // Convert to cents
         packageType: packageKey,
-        isSubscriber: isSubscribed
+        isSubscriber: true, // Always true at this point since we check above
+        quantity: quantity,
+        priceId: priceId // Pass the specific price ID to the API
       })
       
       window.location.href = response.data.url
@@ -175,6 +223,20 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
     } finally {
       setTokenLoading(prev => ({ ...prev, [packageKey]: false }))
     }
+  }
+  
+  // Calculate the total price for a token package based on quantity
+  const calculateTotalPrice = (packageKey: string) => {
+    const quantity = tokenQuantities[packageKey] || 1;
+    const basePrice = TOKEN_PACKAGES[packageKey as keyof typeof TOKEN_PACKAGES].price;
+    return (basePrice * quantity).toFixed(2);
+  }
+  
+  // Calculate the total tokens for a token package based on quantity
+  const calculateTotalTokens = (packageKey: string) => {
+    const quantity = tokenQuantities[packageKey] || 1;
+    const tokens = TOKEN_PACKAGES[packageKey as keyof typeof TOKEN_PACKAGES].tokens;
+    return formatNumber(tokens * quantity);
   }
 
   return (
@@ -330,134 +392,151 @@ export default function SubscribeClient({ userId }: SubscribeClientProps) {
         
         {/* Token Packages Tab */}
         <TabsContent value="tokens">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Standard Token Package */}
-            <div className="relative overflow-hidden p-6 rounded-xl transition-all border-2 hover:shadow-xl bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30">
-              <div className="absolute -top-10 -right-10 h-20 w-20 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full blur-xl" />
-              
-              {isSubscribed && (
-                <div className="absolute top-2 left-2 bg-green-100 dark:bg-green-900/70 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-full">
-                  20% SUBSCRIBER DISCOUNT
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Standard Package */}
+            <div className="bg-secondary/60 rounded-lg p-6 border border-accent-600/20 flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-full bg-accent-100 dark:bg-accent-900/50">
+                  <Coins className="h-6 w-6 text-accent-600" />
                 </div>
-              )}
-              
-              <div className="relative">
-                <div className="flex flex-col items-center mb-4">
-                  <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-3 mb-4">
-                    <Coins className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h3 className="text-xl font-bold">{TOKEN_PACKAGES.standard.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {TOKEN_PACKAGES.standard.description}
-                  </p>
-                  <div className="flex items-baseline gap-x-2">
-                    {isSubscribed && (
-                      <span className="text-xl line-through text-gray-400">${TOKEN_PACKAGES.standard.price}</span>
-                    )}
-                    <span className="text-3xl font-bold">${getDiscountedPrice(TOKEN_PACKAGES.standard.price)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    ${(Number(getDiscountedPrice(TOKEN_PACKAGES.standard.pricePerToken)) * 1000).toFixed(3)} per 1,000 tokens
-                  </div>
+                <div>
+                  <h3 className="font-bold">{TOKEN_PACKAGES.standard.name}</h3>
+                  <p className="text-xs text-accent-500">{TOKEN_PACKAGES.standard.valueText}</p>
                 </div>
+              </div>
 
-                <div className="space-y-3 my-6">
-                  {TOKEN_PACKAGES.standard.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-0.5">
-                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                      </div>
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+              <p className="text-sm text-muted-foreground mb-4">{TOKEN_PACKAGES.standard.description}</p>
 
-                <Button 
-                  onClick={() => handlePurchaseTokens('standard')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+              <div className="mb-2">
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold">${calculateTotalPrice('standard')}</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  for {calculateTotalTokens('standard')} tokens total
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4 flex-grow">
+                {TOKEN_PACKAGES.standard.features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 mt-2 justify-center">
+                <Button
+                  onClick={() => changeTokenQuantity('standard', -1)}
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 rounded-full"
+                  disabled={!!tokenLoading.standard || tokenQuantities.standard <= 1}
+                >
+                  <MinusCircle className="h-4 w-4" />
+                </Button>
+                <span className="font-medium mx-2 w-6 text-center">{tokenQuantities.standard}</span>
+                <Button
+                  onClick={() => changeTokenQuantity('standard', 1)}
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 rounded-full"
                   disabled={!!tokenLoading.standard}
                 >
-                  {tokenLoading.standard ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Purchase Tokens
-                    </>
-                  )}
+                  <PlusCircle className="h-4 w-4" />
                 </Button>
               </div>
+
+              <Button 
+                onClick={() => handlePurchaseTokens('standard')}
+                disabled={!isSubscribed || !!tokenLoading.standard}
+                className="mt-4 bg-accent-600 hover:bg-accent-700 text-white"
+              >
+                {tokenLoading.standard ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Coins className="h-4 w-4" />
+                    Purchase Tokens
+                  </span>
+                )}
+              </Button>
             </div>
 
-            {/* Premium Token Package */}
-            <div className="relative overflow-hidden p-6 rounded-xl transition-all border-2 hover:shadow-xl bg-purple-500/10 dark:bg-purple-500/20 border-purple-500/50">
-              <div className="absolute -top-10 -right-10 h-20 w-20 bg-gradient-to-br from-purple-400/20 to-transparent rounded-full blur-xl" />
-              
-              {/* Best value tag */}
-              <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                BEST VALUE
+            {/* Premium Package */}
+            <div className="bg-secondary/60 rounded-lg p-6 border border-accent-600/20 flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-full bg-accent-100 dark:bg-accent-900/50">
+                  <Diamond className="h-6 w-6 text-accent-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold">{TOKEN_PACKAGES.premium.name}</h3>
+                  <p className="text-xs text-accent-500">{TOKEN_PACKAGES.premium.valueText}</p>
+                </div>
               </div>
-              
-              {isSubscribed && (
-                <div className="absolute top-2 left-2 bg-green-100 dark:bg-green-900/70 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-full">
-                  20% SUBSCRIBER DISCOUNT
-                </div>
-              )}
 
-              <div className="relative">
-                <div className="flex flex-col items-center mb-4">
-                  <div className="rounded-full bg-purple-100 dark:bg-purple-900 p-3 mb-4">
-                    <Diamond className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <h3 className="text-xl font-bold">{TOKEN_PACKAGES.premium.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {TOKEN_PACKAGES.premium.description}
-                  </p>
-                  <div className="flex items-baseline gap-x-2">
-                    {isSubscribed && (
-                      <span className="text-xl line-through text-gray-400">${TOKEN_PACKAGES.premium.price}</span>
-                    )}
-                    <span className="text-3xl font-bold">${getDiscountedPrice(TOKEN_PACKAGES.premium.price)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    ${(Number(getDiscountedPrice(TOKEN_PACKAGES.premium.pricePerToken)) * 1000).toFixed(3)} per 1,000 tokens
-                  </div>
-                  <div className="mt-2 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-xs px-2 py-1 rounded-full">
-                    {isSubscribed ? 'Save 36% vs standard price' : 'Save 20% vs standard price'}
-                  </div>
-                </div>
+              <p className="text-sm text-muted-foreground mb-4">{TOKEN_PACKAGES.premium.description}</p>
 
-                <div className="space-y-3 my-6">
-                  {TOKEN_PACKAGES.premium.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="rounded-full bg-green-100 dark:bg-green-900 p-1 mt-0.5">
-                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                      </div>
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
+              <div className="mb-2">
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold">${calculateTotalPrice('premium')}</span>
                 </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  for {calculateTotalTokens('premium')} tokens total
+                </div>
+              </div>
 
-                <Button 
-                  onClick={() => handlePurchaseTokens('premium')}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+              <div className="space-y-2 mb-4 flex-grow">
+                {TOKEN_PACKAGES.premium.features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 mt-2 justify-center">
+                <Button
+                  onClick={() => changeTokenQuantity('premium', -1)}
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 rounded-full"
+                  disabled={!!tokenLoading.premium || tokenQuantities.premium <= 1}
+                >
+                  <MinusCircle className="h-4 w-4" />
+                </Button>
+                <span className="font-medium mx-2 w-6 text-center">{tokenQuantities.premium}</span>
+                <Button
+                  onClick={() => changeTokenQuantity('premium', 1)}
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0 rounded-full"
                   disabled={!!tokenLoading.premium}
                 >
-                  {tokenLoading.premium ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Get Premium Tokens
-                    </>
-                  )}
+                  <PlusCircle className="h-4 w-4" />
                 </Button>
               </div>
+
+              <Button 
+                onClick={() => handlePurchaseTokens('premium')}
+                disabled={!isSubscribed || !!tokenLoading.premium}
+                className="mt-4 bg-accent-600 hover:bg-accent-700 text-white"
+              >
+                {tokenLoading.premium ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Diamond className="h-4 w-4" />
+                    Purchase Tokens
+                  </span>
+                )}
+              </Button>
             </div>
           </div>
           

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { absoluteUrl } from "@/lib/utils"
+import { checkSubscription } from "@/lib/subscription"
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
@@ -20,20 +21,35 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const { tokenAmount, priceAmount, packageType, isSubscriber } = await req.json()
+    // Check if the user has an active subscription
+    const isPro = await checkSubscription();
+
+    if (!isPro) {
+      return new NextResponse("Subscription required to purchase tokens", { status: 403 })
+    }
+
+    const { 
+      tokenAmount, 
+      priceAmount, 
+      packageType, 
+      quantity = 1,
+      priceId = process.env.STRIPE_TOKEN_BUNDLE_PRICE_ID
+    } = await req.json()
 
     if (!tokenAmount || !priceAmount || !packageType) {
       return new NextResponse("Missing required fields", { status: 400 })
     }
 
+    if (!priceId) {
+      return new NextResponse("Missing price ID configuration", { status: 500 })
+    }
+
     // Format package name for display
     const packageName = packageType === 'premium' ? 'Premium Tokens' : 'Standard Tokens';
     
-    // Add subscriber discount info if applicable
-    const packageDescription = isSubscriber 
-      ? `One-time purchase of ${tokenAmount.toLocaleString()} tokens (20% subscriber discount applied)`
-      : `One-time purchase of ${tokenAmount.toLocaleString()} tokens`;
-
+    // Calculate the total price based on quantity
+    const totalPrice = priceAmount * quantity;
+    
     // Create a one-time payment session
     const stripeSession = await stripe.checkout.sessions.create({
       success_url: settingsUrl,
@@ -44,15 +60,8 @@ export async function POST(req: Request) {
       customer_email: user.email || '',
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${packageName} (${tokenAmount.toLocaleString()} tokens)`,
-              description: packageDescription,
-            },
-            unit_amount: priceAmount, // Amount in cents
-          },
-          quantity: 1,
+          price: priceId, // Use the price ID directly
+          quantity: quantity,
         },
       ],
       metadata: {
@@ -60,7 +69,8 @@ export async function POST(req: Request) {
         tokenAmount: tokenAmount.toString(),
         packageType,
         paymentType: "token-purchase",
-        isSubscriber: isSubscriber ? "true" : "false"
+        isSubscriber: "true", // Always true since we check subscription status
+        quantity: quantity.toString(),
       },
     })
 
