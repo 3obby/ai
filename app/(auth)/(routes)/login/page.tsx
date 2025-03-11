@@ -125,7 +125,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-center text-white">GCBB - Beta</h1>
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-white/80">v1.0.4</p>
+            <p className="text-white/80">v1.0.5</p>
             <Link 
               href="/updates" 
               className="text-white/60 hover:text-white text-xs underline"
@@ -133,6 +133,7 @@ export default function LoginPage() {
               updates
             </Link>
           </div>
+          <p className="text-sm text-white/60">gcbb@formulax.dev</p>
         </div>
 
         <div className="w-full space-y-4">

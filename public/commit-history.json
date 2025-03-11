@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "97e8b49",
+      "fullHash": "97e8b4944f0d2baf1f61b3bf32a1d042ff572d52",
+      "date": "2025-03-11 13:19:44 +0700",
+      "author": "3obby",
+      "message": "Add contact email to login page",
+      "category": "feature"
+    },
+    {
       "hash": "5411db5",
       "fullHash": "5411db5c4c446775594791913fd274dfb45f8094",
       "date": "2025-03-11 01:07:39 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-02 23:45:10 +0700",
       "author": "3obby",
       "message": "maybe fixed subscription",
-      "category": "bugfix"
-    },
-    {
-      "hash": "c8b2116",
-      "fullHash": "c8b211659bd856df522745626173d4ca77810485",
-      "date": "2025-03-02 23:35:28 +0700",
-      "author": "3obby",
-      "message": "fixed stripe redirect",
       "category": "bugfix"
     }
   ]
