@@ -81,4 +81,48 @@ export async function GET(req: Request) {
     console.error("[FILE_GROUP_GET_ERROR]", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
+}
+
+// Delete a file group
+export async function DELETE(req: Request) {
+  try {
+    const session = await auth();
+    const userId = session?.userId;
+    
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    
+    // Get group ID from query params
+    const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get("id");
+    
+    if (!groupId) {
+      return new NextResponse("Group ID is required", { status: 400 });
+    }
+    
+    // Verify the user owns this group
+    const existingGroup = await prismadb.fileGroup.findFirst({
+      where: {
+        id: groupId,
+        userId,
+      },
+    });
+    
+    if (!existingGroup) {
+      return new NextResponse("Group not found or not owned by user", { status: 404 });
+    }
+    
+    // Delete the file group - cascade will handle relations
+    await prismadb.fileGroup.delete({
+      where: {
+        id: groupId,
+      },
+    });
+    
+    return new NextResponse(JSON.stringify({ success: true }));
+  } catch (error) {
+    console.error("[FILE_GROUP_DELETE_ERROR]", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
 } 
