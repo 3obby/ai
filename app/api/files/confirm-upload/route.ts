@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth-helpers";
-import { getSignedDownloadUrl } from "@/lib/google-cloud-storage";
+import { getSignedDownloadUrl } from "@/lib/vercel-blob-storage";
 import prismadb from "@/lib/prismadb";
 
 // Check if we're in development mode
@@ -36,15 +36,15 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
-    // Generate a signed download URL or use a mock URL in development
+    // With Vercel Blob, the storagePath is already a URL, but we'll verify it exists
     let downloadUrl;
     try {
       downloadUrl = await getSignedDownloadUrl(file.storagePath);
     } catch (error) {
-      console.error("Error generating download URL:", error);
+      console.error("Error verifying Blob URL:", error);
       if (isDevelopment) {
         // Use a mock URL in development
-        downloadUrl = `https://storage.googleapis.com/mock-download/${file.storagePath}?mock=true`;
+        downloadUrl = `https://mock-vercel-blob-download.com/${file.storagePath}?mock=true`;
         console.log("Using mock download URL in development:", downloadUrl);
       } else {
         // In production, propagate the error
@@ -52,41 +52,19 @@ export async function POST(req: Request) {
       }
     }
     
-    // Update the file record with the download URL and set status to READY
-    const updatedFile = await prismadb.file.update({
-      where: { id: fileId },
-      data: {
-        url: downloadUrl,
-        status: "READY",
-      },
-    });
-    
-    // Deduct tokens from user's balance
-    await prismadb.userUsage.update({
-      where: { userId },
-      data: {
-        availableTokens: {
-          decrement: file.tokensCost,
+    // Update the file record with the verified URL and set status to READY
+    const updatedFile = await prismadb.$transaction(async (tx) => {
+      // Update the file
+      const updatedFile = await tx.file.update({
+        where: { id: fileId },
+        data: {
+          url: downloadUrl,
+          status: "READY",
         },
-      },
-    });
-    
-    // Create a transaction record
-    // In development, we'll just log the transaction details
-    if (isDevelopment) {
-      console.log("Would create transaction:", {
-        amount: -file.tokensCost,
-        type: "FILE_STORAGE",
-        description: `File storage: ${file.originalName}`,
-        metadata: {
-          fileId: file.id,
-          fileName: file.originalName,
-          fileSize: file.size,
-        },
-        userId,
       });
-    } else {
-      await prismadb.transaction.create({
+      
+      // Create a transaction record
+      await tx.transaction.create({
         data: {
           amount: -file.tokensCost,
           type: "FILE_STORAGE",
@@ -96,23 +74,11 @@ export async function POST(req: Request) {
             fileName: file.originalName,
             fileSize: file.size,
           }),
-          userUsage: {
-            connect: {
-              userId,
-            },
-          },
+          userUsageId: (await tx.userUsage.findUnique({ where: { userId } }))?.id || '',
         },
       });
-    }
-    
-    // Update user's total storage
-    await prismadb.user.update({
-      where: { id: userId },
-      data: {
-        totalStorage: {
-          increment: file.size,
-        },
-      },
+      
+      return updatedFile;
     });
     
     return new NextResponse(JSON.stringify({

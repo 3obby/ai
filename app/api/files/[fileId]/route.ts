@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth-helpers";
 import prismadb from "@/lib/prismadb";
-import { deleteFile } from "@/lib/google-cloud-storage";
+import { deleteFile } from "@/lib/vercel-blob-storage";
 
 export async function DELETE(req: Request, { params }: { params: { fileId: string } }) {
   try {
@@ -26,31 +26,34 @@ export async function DELETE(req: Request, { params }: { params: { fileId: strin
       return new NextResponse("File not found", { status: 404 });
     }
     
-    // Delete from storage first
+    // Delete from Vercel Blob storage
     try {
       await deleteFile(file.storagePath);
     } catch (error) {
-      console.error("[FILE_STORAGE_DELETE_ERROR]", error);
+      console.error("[VERCEL_BLOB_DELETE_ERROR]", error);
       // Continue with database deletion even if storage deletion fails
     }
     
-    // Delete the file record (this will cascade to fileToGroup records)
-    await prismadb.file.delete({
-      where: {
-        id: fileId,
-      },
-    });
-    
-    // Update user's total storage
-    await prismadb.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        totalStorage: {
-          decrement: file.size,
+    // Use a transaction to update related records
+    await prismadb.$transaction(async (tx) => {
+      // Delete the file record (this will cascade to fileToGroup records)
+      await tx.file.delete({
+        where: {
+          id: fileId,
         },
-      },
+      });
+      
+      // Update user's total storage
+      await tx.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          totalStorage: {
+            decrement: file.size,
+          },
+        },
+      });
     });
     
     return new NextResponse(null, { status: 204 });

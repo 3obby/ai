@@ -48,10 +48,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if the path is public or should be accessible to anonymous users
+  // Special handling for group chat URLs with the userId parameter
   if (
     publicPaths.some(
       (publicPath) => path === publicPath || path.startsWith(publicPath)
-    )
+    ) ||
+    // Allow access to group-chat/[id] with userId parameter for anonymous users
+    (path.match(/^\/group-chat\/[a-zA-Z0-9-]+$/) && url.searchParams.has('userId'))
   ) {
     return NextResponse.next()
   }

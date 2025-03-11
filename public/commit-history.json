@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "0f0a0eb",
+      "fullHash": "0f0a0eb4978c4eb5c7a5169f1926eeec27fde785",
+      "date": "2025-03-12 01:46:53 +0700",
+      "author": "3obby",
+      "message": "Middleware Fix",
+      "category": "bugfix"
+    },
+    {
       "hash": "9967920",
       "fullHash": "99679208bf54f3a621cf6ad7883d66fd2d78805e",
       "date": "2025-03-12 00:22:17 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-06 14:45:20 +0700",
       "author": "3obby",
       "message": "Restored 'looks great' commit with the not-found page",
-      "category": "other"
-    },
-    {
-      "hash": "05fdf64",
-      "fullHash": "05fdf6428d0c56508dc3891f7de6dfdac3dd9578",
-      "date": "2025-03-03 22:30:44 +0700",
-      "author": "3obby",
-      "message": "looks great",
       "category": "other"
     }
   ]

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth-helpers";
-import { getSignedUploadUrl, generateUniqueFilename, calculateTokenCost } from "@/lib/google-cloud-storage";
+import { getSignedUploadUrl, generateUniqueFilename, calculateTokenCost } from "@/lib/vercel-blob-storage";
 import prismadb from "@/lib/prismadb";
 
 // Max file size: 50MB for individual files
@@ -90,31 +90,70 @@ export async function POST(req: Request) {
     // Generate a unique filename
     const uniqueFilename = generateUniqueFilename(filename);
     
-    // Generate a signed URL for upload
+    // Generate a signed URL for upload using Vercel Blob
     const { url, storagePath } = await getSignedUploadUrl(uniqueFilename, contentType, userId);
     
-    // Create a file record in the database with PROCESSING status
-    const file = await prismadb.file.create({
-      data: {
-        userId,
-        name: uniqueFilename,
-        originalName: filename,
-        type: contentType,
-        size,
-        url: "", // Will be updated after upload confirmation
-        storagePath,
-        status: "PROCESSING",
-        tokensCost: tokenCost,
-      },
+    // Perform database operations in a transaction
+    await prismadb.$transaction(async (tx) => {
+      // Create a file record
+      const file = await tx.file.create({
+        data: {
+          userId,
+          name: uniqueFilename,
+          originalName: filename,
+          type: contentType,
+          size,
+          url: storagePath, // Use storagePath as URL
+          storagePath,
+          status: "PROCESSING", // Use the enum value from FileStatus
+          tokensCost: tokenCost,
+        },
+      });
+      
+      // Update user's storage usage
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalStorage: {
+            increment: size,
+          },
+        },
+      });
+      
+      // Deduct tokens from user's balance
+      await tx.userUsage.update({
+        where: { userId },
+        data: {
+          availableTokens: {
+            decrement: tokenCost,
+          },
+        },
+      });
+      
+      // Create a transaction record
+      await tx.transaction.create({
+        data: {
+          amount: -tokenCost,
+          type: "FILE_UPLOAD",
+          description: `Upload file: ${filename}`,
+          metadata: JSON.stringify({
+            fileId: file.id,
+            fileName: filename,
+            fileSize: size,
+          }),
+          userUsageId: userUsage.id,
+        },
+      });
     });
     
-    return new NextResponse(JSON.stringify({
-      uploadUrl: url,
-      fileId: file.id,
-      tokenCost,
-    }));
+    return NextResponse.json({
+      url,
+      fileId: null, // File ID will be determined after successful upload
+      name: uniqueFilename,
+      tokensCost: tokenCost,
+    });
   } catch (error) {
-    console.error("[FILES_UPLOAD_URL_ERROR]", error);
+    console.error("[FILE_UPLOAD_ERROR]", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 } 

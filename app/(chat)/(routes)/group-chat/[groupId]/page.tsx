@@ -7,10 +7,13 @@ import { GroupChatClient } from "./components/client"
 interface GroupChatIdPageProps {
   params: {
     groupId: string
+  },
+  searchParams: {
+    userId?: string
   }
 }
 
-const GroupChatIdPage = async ({ params }: GroupChatIdPageProps) => {
+const GroupChatIdPage = async ({ params, searchParams }: GroupChatIdPageProps) => {
   const session = await auth()
   const userId = session?.userId
   
@@ -20,8 +23,17 @@ const GroupChatIdPage = async ({ params }: GroupChatIdPageProps) => {
                           cookieStore.get('next-auth.anonymous-user-id')?.value || 
                           cookieStore.get('next-auth.anonymous-token')?.value
   
-  // Use authenticated user ID or anonymous user ID
-  const effectiveUserId = userId || anonymousUserId
+  // Also check the URL query parameter for userId (this will be set during redirect from group creation)
+  const queryUserId = searchParams.userId
+  
+  console.log("GroupChatIdPage auth info:", {
+    authenticatedUserId: userId,
+    anonymousUserIdFromCookie: anonymousUserId,
+    queryUserId
+  })
+  
+  // Use authenticated user ID, anonymous user ID from cookie, or query parameter (in that order of preference)
+  const effectiveUserId = userId || anonymousUserId || queryUserId
   
   if (!effectiveUserId) {
     console.log("No user ID found for group chat page, redirecting to login")

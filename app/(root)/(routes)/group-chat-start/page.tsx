@@ -55,6 +55,10 @@ const GroupChatStartPage = () => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('anonymousUserId', anonymousId)
       }
+      
+      console.log("Created new anonymous user ID:", anonymousId)
+    } else {
+      console.log("Using existing anonymous user ID:", anonymousId)
     }
     
     return anonymousId
@@ -91,7 +95,11 @@ const GroupChatStartPage = () => {
     setIsCreating(true)
     
     try {
+      // Get effective user ID from either session or anonymous ID
       const effectiveUserId = session?.user?.id || getAnonymousUserId()
+      console.log("Creating group chat with user ID:", effectiveUserId)
+      
+      // Create query parameter for API request
       const userIdParam = effectiveUserId ? `?userId=${effectiveUserId}` : ''
       
       // Create the group chat
@@ -102,8 +110,16 @@ const GroupChatStartPage = () => {
       
       toast.success("Group chat created successfully!")
       
-      // Navigate to the new group chat
-      router.push(`/group-chat/${response.data.id}`)
+      // Navigation: Always add the userId as a parameter to maintain anonymous session
+      const isAnonymous = !session?.user?.id
+      const navigationUrl = isAnonymous 
+        ? `/group-chat/${response.data.id}?userId=${effectiveUserId}`
+        : `/group-chat/${response.data.id}`
+      
+      console.log("Navigating to:", navigationUrl)  
+      
+      // Navigate to the new group chat with the userId parameter if needed
+      router.push(navigationUrl)
     } catch (error) {
       console.error("Error creating group chat:", error)
       toast.error("Failed to create group chat")
