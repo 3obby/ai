@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "745bd9d",
+      "fullHash": "745bd9d21e755794dc17453da83f390f0654026d",
+      "date": "2025-03-12 16:26:39 +0700",
+      "author": "3obby",
+      "message": "Update react-spinners to 0.15.0 for React 19 compatibility",
+      "category": "enhancement"
+    },
+    {
       "hash": "4187825",
       "fullHash": "4187825468f7e711ebbb74c06a2e9057490611ba",
       "date": "2025-03-12 16:24:11 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Create script to automate auth updates and fix remaining Clerk dependencies",
       "category": "bugfix"
-    },
-    {
-      "hash": "f11ebf2",
-      "fullHash": "f11ebf265c085c720dfe91b933496d148d89d802",
-      "date": "2025-03-06 15:53:11 +0700",
-      "author": "3obby",
-      "message": "Update API routes to use custom auth instead of Clerk",
-      "category": "enhancement"
     }
   ]
 }
