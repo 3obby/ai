@@ -31,11 +31,16 @@ SELECT
   c.id, 
   c.name, 
   c.src, 
+  c.description,
   c."categoryId", 
   c."userName", 
   c."tokensBurned", 
   c.private, 
   c."userId",
+  c."isFree",
+  c.global,
+  c.views,
+  c.votes,
   COUNT(m.id) as message_count
 FROM "Companion" c
 LEFT JOIN "Message" m ON c.id = m."companionId"
@@ -180,12 +185,17 @@ BEGIN
     c.id, 
     c.name, 
     c.src, 
+    c.description,
     c."categoryId", 
     c."userId",
     c.private,
     c."userName", 
     c."tokensBurned",
     c."createdAt",
+    c."isFree",
+    c.global,
+    c.views,
+    c.votes,
     COUNT(m.id) as message_count
   FROM "Companion" c
   LEFT JOIN "Message" m ON c.id = m."companionId"
