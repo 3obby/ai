@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth-helpers"
+import { auth } from "@/lib/auth"
 import prismadb from "@/lib/prismadb"
 
 const DAY_IN_MS = 86_400_000

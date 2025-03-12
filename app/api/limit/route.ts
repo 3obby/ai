@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getUserMessageLimit } from "@/lib/rate-limit";
 

@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/navbar"
 import { Sidebar } from "@/components/sidebar"
 import { checkSubscription } from "@/lib/subscription"
-import { auth } from "@/lib/auth-helpers"
+import { auth } from "@/lib/auth"
 import { v4 as uuidv4 } from 'uuid'
 import { allocateAnonymousTokens } from "@/lib/token-usage"
 import prismadb from "@/lib/prismadb"

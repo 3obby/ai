@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import prismadb from "@/lib/prismadb";
 
 

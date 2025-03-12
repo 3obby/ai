@@ -1,26 +1,13 @@
 import { Resend } from 'resend';
-import fs from 'fs';
-import path from 'path';
 
 // Initialize the Resend client
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Get the project version from version.json
-const getProjectVersion = (): string => {
-  try {
-    const versionPath = path.join(process.cwd(), 'version.json');
-    const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
-    return `v${versionData.major}.${versionData.minor}.${versionData.patch}`;
-  } catch (error) {
-    console.error('Error reading version file:', error);
-    return 'v0.3.x'; // Fallback version
-  }
-};
+// Hardcoded version for Edge compatibility
+const PROJECT_VERSION = 'v0.3.x';
 
 // Email template with logo and styling
 const createEmailHtml = (message: string): string => {
-  const version = getProjectVersion();
-  
   return `
     <!DOCTYPE html>
     <html>
@@ -112,7 +99,7 @@ const createEmailHtml = (message: string): string => {
           <div class="bottom-section">
             <div class="brand">GCBB</div>
             <img src="https://groupchatbotbuilder.com/feather.png" alt="GCBB Logo" class="logo">
-            <div class="version">${version}</div>
+            <div class="version">${PROJECT_VERSION}</div>
           </div>
           
           <div class="footer">

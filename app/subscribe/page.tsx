@@ -1,6 +1,6 @@
 import axios from "axios"
 import SubscribeClient from "./components/subscribe-client"
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"

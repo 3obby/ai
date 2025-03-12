@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import { getSignedUploadUrl, generateUniqueFilename, calculateTokenCost } from "@/lib/vercel-blob-storage";
 import prismadb from "@/lib/prismadb";
 

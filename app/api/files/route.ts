@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import prismadb from "@/lib/prismadb";
 
 export async function GET(req: Request) {

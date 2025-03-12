@@ -74,13 +74,12 @@ model Companion {
   toolAccess           String[]           @default([])
   version              Int                @default(1)
   
+  @@index([private, userId])
   @@index([categoryId])
-  @@index([userId])
-  @@index([name])
   @@index([createdAt])
-  @@index([updatedAt])
+  @@index([tokensBurned])
+  @@index([name])
   @@index([isFree])
-  @@index([private])
   @@index([global])
 }
 

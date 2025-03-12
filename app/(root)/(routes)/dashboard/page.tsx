@@ -1,21 +1,19 @@
-import { Suspense } from "react"
-import prismadb from "@/lib/prismadb"
+"use client"
+
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { Categories } from "@/components/categories"
 import { Companions } from "@/components/companions"
 import { SearchInput } from "@/components/search-input"
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { DashboardSkeleton } from "@/components/ui/dashboard-skeleton"
-import { CategoriesSkeleton } from "@/components/categories-skeleton"
-import { CompanionsSkeleton } from "@/components/companions-skeleton"
-import { SearchInputSkeleton } from "@/components/search-input-skeleton"
-import { v4 as uuidv4 } from 'uuid'
-import { cookies } from 'next/headers'
-import { allocateAnonymousTokens } from "@/lib/token-usage"
-import { ANONYMOUS_TOKEN_ALLOWANCE } from "@/lib/token-usage"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useCurrentUser } from "@/lib/hooks/use-current-user" 
+import useClientAuth from "@/lib/hooks/use-client-auth"
+import { useProModal } from "@/hooks/use-pro-modal"
+import { useDashboardData } from "@/hooks/use-dashboard-data"
+import { ClipLoader } from "react-spinners"
+import { toast } from "react-hot-toast"
 
-// Force dynamic rendering for this route to ensure fresh data
-export const dynamic = 'force-dynamic';
+// Client-side comment about caching (not an actual directive)
+// We achieve caching through the useDashboardData hook for client components
 
 interface DashboardPageProps {
   searchParams: {
@@ -25,224 +23,127 @@ interface DashboardPageProps {
   }
 }
 
-// Create or get an anonymous user ID
-async function getOrCreateAnonymousUser(): Promise<string | undefined> {
-  // Generate a new anonymous user ID
-  const anonymousId = uuidv4();
+// Client component dashboard with optimized data loading
+const Dashboard = () => {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  // Use both authentication methods for smoother transition
+  const { user: sessionUser, isLoading: sessionLoading } = useCurrentUser()
+  const { authenticated, user: edgeUser, loading: edgeAuthLoading } = useClientAuth()
   
-  console.log(`Creating new anonymous user with ID: ${anonymousId}`);
+  // Prefer session user but fall back to edge auth user
+  const user = sessionUser || edgeUser
+  const isLoading = sessionLoading || edgeAuthLoading
   
-  try {
-    // Create a new user record
-    await prismadb.user.create({
-      data: {
-        id: anonymousId,
-        name: 'Anonymous User',
-        email: `anon-${anonymousId}@example.com`,
-        // Store anonymous info in metadata
-        metadata: { isAnonymous: true }
-      }
-    });
-    
-    // Allocate tokens to the anonymous user
-    await allocateAnonymousTokens(anonymousId);
-    
-    console.log(`Successfully created new anonymous user with ID: ${anonymousId}`);
-    return anonymousId;
-  } catch (error) {
-    console.error('Error creating anonymous user:', error);
-    return undefined;
-  }
-}
+  const proModal = useProModal()
+  const [companions, setCompanions] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [value, setValue] = useState("")
+  const [messages, setMessages] = useState<any[]>([])
+  const [totalCompanions, setTotalCompanions] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [loadTime, setLoadTime] = useState(0)
+  
+  // userId can be undefined for anonymous users
+  const userId = user?.id;
+  
+  // Use dashboard data hook which now supports anonymous users
+  const { 
+    messageCount, 
+    userProgress, 
+    isAnonymous,
+    refreshData,
+    isLoading: isDashboardLoading 
+  } = useDashboardData({ userId });
 
-// Separate async component for loading categories
-async function CategoriesWrapper() {
-  // Add a small artificial delay for UX testing if needed
-  // await new Promise(resolve => setTimeout(resolve, 1000));
-  const categories = await prismadb.category.findMany();
-  return <Categories data={categories} />;
-}
+  // Show a refresh button if loading takes too long
+  const handleManualRefresh = useCallback(() => {
+    fetchDashboardData();
+    toast.success('Refreshing dashboard data');
+  }, []);
 
-// Separate async component for loading companions with pagination
-async function CompanionsWrapper({ 
-  searchParams, 
-  userId 
-}: { 
-  searchParams: { categoryId?: string; name?: string; page?: string }; 
-  userId: string | undefined 
-}) {
-  // Handle the case where userId might be undefined
-  if (!userId) {
-    // Return empty state if no user ID is available (should not happen in practice)
-    return <Companions userId="" data={[]} currentPage={1} totalCompanions={0} pageSize={10} />;
-  }
-  
-  try {
-    console.log("Fetching companions for dashboard...");
+  // Fetch all dashboard data in a single request
+  const fetchDashboardData = useCallback(async () => {
+    const startTime = performance.now();
+    setLoading(true);
     
-    const page = parseInt(searchParams.page || "1", 10);
-    const pageSize = 10; // Number of companions per page
-    const skip = (page - 1) * pageSize;
-    
-    // Get the total count for pagination
-    // Use as any to bypass the TypeScript error
-    const totalCount = await (prismadb.companion as any).count({
-      where: {
-        AND: [
-          {
-            categoryId: searchParams.categoryId || undefined,
-            name: searchParams.name
-              ? { contains: searchParams.name, mode: "insensitive" }
-              : undefined,
-          },
-          {
-            OR: [
-              { private: false },
-              {
-                AND: [
-                  { private: true },
-                  { userId: userId },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    });
-    
-    // Get paginated companions
-    const data = await prismadb.companion.findMany({
-      where: {
-        AND: [
-          {
-            categoryId: searchParams.categoryId || undefined,
-            name: searchParams.name
-              ? {
-                  contains: searchParams.name,
-                  mode: "insensitive",
-                }
-              : undefined,
-          },
-          {
-            OR: [
-              { private: false },
-              {
-                AND: [
-                  { private: true },
-                  { userId: userId },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        _count: {
-          select: {
-            messages: true,
-          },
-        },
-        // Include user-specific burned tokens for the current user
-        userBurnedTokens: {
-          where: {
-            userId: userId,
-          },
-          take: 1,
-        },
-      },
-      skip,
-      take: pageSize,
-    });
-    
-    console.log(`Found ${data.length} companions (page ${page}, total ${totalCount})`);
-    
-    return <Companions 
-             userId={userId} 
-             data={data} 
-             currentPage={page} 
-             totalCompanions={totalCount} 
-             pageSize={pageSize} 
-           />;
-  } catch (error) {
-    console.error("Error fetching companions:", error);
-    // Return an empty list as fallback
-    return <Companions userId={userId} data={[]} currentPage={1} totalCompanions={0} pageSize={10} />;
-  }
-}
-
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  // Try to get authenticated user
-  const session = await auth();
-  const userId = session?.user?.id;
-  
-  console.log("Dashboard page accessed. Authenticated user ID:", userId || "None");
-  
-  // Handle anonymous user case
-  let effectiveUserId = userId;
-  
-  if (!userId) {
-    console.log("No authenticated user, creating anonymous user...");
     try {
-      // Create an anonymous user if no logged-in user
-      const anonymousUserId = await getOrCreateAnonymousUser();
+      // Get current params - handle null searchParams
+      const page = searchParams?.get('page') || '1';
+      const categoryId = searchParams?.get('categoryId') || '';
       
-      if (anonymousUserId) {
-        console.log("Successfully created anonymous user:", anonymousUserId);
-        effectiveUserId = anonymousUserId;
-      } else {
-        console.error("Failed to create anonymous user");
-      }
+      // Build URL with search params
+      const url = new URL('/api/dashboard/prefetch', window.location.origin);
+      url.searchParams.set('page', page);
+      if (categoryId) url.searchParams.set('categoryId', categoryId);
+      
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      
+      const data = await response.json();
+      
+      // Update all state at once
+      setCompanions(data.companions);
+      setCategories(data.categories);
+      setTotalCompanions(data.totalCompanions);
+      setCurrentPage(data.currentPage);
+      setPageSize(data.pageSize);
+      
+      const endTime = performance.now();
+      setLoadTime(Math.round(endTime - startTime));
     } catch (error) {
-      console.error("Error in anonymous user creation:", error);
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
-  }
-  
-  // Display a welcome message for anonymous users
-  const isAnonymous = !userId;
-  const anonymousMessage = isAnonymous ? { 
-    title: "Welcome to the AI Companion Platform!",
-    description: `You're browsing as an anonymous user with ${ANONYMOUS_TOKEN_ALLOWANCE} free tokens. Create an account to get access to more features and tokens.`
-  } : null;
+  }, [searchParams]);
+
+  // Fetch data when component mounts or params change
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData, searchParams]);
 
   return (
-    <div className="h-full pt-2 pb-16 px-1 sm:px-2 md:p-4 space-y-2 sm:space-y-4 overflow-x-hidden max-w-[100vw]">
-      {anonymousMessage && (
-        <div className="bg-gradient-to-r from-orange-500/20 to-orange-500/10 p-4 rounded-lg mb-4 shadow-md border border-orange-500/20">
-          <h2 className="text-xl font-bold text-orange-500">{anonymousMessage.title}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{anonymousMessage.description}</p>
-          <div className="mt-3 flex gap-3">
-            <a href="/login" className="bg-orange-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-600 transition-colors">
-              Sign Up
-            </a>
-            <a href="/login" className="bg-white text-orange-500 border border-orange-500 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-50 transition-colors">
-              Log In
-            </a>
-          </div>
+    <div className="h-full p-4 space-y-2">
+      {loading && (
+        <div className="text-blue-500 text-sm p-2 rounded bg-blue-100/10 dark:bg-blue-900/10 flex justify-between items-center">
+          <span>Loading dashboard...</span>
         </div>
       )}
       
-      <Suspense fallback={<SearchInputSkeleton />}>
-        <SearchInput />
-      </Suspense>
+      {loadTime > 1000 && !loading && (
+        <div className="text-amber-500 text-xs p-1 rounded bg-amber-100/10 text-right">
+          Loaded in {loadTime}ms
+          {loadTime > 3000 && (
+            <span className="ml-2 text-amber-300 cursor-pointer" onClick={handleManualRefresh}>
+              ↻ Refresh
+            </span>
+          )}
+        </div>
+      )}
       
-      <Suspense fallback={<CategoriesSkeleton />}>
-        <CategoriesWrapper />
-      </Suspense>
+      <SearchInput />
       
-      <Suspense fallback={<CompanionsSkeleton />}>
-        {effectiveUserId ? (
-          <CompanionsWrapper userId={effectiveUserId} searchParams={searchParams} />
-        ) : (
-          <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <p className="text-muted-foreground">
-              Unable to display companions. Please try refreshing the page.
-            </p>
-          </div>
-        )}
-      </Suspense>
+      <Categories data={categories || []} />
+      
+      {loading ? (
+        <div className="flex items-center justify-center h-40">
+          <ClipLoader color="#888" size={30} />
+        </div>
+      ) : (
+        <Companions 
+          userId={userId || ""} 
+          data={companions} 
+          currentPage={currentPage} 
+          totalCompanions={totalCompanions} 
+          pageSize={pageSize} 
+        />
+      )}
     </div>
   )
-} 
+}
+
+export default Dashboard 

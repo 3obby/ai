@@ -150,7 +150,7 @@ export const Companions = ({
   return (
     <div className="space-y-4 mb-8 max-w-full overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-1 sm:px-2 md:px-4 max-w-full">
-        {data.map((item) => (
+        {data.map((item, index) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full w-full">
             <div className="relative flex flex-col h-full">
               {/* Configure button - Now in top left corner */}
@@ -179,11 +179,17 @@ export const Companions = ({
                     <Image
                       src={item.src}
                       fill
-                      sizes="(max-width: 480px) 96px, (max-width: 640px) 112px, 128px"
-                      className={`rounded-xl object-cover shadow-md transition-opacity duration-300 ${loadingImages[item.id] ? 'opacity-0' : 'opacity-100'}`}
+                      className={cn(
+                        "rounded-xl object-cover transition-opacity duration-300", 
+                        loadingImages[item.id] ? "opacity-0" : "opacity-100"
+                      )}
                       alt={item.name}
                       onLoad={() => handleImageLoaded(item.id)}
                       onError={() => handleImageError(item.id)}
+                      sizes="(max-width: 640px) 96px, (max-width: 768px) 112px, 128px"
+                      priority={index < 8} // Prioritize loading first 8 images
+                      placeholder="blur"
+                      blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAEhQJ/e2imzgAAAABJRU5ErkJggg=="
                     />
                   </div>
                   
@@ -195,7 +201,7 @@ export const Companions = ({
                         <div className="flex items-center gap-1.5">
                           <Globe className="h-3 w-3 text-blue-500 flex-shrink-0" />
                           <span className="text-xs font-medium truncate">
-                            {((item as any).tokensBurned || (item as any).xpEarned || 0).toLocaleString()}
+                            {((item as any).tokensBurned || 0).toLocaleString()}
                           </span>
                         </div>
                       </Badge>
@@ -223,7 +229,7 @@ export const Companions = ({
                         <div className="flex items-center gap-1.5">
                           <MessagesSquare className="h-3 w-3 flex-shrink-0" />
                           <span className="text-xs">
-                            {item._count.messages}
+                            {item._count?.messages || 0}
                           </span>
                         </div>
                       </div>

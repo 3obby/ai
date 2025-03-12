@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 import prismadb from "@/lib/prismadb"
 import { NextResponse } from "next/server"
 import {
@@ -7,6 +7,11 @@ import {
   getProgressToNextLevel,
 } from "@/lib/level-system"
 import { SUBSCRIPTION_PLAN } from "@/lib/subscription-plans"
+
+// For NextAuth we need to use Node.js runtime 
+// since it uses crypto which isn't available in Edge
+export const runtime = 'nodejs';
+export const revalidate = 5;
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";

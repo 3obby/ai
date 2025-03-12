@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "3fe73d7",
+      "fullHash": "3fe73d7023dcc90d5dd0f22509cae3427df99b31",
+      "date": "2025-03-12 16:14:28 +0700",
+      "author": "3obby",
+      "message": "Next.js 15 migration + Redis caching + Performance optimizations",
+      "category": "other"
+    },
+    {
       "hash": "70b93f1",
       "fullHash": "70b93f139de5c9ad4ec69f097da727341e254b50",
       "date": "2025-03-12 16:10:38 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix Clerk dependencies and update components to use custom magic link auth",
       "category": "bugfix"
-    },
-    {
-      "hash": "36552df",
-      "fullHash": "36552df24acab06902ad66d258cb07bc671864bb",
-      "date": "2025-03-06 15:27:19 +0700",
-      "author": "3obby",
-      "message": "Replace Clerk with magic link authentication using Postmark",
-      "category": "other"
     }
   ]
 }

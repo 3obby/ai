@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth-helpers"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 import TokenShopClient from "./components/token-shop-client"

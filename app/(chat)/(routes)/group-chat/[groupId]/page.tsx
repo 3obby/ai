@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth-helpers"
+import { auth } from "@/lib/auth"
 import prismadb from "@/lib/prismadb"
 import { cookies } from "next/headers"
 import { GroupChatClient } from "./components/client"

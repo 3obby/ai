@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth-helpers"
+import { auth } from "@/lib/auth"
 import { cookies } from "next/headers"
 import { v4 as uuidv4 } from 'uuid'
 

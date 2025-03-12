@@ -1,62 +1,38 @@
 const fs = require('fs');
 const path = require('path');
-const { promisify } = require('util');
+const { exec } = require('child_process');
 
-const readdir = promisify(fs.readdir);
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
-const stat = promisify(fs.stat);
-
-// RegExp pattern to match server-auth imports
-const importPattern = /import\s+?(?:{[\s\w,]+?})?\s+?from\s+?['"]@\/lib\/server-auth['"];?/g;
-const replacementImport = 'import { auth } from "@/lib/auth-helpers";';
-
-async function traverseDirectory(directory) {
-  const files = await readdir(directory);
-  
-  for (const file of files) {
-    const filePath = path.join(directory, file);
-    const stats = await stat(filePath);
-
-    if (stats.isDirectory()) {
-      // Skip node_modules and .next directories
-      if (file !== 'node_modules' && file !== '.next' && file !== '.git') {
-        await traverseDirectory(filePath);
-      }
-    } else if (stats.isFile() && (file.endsWith('.ts') || file.endsWith('.tsx'))) {
-      await processFile(filePath);
-    }
+// Find all files that import from auth-helpers
+exec('grep -r "import.*auth.*from.*auth-helpers" --include="*.ts" --include="*.tsx" .', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
   }
-}
 
-async function processFile(filePath) {
-  try {
-    const content = await readFile(filePath, 'utf8');
-    
-    if (content.includes('@/lib/server-auth')) {
-      console.log(`Processing: ${filePath}`);
+  const files = stdout.split('\n').filter(line => line).map(line => {
+    const [filePath] = line.split(':');
+    return filePath;
+  });
+
+  // Unique files
+  const uniqueFiles = [...new Set(files)];
+  console.log(`Found ${uniqueFiles.length} files with auth-helpers imports`);
+
+  // Update each file
+  uniqueFiles.forEach(filePath => {
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const updatedContent = content.replace(
+        /import\s+\{\s*auth\s*\}\s+from\s+['"]@\/lib\/auth-helpers['"]/g,
+        'import { auth } from "@/lib/auth"'
+      );
       
-      // Replace import
-      const newContent = content.replace(importPattern, replacementImport);
-      
-      if (newContent !== content) {
-        await writeFile(filePath, newContent, 'utf8');
-        console.log(`Updated import in: ${filePath}`);
+      if (content !== updatedContent) {
+        fs.writeFileSync(filePath, updatedContent);
+        console.log(`Updated ${filePath}`);
       }
+    } catch (err) {
+      console.error(`Error updating ${filePath}: ${err}`);
     }
-  } catch (error) {
-    console.error(`Error processing file ${filePath}:`, error);
-  }
-}
-
-async function main() {
-  try {
-    console.log('Starting auth imports update...');
-    await traverseDirectory('./app');
-    console.log('Completed auth imports update!');
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-main(); 
+  });
+}); 

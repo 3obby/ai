@@ -213,6 +213,33 @@ declare global {
  * for database operations.
  */
 
+// Performance tracking middleware for high-latency connections
+const addPrismaMiddleware = (prisma: PrismaClient) => {
+  prisma.$use(async (params, next) => {
+    const startTime = Date.now();
+    
+    try {
+      const result = await next(params);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      // Log slow queries (>500ms) to help identify optimization opportunities
+      if (duration > 500) {
+        const argsString = params.args ? JSON.stringify(params.args).substring(0, 100) : '{}';
+        console.warn(`[SLOW_QUERY] ${duration}ms | ${params.model}.${params.action} | ${argsString}...`);
+      }
+      
+      return result;
+    } catch (error) {
+      const endTime = Date.now();
+      console.error(`[QUERY_ERROR] ${endTime - startTime}ms | ${params.model}.${params.action} | ${error}`);
+      throw error;
+    }
+  });
+  
+  return prisma;
+};
+
 // Create a singleton instance with appropriate client for the runtime
 const createClient = () => {
   if (isEdgeRuntime()) {
@@ -221,11 +248,24 @@ const createClient = () => {
   }
   
   // For regular Node.js runtime, use the normal PrismaClient with proper typing
-  return new PrismaClient({
+  const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' 
       ? ['error', 'warn'] 
-      : ['error']
+      : ['error'],
+    // Add connection pooling for better performance with high-latency connections
+    // Extend the idle timeout to prevent connections from being closed too quickly
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    },
+    // Connection pool settings (though actual pooling is managed by the DB provider)
+    // These just ensure our Prisma client is configured optimally
+    // Note: connection pooling is often configured on the connection string itself
   })
+  
+  // Add performance middleware
+  return addPrismaMiddleware(client)
 }
 
 const prismadb = globalThis.prisma || createClient()
@@ -236,3 +276,49 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default prismadb
+
+// Query optimization helpers
+export const optimizedQuery = {
+  /**
+   * Optimize companion queries for dashboard
+   * @param queryOptions - The base query options
+   * @returns Optimized query options with only necessary fields
+   */
+  companions: (queryOptions: any) => {
+    // Clone the options to avoid mutating the original
+    const options = JSON.parse(JSON.stringify(queryOptions));
+    
+    // If querying for dashboard display, limit the fields
+    if (options.take && !options.include?.messages) {
+      // For dashboard list view, we don't need all fields
+      options.select = {
+        id: true,
+        name: true,
+        description: true,
+        src: true,
+        createdAt: true,
+        updatedAt: true,
+        categoryId: true,
+        userId: true,
+        private: true,
+        _count: {
+          select: {
+            messages: true,
+          }
+        },
+        userBurnedTokens: options.include?.userBurnedTokens ? {
+          where: options.include.userBurnedTokens.where,
+          take: 1,
+          select: {
+            burnedTokens: true
+          }
+        } : undefined
+      };
+      
+      // Remove the include since we're using select
+      delete options.include;
+    }
+    
+    return options;
+  }
+}

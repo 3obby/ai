@@ -1,76 +1,109 @@
 import { NextResponse } from "next/server"
-import { getToken } from "next-auth/jwt"
 import type { NextRequest } from "next/server"
+import { verifyAuthToken, isPublicPath } from "@/lib/auth-helpers"
 
-// Force Node.js runtime to support jsonwebtoken
-export const runtime = 'nodejs';
+// Using experimental-edge for middleware until fully supported in Next.js
+// API routes should use the standard 'edge' runtime
+export const runtime = 'experimental-edge';
 
-// This handles authentication protection for routes
+// This handles authentication protection and performance optimization
 export async function middleware(request: NextRequest) {
-  // Public routes that don't require authentication
-  const publicPaths = [
-    "/",
-    "/login",
-    "/register",
-    "/api/auth",
-    "/api/webhook",
-    "/subscribe",
-    "/dashboard",
-    "/chat",
-    "/companion",
-    "/groups",
-    "/group-chat", // Allow anonymous users to access group chat pages
-    "/group-chat-start", // New route for starting group chats as anonymous user
-  ]
-
-  // Restricted paths that always require authentication
-  const restrictedPaths = [
-    "/files",
-    "/vote",
-    "/admin",
-  ]
-
-  const url = request.nextUrl.clone()
-  const path = url.pathname
-
-  // Check if the path is one of the restricted paths
-  if (restrictedPaths.some(restrictedPath => path.startsWith(restrictedPath))) {
-    // Get session token using NextAuth's getToken
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
-
-    // If no token found for restricted path, redirect to login
-    if (!token) {
-      url.pathname = "/login"
-      return NextResponse.redirect(url)
+  const requestStartTime = Date.now();
+  const pathname = request.nextUrl.pathname;
+  const searchParams = request.nextUrl.searchParams;
+  
+  // Skip middleware for static asset requests
+  if (
+    pathname.includes('.') || // Static files
+    pathname.startsWith('/_next') || // Next.js internals
+    pathname.startsWith('/favicon') || // Favicon
+    pathname.startsWith('/api/auth') // Auth endpoints handle their own auth
+  ) {
+    return NextResponse.next();
+  }
+  
+  // Create response to later modify headers
+  const response = NextResponse.next();
+  
+  // PERFORMANCE OPTIMIZATION: Add headers for API responses
+  if (pathname.startsWith('/api/')) {
+    // For frequently accessed public dashboard data endpoints, add caching headers
+    if (pathname.startsWith('/api/dashboard') || 
+        pathname.startsWith('/api/categories') ||
+        pathname.startsWith('/api/companions') && request.method === 'GET') {
+      
+      // Add cache control headers based on whether this is an authenticated request
+      const authCookie = request.cookies.get('authjs.session-token')?.value;
+      
+      if (!authCookie) {
+        // For anonymous users, enable caching
+        response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600');
+      } else {
+        // For authenticated users, enable shorter caching
+        response.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=60');
+      }
     }
     
-    return NextResponse.next()
+    // Continue with API requests without auth checks
+    response.headers.set(
+      "Server-Timing",
+      `middleware;dur=${Date.now() - requestStartTime}`
+    );
+    return response;
   }
-
-  // Check if the path is public or should be accessible to anonymous users
-  // Special handling for group chat URLs with the userId parameter
-  if (
-    publicPaths.some(
-      (publicPath) => path === publicPath || path.startsWith(publicPath)
-    ) ||
-    // Allow access to group-chat/[id] with userId parameter for anonymous users
-    (path.match(/^\/group-chat\/[a-zA-Z0-9-]+$/) && url.searchParams.has('userId'))
-  ) {
-    return NextResponse.next()
+  
+  // AUTH PROTECTION: Handle authentication for non-API routes
+  
+  // For public paths, just continue
+  if (isPublicPath(pathname, searchParams)) {
+    response.headers.set(
+      "Server-Timing",
+      `middleware;dur=${Date.now() - requestStartTime}`
+    );
+    return response;
   }
-
-  // For any other path, check authentication
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
-
-  // If no token found and not on a public path, redirect to login
-  if (!token) {
-    url.pathname = "/login"
-    return NextResponse.redirect(url)
+  
+  // For protected paths, validate the token
+  try {
+    const token = request.cookies.get("session-token")?.value;
+    
+    // No token found, redirect to login
+    if (!token) {
+      const url = new URL('/login', request.url);
+      url.searchParams.set("callbackUrl", encodeURI(request.url));
+      return NextResponse.redirect(url);
+    }
+    
+    // Validate token (passing the request)
+    const validToken = await verifyAuthToken(request);
+    
+    // Invalid token, redirect to login
+    if (!validToken) {
+      const url = new URL('/login', request.url);
+      url.searchParams.set("callbackUrl", encodeURI(request.url));
+      return NextResponse.redirect(url);
+    }
+  } catch (error) {
+    console.error("[MIDDLEWARE_AUTH_ERROR]", error);
+    
+    // On error, redirect to login
+    const url = new URL('/login', request.url);
+    url.searchParams.set("callbackUrl", encodeURI(request.url));
+    return NextResponse.redirect(url);
   }
-
-  return NextResponse.next()
+  
+  // Add Server-Timing header for performance monitoring
+  response.headers.set(
+    "Server-Timing",
+    `middleware;dur=${Date.now() - requestStartTime}`
+  );
+  
+  return response;
 }
 
+// Run the middleware on all routes except static files
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
-}
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+};

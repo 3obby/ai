@@ -12,10 +12,42 @@ import {
 } from "@/lib/level-system"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Card } from "@/components/ui/card"
+import { Progress as UiProgress } from "@/components/ui/progress"
+import { useProModal } from "@/hooks/use-pro-modal"
+import { useRouter } from "next/navigation"
+import { toast } from "react-hot-toast"
+
+// Simple in-memory cache to reduce API calls
+const progressCache = new Map<string, {data: any, timestamp: number}>();
+const CACHE_TTL = 10000; // 10 seconds
+
+// For sharing user progress data across components
+const USER_PROGRESS_EVENT = 'user-progress-updated';
+
+// Broadcast user progress updates to all components
+export const broadcastProgress = (data: any) => {
+  if (typeof window !== 'undefined') {
+    const event = new CustomEvent(USER_PROGRESS_EVENT, { detail: data });
+    window.dispatchEvent(event);
+  }
+};
+
+// Listen for progress updates from other components
+export const useProgressUpdates = (callback: (data: any) => void) => {
+  useEffect(() => {
+    const handler = (event: any) => callback(event.detail);
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener(USER_PROGRESS_EVENT, handler);
+      return () => window.removeEventListener(USER_PROGRESS_EVENT, handler);
+    }
+  }, [callback]);
+};
 
 interface ChatLimitProps {
-  userId: string
-  onXpChange?: (newXp: number) => void
+  userId?: string
+  onXpChange?: (tokens: number) => void
   className?: string
 }
 
@@ -36,12 +68,47 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [tokensUpdated, setTokensUpdated] = useState(false)
   const { user } = useCurrentUser()
+  const proModal = useProModal()
 
   const fetchProgress = async () => {
     try {
       console.log("Fetching user progress...")
       setFetchError(null)
-      const response = await fetch("/api/user-progress")
+      
+      // Use cache if available and fresh
+      const cacheKey = userId || 'anonymous';
+      const cachedData = progressCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (cachedData && (now - cachedData.timestamp < CACHE_TTL)) {
+        console.log("Using cached progress data");
+        const data = cachedData.data;
+        
+        // If we already had progress data and tokens increased significantly,
+        // show a visual indicator
+        if (progress && data.remainingTokens > progress.remainingTokens + 10000) {
+          setTokensUpdated(true);
+          // Hide the indicator after 5 seconds
+          setTimeout(() => setTokensUpdated(false), 5000);
+        }
+        
+        setProgress({
+          earnedTokens: data.burnedTokens || 0,
+          level: data.level || 0,
+          nextLevelTokens: data.nextLevelTokens || 0,
+          progressToNextLevel: data.progressToNextLevel || 0,
+          usedTokens: data.usedTokens || 0,
+          remainingTokens: data.remainingTokens || 0,
+          baseTokenAllocation: data.baseTokenAllocation || 0,
+          isSubscribed: data.isSubscribed || false,
+        });
+        
+        onXpChange?.(data.remainingTokens);
+        return;
+      }
+      
+      // Fetch new data if no cache or cache expired
+      const response = await fetch(`/api/user-progress${userId ? `?userId=${userId}` : ''}`)
 
       if (!response.ok) {
         console.error("Failed to fetch user progress:", response.statusText)
@@ -59,6 +126,12 @@ export const ChatLimit = ({ userId, onXpChange, className }: ChatLimitProps) => 
         setFetchError("No data returned from API")
         return
       }
+      
+      // Store in cache
+      progressCache.set(cacheKey, {
+        data,
+        timestamp: now
+      });
 
       // If we already had progress data and tokens increased significantly,
       // show a visual indicator
