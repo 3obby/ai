@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "f26a3ca",
+      "fullHash": "f26a3ca68de508e82fac09ba27efb218a2f1c359",
+      "date": "2025-03-12 11:02:26 +0700",
+      "author": "3obby",
+      "message": "Fix: Remove Google Cloud Storage dependencies and fix auth core version",
+      "category": "bugfix"
+    },
+    {
       "hash": "0f0a0eb",
       "fullHash": "0f0a0eb4978c4eb5c7a5169f1926eeec27fde785",
       "date": "2025-03-12 01:46:53 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Updated landing page and authentication flow with cleaner URLs",
       "category": "enhancement"
-    },
-    {
-      "hash": "9f0ccd1",
-      "fullHash": "9f0ccd1f733d1b9d07dd13d54f61b7ed110bc775",
-      "date": "2025-03-06 14:45:20 +0700",
-      "author": "3obby",
-      "message": "Restored 'looks great' commit with the not-found page",
-      "category": "other"
     }
   ]
 }
