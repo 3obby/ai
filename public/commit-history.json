@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "f6752a2",
+      "fullHash": "f6752a29e93c17699f9bd21cae4affca73baf917",
+      "date": "2025-03-13 03:29:07 +0700",
+      "author": "3obby",
+      "message": "Fix group chat for anonymous users and improve mobile responsiveness of companion cards",
+      "category": "bugfix"
+    },
+    {
       "hash": "ebb23f5",
       "fullHash": "ebb23f5775410b9b6a26fa4b24cee3ee2ade97c9",
       "date": "2025-03-13 03:22:24 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Add shadcn/ui components and UI demo page",
       "category": "feature"
-    },
-    {
-      "hash": "b5f06d8",
-      "fullHash": "b5f06d8a2fe01f4d6e40cdf3eb9a5c9cb72b3a10",
-      "date": "2025-03-08 00:04:49 +0700",
-      "author": "3obby",
-      "message": "Update user dropdown to link to /account page",
-      "category": "enhancement"
     }
   ]
 }
