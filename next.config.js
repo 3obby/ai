@@ -7,6 +7,8 @@ const nextConfig = {
     optimizeCss: true, // Enable CSS optimization
     scrollRestoration: true, // Improve scroll performance
   },
+  // External packages to be bundled in the server build
+  serverExternalPackages: ['sharp', 'onnxruntime-node'], 
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -92,6 +94,26 @@ const nextConfig = {
         ]
       },
       {
+        // Add specific caching for CSS files
+        source: '/_next/static/css/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate'
+          }
+        ]
+      },
+      {
+        // Add specific caching for images
+        source: '/_next/image(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=31536000'
+          }
+        ]
+      },
+      {
         // Cache API responses
         source: '/api/(.*)',
         headers: [
@@ -102,7 +124,10 @@ const nextConfig = {
         ]
       }
     ]
-  }
+  },
+  // Improve build output and minimize request size
+  output: 'standalone',
+  poweredByHeader: false,
 };
 
 module.exports = nextConfig; 

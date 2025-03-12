@@ -12,6 +12,7 @@
 - Vercel deployment with Neon PostgreSQL database
 - Redis caching for API responses
 - Materialized views for dashboard performance
+- Server-side streaming for real-time AI responses
 
 ## Key Components
 
@@ -104,8 +105,15 @@
 - Partial indexes for common query patterns (public companions, system companions)
 - Composite indexes for multi-column conditions
 - Materialized views for dashboard data with refresh functions
+  - mv_dashboard_companions: Caches companion data to speed up dashboard loading
+  - Scheduled refresh via /api/cron/refresh-views endpoint
+  - Fix scripts for schema updates: scripts/fix-mv-dashboard-companions.sql
 - Query monitoring and slow query analysis
 - Connection pooling for high-traffic scenarios
+- Compound indexes for chat message retrieval optimizations
+- Query timeouts to prevent slow queries from blocking responses
+- Smarter column detection for materialized views
+- Fallback query paths when optimal tables aren't available
 
 ### Caching Architecture
 - Redis caching for public API responses
@@ -115,6 +123,24 @@
   - Authenticated users: 30-second cache
   - Critical content: No cache
 - Cache invalidation on relevant data changes
+- Enhanced anonymous user caching with longer TTL
+- Chunk-based caching for large responses
+- Error handling for cache retrieval failures
+- Graceful fallbacks when cache is unavailable
+- Dynamic cache TTL based on user type and data volume
+- Query parameter versioning to bypass caching when needed
+
+### Response Speed Optimizations
+- Server-side streaming for immediate partial responses
+- Background processing for token tracking and analytics
+- Simplified decision process for anonymous users
+- Fast-path implementation for group chat first responses
+- Response generation parallelization for multi-bot conversations
+- Promise race patterns with timeouts to prevent hanging requests
+- Data limiting for anonymous users to reduce response size
+- Description truncation for performance
+- Partial failure handling with Promise.allSettled
+- Response status code normalization (return 200 with error data vs 500)
 
 ### Frontend Performance
 - Optimized image loading with priority images
@@ -122,6 +148,11 @@
 - Response compression with gzip/brotli
 - Static asset caching with optimal Cache-Control headers
 - Conditional component rendering based on user type
+- Explicit CSS loading in layout components for Next.js 15
+- Dynamic versioning of CSS resources to prevent caching issues
+- Metadata optimization for all pages including error pages
+- Exponential backoff for retrying failed requests
+- Enhanced error handling in data fetching hooks
 
 ### Multi-Region Deployment
 - Configuration for multiple Vercel regions (Singapore, France)
@@ -132,8 +163,12 @@
 ### Anonymous User Experience
 - Public dashboard access without authentication
 - Viewing public companions without login
+- Anonymous chat sessions via server actions and cookie-based user tracking
 - Seamless upgrade path to authenticated session
 - Progressive feature revelation based on authentication status
+- Optimized response time with simplified models and caching
+- Server action pattern for cookie management in Next.js 15
+- Automatic token allocation for anonymous users (1,000 tokens)
 
 ## Development Approach
 - Server Components for efficient rendering
@@ -142,4 +177,5 @@
 - Custom hooks for specialized behaviors
 - Prisma migrations with shadow database for safe schema changes
 - Scheduled database maintenance for materialized view refresh
-- Comprehensive error handling with graceful degradation 
+- Comprehensive error handling with graceful degradation
+- Server actions for stateful operations in a serverless environment 

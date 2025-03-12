@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { broadcastProgress } from '@/components/chat-limit';
+import { toast } from 'react-hot-toast';
 
 interface UseDashboardDataOptions {
   userId?: string; // Make userId optional for anonymous users
@@ -34,6 +35,7 @@ export function useDashboardData({ userId, prefetch = false }: UseDashboardDataO
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchData = useCallback(async (forceRefresh = false) => {
     // For anonymous users, use a special cache key
@@ -56,25 +58,87 @@ export function useDashboardData({ userId, prefetch = false }: UseDashboardDataO
       // If userId is undefined, the API will handle anonymous users
       const start = performance.now();
       const url = userId ? `/api/dashboard-data?userId=${userId}` : '/api/dashboard-data';
-      const response = await fetch(url);
+      
+      // Add timestamp to prevent cache issues
+      const timestamp = Date.now();
+      const fetchUrl = `${url}${url.includes('?') ? '&' : '?'}_t=${timestamp}`;
+      
+      console.log(`Fetching dashboard data from: ${fetchUrl}`);
+      
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
 
       if (!response.ok) {
+        console.error(`Dashboard data fetch failed: ${response.status} ${response.statusText}`);
+        
+        // Try fallback approach for anonymous users
+        if (!userId) {
+          console.log('Trying fallback for anonymous user...');
+          const fallbackData = {
+            companionCount: 0,
+            messageCount: 0,
+            userProgress: null,
+            categories: [],
+            queryTimeMs: 0,
+            isAnonymous: true,
+          };
+          
+          setData(fallbackData);
+          
+          // Still try to fetch companions from the other endpoint
+          try {
+            console.log('Attempting fallback prefetch...');
+            const prefetchResponse = await fetch(`/api/dashboard/prefetch?page=1&_t=${timestamp}`, {
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
+            
+            if (prefetchResponse.ok) {
+              const prefetchData = await prefetchResponse.json();
+              console.log('Successfully fetched fallback data:', prefetchData);
+              // Update the categories at least
+              setData(prev => ({
+                ...prev,
+                categories: prefetchData.categories || [],
+                companionCount: prefetchData.totalCompanions || 0
+              }));
+            } else {
+              console.error('Fallback prefetch failed with status:', prefetchResponse.status);
+            }
+          } catch (fallbackErr) {
+            console.error('Fallback prefetch failed:', fallbackErr);
+          } finally {
+            setIsLoading(false);
+          }
+          
+          return;
+        }
+        
         throw new Error(`Failed to fetch dashboard data: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
       const clientFetchTime = performance.now() - start;
       
-      console.log(`Dashboard data loaded in ${Math.round(clientFetchTime)}ms (server: ${result.performance.queryTimeMs}ms)`);
+      console.log(`Dashboard data loaded in ${Math.round(clientFetchTime)}ms (server: ${result.performance?.queryTimeMs || 0}ms)`);
 
       const newData = {
-        companionCount: result.counts.companions,
-        messageCount: result.counts.messages,
-        userProgress: result.userProgress,
-        categories: result.categories,
-        queryTimeMs: result.performance.queryTimeMs + Math.round(clientFetchTime),
+        companionCount: result.counts?.companions || 0,
+        messageCount: result.counts?.messages || 0,
+        userProgress: result.userProgress || null,
+        categories: result.categories || [],
+        queryTimeMs: (result.performance?.queryTimeMs || 0) + Math.round(clientFetchTime),
         isAnonymous: result.isAnonymous || !userId,
       };
+
+      // Reset retry count on success
+      setRetryCount(0);
 
       // Update cache
       dataCache.set(cacheKey, {
@@ -93,11 +157,35 @@ export function useDashboardData({ userId, prefetch = false }: UseDashboardDataO
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data. Please try again.');
       setIsLoading(false);
+      
+      // Show toast for user feedback
+      toast.error('Failed to load dashboard data. Retrying...');
+      
+      // Set minimal fallback data
+      setData(prev => ({
+        ...prev,
+        isAnonymous: !userId,
+      }));
+      
+      // Increment retry count
+      setRetryCount(prev => prev + 1);
+      
+      // Auto-retry up to 3 times with increasing backoff
+      if (retryCount < 3) {
+        const backoffTime = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        console.log(`Will retry in ${backoffTime}ms (attempt ${retryCount + 1}/3)`);
+        
+        setTimeout(() => {
+          fetchData(true);
+        }, backoffTime);
+      }
     }
-  }, [userId]);
+  }, [userId, retryCount]);
 
   // Function to manually refresh data
   const refreshData = useCallback(async () => {
+    // Reset retry count on manual refresh
+    setRetryCount(0);
     await fetchData(true);
   }, [fetchData]);
 
@@ -106,9 +194,10 @@ export function useDashboardData({ userId, prefetch = false }: UseDashboardDataO
     fetchData();
 
     // Set up interval for periodic refresh in background
+    // but with a longer interval to avoid too many requests
     const intervalId = setInterval(() => {
       fetchData();
-    }, CACHE_TTL / 2); // Refresh halfway through cache lifetime
+    }, 60000); // Refresh every minute instead of more frequently
 
     return () => {
       clearInterval(intervalId);
@@ -122,7 +211,7 @@ export function useDashboardData({ userId, prefetch = false }: UseDashboardDataO
       const prefetchResources = async () => {
         // Prefetch avatar images, template data, etc.
         try {
-          await fetch('/api/templates');
+          await fetch('/api/dashboard/prefetch?page=1');
           // Prefetch companion images
           document.querySelectorAll('img[data-src]').forEach(img => {
             const src = img.getAttribute('data-src');

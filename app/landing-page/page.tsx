@@ -1,5 +1,25 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import type { Metadata } from "next"
+
+// Add proper metadata for the landing page
+export const metadata: Metadata = {
+  title: "GCBB AI - Smart Group Chats with AI Companions",
+  description: "Create, customize, and chat with AI companions. Build your personalized group chats with powerful AI.",
+  openGraph: {
+    title: "GCBB AI - Smart Group Chats with AI Companions",
+    description: "Create, customize, and chat with AI companions. Build your personalized group chats with powerful AI.",
+    siteName: "GCBB AI",
+    images: [
+      {
+        url: "/feather.png",
+        width: 800,
+        height: 600,
+        alt: "GCBB AI"
+      }
+    ]
+  }
+}
 
 export default function LandingPage() {
   return (

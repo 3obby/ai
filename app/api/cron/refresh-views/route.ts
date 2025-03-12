@@ -1,55 +1,88 @@
-import { NextResponse } from "next/server";
-import prismadb from "@/lib/prismadb";
-import { clearCachePattern } from "@/lib/redis-cache";
+/**
+ * API route for refreshing materialized views
+ * This endpoint is meant to be called by a cron job
+ * 
+ * Path: /api/cron/refresh-views
+ */
 
-// This API endpoint is called by Vercel's cron job to refresh materialized views
-// It needs a long timeout since refreshing views can take time
-export const maxDuration = 120; // 2 minutes max duration
-export const runtime = "nodejs";
+import { NextResponse } from 'next/server';
+import prismadb from '@/lib/prismadb';
+import { refreshStaticCacheIfNeeded } from '@/optimizations/static-data-cache';
 
-// Force dynamic rendering for API routes
-export const dynamic = "force-dynamic";
+// Use Node.js runtime for database operations
+export const runtime = 'nodejs';
+
+// Protect endpoint with a secret key
+const CRON_SECRET = process.env.CRON_SECRET || 'default_secret_replace_me';
 
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  console.log('[CRON] Materialized view refresh requested');
+
   try {
-    const start = Date.now();
-    
-    console.log(`[REFRESH_VIEWS] Starting materialized view refresh...`);
-    
-    // Make sure only authorized sources can trigger this
-    const { searchParams } = new URL(req.url);
-    const authToken = searchParams.get("auth");
-    
-    // Simple auth check (you might want to use a more secure approach in production)
-    if (authToken !== process.env.CRON_SECRET) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // Verify authorization if not in development
+    if (process.env.NODE_ENV !== 'development') {
+      const { searchParams } = new URL(req.url);
+      const secret = searchParams.get('secret');
+      
+      // Simple authorization to prevent unauthorized access
+      if (secret !== CRON_SECRET) {
+        console.error('[CRON] Unauthorized access attempt');
+        return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
     
-    // Execute the refresh of the materialized view
-    await prismadb.$executeRaw`REFRESH MATERIALIZED VIEW "mv_dashboard_companions"`;
+    // Refreshing materialized view
+    console.log('[CRON] Refreshing materialized view for dashboard companions');
     
-    console.log(`[REFRESH_VIEWS] Materialized view refreshed in ${Date.now() - start}ms`);
-    
-    // Try to refresh all materialized views using the refresh_all_views function
     try {
-      await prismadb.$queryRaw`SELECT refresh_all_views()`;
-      console.log("✅ All materialized views refreshed successfully");
-    } catch (error) {
-      console.error("❌ Error refreshing all views:", error);
-      // Continue with other operations even if this fails
+      // Try concurrent refresh first (which doesn't block reads)
+      await prismadb.$executeRawUnsafe(`
+        REFRESH MATERIALIZED VIEW CONCURRENTLY "mv_dashboard_companions"
+      `);
+      console.log('[CRON] Concurrent refresh completed successfully');
+    } catch (viewError) {
+      console.log('[CRON] Concurrent refresh failed, trying regular refresh', viewError);
+      
+      // Fall back to regular refresh if concurrent fails
+      await prismadb.$executeRawUnsafe(`
+        REFRESH MATERIALIZED VIEW "mv_dashboard_companions"
+      `);
+      console.log('[CRON] Regular refresh completed');
     }
     
-    // Clear cache for anonymous users to ensure they get fresh data
-    await clearCachePattern("dashboard:anon:*");
-    console.log("✅ Anonymous user cache cleared");
+    // Also refresh the static cache
+    console.log('[CRON] Refreshing static cache for anonymous users');
+    const cacheResult = await refreshStaticCacheIfNeeded();
     
+    // Run ANALYZE for query planner
+    console.log('[CRON] Updating database statistics');
+    await prismadb.$executeRawUnsafe(`ANALYZE "Companion"`);
+    await prismadb.$executeRawUnsafe(`ANALYZE "mv_dashboard_companions"`);
+    
+    // Calculate execution time
+    const duration = (Date.now() - startTime) / 1000;
+    
+    // Return success response
+    console.log(`[CRON] Refresh completed in ${duration.toFixed(2)}s`);
     return NextResponse.json({
       success: true,
-      message: "Materialized view refreshed successfully",
-      duration: Date.now() - start
+      message: 'Views refreshed successfully',
+      duration: `${duration.toFixed(2)}s`,
+      staticCacheRefreshed: cacheResult,
+      timestamp: new Date().toISOString()
     });
+    
   } catch (error) {
-    console.error("[REFRESH_VIEWS_ERROR]", error);
-    return new NextResponse("Error refreshing materialized view", { status: 500 });
+    // Log and return error
+    console.error('[CRON_ERROR]', error);
+    return NextResponse.json({
+      success: false,
+      error: String(error),
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 } 

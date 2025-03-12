@@ -1,5 +1,5 @@
 import "./globals.css"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
@@ -15,35 +15,47 @@ export const dynamic = 'force-dynamic';
 
 const inter = Inter({ subsets: ["latin"] })
 
+// Get application URL safely
+const getAppUrl = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const vercelUrl = process.env.VERCEL_URL;
+  
+  if (appUrl) return new URL(appUrl);
+  if (vercelUrl) return new URL(`https://${vercelUrl}`);
+  return new URL("http://localhost:3000");
+};
+
+// Separate viewport configuration for Next.js 15
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
-  title: "GroupChatBotBuilder",
-  description: "Create and deploy AI bot companions",
-  manifest: '/site.webmanifest',
-  icons: {
-    icon: [
-      {
-        media: '(prefers-color-scheme: light)',
-        url: '/feather.png',
-        href: '/feather.png',
-      },
-      {
-        media: '(prefers-color-scheme: dark)',
-        url: '/feather.png',
-        href: '/feather.png',
-      },
-    ],
-    shortcut: ['/feather.png'],
-    apple: [
-      { url: '/feather.png' },
-      { url: '/feather.png', sizes: '180x180', type: 'image/png' },
-    ],
-    other: [
-      {
-        rel: 'apple-touch-icon-precomposed',
-        url: '/feather.png',
-      },
-    ],
-  },
+  title: "GCBB AI Companion - Your Personal AI Assistant",
+  description: "Engage with customizable AI companions for productivity, learning, and entertainment. Access a variety of companions with unique personalities and knowledge domains.",
+  metadataBase: getAppUrl(),
+  manifest: "/site.webmanifest",
+  keywords: [
+    "AI",
+    "GPT",
+    "GCBB",
+    "AI Companion",
+    "Chat",
+    "Companion",
+    "Artificial Intelligence",
+    "Conversation",
+    "Assistant"
+  ],
+  authors: [
+    {
+      name: "GCBB Team",
+    }
+  ],
+  creator: "GCBB Team",
+  publisher: "GCBB",
 }
 
 export default async function RootLayout({
@@ -77,6 +89,9 @@ export default async function RootLayout({
         <meta name="msapplication-TileImage" content="/feather.png" />
         <meta name="msapplication-TileColor" content="#1f2937" />
         <meta name="theme-color" content="#1f2937" />
+        
+        {/* Explicit CSS loading for Next.js 15 - includes version to prevent caching issues */}
+        <link rel="stylesheet" href={`/_next/static/css/app/layout.css?v=${Date.now()}`} />
       </head>
       <body className={cn("bg-secondary", inter.className)}>
         <NextAuthProvider>

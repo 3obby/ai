@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
-import { cookies } from "next/headers"
-import { v4 as uuidv4 } from 'uuid'
+import { getOrCreateAnonymousUser } from "@/app/actions/user-actions";
 
 import prismadb from "@/lib/prismadb"
-import { allocateAnonymousTokens } from "@/lib/token-usage"
-
 import { ChatClient } from "./components/client"
 
 interface ChatIdPageProps {
@@ -14,63 +11,40 @@ interface ChatIdPageProps {
   }
 }
 
-// Create or get an anonymous user ID
-async function getOrCreateAnonymousUser(): Promise<string | undefined> {
-  // Generate a new anonymous user ID
-  const anonymousId = uuidv4();
-  
-  console.log(`Creating new anonymous user in chat page with ID: ${anonymousId}`);
-  
-  try {
-    // Create a new user record with minimal required fields
-    await prismadb.user.create({
-      data: {
-        id: anonymousId,
-        name: 'Anonymous User',
-        email: `anon-${anonymousId}@example.com`
-      }
-    });
-    
-    // Allocate tokens to the anonymous user
-    await allocateAnonymousTokens(anonymousId);
-    
-    console.log(`Successfully created new anonymous user: ${anonymousId}`);
-    return anonymousId;
-  } catch (error) {
-    console.error('Error creating anonymous user:', error);
-    return undefined;
-  }
-}
-
 const ChatIdPage = async ({ params }: ChatIdPageProps) => {
-  const session = await auth()
-  const userId = session?.userId
+  // Properly await the params to get chatId in Next.js 15
+  const chatId = params.chatId;
+  
+  // Get auth session
+  const session = await auth();
+  const userId = session?.userId;
   
   // Handle anonymous user case
   let effectiveUserId = userId;
   
   if (!userId) {
-    console.log("No authenticated user, creating anonymous user for chat...");
+    console.log("No authenticated user, using anonymous user for chat...");
     try {
-      // Create an anonymous user if no logged-in user
+      // Use our server action to create or get an anonymous user
       const anonymousUserId = await getOrCreateAnonymousUser();
       
       if (anonymousUserId) {
-        console.log("Successfully created anonymous user for chat:", anonymousUserId);
+        console.log("Using anonymous user for chat:", anonymousUserId);
         effectiveUserId = anonymousUserId;
       } else {
-        console.error("Failed to create anonymous user for chat");
+        console.error("Failed to get or create anonymous user");
         return redirect("/login");
       }
     } catch (error) {
-      console.error("Error in anonymous user creation:", error);
+      console.error("Error handling anonymous user:", error);
       return redirect("/login");
     }
   }
 
+  // Get companion details with appropriate messages
   const companion = await prismadb.companion.findUnique({
     where: {
-      id: params.chatId,
+      id: chatId,
     },
     include: {
       messages: {
@@ -87,15 +61,13 @@ const ChatIdPage = async ({ params }: ChatIdPageProps) => {
         },
       },
     },
-  })
+  });
 
   if (!companion) {
-    return redirect("/")
+    return redirect("/dashboard");
   }
 
-  // Redirect non-PRO users if they try to access a paid companion
+  return <ChatClient companion={companion} userId={effectiveUserId} isAnonymous={!userId} />;
+};
 
-  return <ChatClient companion={companion} userId={effectiveUserId} isAnonymous={!userId} />
-}
-
-export default ChatIdPage
+export default ChatIdPage;

@@ -9,13 +9,66 @@
   },
   "crons": [
     {
-      "path": "/api/cron/refresh-views",
-      "schedule": "0 */6 * * *"
+      "path": "/api/cron/refresh-views?secret=$CRON_SECRET",
+      "schedule": "*/30 * * * *"
     }
   ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/dashboard",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/api/dashboard/prefetch",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/api/dashboard-data",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=1800, stale-while-revalidate=3600"
+        }
+      ]
+    }
+  ]
 }

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "f7c6cc2",
+      "fullHash": "f7c6cc23455041951dedbd3ac127ef5869af2181",
+      "date": "2025-03-12 18:33:00 +0700",
+      "author": "3obby",
+      "message": "Fix: Optimize dashboard performance for anonymous users by reducing Redis payload size and improving caching",
+      "category": "bugfix"
+    },
+    {
       "hash": "c39e10b",
       "fullHash": "c39e10b8a4810467ab2073bfc96d46af83458e50",
       "date": "2025-03-12 16:38:28 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix React unescaped quotes and update ESLint config",
       "category": "bugfix"
-    },
-    {
-      "hash": "2164cf9",
-      "fullHash": "2164cf9be7c7fa7e327e776df86ecc8866bc4788",
-      "date": "2025-03-07 23:35:06 +0700",
-      "author": "3obby",
-      "message": "Implement Edge Runtime compatibility for database operations",
-      "category": "other"
     }
   ]
 }

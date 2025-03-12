@@ -6,13 +6,23 @@ import { Prisma } from "@prisma/client";
 import { revalidateTag } from "next/cache";
 import { getFromCache, getChunkedFromCache, setCache, setCacheWithChunking } from "@/lib/redis-cache";
 
+// Constants
+const ANON_COMPANION_LIMIT = 15; // Show fewer companions for anonymous users
+const ANON_CACHE_TTL = 600; // 10 minutes for anonymous users
+const AUTH_CACHE_TTL = 60; // 1 minute for authenticated users
+const ANON_QUERY_TIMEOUT = 2000; // 2 second timeout for anonymous queries
+const MAX_DESCRIPTION_LENGTH = 80; // Shorter description for performance
+
 // For NextAuth we need to use Node.js runtime 
 // since it uses crypto which isn't available in Edge
 export const runtime = 'nodejs';
-export const revalidate = 10; // 10 seconds
+export const revalidate = 60; // Increased revalidation period
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
+
+// Import optimized implementation
+import { GET as OptimizedDashboardPrefetch } from "@/optimizations/optimized-dashboard-prefetch";
 
 // Helper function to safely convert BigInt to Number
 function safeNumberConversion(value: any): number {
@@ -25,348 +35,145 @@ function safeNumberConversion(value: any): number {
   return value || 0;
 }
 
-export async function GET(req: Request) {
-  try {
-    // Track request timing
-    const startTime = Date.now();
-    
-    // Cache for 5 minutes if no user is logged in
-    let headers: HeadersInit = {};
-    
-    // Get user session
-    const session = await auth();
-    const userId = session?.userId;
-    
-    // Use query parameters for filtering
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get("categoryId");
-    const page = parseInt(searchParams.get("page") || "1");
-    const pageSize = parseInt(searchParams.get("pageSize") || "20");
-    const skip = (page - 1) * pageSize;
-    
-    // Generate cache key based on request params
-    const cacheKey = `dashboard:${userId || 'anon'}:${categoryId || 'all'}:${page}:${pageSize}`;
-    
-    // For anonymous users, try to get from cache first
-    if (!userId) {
-      const cachedData = await getChunkedFromCache(cacheKey);
-      if (cachedData) {
-        console.log(`[DASHBOARD_PREFETCH] Cache hit for ${cacheKey}`);
-        return NextResponse.json(cachedData, {
-          headers: {
-            'X-Cache': 'HIT',
-            'Cache-Control': 'public, max-age=300, s-maxage=300',
-            'CDN-Cache-Control': 'public, max-age=300, s-maxage=300'
-          }
-        });
-      }
-    }
-    
-    // Create base query depending on whether we should use the materialized view
-    let useView = true;
-    let availableColumns = {
+// Function to get data without materialized view
+async function getDashboardDataDirect(
+  isAnonymous: boolean, 
+  categoryId: string | null, 
+  userId: string | null, 
+  page: number, 
+  pageSize: number
+) {
+  const skip = (page - 1) * pageSize;
+  const startTime = Date.now();
+  
+  // 1. Categories - simple and fast
+  const categoriesPromise = prismadb.category.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true }
+  });
+  
+  // 2. Build companion WHERE clause once
+  const whereClause: Prisma.CompanionWhereInput = {
+    OR: [
+      { private: false },
+      { userId: 'system' }
+    ],
+    ...(userId ? { OR: [{ private: false }, { userId: 'system' }, { userId }] } : {}),
+    ...(categoryId ? { categoryId } : {})
+  };
+  
+  // 3. Optimized companion query with minimal fields for speed
+  const companionsPromise = prismadb.companion.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      name: true,
+      src: true,
       description: true,
+      categoryId: true,
+      userName: true,
       isFree: true,
       global: true,
-      views: true,
-      votes: true
-    };
-    
-    try {
-      // Check if the view exists
-      await prismadb.$queryRaw`SELECT 1 FROM "mv_dashboard_companions" LIMIT 1`;
-      
-      // Check for each column individually
-      try {
-        await prismadb.$queryRaw`SELECT "description" FROM "mv_dashboard_companions" LIMIT 1`;
-      } catch (e) {
-        console.log("[DASHBOARD_PREFETCH] Description column not found in view");
-        availableColumns.description = false;
-      }
-      
-      try {
-        await prismadb.$queryRaw`SELECT "isFree" FROM "mv_dashboard_companions" LIMIT 1`;
-      } catch (e) {
-        console.log("[DASHBOARD_PREFETCH] isFree column not found in view");
-        availableColumns.isFree = false;
-      }
-      
-      try {
-        await prismadb.$queryRaw`SELECT global FROM "mv_dashboard_companions" LIMIT 1`;
-      } catch (e) {
-        console.log("[DASHBOARD_PREFETCH] global column not found in view");
-        availableColumns.global = false;
-      }
-      
-      try {
-        await prismadb.$queryRaw`SELECT views FROM "mv_dashboard_companions" LIMIT 1`;
-      } catch (e) {
-        console.log("[DASHBOARD_PREFETCH] views column not found in view");
-        availableColumns.views = false;
-      }
-      
-      try {
-        await prismadb.$queryRaw`SELECT votes FROM "mv_dashboard_companions" LIMIT 1`;
-      } catch (e) {
-        console.log("[DASHBOARD_PREFETCH] votes column not found in view");
-        availableColumns.votes = false;
-      }
-      
-      // If too many columns are missing, fallback to direct query
-      const missingColumns = Object.values(availableColumns).filter(v => !v).length;
-      if (missingColumns > 3) {
-        console.log(`[DASHBOARD_PREFETCH] Too many columns missing (${missingColumns}), falling back to direct query`);
-        useView = false;
-      }
-    } catch (e) {
-      console.log("[DASHBOARD_PREFETCH] Materialized view not found, falling back to direct queries");
-      useView = false;
-    }
-    
-    // Execute queries in parallel for better performance
-    const categoriesPromise = prismadb.category.findMany({
-      orderBy: {
-        name: 'asc'
-      },
-      // Limit fields for better performance
-      select: {
-        id: true,
-        name: true
-      }
-    });
-    
-    let companionsPromise;
-    let countPromise;
-    
-    if (useView) {
-      // Use the much faster materialized view if available
-      const viewWhereClause = categoryId 
-        ? Prisma.sql`WHERE "categoryId" = ${categoryId}`
-        : Prisma.sql``;
-        
-      // Get count from view with a timeout
-      countPromise = Promise.race([
-        prismadb.$queryRaw`
-          SELECT COUNT(*) as count FROM "mv_dashboard_companions"
-          ${viewWhereClause}
-        `,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Count query timeout')), 1000)
-        )
-      ]).catch(err => {
-        console.log("[DASHBOARD_PREFETCH] Count query timeout, using estimate:", err);
-        return [{ count: 100 }]; // Fallback to an estimate
-      });
-      
-      // Build a dynamic query that only includes available columns
-      let selectClause = Prisma.sql`
-        SELECT 
-          id, name, src, "categoryId", "userName"
-      `;
-      
-      // Conditionally add columns that might be missing
-      if (availableColumns.description) {
-        selectClause = Prisma.sql`${selectClause}, "description"`;
-      }
-      
-      if (availableColumns.isFree) {
-        selectClause = Prisma.sql`${selectClause}, "isFree"`;
-      }
-      
-      if (availableColumns.global) {
-        selectClause = Prisma.sql`${selectClause}, global`;
-      }
-      
-      if (availableColumns.views) {
-        selectClause = Prisma.sql`${selectClause}, views`;
-      }
-      
-      if (availableColumns.votes) {
-        selectClause = Prisma.sql`${selectClause}, votes`;
-      }
-      
-      // Add other essential columns
-      selectClause = Prisma.sql`${selectClause}, "createdAt"`;
-      
-      // Build the full query
-      companionsPromise = prismadb.$queryRaw`
-        ${selectClause}
-        FROM "mv_dashboard_companions"
-        ${viewWhereClause}
-        LIMIT ${pageSize} OFFSET ${skip}
-      `;
-    } else {
-      // Fall back to the original query with optimizations
-      const whereCondition: Prisma.CompanionWhereInput = {
-        OR: [
-          { private: false },
-          { userId: "system" },
-          ...(userId ? [{ userId }] : [])
-        ],
-        ...(categoryId ? { categoryId } : {})
-      };
-      
-      // Select only needed fields to reduce query size and processing time
-      companionsPromise = prismadb.companion.findMany({
-        where: whereCondition,
-        select: {
-          id: true,
-          userId: true,
-          userName: true,
-          src: true,
-          name: true,
-          description: true,
-          categoryId: true,
-          isFree: true,
-          global: true,
-          createdAt: true,
-          views: true,
-          votes: true,
-          // Exclude large fields like instructions, seed, etc.
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        skip,
-        take: pageSize,
-      });
-    
-      // Use an SQL count query instead
-      countPromise = prismadb.$queryRaw`
-        SELECT COUNT(*) as count FROM "Companion" 
-        WHERE (private = false OR "userId" = 'system' ${userId ? Prisma.sql`OR "userId" = ${userId}` : Prisma.empty})
-        ${categoryId ? Prisma.sql`AND "categoryId" = ${categoryId}` : Prisma.empty}
-      `;
-    }
-    
-    // Get user progress (if authenticated)
-    const userProgressPromise = userId ? prismadb.userUsage.findUnique({
-      where: { userId },
-      select: {
-        availableTokens: true,
-        totalSpent: true
-      }
-    }) : Promise.resolve(null);
-    
-    // Wait for all queries to complete
-    const [categories, companions, companionsCount, userProgress] = await Promise.all([
-      categoriesPromise,
-      companionsPromise,
-      countPromise,
-      userProgressPromise
-    ]) as [any, any[], any[], any];
-    
-    // Process the companions data to ensure consistent structure
-    const processedCompanions = companions.map((companion: any) => ({
-      ...companion,
+      createdAt: true,
       _count: {
-        messages: safeNumberConversion(companion.message_count) || 0
-      },
-      tokensBurned: safeNumberConversion(companion.tokensBurned)
-    }));
-    
-    // For authenticated users, fetch user-specific burned tokens
-    let companionsWithUserData = processedCompanions;
-    
-    if (userId) {
-      const userBurnedTokensPromise = prismadb.userBurnedTokens.findMany({
-        where: {
-          userId,
-          companionId: {
-            in: processedCompanions.map((c: any) => c.id)
-          }
-        }
-      });
-      
-      // Load user burned tokens in parallel with other queries
-      const userBurnedTokens = await userBurnedTokensPromise;
-      
-      companionsWithUserData = processedCompanions.map((companion: any) => ({
-        ...companion,
-        userBurnedTokens: userBurnedTokens.filter(
-          token => token.companionId === companion.id
-        ).map(token => ({
-          ...token,
-          tokensBurned: safeNumberConversion(token.tokensBurned)
-        }))
-      }));
-    }
-    
-    // Prepare response data with safely converted numbers
-    const totalCompanions = safeNumberConversion(
-      Array.isArray(companionsCount) && companionsCount.length > 0 
-        ? companionsCount[0]?.count 
-        : 0
-    );
-    
-    // Trim companion data to reduce cache size
-    const trimmedCompanions = companionsWithUserData.map(companion => ({
-      id: companion.id,
-      name: companion.name,
-      src: companion.src,
-      description: companion.description ? 
-        (companion.description.substring(0, 100) + (companion.description.length > 100 ? '...' : '')) : 
-        'No description available', // Fallback for missing description
-      categoryId: companion.categoryId,
-      userName: companion.userName,
-      isFree: companion.isFree !== undefined ? companion.isFree : false,
-      global: companion.global !== undefined ? companion.global : false,
-      createdAt: companion.createdAt,
-      views: companion.views !== undefined ? companion.views : 0,
-      votes: companion.votes !== undefined ? companion.votes : 0,
-      // Exclude large fields like instructions, seed, and configuration objects
-    }));
-    
-    const responseData = {
-      categories,
-      companions: trimmedCompanions, // Use trimmed companions data for response
-      totalCompanions,
-      currentPage: page,
-      pageSize,
-      userProgress: userProgress ? {
-        availableTokens: safeNumberConversion(userProgress.availableTokens),
-        totalSpent: safeNumberConversion(userProgress.totalSpent)
-      } : { availableTokens: 0, totalSpent: 0 },
-      performance: {
-        responseTime: Date.now() - startTime,
-        cached: false,
-        usedMaterializedView: useView
+        select: { messages: true }
       }
-    };
-    
-    // If no user, add cache headers and cache the result
-    if (!userId) {
-      headers = {
-        "Cache-Control": "public, max-age=300, s-maxage=300",
-        "CDN-Cache-Control": "public, max-age=300, s-maxage=300",
-        "X-Cache": "MISS"
-      };
-      
-      // Cache for anonymous users (5 minutes) with chunking
-      await setCacheWithChunking(cacheKey, responseData, 300);
-    } else if (userId) {
-      // Cache for authenticated users (30 seconds) with chunking
-      await setCacheWithChunking(cacheKey, responseData, 30);
+    },
+    orderBy: { createdAt: 'desc' },
+    take: pageSize,
+    skip
+  });
+  
+  // 4. Get count with timeout - using raw SQL query for better performance
+  const countPromise = Promise.race([
+    prismadb.$executeRaw`SELECT COUNT(*) as count FROM "Companion" 
+      WHERE (private = false OR "userId" = 'system' ${userId ? Prisma.sql`OR "userId" = ${userId}` : Prisma.empty})
+      ${categoryId ? Prisma.sql`AND "categoryId" = ${categoryId}` : Prisma.empty}`,
+    new Promise<any>((_, reject) => 
+      setTimeout(() => reject(new Error('Count query timeout')), ANON_QUERY_TIMEOUT)
+    )
+  ]).catch(() => {
+    console.log("[DASHBOARD_DIRECT] Count query timeout, using fallback");
+    return [{ count: pageSize * 3 }]; // Fallback estimate
+  });
+  
+  // 5. Execute all in parallel
+  const [categories, companions, countResult] = await Promise.all([
+    categoriesPromise,
+    companionsPromise,
+    countPromise
+  ]);
+  
+  // Get the count from the result (handle array format)
+  const totalCompanions = Array.isArray(countResult) && countResult.length > 0 
+    ? Number(countResult[0]?.count || 0) 
+    : (typeof countResult === 'number' ? countResult : pageSize * 3);
+  
+  // 6. Process companions - minimize processing
+  const processedCompanions = companions.map((companion: any) => ({
+    id: companion.id,
+    name: companion.name,
+    src: companion.src,
+    description: companion.description?.length > MAX_DESCRIPTION_LENGTH ? 
+      companion.description.substring(0, MAX_DESCRIPTION_LENGTH) + '...' : 
+      companion.description || 'No description',
+    categoryId: companion.categoryId,
+    userName: companion.userName,
+    isFree: companion.isFree,
+    global: companion.global || false,
+    createdAt: companion.createdAt,
+    _count: { messages: companion._count?.messages || 0 }
+  }));
+  
+  console.log(`[DASHBOARD_DIRECT] Direct query completed in ${Date.now() - startTime}ms`);
+  
+  return {
+    categories,
+    companions: processedCompanions,
+    totalCompanions,
+    performance: {
+      responseTime: Date.now() - startTime,
+      usedMaterializedView: false
     }
+  };
+}
+
+// Proxy to optimized implementation
+export async function GET(req: Request) {
+  // Add Vercel Edge Cache headers
+  try {
+    const result = await OptimizedDashboardPrefetch(req);
     
-    // Log performance
-    const duration = Date.now() - startTime;
-    console.log(`[DASHBOARD_PREFETCH] Completed in ${duration}ms`);
+    // Add additional cache headers for Vercel
+    const headers = new Headers(result.headers);
     
-    // Use the structured clone algorithm to handle BigInt serialization
-    return new NextResponse(
-      JSON.stringify(responseData, (key, value) => {
-        if (typeof value === 'bigint') {
-          return Number(value.toString());
-        }
-        return value;
-      }),
-      { headers }
-    );
+    // Add Vercel-specific cache headers
+    headers.set('CDN-Cache-Control', headers.get('Cache-Control') || 'public, max-age=1800, stale-while-revalidate=3600');
+    headers.set('Vercel-CDN-Cache-Control', headers.get('Cache-Control') || 'public, max-age=1800, stale-while-revalidate=3600');
     
+    // Create new response with updated headers
+    return new NextResponse(await result.text(), {
+      status: result.status,
+      statusText: result.statusText,
+      headers
+    });
   } catch (error) {
-    console.log("[DASHBOARD_PREFETCH_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("[DASHBOARD_PREFETCH_PROXY_ERROR]", error);
+    
+    // Return minimal data on error
+    return NextResponse.json({
+      categories: [],
+      companions: [],
+      totalCompanions: 0,
+      currentPage: 1,
+      pageSize: 12,
+      performance: {
+        responseTime: 0,
+        cached: false,
+        usedMaterializedView: false,
+        error: true
+      }
+    }, { status: 200 });
   }
 }
 

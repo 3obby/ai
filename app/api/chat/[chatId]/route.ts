@@ -4,7 +4,6 @@ import { NextResponse } from "next/server"
 import { OpenAI } from "openai"
 import prismadb from "@/lib/prismadb"
 import { Role, Companion } from "@prisma/client"
-import { StreamingTextResponse } from "ai"
 
 import { MemoryManager } from "@/lib/memory"
 import { rateLimit } from "@/lib/rate-limit"
@@ -12,6 +11,7 @@ import {
   trackTokenUsage
 } from "@/lib/token-usage"
 import { TOKENS_PER_MESSAGE } from "@/lib/token-usage"
+import { getAnonymousCache, setAnonymousCache } from "@/lib/redis-cache"
 
 
 // Force dynamic rendering for API routes
@@ -36,6 +36,9 @@ export async function POST(
     
     // Use query userId if provided and no session userId exists
     const effectiveUserId = userId || queryUserId;
+    
+    // Check if this is an anonymous user
+    const isAnonymousUser = !userId && queryUserId;
 
     if (!effectiveUserId) {
       return new NextResponse("User ID is required", { status: 400 })
@@ -288,88 +291,129 @@ export async function POST(
     // Initialize OpenAI
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
 
-    // Get a completion from the API without streaming
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: optimizedMessages,
-    });
-
-    // Calculate tokens used from the API response
-    const promptTokens = completion.usage?.prompt_tokens || 0;
-    const completionTokens = completion.usage?.completion_tokens || 0;
-    const totalTokens = promptTokens + completionTokens;
-    
-    // Log token usage for debugging
-    console.log(`[TOKEN_USAGE] Actual tokens used - Prompt: ${promptTokens}, Completion: ${completionTokens}, Total: ${totalTokens}`);
-    
-    // Token efficiency optimization
-    // Economy mode uses an even lower minimum token count
-    const MIN_TOKENS = economyMode ? 25 : 50;
-    const tokensToDeduct = Math.max(totalTokens, MIN_TOKENS);
-
-    // Update token usage with the actual token count
-    await trackTokenUsage(effectiveUserId, tokensToDeduct, "chat")
-      .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
-
-    // Deduct tokens from user's allocation based on actual usage
-    await prismadb.userUsage.update({
-      where: { userId: effectiveUserId },
-      data: {
-        availableTokens: { decrement: tokensToDeduct },
-        totalSpent: { increment: tokensToDeduct },
-      },
-    });
-    
-    // Update both global and user-specific token burning metrics
-    try {
-      // Use the updated transaction syntax with a callback function
-      await prismadb.$transaction(async (tx) => {
-        // Update global tokens burned counter for the bot
-        await tx.$executeRaw`
-          UPDATE "Companion" 
-          SET "tokensBurned" = "tokensBurned" + ${tokensToDeduct},
-              "xpEarned" = "xpEarned" + ${tokensToDeduct}
-          WHERE "id" = ${params.chatId}
-        `;
-        
-        // Upsert user-specific token burning record
-        await tx.$executeRaw`
-          INSERT INTO "UserBurnedTokens" ("id", "userId", "companionId", "tokensBurned", "createdAt", "updatedAt")
-          VALUES (
-            gen_random_uuid(), 
-            ${effectiveUserId}, 
-            ${params.chatId}, 
-            ${tokensToDeduct}, 
-            NOW(), 
-            NOW()
-          )
-          ON CONFLICT ("userId", "companionId") 
-          DO UPDATE SET 
-            "tokensBurned" = "UserBurnedTokens"."tokensBurned" + ${tokensToDeduct},
-            "updatedAt" = NOW()
-        `;
-      });
+    // For anonymous users with simple queries, check cache first
+    if (isAnonymousUser && allMessages.length <= 3) {
+      // Create a cache key based on the companion and the last message
+      const lastMessage = allMessages[allMessages.length - 1];
+      const cacheKey = `chat:${params.chatId}:${Buffer.from(lastMessage.content).toString('base64').substring(0, 40)}`;
       
-      console.log(`Updated token metrics: ${tokensToDeduct} tokens burned by interaction with ${params.chatId}`);
-    } catch (error) {
-      console.error("Failed to update token burning records:", error);
+      // Try to get from cache
+      const cachedResponse = await getAnonymousCache<string>(cacheKey);
+      
+      if (cachedResponse) {
+        console.log(`[CACHE_HIT] Using cached response for anonymous user`);
+        
+        // Even for cached responses, we need to track token usage
+        // But we can do it asynchronously
+        setTimeout(async () => {
+          try {
+            await trackTokenUsage(effectiveUserId, TOKENS_PER_MESSAGE, "chat")
+              .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
+            
+            await prismadb.userUsage.update({
+              where: { userId: effectiveUserId },
+              data: {
+                availableTokens: { decrement: TOKENS_PER_MESSAGE },
+                totalSpent: { increment: TOKENS_PER_MESSAGE },
+              },
+            });
+          } catch (error) {
+            console.error("[ASYNC_TOKEN_UPDATE_ERROR]", error);
+          }
+        }, 0);
+        
+        // Return cached response immediately
+        return new Response(cachedResponse);
+      }
     }
+    
+    // If no cached response, continue with the regular flow...
+    
+    // Create a streaming response for faster user experience
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    
+    // Process in background while immediately returning stream
+    const processResponse = async () => {
+      try {
+        // Get a completion from the API with streaming
+        const stream = await openai.chat.completions.create({
+          model: economyMode ? "gpt-3.5-turbo" : "gpt-4",
+          messages: optimizedMessages,
+          stream: true,
+          temperature: 0.7,
+          max_tokens: economyMode ? 250 : 500,
+        });
+        
+        // Variables to track token usage (estimated)
+        let responseText = '';
+        
+        // Process each chunk as it arrives
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          responseText += content;
+          
+          // Write to the stream for immediate display to user
+          if (content) {
+            await writer.write(content);
+          }
+        }
+        
+        // For anonymous users, cache the response to improve future performance
+        if (isAnonymousUser && allMessages.length <= 3) {
+          const lastMessage = allMessages[allMessages.length - 1];
+          const cacheKey = `chat:${params.chatId}:${Buffer.from(lastMessage.content).toString('base64').substring(0, 40)}`;
+          
+          // Cache the full response
+          await setAnonymousCache(cacheKey, responseText, 300); // 5 minute TTL
+          console.log(`[CACHE_SET] Cached response for anonymous user`);
+        }
+        
+        // Calculate approximate token usage
+        const promptTokens = optimizedMessages.reduce((total: number, msg: { content: string }) => {
+          return total + (msg.content.length / 4); // Rough approximation
+        }, 0);
+        const completionTokens = responseText.length / 4; // Rough approximation
+        const totalTokens = Math.ceil(promptTokens + completionTokens);
+        
+        // Log token usage for debugging
+        console.log(`[TOKEN_USAGE] Estimated tokens used - Prompt: ${Math.ceil(promptTokens)}, Completion: ${Math.ceil(completionTokens)}, Total: ${totalTokens}`);
+        
+        // Token efficiency optimization
+        // Economy mode uses an even lower minimum token count
+        const MIN_TOKENS = economyMode ? 25 : 50;
+        const tokensToDeduct = Math.max(totalTokens, MIN_TOKENS);
 
-    // Get the response content
-    const responseContent = completion.choices[0].message.content || "";
+        // Update token usage in the background (don't block response)
+        trackTokenUsage(effectiveUserId, tokensToDeduct, "chat")
+          .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
 
-    // Save the message to the database
-    await prismadb.message.create({
-      data: {
-        content: responseContent,
-        role: "assistant" as Role,
-        companionId: params.chatId,
-        userId: effectiveUserId,
+        // Deduct tokens from user's allocation based on actual usage
+        await prismadb.userUsage.update({
+          where: { userId: effectiveUserId },
+          data: {
+            availableTokens: { decrement: tokensToDeduct },
+            totalSpent: { increment: tokensToDeduct },
+          },
+        });
+        
+        // Close the writer when done
+        await writer.close();
+      } catch (error) {
+        console.error("[CHAT_STREAM_ERROR]", error);
+        await writer.abort(error);
+      }
+    };
+    
+    // Start processing in the background
+    processResponse();
+    
+    // Return the readable stream directly instead of using StreamingTextResponse
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
       },
     });
-
-    // Return the response content directly
-    return new Response(responseContent);
   } catch (error) {
     console.log("Error in POST route:", error)
     return new NextResponse("Internal Error", { status: 500 })

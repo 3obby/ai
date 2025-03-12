@@ -74,22 +74,40 @@ const Dashboard = () => {
       const page = searchParams?.get('page') || '1';
       const categoryId = searchParams?.get('categoryId') || '';
       
-      // Build URL with search params
+      // Build URL with search params and add timestamp to prevent caching issues
       const url = new URL('/api/dashboard/prefetch', window.location.origin);
       url.searchParams.set('page', page);
       if (categoryId) url.searchParams.set('categoryId', categoryId);
+      url.searchParams.set('_t', Date.now().toString()); // Add timestamp to prevent caching
       
       const response = await fetch(url.toString());
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      if (!response.ok) {
+        console.error(`Dashboard prefetch failed: ${response.status} ${response.statusText}`);
+        
+        // If we get a 404, try to use fallback data
+        if (response.status === 404) {
+          // Set minimal data to prevent UI from breaking
+          setCompanions([]);
+          setCategories([]);
+          setTotalCompanions(0);
+          setCurrentPage(parseInt(page));
+          setPageSize(20);
+          
+          // Try refreshing the dashboard data instead
+          refreshData();
+        }
+        
+        throw new Error(`Failed to fetch dashboard data: ${response.status} ${response.statusText}`);
+      }
       
       const data = await response.json();
       
       // Update all state at once
-      setCompanions(data.companions);
-      setCategories(data.categories);
-      setTotalCompanions(data.totalCompanions);
-      setCurrentPage(data.currentPage);
-      setPageSize(data.pageSize);
+      setCompanions(data.companions || []);
+      setCategories(data.categories || []);
+      setTotalCompanions(data.totalCompanions || 0);
+      setCurrentPage(data.currentPage || parseInt(page));
+      setPageSize(data.pageSize || 20);
       
       const endTime = performance.now();
       setLoadTime(Math.round(endTime - startTime));
@@ -99,7 +117,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchParams]);
+  }, [searchParams, refreshData]);
 
   // Fetch data when component mounts or params change
   useEffect(() => {

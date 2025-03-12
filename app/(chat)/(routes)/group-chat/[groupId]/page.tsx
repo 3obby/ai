@@ -17,8 +17,8 @@ const GroupChatIdPage = async ({ params, searchParams }: GroupChatIdPageProps) =
   const session = await auth()
   const userId = session?.userId
   
-  // Check for anonymous user ID in cookies
-  const cookieStore = cookies()
+  // In Next.js 15, cookies() must be awaited
+  const cookieStore = await cookies()
   const anonymousUserId = cookieStore.get('anonymousUserId')?.value || 
                           cookieStore.get('next-auth.anonymous-user-id')?.value || 
                           cookieStore.get('next-auth.anonymous-token')?.value

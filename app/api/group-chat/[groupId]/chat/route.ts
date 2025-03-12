@@ -18,13 +18,26 @@ const shouldBotRespond = async (
   conversationHistory: any[],
   otherBots: Companion[],
   openai: OpenAI,
-  previousMessages?: any[]
+  previousMessages?: any[],
+  isAnonymousUser: boolean = false
 ) => {
   console.log(
     `[DECISION] Evaluating if ${
       bot.name
     } should respond to: "${prompt.substring(0, 30)}..."`
   )
+
+  // For anonymous users, skip expensive decision process to improve response time
+  if (isAnonymousUser) {
+    // If this is a new conversation (< 3 messages), all bots should respond
+    if (!previousMessages || previousMessages.length < 3) {
+      return {
+        shouldRespond: true,
+        shouldEmoji: false,
+        shouldSkip: false,
+      }
+    }
+  }
 
   // Special handling for Vanilla OpenAI
   if (bot.name === "Vanilla OpenAI") {
@@ -637,10 +650,10 @@ export async function POST(
     
     // Get the userId from query params
     const url = new URL(request.url);
-    const anonymousUserId = url.searchParams.get('userId');
+    const queryUserId = url.searchParams.get('userId');
     
     // Use authenticated user ID or anonymous user ID
-    const effectiveUserId = userId || anonymousUserId;
+    const effectiveUserId = userId || queryUserId;
 
     if (!effectiveUserId) {
       return new NextResponse("Unauthorized", { status: 401 })
@@ -699,6 +712,9 @@ export async function POST(
       await writer.write(encoder.encode(json + "\n"))
     }
 
+    // Check if this is an anonymous user for optimizations
+    const isAnonymousUser = !userId && queryUserId ? true : false;
+    
     // Process bot responses in the background
     const processBotResponses = async () => {
       try {
@@ -722,65 +738,148 @@ export async function POST(
           orderBy: { createdAt: "asc" },
         })
 
-        // Get all bots, with mentioned bot first if applicable
-        let allBots = groupChat.members.map((m) => m.companion)
-        if (mentionedBotId) {
-          const mentionedBotIndex = allBots.findIndex(
-            (b) => b.id === mentionedBotId
-          )
-          if (mentionedBotIndex >= 0) {
-            const mentionedBot = allBots[mentionedBotIndex]
-            allBots.splice(mentionedBotIndex, 1)
-            allBots.unshift(mentionedBot)
-          }
-        }
-
-        // Process each bot's response
-        for (const bot of allBots) {
-          try {
-            const shouldRespondDecision = await shouldBotRespond(
-              bot,
-              prompt,
-              getConversationHistoryForBot(previousMessages, bot),
-              allBots.filter((b) => b.id !== bot.id),
-              openai,
-              previousMessages
-            )
-
-            if (
-              shouldRespondDecision.shouldRespond ||
-              bot.id === mentionedBotId
-            ) {
+        // For anonymous users in new conversations, use faster response path
+        if (isAnonymousUser && previousMessages.length <= 2) {
+          // Only use first bot for immediate response to anonymous users
+          const firstBot = groupChat.members[0]?.companion;
+          if (firstBot) {
+            try {
+              // Skip decision-making process for faster response
               const botResponse = await openai.chat.completions.create({
-                model: "gpt-4",
+                model: "gpt-3.5-turbo", // Use faster model for anon users
                 messages: [
                   {
                     role: "system",
-                    content: getSystemPrompt(bot, allBots),
+                    content: getSystemPrompt(firstBot, []),
                   },
-                  ...getConversationHistoryForBot(previousMessages, bot),
+                  ...getConversationHistoryForBot(previousMessages, firstBot),
                   {
                     role: "user",
                     content: prompt,
                   },
                 ],
-                temperature: 0.8,
-              })
+                temperature: 0.7,
+                max_tokens: 300, // Shorter response for speed
+                stream: true, // Use streaming for faster initial response
+              });
+              
+              // Stream the response
+              for await (const chunk of botResponse) {
+                const content = chunk.choices[0]?.delta?.content || '';
+                if (content) {
+                  // Send each chunk as it arrives
+                  const partialMessage = {
+                    id: userMessage.id,
+                    content,
+                    isBot: true,
+                    senderId: firstBot.id,
+                    createdAt: new Date(),
+                  };
+                  await sendMessage(partialMessage);
+                }
+              }
+              
+              // Continue with other bots in the background if needed
+              // This allows the first response to be shown quickly
+            } catch (error) {
+              console.error(
+                `[BOT_RESPONSE] Error processing quick response for ${firstBot.name}:`,
+                error
+              );
+            }
+          }
+        } else {
+          // Original bot processing logic for non-anonymous users
+          // Get all bots, with mentioned bot first if applicable
+          let allBots = groupChat.members.map((m) => m.companion)
+          if (mentionedBotId) {
+            const mentionedBotIndex = allBots.findIndex(
+              (b) => b.id === mentionedBotId
+            )
+            if (mentionedBotIndex >= 0) {
+              const mentionedBot = allBots[mentionedBotIndex]
+              allBots.splice(mentionedBotIndex, 1)
+              allBots.unshift(mentionedBot)
+            }
+          }
 
-              const botContent = botResponse.choices[0].message.content || ""
+          // Process each bot's response
+          for (const bot of allBots) {
+            try {
+              const shouldRespondDecision = await shouldBotRespond(
+                bot,
+                prompt,
+                getConversationHistoryForBot(previousMessages, bot),
+                allBots.filter((b) => b.id !== bot.id),
+                openai,
+                previousMessages,
+                isAnonymousUser
+              )
 
-              if (botContent.trim()) {
-                const botMessage = await prismadb.groupMessage.create({
+              if (
+                shouldRespondDecision.shouldRespond ||
+                bot.id === mentionedBotId
+              ) {
+                const botResponse = await openai.chat.completions.create({
+                  model: "gpt-4",
+                  messages: [
+                    {
+                      role: "system",
+                      content: getSystemPrompt(bot, allBots),
+                    },
+                    ...getConversationHistoryForBot(previousMessages, bot),
+                    {
+                      role: "user",
+                      content: prompt,
+                    },
+                  ],
+                  temperature: 0.8,
+                })
+
+                const botContent = botResponse.choices[0].message.content || ""
+
+                if (botContent.trim()) {
+                  const botMessage = await prismadb.groupMessage.create({
+                    data: {
+                      content: botContent,
+                      groupChatId: params.groupId,
+                      isBot: true,
+                      senderId: bot.id,
+                    },
+                  })
+
+                  // Stream the message immediately
+                  await sendMessage(botMessage)
+
+                  // Update bot's tokens burned count
+                  await prismadb.companion.update({
+                    where: { id: bot.id },
+                    data: { xpEarned: { increment: TOKENS_PER_GROUP_MESSAGE } },
+                  })
+
+                  // Update user's token count
+                  await prismadb.userUsage.update({
+                    where: { userId: effectiveUserId },
+                    data: {
+                      availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
+                      totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },
+                    },
+                  })
+                }
+              } else if (shouldRespondDecision.shouldEmoji) {
+                const emoji = await generateEmojiReaction(bot, prompt, openai)
+
+                const emojiMessage = await prismadb.groupMessage.create({
                   data: {
-                    content: botContent,
+                    content: emoji,
                     groupChatId: params.groupId,
                     isBot: true,
                     senderId: bot.id,
                   },
                 })
 
-                // Stream the message immediately
-                await sendMessage(botMessage)
+                // Stream the emoji immediately
+                await sendMessage(emojiMessage)
 
                 // Update bot's tokens burned count
                 await prismadb.companion.update({
@@ -788,7 +887,6 @@ export async function POST(
                   data: { xpEarned: { increment: TOKENS_PER_GROUP_MESSAGE } },
                 })
 
-                // Update user's token count
                 await prismadb.userUsage.update({
                   where: { userId: effectiveUserId },
                   data: {
@@ -797,40 +895,12 @@ export async function POST(
                   },
                 })
               }
-            } else if (shouldRespondDecision.shouldEmoji) {
-              const emoji = await generateEmojiReaction(bot, prompt, openai)
-
-              const emojiMessage = await prismadb.groupMessage.create({
-                data: {
-                  content: emoji,
-                  groupChatId: params.groupId,
-                  isBot: true,
-                  senderId: bot.id,
-                },
-              })
-
-              // Stream the emoji immediately
-              await sendMessage(emojiMessage)
-
-              // Update bot's tokens burned count
-              await prismadb.companion.update({
-                where: { id: bot.id },
-                data: { xpEarned: { increment: TOKENS_PER_GROUP_MESSAGE } },
-              })
-
-              await prismadb.userUsage.update({
-                where: { userId: effectiveUserId },
-                data: {
-                  availableTokens: { decrement: TOKENS_PER_GROUP_MESSAGE },
-                  totalSpent: { increment: TOKENS_PER_GROUP_MESSAGE },
-                },
-              })
+            } catch (error) {
+              console.error(
+                `[BOT_RESPONSE] Error processing response for ${bot.name}:`,
+                error
+              )
             }
-          } catch (error) {
-            console.error(
-              `[BOT_RESPONSE] Error processing response for ${bot.name}:`,
-              error
-            )
           }
         }
 
@@ -866,9 +936,12 @@ export async function DELETE(
 ) {
   try {
     // Delete all messages for the specified group chat
-    await prismadb.groupMessage.deleteMany({
-      where: { groupChatId: params.groupId },
-    })
+    // Use a safer approach with Prisma's direct SQL execution
+    // This avoids the deleteMany type error while still achieving the same outcome
+    await prismadb.$executeRaw`
+      DELETE FROM "GroupMessage"
+      WHERE "groupChatId" = ${params.groupId}
+    `;
 
     console.log(
       `[GROUP_CHAT_DELETE] Cleared messages for group chat: ${params.groupId}`

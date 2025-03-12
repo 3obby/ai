@@ -97,6 +97,10 @@ model Message {
   @@index([userId])
   @@index([createdAt])
   @@index([role])
+  // Add compound indexes for faster chat message queries
+  @@index([companionId, createdAt])
+  @@index([companionId, userId])
+  @@index([companionId, userId, createdAt])
 }
 
 model DailyMessageCount {
@@ -199,6 +203,8 @@ model GroupChat {
   @@index([creatorId])
   @@index([createdAt])
   @@index([name])
+  // Add index for faster creator + creation time queries
+  @@index([creatorId, createdAt])
 }
 
 model GroupChatMember {
@@ -229,6 +235,11 @@ model GroupMessage {
   @@index([senderId])
   @@index([createdAt])
   @@index([isBot])
+  // Add compound indexes for faster message retrieval
+  @@index([groupChatId, createdAt])
+  @@index([groupChatId, senderId])
+  @@index([groupChatId, isBot])
+  @@index([groupChatId, senderId, createdAt])
 }
 
 model UserPrompt {
