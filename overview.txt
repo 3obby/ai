@@ -1,7 +1,7 @@
 # GCBB AI Companion Platform - Technical Overview
 
 ## Core Architecture
-- Next.js 14.2.24 with App Router and TypeScript
+- Next.js with App Router and TypeScript
 - PostgreSQL database with Prisma ORM (v6.4.1)
 - OpenAI integration (GPT models via API)
 - Authentication via NextAuth (v4.24.11)
@@ -10,6 +10,8 @@
 - Tailwind CSS with dark mode theming
 - Server Components optimization
 - Vercel deployment with Neon PostgreSQL database
+- Redis caching for API responses
+- Materialized views for dashboard performance
 
 ## Key Components
 
@@ -25,10 +27,12 @@
 
 ### Token Economy System
 - Token balance tracking per user
-- Subscription-based token allocation (200,000 tokens weekly)
-- Token purchases with subscriber discounts (20% off)
+- Anonymous users receive 1,000 free tokens for trial usage
+- Magic link login users (/login) receive 10,000 free tokens upon authentication
+- Subscription-based allocation: Users subscribing at $4.99/week receive 200,000 tokens weekly
+- Additional token purchases: Active subscribers can buy 250,000 tokens for $4.99 each
 - Usage analytics and transaction tracking
-- Companion publishing costs (100,000 tokens)
+- Companion publishing costs: 100,000 tokens
 
 ### API Architecture
 - `/api/chat/[chatId]`: Message exchange endpoint
@@ -93,9 +97,49 @@
 - Collaborative workspace tools
 - Role-playing frameworks
 
+## Performance Optimizations
+
+### Database Optimizations
+- Strategic indexes on foreign keys and frequently queried columns
+- Partial indexes for common query patterns (public companions, system companions)
+- Composite indexes for multi-column conditions
+- Materialized views for dashboard data with refresh functions
+- Query monitoring and slow query analysis
+- Connection pooling for high-traffic scenarios
+
+### Caching Architecture
+- Redis caching for public API responses
+- Custom BigInt serialization for Redis compatibility
+- Tiered cache strategy:
+  - Anonymous users: 5-minute cache
+  - Authenticated users: 30-second cache
+  - Critical content: No cache
+- Cache invalidation on relevant data changes
+
+### Frontend Performance
+- Optimized image loading with priority images
+- Progressive image loading with blur placeholders
+- Response compression with gzip/brotli
+- Static asset caching with optimal Cache-Control headers
+- Conditional component rendering based on user type
+
+### Multi-Region Deployment
+- Configuration for multiple Vercel regions (Singapore, France)
+- Edge caching for static assets
+- Region-specific databases for reduced latency
+- CDN optimization for image delivery
+
+### Anonymous User Experience
+- Public dashboard access without authentication
+- Viewing public companions without login
+- Seamless upgrade path to authenticated session
+- Progressive feature revelation based on authentication status
+
 ## Development Approach
 - Server Components for efficient rendering
 - Progressive enhancement for feature detection
 - React Context for state management
 - Custom hooks for specialized behaviors
-- Prisma migrations with shadow database for safe schema changes 
+- Prisma migrations with shadow database for safe schema changes
+- Scheduled database maintenance for materialized view refresh
+- Comprehensive error handling with graceful degradation 

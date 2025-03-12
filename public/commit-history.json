@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "70b93f1",
+      "fullHash": "70b93f139de5c9ad4ec69f097da727341e254b50",
+      "date": "2025-03-12 16:10:38 +0700",
+      "author": "3obby",
+      "message": "Add Redis caching and performance optimizations with materialized views",
+      "category": "feature"
+    },
+    {
       "hash": "f26a3ca",
       "fullHash": "f26a3ca68de508e82fac09ba27efb218a2f1c359",
       "date": "2025-03-12 11:02:26 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Replace Clerk with magic link authentication using Postmark",
       "category": "other"
-    },
-    {
-      "hash": "fdf77e0",
-      "fullHash": "fdf77e0c15d905799849ff695cd531339b8e5486",
-      "date": "2025-03-06 14:51:54 +0700",
-      "author": "3obby",
-      "message": "Updated landing page and authentication flow with cleaner URLs",
-      "category": "enhancement"
     }
   ]
 }

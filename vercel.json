@@ -1,4 +1,18 @@
 {
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "regions": ["fra1", "sin1"],
+  "public": false,
+  "github": {
+    "silent": true
+  },
+  "crons": [
+    {
+      "path": "/api/cron/refresh-views",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60
