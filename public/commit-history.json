@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "13b4e53",
+      "fullHash": "13b4e53f369c7d8cfe8cedf6a3ac87e4a970c836",
+      "date": "2025-03-12 16:19:44 +0700",
+      "author": "3obby",
+      "message": "Fix React 19 compatibility issues with Radix UI and other dependencies",
+      "category": "bugfix"
+    },
+    {
       "hash": "3fe73d7",
       "fullHash": "3fe73d7023dcc90d5dd0f22509cae3427df99b31",
       "date": "2025-03-12 16:14:28 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update remaining components to use custom auth instead of Clerk",
       "category": "enhancement"
-    },
-    {
-      "hash": "ef516ad",
-      "fullHash": "ef516adf8553bf7945c795f7f01eb2e81d93b2d0",
-      "date": "2025-03-06 15:34:07 +0700",
-      "author": "3obby",
-      "message": "Fix Clerk dependencies and update components to use custom magic link auth",
-      "category": "bugfix"
     }
   ]
 }
