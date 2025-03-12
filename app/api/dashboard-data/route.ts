@@ -17,6 +17,37 @@ export const dynamic = "force-dynamic";
 // Cache control for anonymous users
 export const revalidate = 60; // 1 minute revalidation for all users
 
+// Configure retry settings for database queries
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 500; // ms
+
+/**
+ * Wrapper function to retry database queries
+ */
+async function withRetry<T>(
+  queryFn: () => Promise<T>, 
+  errorMessage: string,
+  maxRetries = MAX_RETRIES
+): Promise<T> {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await queryFn();
+    } catch (error) {
+      console.error(`[DASHBOARD_DATA] ${errorMessage} (Attempt ${attempt}/${maxRetries}):`, error);
+      lastError = error;
+      
+      // If this is not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function GET(req: Request) {
   const startTime = performance.now();
   try {
@@ -45,7 +76,7 @@ export async function GET(req: Request) {
           return NextResponse.json(cachedData, {
             headers: {
               'X-Cache': 'HIT',
-              'Cache-Control': 'public, max-age=300, s-maxage=300',
+              'Cache-Control': 'public, max-age=600, s-maxage=600',
             }
           });
         }
@@ -58,15 +89,15 @@ export async function GET(req: Request) {
     // Prepare cache headers
     const headers: HeadersInit = {};
     if (isAnonymous) {
-      // Cache anonymous responses for 5 minutes
-      headers["Cache-Control"] = "public, max-age=300, s-maxage=300";
+      // Cache anonymous responses for 10 minutes (increased from 5)
+      headers["Cache-Control"] = "public, max-age=600, s-maxage=600";
     }
     
     // Run queries in parallel for better performance with timeouts
     console.log(`[DASHBOARD_DATA] Fetching data for ${isAnonymous ? 'anonymous user' : `user ${effectiveUserId}`}`);
     
     // Use longer timeouts for anonymous users
-    const queryTimeout = isAnonymous ? 6000 : 3000; // 6 seconds for anon, 3 for logged in
+    const queryTimeout = isAnonymous ? 15000 : 8000; // 15 seconds for anon, 8 for users (increased from 6/3)
     
     // Wrap each query in a promise race with timeout to prevent slow queries
     const categoriesPromise = Promise.race([
@@ -169,10 +200,8 @@ export async function GET(req: Request) {
     // Handle bigint conversion and safe extraction for message count
     let messageCount = 0;
     if (results[2].status === 'fulfilled') {
-      const msgCountResult = results[2].value;
-      if (Array.isArray(msgCountResult) && msgCountResult.length > 0) {
-        messageCount = Number(msgCountResult[0]?.count || 0);
-      }
+      const msgCountResult = results[2].value as { count: number }[];
+      messageCount = Number(msgCountResult[0]?.count || 0);
     }
     
     const userProgress = results[3].status === 'fulfilled' ? results[3].value : null;
@@ -224,10 +253,10 @@ export async function GET(req: Request) {
     if (isAnonymous && timestamp) {
       try {
         const cacheKey = `dashboard-data:anon:${timestamp.substring(0, 8)}`;
-        await setCache(cacheKey, responseData, 300); // 5 minute TTL
+        await setCache(cacheKey, responseData, 600); // 10 minute TTL
         console.log(`[DASHBOARD_DATA] Cached data for anonymous user`);
       } catch (cacheError) {
-        console.error('[DASHBOARD_DATA] Caching error:', cacheError);
+        console.error('[DASHBOARD_DATA] Cache error:', cacheError);
       }
     }
     

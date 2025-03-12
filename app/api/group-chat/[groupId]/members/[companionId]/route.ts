@@ -1,7 +1,6 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
-
+import { getApiAuth } from "@/lib/api-auth";
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
@@ -11,8 +10,8 @@ export async function DELETE(
   { params }: { params: { groupId: string; companionId: string } }
 ) {
   try {
-    const session = await auth();
-const userId = session?.userId;
+    // Use our new modular authentication utility
+    const { userId, isAuthenticated, isAnonymous } = await getApiAuth(req);
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -29,6 +28,7 @@ const userId = session?.userId;
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Delete the member from the group
     await prismadb.groupChatMember.delete({
       where: {
         groupChatId_companionId: {
@@ -38,9 +38,19 @@ const userId = session?.userId;
       },
     });
 
-    return new NextResponse("OK");
+    // Add system message about removal
+    await prismadb.groupMessage.create({
+      data: {
+        content: `${params.companionId} was removed from the group`,
+        groupChatId: params.groupId,
+        isBot: false,
+        senderId: userId,
+      },
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.log("[GROUP_CHAT_MEMBER_DELETE]", error);
+    console.log("[GROUP_MEMBER_DELETE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

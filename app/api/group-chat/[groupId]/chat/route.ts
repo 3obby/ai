@@ -645,6 +645,9 @@ export async function POST(
   { params }: { params: { groupId: string } }
 ) {
   try {
+    // In Next.js 15, we need to await the params object
+    const { groupId } = await params;
+
     const session = await auth();
     const userId = session?.userId;
     
@@ -660,7 +663,10 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { prompt, mentionedBotId, isFollowUp, newBotJoined } = body
+    const { prompt: rawPrompt, message, mentionedBotId, isFollowUp, newBotJoined } = body
+    
+    // Support both 'prompt' and 'message' parameter names for compatibility
+    const prompt = rawPrompt || message;
 
     if (!prompt && !newBotJoined) {
       return new NextResponse("Prompt is required", { status: 400 })
@@ -676,7 +682,7 @@ export async function POST(
 
     const groupChat = await prismadb.groupChat.findUnique({
       where: {
-        id: params.groupId,
+        id: groupId,
       },
       include: {
         members: {
@@ -722,7 +728,7 @@ export async function POST(
         const userMessage = await prismadb.groupMessage.create({
           data: {
             content: prompt,
-            groupChatId: params.groupId,
+            groupChatId: groupId,
             isBot: false,
             senderId: effectiveUserId,
           },
@@ -734,7 +740,7 @@ export async function POST(
 
         // Get previous messages for context
         const previousMessages = await prismadb.groupMessage.findMany({
-          where: { groupChatId: params.groupId },
+          where: { groupChatId: groupId },
           orderBy: { createdAt: "asc" },
         })
 
@@ -842,7 +848,7 @@ export async function POST(
                   const botMessage = await prismadb.groupMessage.create({
                     data: {
                       content: botContent,
-                      groupChatId: params.groupId,
+                      groupChatId: groupId,
                       isBot: true,
                       senderId: bot.id,
                     },
@@ -872,7 +878,7 @@ export async function POST(
                 const emojiMessage = await prismadb.groupMessage.create({
                   data: {
                     content: emoji,
-                    groupChatId: params.groupId,
+                    groupChatId: groupId,
                     isBot: true,
                     senderId: bot.id,
                   },
@@ -935,16 +941,19 @@ export async function DELETE(
   { params }: { params: { groupId: string } }
 ) {
   try {
+    // In Next.js 15, we need to await the params object
+    const { groupId } = await params;
+    
     // Delete all messages for the specified group chat
     // Use a safer approach with Prisma's direct SQL execution
     // This avoids the deleteMany type error while still achieving the same outcome
     await prismadb.$executeRaw`
       DELETE FROM "GroupMessage"
-      WHERE "groupChatId" = ${params.groupId}
+      WHERE "groupChatId" = ${groupId}
     `;
 
     console.log(
-      `[GROUP_CHAT_DELETE] Cleared messages for group chat: ${params.groupId}`
+      `[GROUP_CHAT_DELETE] Cleared messages for group chat: ${groupId}`
     )
 
     return new NextResponse("Messages cleared", { status: 200 })

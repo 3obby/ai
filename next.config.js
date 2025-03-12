@@ -3,12 +3,12 @@ const webpack = require('webpack');
 
 const nextConfig = {
   experimental: {
-    // serverActions: true
+    // Remove serverActions as it's now the default in Next.js 15
     optimizeCss: true, // Enable CSS optimization
     scrollRestoration: true, // Improve scroll performance
   },
-  // External packages to be bundled in the server build
-  serverExternalPackages: ['sharp', 'onnxruntime-node'], 
+  // External packages via transpilePackages instead of serverExternalPackages
+  transpilePackages: ['sharp', 'onnxruntime-node'],
   typescript: {
     ignoreBuildErrors: true,
   },

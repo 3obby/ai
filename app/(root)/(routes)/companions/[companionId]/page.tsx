@@ -5,14 +5,16 @@ import prismadb from "@/lib/prismadb";
 import { CharacterFrameworkDisplay } from "@/app/components/character-framework/CharacterFrameworkDisplay";
 
 interface CompanionIdPageProps {
-  params: {
+  params: Promise<{
     companionId: string;
-  };
+  }>;
 }
 
 const CompanionIdPage = async ({
   params
 }: CompanionIdPageProps) => {
+  const { companionId } = await params;
+  
   const session = await getServerSession();
   const userId = session?.user?.id;
 
@@ -22,7 +24,7 @@ const CompanionIdPage = async ({
 
   const companion = await prismadb.companion.findUnique({
     where: {
-      id: params.companionId,
+      id: companionId,
       userId,
     }
   });

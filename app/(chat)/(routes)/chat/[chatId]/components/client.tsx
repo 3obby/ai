@@ -6,6 +6,7 @@ import { Companion, Message } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useChatLimit } from "@/store/use-chat-limit"
 import { usePrompts } from "@/store/use-prompts"
+import { toast } from "react-hot-toast"
 
 import { ChatForm } from "@/components/chat-form"
 import { ChatHeader } from "@/components/chat-header"
@@ -23,12 +24,14 @@ interface ChatClientProps {
   }
   userId?: string
   isAnonymous?: boolean
+  hasConnectionIssues?: boolean
 }
 
 export const ChatClient = ({ 
   companion, 
   userId,
-  isAnonymous = false
+  isAnonymous = false,
+  hasConnectionIssues = false
 }: ChatClientProps) => {
   const router = useRouter()
   const { prompts } = usePrompts()
@@ -51,6 +54,19 @@ export const ChatClient = ({
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isClearingMessages, setIsClearingMessages] = useState(false)
+
+  useEffect(() => {
+    if (hasConnectionIssues) {
+      toast.error(
+        "Database connection issues detected. Some features may be limited.", 
+        { 
+          id: "db-connection-error",
+          duration: 5000,
+          icon: "🔌"
+        }
+      );
+    }
+  }, [hasConnectionIssues]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>

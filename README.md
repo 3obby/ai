@@ -1,113 +1,120 @@
-# AI Companion Platform
+# GCBB AI Companion Platform - Core Overview
 
-An advanced AI companion platform built with Next.js 14 App Router, TypeScript, Prisma, and PostgreSQL. This platform enables users to create, customize, and interact with AI companions powered by OpenAI's GPT models.
+## Architecture
+- Next.js 15 App Router with TypeScript (fully compatible with Next.js 15 breaking changes)
+- PostgreSQL database (Neon) with Prisma ORM v6.4.1
+- OpenAI integration (GPT models via API)
+- Authentication via NextAuth v4.24.11
+- Token-based economy with subscription tiers
+- Vercel deployment with Blob storage
+- Tailwind CSS with dark mode theming
+- Redis caching for API responses
+- Server-side streaming for real-time AI responses
+- Optimized connection pooling for serverless database
 
-## 🧠 Technical Architecture
+## Next.js 15 Compatibility
+- All dynamic route parameters (`params`, `searchParams`) correctly awaited in server components
+- Middleware and API routes updated for Next.js 15 compatibility
+- Edge runtime API optimizations
+- Enhanced document flow with optimized components
+- See `DEVELOPMENT_AND_DEPLOYMENT.md` for detailed notes on breaking changes
 
-### Core Technologies
-- **Framework**: Next.js 14.2.24 with App Router
-- **Language**: TypeScript
-- **Database**: PostgreSQL with Prisma ORM 6.4.1
-- **Authentication**: NextAuth 4.x with Email Magic Link
-- **Payments**: Stripe integration with subscription tiers and token purchases 
-- **AI Integration**: OpenAI API (GPT-3.5 & GPT-4)
-- **Styling**: Tailwind CSS with dark/light mode
-- **Storage**: Vercel Blob for file management
-- **Deployment**: Vercel with Neon PostgreSQL
+## Key Data Models
+- **User**: Authentication, preferences, token balance
+- **Companion**: AI persona with configurable traits
+- **Chat/Message**: Conversation threads between users and companions
+- **GroupChat/GroupChatMember**: Multi-participant conversation system
+- **UserSubscription**: Subscription status ($4.99/week)
+- **File/FileGroup**: File storage and organization (5GB/user)
 
-### Key Components
-- **Token System**: Weekly subscription ($4.99) with 200,000 tokens, additional token purchases
-- **Server Components**: Optimized for Next.js app router patterns
-- **Real-time Chat**: Interactive messaging experience
-- **Group Chat**: Multi-bot conversation capabilities with configurable interactions
-- **File Management**: 5GB storage per user for sharing files with AI companions
-- **Companion Configuration**: Control over personality, knowledge profile, and interaction styles
-- **Community Sharing**: Publish companions to marketplace (costs 100,000 tokens)
+## Token Economy
+- Anonymous users: 1,000 free tokens
+- Email login: 10,000 free tokens
+- Subscription: 200,000 tokens weekly ($4.99/week)
+- Additional purchases: 250,000 tokens for $4.99 (subscribers)
+- Companion publishing: 100,000 tokens
+- Token burning: 1:1 ratio (each inference token used burns one token from balance)
 
-## 💼 Business Capabilities
+## API Architecture
+- `/api/chat/[chatId]`: Message exchange with streaming
+- `/api/companions`: List and filter companions
+- `/api/companion/[companionId]`: CRUD operations
+- `/api/user-progress`: Token usage statistics
+- `/api/stripe`: Payment processing
+- `/api/files`: File management endpoints
+- `/api/group-chat`: Group chat configuration
+- `/api/dashboard-data`: Optimized metrics retrieval for dashboard with tiered caching
+- `/api/cache`: System-level cache management for administrators
+- `/api/chat-config`: Chat configuration templates and custom settings
+- `/api/db`: Database operation endpoints for processing payments, subscriptions, and token purchases
+- `/api/vote`: Community voting system for feature ideas and community submissions
 
-### Monetization
-- **Subscription Model**: Weekly subscription ($4.99) with 200,000 tokens included
-- **Token Purchases**: Two-tier token pricing with subscriber discounts (20% off)
-- **Usage Analytics**: Track token consumption and user engagement
-- **Retention Strategy**: Combined subscription + token purchase model
+## App Router Structure
+- Main dashboard: `/dashboard` (app/(root)/(routes)/dashboard/page.tsx)
+- Chat interfaces: `/c/[companionId]` (app/(chat)/(routes)/c/[companionId]/page.tsx)
+- Auth routes: `/sign-in`, `/sign-up` (app/(auth)/*)
+- Account/token management: `/account`, `/token-shop`
 
-### User Engagement
-- **Companion Creation**: Create and customize AI companions
-- **Community Features**: Public companion marketplace with voting
-- **Progress System**: Token usage tracking with statistics
-- **File Sharing**: Upload and share documents, images with companions
-- **Companion Configuration**: Fine-tune AI personality traits, knowledge, and behaviors
+## Group Chat Framework
+- Multiple participants (human and AI companions)
+- Custom instruction injection
+- Message routing and processing pipeline
+- Context management
+- Tool access configuration per participant
+- Role-based access system
+- State management with shared/private objects
 
-## 🚀 Key Features
+## Companion Customization Framework
+- **Personality Configuration**
+  - **Personality Traits**: 0-10 scales for analytical/creative, formal/casual, serious/humorous, reserved/enthusiastic, practical/theoretical
+  - **Voice Attributes**: Configurable humor, directness, and warmth on 0-10 scales
+  - **Response Format**: Customizable length (concise, balanced, detailed) and writing style (academic, conversational, technical, narrative, casual)
+  - **Personality Templates**: Pre-configured personality profiles (Academic Expert, Friendly Tutor, Creative Collaborator, Technical Expert)
 
-### Companion System
-- **Custom Instructions**: Generate unique companion behavior
-- **Configuration Options**: Personality settings (analytical vs. creative, formal vs. casual, etc.)
-- **Knowledge Profile**: Set expertise areas and knowledge depth
-- **Interaction Controls**: Adjust responsiveness, initiative levels, and message styles
-- **Tool Access**: Configure web search, code execution, and other capabilities
+- **Knowledge Configuration**
+  - **Expertise Areas**: Configurable primary and secondary domains of knowledge
+  - **Knowledge Depth**: Scale from general (0) to specialized (10) knowledge
+  - **Confidence Settings**: Threshold for expressing uncertainty (0-10 scale)
+  - **Source Preferences**: Academic, industry, news, or general sources
+  - **Citation Style**: None, inline, footnote, or comprehensive citation formats
 
-### Group Chat Framework
-- **Multi-Participant**: Combine multiple AI companions in one conversation
-- **Custom Roles**: Different companion types with varied permissions
-- **Message Routing**: Control which messages go to which participants
-- **Specialized Experiences**: Configurable for various use cases like gaming or collaboration
+- **Interaction Configuration**
+  - **Initiative Level**: Scale from passive (0) to proactive (10) conversation participation
+  - **Conversational Memory**: Minimal, moderate, or extensive recall of previous exchanges
+  - **Follow-up Behavior**: None, occasional, or frequent follow-up questions
+  - **Feedback Loop**: Option to request user feedback on responses
+  - **Multi-turn Reasoning**: Enable step-by-step reasoning for complex topics
 
-### File Management
-- **Storage**: 5GB per user with organization capabilities
-- **Supported Formats**: Documents, images, and more
-- **Security**: Secure access via signed URLs
-- **Integration**: Companions can reference uploaded content
+- **Tool Access Configuration**
+  - **Web Search Integration**: Configurable search providers and result limits
+  - **Code Execution**: Language-specific code running capabilities
+  - **Data Visualization**: Enable/disable chart and graph generation
+  - **Document Analysis**: Enable/disable document processing features
+  - **Calculation Tools**: Enable/disable mathematical computation features
 
-## 🔧 Development Guide
+- **Implementation Details**
+  - Stored in database as JSON fields (personalityConfig, knowledgeConfig, interactionConfig, toolConfig)
+  - Version tracking via integer field
+  - Tool access control via string array
+  - Full form-based UI for companion creators
+  - Runtime application during AI response generation
 
-### Environment Setup
-Required environment variables:
-```
-# Authentication
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=
-NEXTAUTH_URL_PRODUCTION=
+## Performance Optimizations
+- Strategic database indexes on frequently queried columns
+- Composite indexes for multi-column conditions
+- Materialized views for dashboard data
+- Tiered Redis caching:
+  - Anonymous users: 10-30 minute cache (depends on implementation)
+  - Authenticated users: 1-minute cache
+- Server-side streaming for immediate partial responses
+- Background processing for token tracking
+- Optimized image loading with progressive techniques
+- Multi-region deployment configuration
 
-# Email provider
-POSTMARK_API_KEY=
-
-# OpenAI
-OPENAI_API_KEY=
-
-# Database
-DATABASE_URL=
-SHADOW_DATABASE_URL=
-
-# Stripe
-STRIPE_API_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_STANDARD_PRICE_ID=
-
-# Vercel Blob
-VERCELBLOB_READ_WRITE_TOKEN=
-```
-
-### Installation
-1. Clone the repository
-2. Install dependencies with `npm install`
-3. Set up your environment variables
-4. Run database migrations: `npx prisma migrate dev`
-5. Start the development server: `npx next dev`
-
-### Database Migrations
-For safe schema changes:
-1. Make schema changes in schema.prisma
-2. Run `npm run db:migrate -- --name your_change`
-3. Commit and push to main
-4. Vercel build automatically runs `prisma migrate deploy`
-
-## 📱 Mobile & Responsive Design
-
-The platform is fully responsive across desktop, tablet, and mobile devices with a dark, modern aesthetic using Tailwind CSS.
-
-## 🔄 Version Information
-
-Current version: 0.3.27  
-Check `/updates` for version history and recent changes.
+## Anonymous User Experience
+- Public dashboard access without authentication
+- Viewing public companions without login
+- Anonymous chat sessions with cookie-based tracking
+- Seamless upgrade path to authenticated session
+- Optimized response time with simplified models
+- Automatic token allocation (1,000 tokens)

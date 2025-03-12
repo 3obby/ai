@@ -227,7 +227,7 @@ export const GroupChatClient = ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: input,
+            prompt: input,
           }),
         });
         

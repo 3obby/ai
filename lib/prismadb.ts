@@ -200,6 +200,13 @@ class EdgeCompatPrismaClient {
   }
 }
 
+// Update the maximum retries to use environment variables
+// Maximum number of connection retries
+const MAX_RETRIES = process.env.DB_MAX_RETRIES ? parseInt(process.env.DB_MAX_RETRIES, 10) : 3;
+const RETRY_DELAY_MS = process.env.DB_RETRY_DELAY_MS ? parseInt(process.env.DB_RETRY_DELAY_MS, 10) : 1000;
+const ENABLE_RETRIES = process.env.ENABLE_DB_CONNECTION_RETRIES === 'true';
+const MAX_RETRY_TIME = 15000; // Maximum time to attempt retries (15 seconds total)
+
 // Define global variable types to include our custom client
 declare global {
   var prisma: PrismaClient | EdgeCompatPrismaClient | undefined
@@ -213,28 +220,91 @@ declare global {
  * for database operations.
  */
 
-// Performance tracking middleware for high-latency connections
+// Performance tracking middleware with retry logic for high-latency connections
 const addPrismaMiddleware = (prisma: PrismaClient) => {
   prisma.$use(async (params, next) => {
     const startTime = Date.now();
+    let retries = 0;
     
-    try {
-      const result = await next(params);
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      
-      // Log slow queries (>500ms) to help identify optimization opportunities
-      if (duration > 500) {
-        const argsString = params.args ? JSON.stringify(params.args).substring(0, 100) : '{}';
-        console.warn(`[SLOW_QUERY] ${duration}ms | ${params.model}.${params.action} | ${argsString}...`);
+    const executeWithRetry = async () => {
+      try {
+        const result = await next(params);
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        // Log slow queries (>500ms) to help identify optimization opportunities
+        if (duration > 500) {
+          const argsString = params.args ? JSON.stringify(params.args).substring(0, 100) : '{}';
+          console.warn(`[SLOW_QUERY] ${duration}ms | ${params.model}.${params.action} | ${argsString}...`);
+        }
+        
+        return result;
+      } catch (error: any) {
+        const endTime = Date.now();
+        const elapsed = endTime - startTime;
+        const remainingRetryTime = MAX_RETRY_TIME - elapsed;
+        
+        // Keep original error message for logging
+        const originalMessage = error?.message || 'Unknown database error';
+        
+        // Update the retry logic to check the environment flag and include more error types
+        if (
+          ENABLE_RETRIES && 
+          retries < MAX_RETRIES && 
+          remainingRetryTime > 0 &&
+          (
+            originalMessage.includes("Can't reach database server") ||
+            originalMessage.includes("Connection refused") ||
+            originalMessage.includes("Connection terminated unexpectedly") ||
+            originalMessage.includes("Connection timed out") ||
+            originalMessage.includes("Connection reset by peer") ||
+            originalMessage.includes("Connection lost") ||
+            (error?.code && [
+              'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 
+              'EPIPE', 'ENOTFOUND', 'P1001', 'P1002', 'P1008', 'P1017'
+            ].includes(error.code))
+          )
+        ) {
+          retries++;
+          // Calculate backoff time (exponential with jitter)
+          const backoffTime = Math.min(
+            RETRY_DELAY_MS * Math.pow(1.5, retries-1) * (0.9 + Math.random() * 0.2), 
+            remainingRetryTime
+          );
+          
+          console.warn(
+            `[DB_RETRY] Attempt ${retries}/${MAX_RETRIES} for ${params.model}.${params.action} - ` +
+            `"${originalMessage}". Retrying in ${Math.round(backoffTime)}ms...`
+          );
+          
+          // Wait before retrying with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+          return executeWithRetry();
+        }
+        
+        // Log all database errors for debugging
+        console.error(
+          `[DB_ERROR] ${params.model}.${params.action} failed after ${retries > 0 ? retries + ' retries' : 'no retries'}: ${originalMessage}`
+        );
+        
+        // Enhance error with additional context
+        if (retries > 0) {
+          error.retriesAttempted = retries;
+          error.totalDuration = endTime - startTime;
+          
+          // Add helpful properties for the application layer
+          if (originalMessage.includes("Can't reach database server")) {
+            error.isConnectionError = true;
+            error.isRetryable = true;
+            error.requiresBackoff = true;
+          }
+        }
+        
+        throw error;
       }
-      
-      return result;
-    } catch (error) {
-      const endTime = Date.now();
-      console.error(`[QUERY_ERROR] ${endTime - startTime}ms | ${params.model}.${params.action} | ${error}`);
-      throw error;
-    }
+    };
+    
+    return executeWithRetry();
   });
   
   return prisma;

@@ -6,12 +6,20 @@ import { useSession } from "next-auth/react"
 import { v4 as uuidv4 } from 'uuid'
 import Cookies from 'js-cookie'
 import axios from "axios"
-import { toast } from "react-hot-toast"
+import { setAnonymousUserCookie } from "@/app/actions/user-actions"
+import { fetchWithBaseUrl, getAbsoluteUrl } from '@/lib/url-helper'
+import api from '@/lib/axios-config' // Import our pre-configured axios
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BotAvatar } from "@/components/bot-avatar"
+import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarImage } from '@/components/ui/avatar'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
+import NoResults from '@/components/ui/no-results'
+import { useToast } from "@/components/ui/use-toast"
 
 interface Companion {
   id: string
@@ -24,6 +32,16 @@ interface Companion {
   }
 }
 
+// Define origin helper for absolute URLs (required in Next.js 15)
+const getOrigin = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || 
+         process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+         'http://localhost:3000';
+};
+
 const GroupChatStartPage = () => {
   const [companions, setCompanions] = useState<Companion[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,62 +51,78 @@ const GroupChatStartPage = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
   const { data: session } = useSession()
+  const { toast } = useToast()
 
   // Get or create anonymous user ID
   const getAnonymousUserId = () => {
-    // First check cookies
-    let anonymousId = Cookies.get('anonymousUserId')
-    
-    // If not in cookies, check localStorage
-    if (!anonymousId && typeof window !== 'undefined') {
-      const localStorageId = localStorage.getItem('anonymousUserId')
-      if (localStorageId) {
-        anonymousId = localStorageId
-      }
+    // Check localStorage first
+    if (typeof window !== 'undefined') {
+      const storedId = localStorage.getItem('anonymousUserId')
+      if (storedId) return storedId
     }
     
-    // If still no ID, create a new one
-    if (!anonymousId) {
-      anonymousId = uuidv4()
-      // Store in both cookies and localStorage for redundancy
-      Cookies.set('anonymousUserId', anonymousId, { expires: 365 })
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('anonymousUserId', anonymousId)
-      }
-      
-      console.log("Created new anonymous user ID:", anonymousId)
-    } else {
-      console.log("Using existing anonymous user ID:", anonymousId)
+    // Generate a new one
+    const anonymousId = uuidv4()
+    
+    // Store the ID in localStorage for redundancy
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('anonymousUserId', anonymousId)
     }
+    
+    // Use the API directly to set cookies (works more reliably in Next.js 15)
+    fetchWithBaseUrl('/api/auth/anonymous', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: anonymousId }),
+    }).catch(err => {
+      console.error('Error setting anonymous cookie:', err)
+    })
     
     return anonymousId
   }
 
-  useEffect(() => {
-    const fetchCompanions = async () => {
-      try {
-        const response = await fetch("/api/companions?public=true")
-        const data = await response.json()
-        setCompanions(data.companions)
-      } catch (error) {
-        console.error("Error fetching companions:", error)
-        toast.error("Failed to load companions")
-      } finally {
-        setLoading(false)
-      }
+  const fetchCompanions = async () => {
+    setLoading(true)
+    try {
+      // Use our pre-configured axios instance which handles the base URL automatically
+      const response = await api.get("/api/companions", {
+        params: {
+          public: true
+        }
+      });
+      
+      setCompanions(response.data.companions)
+    } catch (error) {
+      console.error("Error fetching companions:", error)
+      toast({
+        variant: "destructive",
+        description: "Failed to load companions",
+      })
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchCompanions()
   }, [])
 
   const createGroupChat = async () => {
     if (!selectedCompanion) {
-      toast.error("Please select a companion to start with")
+      toast({
+        variant: "destructive",
+        description: "Please select a companion to start with",
+      })
       return
     }
     
     if (!groupName.trim()) {
-      toast.error("Please enter a group name")
+      toast({
+        variant: "destructive",
+        description: "Please enter a group name",
+      })
       return
     }
     
@@ -99,16 +133,16 @@ const GroupChatStartPage = () => {
       const effectiveUserId = session?.user?.id || getAnonymousUserId()
       console.log("Creating group chat with user ID:", effectiveUserId)
       
-      // Create query parameter for API request
-      const userIdParam = effectiveUserId ? `?userId=${effectiveUserId}` : ''
-      
-      // Create the group chat
-      const response = await axios.post(`/api/group-chat${userIdParam}`, {
+      // Use our pre-configured axios instance with proper URL handling for Next.js 15
+      const response = await api.post("/api/group-chat", {
         name: groupName,
         initialCompanionId: selectedCompanion,
+        userId: effectiveUserId // Pass userId in body instead of URL for cleaner code
       })
       
-      toast.success("Group chat created successfully!")
+      toast({
+        description: "Group chat created successfully!",
+      })
       
       // Navigation: Always add the userId as a parameter to maintain anonymous session
       const isAnonymous = !session?.user?.id
@@ -122,7 +156,10 @@ const GroupChatStartPage = () => {
       router.push(navigationUrl)
     } catch (error) {
       console.error("Error creating group chat:", error)
-      toast.error("Failed to create group chat")
+      toast({
+        variant: "destructive",
+        description: "Failed to create group chat",
+      })
     } finally {
       setIsCreating(false)
     }

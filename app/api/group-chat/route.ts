@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getUserIdForApi } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 
@@ -8,24 +8,22 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const { name, initialCompanionId, chatHistory } = await request.json();
-    const session = await auth();
-    const userId = session?.userId;
+    const body = await request.json();
+    const { name, initialCompanionId, chatHistory, userId: bodyUserId } = body;
     
-    // Get the userId from the query params or body
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get('userId');
-    
-    // Use query userId if provided and no session userId exists
-    const effectiveUserId = userId || queryUserId;
+    // Use our utility function to get user ID and auth status
+    const { userId: authUserId, isAuthenticated, isAnonymous } = await getUserIdForApi(request);
 
-    if (!effectiveUserId) {
+    // Use userId from body if provided (for anonymous users), otherwise use from auth
+    const userId = bodyUserId || authUserId;
+
+    if (!userId) {
       return new NextResponse("User ID is required", { status: 400 });
     }
 
     // Fetch user usage
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: effectiveUserId },
+      where: { userId },
     });
 
     if (!userUsage || userUsage.availableTokens < 50) {
@@ -36,7 +34,7 @@ export async function POST(request: Request) {
     const groupChat = await prismadb.groupChat.create({
       data: {
         name,
-        creatorId: effectiveUserId,
+        creatorId: userId,
         members: {
           create: {
             companionId: initialCompanionId,
@@ -54,7 +52,7 @@ export async function POST(request: Request) {
 
     // Update user usage
     await prismadb.userUsage.update({
-      where: { userId: effectiveUserId },
+      where: { userId },
       data: {
         availableTokens: userUsage.availableTokens - 50,
         totalSpent: userUsage.totalSpent + 50,
@@ -74,7 +72,7 @@ export async function POST(request: Request) {
               groupChatId: groupChat.id,
               content: message.content,
               isBot: message.role === "assistant",
-              senderId: message.role === "assistant" ? initialCompanionId : effectiveUserId,
+              senderId: message.role === "assistant" ? initialCompanionId : userId,
             },
           });
         })
@@ -113,17 +111,17 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-    const userId = session?.userId;
-    
-    // Get the userId from the query if passed
+    // Get userId from query parameters
     const url = new URL(request.url);
     const queryUserId = url.searchParams.get('userId');
     
-    // Use query userId if provided and no session userId exists
-    const effectiveUserId = userId || queryUserId;
+    // Use our utility function to get user ID and auth status
+    const { userId: authUserId, isAuthenticated, isAnonymous } = await getUserIdForApi(request);
+    
+    // Use userId from query if provided (for anonymous users), otherwise use from auth
+    const userId = queryUserId || authUserId;
 
-    if (!effectiveUserId) {
+    if (!userId) {
       // Return empty array instead of error for anonymous users without ID
       return NextResponse.json([]);
     }
@@ -132,7 +130,7 @@ export async function GET(request: Request) {
     const [groupChats, totalCount] = await Promise.all([
       prismadb.groupChat.findMany({
         where: {
-          creatorId: effectiveUserId,
+          creatorId: userId,
         },
         include: {
           members: {
@@ -140,14 +138,19 @@ export async function GET(request: Request) {
               companion: true,
             },
           },
+          _count: {
+            select: {
+              messages: true,
+            },
+          },
         },
         orderBy: {
-          updatedAt: "desc",
+          updatedAt: 'desc',
         },
       }),
       prismadb.groupChat.count({
         where: {
-          creatorId: effectiveUserId,
+          creatorId: userId,
         },
       }),
     ]);

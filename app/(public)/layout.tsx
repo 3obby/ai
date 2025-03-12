@@ -1,18 +1,13 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation"
+import { AuthWrapper } from "@/components/auth/auth-wrapper";
 
-export default async function PublicLayout({
+export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Check if user is authenticated
-  const session = await auth()
-  
-  // If authenticated, redirect to dashboard
-  if (session?.userId) {
-    redirect("/dashboard")
-  }
-
-  return children
+  return (
+    <AuthWrapper redirectIfAuthenticated="/dashboard">
+      {children}
+    </AuthWrapper>
+  );
 }

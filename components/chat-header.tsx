@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import axios from "axios"
+import api from '@/lib/axios-config'
 import {
   Edit,
   MessagesSquare,
@@ -14,6 +15,8 @@ import {
 import { useRouter } from "next/navigation"
 import { Companion, Message } from "@prisma/client"
 import { useCurrentUser } from "@/lib/hooks/use-current-user"
+import { getAbsoluteUrl } from '@/lib/url-helper'
+import Cookies from 'js-cookie'
 
 import { Button } from "@/components/ui/button"
 import { BotAvatar } from "@/components/bot-avatar"
@@ -55,20 +58,28 @@ export const ChatHeader = ({
   const [showClearConfirmation, setShowClearConfirmation] = useState(false)
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const onDelete = async () => {
     try {
-      await axios.delete(`/api/companion/${companion.id}`)
+      setIsDeleting(true);
+      
+      // Use our pre-configured axios instance
+      await api.delete(`/api/companion/${companion.id}`);
+      
       toast({
-        description: "Success.",
-      })
-      router.refresh()
-      router.push("/")
+        description: "Success."
+      });
+      
+      router.refresh();
+      router.push("/");
     } catch (error) {
       toast({
         variant: "destructive",
         description: "Something went wrong.",
-      })
+      });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -76,38 +87,39 @@ export const ChatHeader = ({
     try {
       setIsCreatingGroup(true)
       
-      // First fetch the most recent messages for this companion to ensure we have the latest
-      const url = userId ? 
-        `/api/companion/${companion.id}/messages?limit=20&userId=${userId}` : 
-        `/api/companion/${companion.id}/messages?limit=20`;
+      // Make sure we have the userId for anonymous users
+      const anonymousUserId = userId || Cookies.get('anonymousUserId');
       
-      const messagesResponse = await axios.get(url);
+      // Use our pre-configured axios instance for fetching messages
+      const messagesResponse = await api.get(`/api/companion/${companion.id}/messages`, {
+        params: {
+          limit: 20,
+          userId: anonymousUserId // Ensure we always have a userId parameter
+        }
+      });
+      
       const latestMessages = messagesResponse.data;
       
-      // Then create the group chat with the latest messages
-      const groupUrl = userId ? 
-        `/api/group-chat?userId=${userId}` : 
-        `/api/group-chat`;
-      
-      const response = await axios.post(groupUrl, {
-        name,
+      // Use pre-configured axios for creating group chat
+      const groupResponse = await api.post(`/api/group-chat`, {
+        name: name,
         initialCompanionId: companion.id,
-        chatHistory: latestMessages
-      })
-
-      toast({
-        description: "Group chat created successfully!",
-      })
-
-      router.push(`/group-chat/${response.data.id}`)
+        chatHistory: latestMessages.slice(-5), // Match the parameter name expected by the API
+        userId: anonymousUserId // Always include userId for anonymous users
+      });
+      
+      router.push(anonymousUserId ? 
+        `/group-chat/${groupResponse.data.id}?userId=${anonymousUserId}` : 
+        `/group-chat/${groupResponse.data.id}`
+      );
     } catch (error) {
+      console.error('Error creating group chat:', error);
       toast({
         variant: "destructive",
         description: "Failed to create group chat.",
-      })
-      setShowCreateGroup(false)
+      });
     } finally {
-      setIsCreatingGroup(false)
+      setIsCreatingGroup(false);
     }
   }
 

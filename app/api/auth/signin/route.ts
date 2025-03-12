@@ -7,6 +7,10 @@ export async function GET(request: NextRequest) {
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const anonymous = searchParams.get('anonymous') === 'true';
 
+  // In Next.js 15, cookies() is async and must be awaited
+  // (currently this isn't being used, but keeping it for future use)
+  const cookieStore = await cookies();
+
   // If this is an anonymous sign-in request, redirect directly to dashboard
   if (anonymous) {
     return NextResponse.redirect(new URL('/dashboard', request.url));

@@ -2,8 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { verifyAuthToken, isPublicPath } from "@/lib/auth-helpers"
 
-// Using experimental-edge for middleware until fully supported in Next.js
-// API routes should use the standard 'edge' runtime
+// Using 'experimental-edge' runtime for Next.js 15 compatibility
 export const runtime = 'experimental-edge';
 
 // This handles authentication protection and performance optimization
@@ -33,7 +32,7 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/api/companions') && request.method === 'GET') {
       
       // Add cache control headers based on whether this is an authenticated request
-      const authCookie = request.cookies.get('authjs.session-token')?.value;
+      const authCookie = request.cookies.get('authjs.session-token');
       
       if (!authCookie) {
         // For anonymous users, enable caching
@@ -65,7 +64,7 @@ export async function middleware(request: NextRequest) {
   
   // For protected paths, validate the token
   try {
-    const token = request.cookies.get("session-token")?.value;
+    const token = request.cookies.get("session-token");
     
     // No token found, redirect to login
     if (!token) {

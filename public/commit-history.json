@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "2446043",
+      "fullHash": "24460437941aa59fed2004493f36a3b546382682",
+      "date": "2025-03-13 03:01:45 +0700",
+      "author": "3obby",
+      "message": "Fix Next.js 15 async route parameter issues in group chat API and update documentation",
+      "category": "bugfix"
+    },
+    {
       "hash": "f7c6cc2",
       "fullHash": "f7c6cc23455041951dedbd3ac127ef5869af2181",
       "date": "2025-03-12 18:33:00 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Add enhanced account page with subscription details and personalized UI",
       "category": "feature"
-    },
-    {
-      "hash": "2ae132c",
-      "fullHash": "2ae132c40c68f917e1dc481b615397e2c595879e",
-      "date": "2025-03-07 23:38:21 +0700",
-      "author": "3obby",
-      "message": "Fix React unescaped quotes and update ESLint config",
-      "category": "bugfix"
     }
   ]
 }

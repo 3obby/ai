@@ -87,8 +87,8 @@ const replacements = [
 
 // Paths to API route files with Clerk dependencies
 const filesToUpdate = [
-  "app/api/community/[ideaId]/vote/route.ts",
-  "app/api/community/route.ts",
+  "app/api/vote/[ideaId]/vote/route.ts",
+  "app/api/vote/route.ts",
   "app/api/companion/behavior/route.ts",
   "app/api/companion/route.ts",
   "app/api/companions/route.ts",

@@ -1,0 +1,28 @@
+# Task List for AI Companion App Improvements
+
+## Bot Generation and Diversity
+1. Update import script to generate diverse bot avatars
+2. Fix random initial token values - all bots should start at 0
+
+## ChatGPT Vanilla Option
+1. Add "vanilla" ChatGPT bot without custom enhancements
+2. Update companion creation schema with "chatbot type" selector:
+   - Add "Preset" and "Custom" options
+   - For "Preset", add different GPT versions (3.5, 4, etc.)
+   - Default to most recent/powerful model
+   - All current characters would be under "Custom"
+
+## Token Burning System
+1. Fix token burning calculation to include bot's computation
+2. Display personal tokens burned (fire emoji) on each bot card on dashboard
+3. Show global tokens burned (globe icon) with accurate statistics
+
+## UI/Performance Improvements
+1. Implement pagination for bot cards to improve loading performance 
+2. Optimize bot card loading - they're loading too slowly all at once
+
+## Implementation Order
+1. Fix token burning display and calculation issues
+2. Add pagination to dashboard
+3. Implement ChatGPT vanilla bot option
+4. Diversify bot avatars 

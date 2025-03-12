@@ -5,15 +5,17 @@ import prismadb from "@/lib/prismadb";
 import { CharacterFrameworkDisplay } from "@/app/components/character-framework/CharacterFrameworkDisplay";
 
 interface CharacterPageProps {
-  params: {
+  params: Promise<{
     companionId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: CharacterPageProps): Promise<Metadata> {
+  const { companionId } = await params;
+  
   const companion = await prismadb.companion.findUnique({
     where: {
-      id: params.companionId,
+      id: companionId,
     }
   });
 
@@ -27,9 +29,11 @@ export async function generateMetadata({ params }: CharacterPageProps): Promise<
 }
 
 export default async function CharacterPage({ params }: CharacterPageProps) {
+  const { companionId } = await params;
+  
   const companion = await prismadb.companion.findUnique({
     where: {
-      id: params.companionId,
+      id: companionId,
     }
   });
 

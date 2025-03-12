@@ -1,0 +1,92 @@
+
+> ai-character-companion@0.1.0 dev:fast
+> npm run optimize-anon && npm run dev
+
+
+> ai-character-companion@0.1.0 optimize-anon
+> node scripts/optimize-dev.js
+
+🛠️  Optimizing local development environment...
+🚀 Setting up an optimized anonymous user for local development...
+Using existing development anonymous user: dev-anonymous-7705f15d
+✅ Anonymous user setup complete.
+Anonymous User ID: dev-anonymous-7705f15d
+Setting up static cache for dashboard...
+🔄 Generating static cache for dashboard...
+✅ Static cache generated successfully: /Users/dev/code/agentconsult/public/static-cache.json
+Cache contains 8 companions and 6 categories
+✅ Static cache generated successfully.
+✅ Local environment optimization complete!
+🔍 Next steps:
+1. Restart your Next.js server
+2. Clear browser cookies for your local development domain
+3. Test anonymous user flow again
+
+> ai-character-companion@0.1.0 dev
+> lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev & wait-on http://localhost:3000 && open -na 'Google Chrome' --args --auto-open-devtools-for-tabs --user-data-dir=$(mktemp -d) --no-first-run http://localhost:3000
+
+sh: wait-on: command not found
+   ▲ Next.js 15.2.2
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.102:3000
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     ✓ scrollRestoration
+
+ ✓ Starting...
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ✓ Ready in 1666ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ✓ Compiled /middleware in 166ms (147 modules)
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ○ Compiling /api/user-progress ...
+ ✓ Compiled /api/user-progress in 702ms (740 modules)
+ GET /api/user-progress 200 in 986ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 20ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 16ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 11ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 10ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 8ms
+ ✓ Compiled in 177ms (466 modules)
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 135ms
+ ✓ Compiled in 86ms (466 modules)
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 67ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+   Reload env: .env.local
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ✓ Compiled in 255ms (887 modules)
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 135ms
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ ⚠ You are using an experimental edge runtime, the API might change.
+ GET /api/user-progress 200 in 11ms
+ ✓ Compiled in 64ms (466 modules)

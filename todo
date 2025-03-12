@@ -1,0 +1,60 @@
+# Next.js 15 Breaking Changes - TODO List
+
+## Remaining Changes to Check:
+
+1. **Async Cookies API**
+   - Search for all instances of cookies() and ensure they're properly awaited
+   - Check all files in app/api/* routes that might use cookies
+   - Example: `const cookieStore = await cookies();`
+
+2. **Params and SearchParams**
+   - Ensure all dynamic route parameters are properly awaited
+   - Update all files in app/(routes)/* that use params or searchParams
+   - Example: `const { id } = await params;`
+
+3. **App Directory Structure**
+   - Verify that the app directory structure follows Next.js 15 conventions
+   - Check for any deprecated layout or page patterns
+
+4. **Route Handlers**
+   - Review all route handlers (app/api/*) to ensure they follow Next.js 15 patterns
+   - Check for proper use of Response objects
+
+5. **Server Actions**
+   - Verify all server actions are properly defined
+   - Check for any missing 'use server' directives
+
+6. **Image Component Usage**
+   - Verify Image component usage is compatible with Next.js 15
+   - Check for any deprecated props
+
+7. **Metadata API**
+   - Check for any usage of the metadata API to ensure compatibility
+   - Update any static metadata exports
+
+8. **Fetch API Caching**
+   - Review fetch options and caching strategies
+   - Update any fetch calls that rely on outdated caching behavior
+
+## Test Cases:
+
+1. **Anonymous User Flows**
+   - Test anonymous user chat
+   - Test anonymous user group chat
+   - Verify token usage
+
+2. **Authentication Flows**
+   - Test login/logout
+   - Verify session persistence
+   - Check protected routes
+
+3. **API Routes**
+   - Test all major API endpoints
+   - Check error handling
+   - Verify caching behavior
+
+## Resources:
+
+- [Next.js 15 Migration Guide](https://nextjs.org/docs/messages/app-dir-migration)
+- [Next.js 15 Breaking Changes](https://nextjs.org/blog/next-15)
+- [NEXT_JS_15_URL_MIGRATION.md](./NEXT_JS_15_URL_MIGRATION.md) (Our custom guide) 

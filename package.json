@@ -13,7 +13,16 @@
     "db:status": "prisma migrate status",
     "db:reset": "prisma migrate reset --force",
     "db:test-migrations": "ts-node scripts/test-migrations.ts",
-    "clean-build": "rm -rf .next && prisma generate && next build"
+    "db:check": "node scripts/db-check.js",
+    "clean-build": "rm -rf .next && prisma generate && next build",
+    "optimize-local": "node scripts/setup-local-dev.js",
+    "generate-cache": "node scripts/generate-static-cache.js",
+    "refresh-views": "node scripts/refresh-views.js",
+    "dev:optimized": "npm run optimize-local && npm run dev",
+    "optimize-anon": "node scripts/optimize-dev.js",
+    "dev:fast": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev",
+    "dev:browser": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev & npx wait-on http://localhost:3000 && open -na 'Google Chrome' --args --auto-open-devtools-for-tabs --user-data-dir=$(mktemp -d) --no-first-run http://localhost:3000",
+    "postinstall:dev": "chmod +x scripts/db-check.js scripts/optimize-dev.js"
   },
   "dependencies": {
     "@auth/core": "0.34.2",

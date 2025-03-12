@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { SettingsModalProvider } from "@/hooks/use-settings-modal"
 import { PromptsProvider } from "@/store/use-prompts"
 import { Toaster } from "@/components/ui/toaster"
-import { auth } from "@/lib/auth"
+import { withAuth } from "@/lib/auth"
 import NextAuthProvider from "@/components/providers/session-provider"
 import { NavigationProgress } from "@/components/ui/navigation-progress"
 
@@ -63,9 +63,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Get authentication state
-  const session = await auth()
-  const isAuthenticated = !!session?.user?.id
+  // Get authentication state using our enhanced withAuth utility
+  const { isAuthenticated, user } = await withAuth();
 
   return (
     <html lang="en" suppressHydrationWarning>

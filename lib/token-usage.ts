@@ -1,8 +1,8 @@
 import prismadb from "./prismadb"
 import { COMPUTE_COST_PER_TOKEN, SUBSCRIPTION_PLAN } from "./subscription-plans"
 import { stripe } from "./stripe"
-import { calculateXPEarned } from "./level-system"
-import { auth } from "./auth-helpers"
+import { calculateXPEarned as calculateTokensBurned } from "./level-system"
+import { auth } from "./auth"
 
 // Free token allowance for non-subscribed users
 export const FREE_TOKEN_ALLOWANCE = 10000
@@ -156,7 +156,7 @@ export async function trackTokenUsage(
 
     // Calculate the cost and tokens burned for this usage
     const tokenCost = isSubscribed ? tokenAmount * COMPUTE_COST_PER_TOKEN : 0
-    const tokensBurned = calculateXPEarned(tokenAmount, tokenCost)
+    const tokensBurned = calculateTokensBurned(tokenAmount, tokenCost)
 
     // Update user's usage - decrement availableTokens and increment totalSpent for tokens burned
     await prismadb.$transaction([

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getUserIdForApi } from "@/lib/auth";
 import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import OpenAI from "openai"
@@ -13,11 +13,11 @@ export async function POST(
 ) {
   try {
     const { companionId } = await request.json()
-    const session = await auth();
-const userId = session?.userId;
-const user = session?.user;
+    
+    // Use our utility function to get user ID and auth status
+    const { userId, isAuthenticated, isAnonymous } = await getUserIdForApi(request);
 
-    if (!user || !userId) {
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
@@ -84,15 +84,19 @@ export async function DELETE(
   { params }: { params: { groupId: string } }
 ) {
   try {
-    const { searchParams } = new URL(request.url)
-    const companionId = searchParams.get("companionId")
-
-    if (!user || !userId) {
-      return new NextResponse("Unauthorized", { status: 401 })
-    }
+    // Extract companion ID from the URL
+    const url = new URL(request.url)
+    const companionId = url.searchParams.get("companionId")
 
     if (!companionId) {
-      return new NextResponse("Companion ID required", { status: 400 })
+      return new NextResponse("Companion ID is required", { status: 400 })
+    }
+
+    // Use our utility function to get user ID and auth status
+    const { userId, isAuthenticated, isAnonymous } = await getUserIdForApi(request);
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 })
     }
 
     // Check if the group chat exists and user is the creator
@@ -119,7 +123,19 @@ export async function DELETE(
       },
     })
 
-    return new NextResponse("Member removed successfully", { status: 200 })
+    // Add a system message indicating the companion was removed
+    await prismadb.groupMessage.create({
+      data: {
+        content: `${companionId} was removed from the group`,
+        groupChatId: params.groupId,
+        isBot: false,
+        senderId: userId,
+      },
+    })
+
+    return NextResponse.json({
+      message: "Companion removed from group",
+    })
   } catch (error) {
     console.log("[GROUP_MEMBER_DELETE]", error)
     return new NextResponse("Internal Error", { status: 500 })

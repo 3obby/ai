@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import { auth } from "@/lib/auth"
+import { getUserIdForApi } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { OpenAI } from "openai"
 import prismadb from "@/lib/prismadb"
@@ -27,26 +27,17 @@ export async function POST(
 ) {
   try {
     const { allMessages, isFollowUp } = await request.json()
-    const session = await auth()
-    const userId = session?.userId
     
-    // Get the userId from the query if passed
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get('userId');
-    
-    // Use query userId if provided and no session userId exists
-    const effectiveUserId = userId || queryUserId;
-    
-    // Check if this is an anonymous user
-    const isAnonymousUser = !userId && queryUserId;
+    // Use our utility function to get user ID and auth status
+    const { userId, isAuthenticated, isAnonymous } = await getUserIdForApi(request);
 
-    if (!effectiveUserId) {
+    if (!userId) {
       return new NextResponse("User ID is required", { status: 400 })
     }
 
     // Check if user has enough tokens
     const userUsage = await prismadb.userUsage.findUnique({
-      where: { userId: effectiveUserId },
+      where: { userId },
     })
     if (!userUsage) {
       return new NextResponse("User usage record not found", { status: 404 })
@@ -91,7 +82,7 @@ export async function POST(
     const chatConfig = await prismadb.chatConfig.findFirst({
       where: {
         companionId: params.chatId,
-        userId: effectiveUserId
+        userId: userId
       }
     });
 
@@ -226,13 +217,13 @@ export async function POST(
           allMessages[allMessages.length - 1]?.content || "(no user input)",
         role: isFollowUp ? "system" : "user",
         companionId: params.chatId,
-        userId: effectiveUserId,
+        userId: userId,
       },
     })
 
     // Deduct tokens from user's allocation
     await prismadb.userUsage.update({
-      where: { userId: effectiveUserId },
+      where: { userId },
       data: {
         availableTokens: { decrement: TOKENS_PER_MESSAGE },
         totalSpent: { increment: TOKENS_PER_MESSAGE },
@@ -252,12 +243,12 @@ export async function POST(
         prismadb.userBurnedTokens.upsert({
           where: {
             userId_companionId: {
-              userId: effectiveUserId,
+              userId: userId,
               companionId: params.chatId,
             },
           },
           create: {
-            userId: effectiveUserId,
+            userId: userId,
             companionId: params.chatId,
             tokensBurned: TOKENS_PER_MESSAGE,
           },
@@ -292,7 +283,7 @@ export async function POST(
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
 
     // For anonymous users with simple queries, check cache first
-    if (isAnonymousUser && allMessages.length <= 3) {
+    if (isAnonymous && allMessages.length <= 3) {
       // Create a cache key based on the companion and the last message
       const lastMessage = allMessages[allMessages.length - 1];
       const cacheKey = `chat:${params.chatId}:${Buffer.from(lastMessage.content).toString('base64').substring(0, 40)}`;
@@ -307,11 +298,11 @@ export async function POST(
         // But we can do it asynchronously
         setTimeout(async () => {
           try {
-            await trackTokenUsage(effectiveUserId, TOKENS_PER_MESSAGE, "chat")
+            await trackTokenUsage(userId, TOKENS_PER_MESSAGE, "chat")
               .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
             
             await prismadb.userUsage.update({
-              where: { userId: effectiveUserId },
+              where: { userId },
               data: {
                 availableTokens: { decrement: TOKENS_PER_MESSAGE },
                 totalSpent: { increment: TOKENS_PER_MESSAGE },
@@ -360,7 +351,7 @@ export async function POST(
         }
         
         // For anonymous users, cache the response to improve future performance
-        if (isAnonymousUser && allMessages.length <= 3) {
+        if (isAnonymous && allMessages.length <= 3) {
           const lastMessage = allMessages[allMessages.length - 1];
           const cacheKey = `chat:${params.chatId}:${Buffer.from(lastMessage.content).toString('base64').substring(0, 40)}`;
           
@@ -385,12 +376,12 @@ export async function POST(
         const tokensToDeduct = Math.max(totalTokens, MIN_TOKENS);
 
         // Update token usage in the background (don't block response)
-        trackTokenUsage(effectiveUserId, tokensToDeduct, "chat")
+        trackTokenUsage(userId, tokensToDeduct, "chat")
           .catch((error) => console.error("[TRACK_TOKEN_USAGE_ERROR]", error));
 
         // Deduct tokens from user's allocation based on actual usage
         await prismadb.userUsage.update({
-          where: { userId: effectiveUserId },
+          where: { userId },
           data: {
             availableTokens: { decrement: tokensToDeduct },
             totalSpent: { increment: tokensToDeduct },
@@ -426,31 +417,37 @@ export async function DELETE(
   { params }: { params: { chatId: string } }
 ) {
   try {
-    const session = await auth()
-    const userId = session?.userId
-    
-    // Get the userId from the query if passed
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get('userId');
-    
-    // Use query userId if provided and no session userId exists
-    const effectiveUserId = userId || queryUserId;
+    // Use our utility function to get user ID and auth status
+    const { userId, isAuthenticated } = await getUserIdForApi(request);
 
-    if (!effectiveUserId) {
-      return new NextResponse("User ID is required", { status: 400 })
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Delete all messages for this chat
+    // Check if the chat exists and belongs to the user
+    const existingChats = await prismadb.message.findMany({
+      where: {
+        companionId: params.chatId,
+        userId,
+      },
+      take: 1,
+    });
+
+    if (existingChats.length === 0) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+
+    // Delete the chat messages
     await prismadb.message.deleteMany({
       where: {
         companionId: params.chatId,
-        userId: effectiveUserId,
+        userId,
       },
-    })
+    });
 
-    return new NextResponse("Chat deleted successfully", { status: 200 })
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.log("Error in DELETE route:", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    console.log("[CHAT_DELETE]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

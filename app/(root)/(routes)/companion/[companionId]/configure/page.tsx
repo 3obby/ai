@@ -41,7 +41,7 @@ export default function CompanionConfigPage({
         }
         
         const data = await response.json();
-        setCompanion(data);
+        setCompanion(data.companion);
       } catch (err) {
         console.error("Failed to fetch companion:", err);
         setError(err instanceof Error ? err.message : "Failed to load companion data");
