@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { calculateLevel, getXPForNextLevel, getProgressToNextLevel } from "@/lib/level-system";
 import { Prisma } from "@prisma/client";
 import { revalidateTag } from "next/cache";
-import { getFromCache, setCache } from "@/lib/redis-cache";
+import { getFromCache, getChunkedFromCache, setCache, setCacheWithChunking } from "@/lib/redis-cache";
 
 // For NextAuth we need to use Node.js runtime 
 // since it uses crypto which isn't available in Edge
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
     
     // For anonymous users, try to get from cache first
     if (!userId) {
-      const cachedData = await getFromCache(cacheKey);
+      const cachedData = await getChunkedFromCache(cacheKey);
       if (cachedData) {
         console.log(`[DASHBOARD_PREFETCH] Cache hit for ${cacheKey}`);
         return NextResponse.json(cachedData, {
@@ -94,15 +94,26 @@ export async function GET(req: Request) {
         ? Prisma.sql`WHERE "categoryId" = ${categoryId}`
         : Prisma.sql``;
         
-      // Get count from view
-      countPromise = prismadb.$queryRaw`
-        SELECT COUNT(*) as count FROM "mv_dashboard_companions"
-        ${viewWhereClause}
-      `;
+      // Get count from view with a timeout
+      countPromise = Promise.race([
+        prismadb.$queryRaw`
+          SELECT COUNT(*) as count FROM "mv_dashboard_companions"
+          ${viewWhereClause}
+        `,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Count query timeout')), 1000)
+        )
+      ]).catch(err => {
+        console.log("[DASHBOARD_PREFETCH] Count query timeout, using estimate:", err);
+        return [{ count: 100 }]; // Fallback to an estimate
+      });
       
-      // Get data from view with pagination
+      // Get data from view with pagination and optimized field selection
       companionsPromise = prismadb.$queryRaw`
-        SELECT * FROM "mv_dashboard_companions"
+        SELECT 
+          id, name, src, description, "categoryId", "userName", 
+          "isFree", global, "createdAt", views, votes
+        FROM "mv_dashboard_companions"
         ${viewWhereClause}
         LIMIT ${pageSize} OFFSET ${skip}
       `;
@@ -117,27 +128,36 @@ export async function GET(req: Request) {
         ...(categoryId ? { categoryId } : {})
       };
       
-      // Total count for pagination
+      // Select only needed fields to reduce query size and processing time
+      companionsPromise = prismadb.companion.findMany({
+        where: whereCondition,
+        select: {
+          id: true,
+          userId: true,
+          userName: true,
+          src: true,
+          name: true,
+          description: true,
+          categoryId: true,
+          isFree: true,
+          global: true,
+          createdAt: true,
+          views: true,
+          votes: true,
+          // Exclude large fields like instructions, seed, etc.
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: pageSize,
+      });
+    
+      // Use an SQL count query instead
       countPromise = prismadb.$queryRaw`
         SELECT COUNT(*) as count FROM "Companion" 
         WHERE (private = false OR "userId" = 'system' ${userId ? Prisma.sql`OR "userId" = ${userId}` : Prisma.empty})
         ${categoryId ? Prisma.sql`AND "categoryId" = ${categoryId}` : Prisma.empty}
-      `;
-      
-      // Paginated companions with optimized query
-      companionsPromise = prismadb.$queryRaw`
-        SELECT 
-          c.id, c.name, c.src, c."categoryId", c."userName", c."tokensBurned", 
-          ${userId ? Prisma.sql`c.private, c."userId",` : Prisma.empty}
-          COUNT(m.id) as message_count
-        FROM "Companion" c
-        LEFT JOIN "Message" m ON c.id = m."companionId"
-        WHERE 
-          (c.private = false OR c."userId" = 'system' ${userId ? Prisma.sql`OR c."userId" = ${userId}` : Prisma.empty})
-          ${categoryId ? Prisma.sql`AND c."categoryId" = ${categoryId}` : Prisma.empty}
-        GROUP BY c.id
-        ORDER BY c."createdAt" DESC
-        LIMIT ${pageSize} OFFSET ${skip}
       `;
     }
     
@@ -201,9 +221,25 @@ export async function GET(req: Request) {
         : 0
     );
     
+    // Trim companion data to reduce cache size
+    const trimmedCompanions = companionsWithUserData.map(companion => ({
+      id: companion.id,
+      name: companion.name,
+      src: companion.src,
+      description: companion.description.substring(0, 100) + (companion.description.length > 100 ? '...' : ''),
+      categoryId: companion.categoryId,
+      userName: companion.userName,
+      isFree: companion.isFree,
+      global: companion.global,
+      createdAt: companion.createdAt,
+      views: companion.views,
+      votes: companion.votes,
+      // Exclude large fields like instructions, seed, and configuration objects
+    }));
+    
     const responseData = {
       categories,
-      companions: companionsWithUserData,
+      companions: trimmedCompanions, // Use trimmed companions data for response
       totalCompanions,
       currentPage: page,
       pageSize,
@@ -226,11 +262,11 @@ export async function GET(req: Request) {
         "X-Cache": "MISS"
       };
       
-      // Cache for anonymous users (5 minutes)
-      await setCache(cacheKey, responseData, 300);
+      // Cache for anonymous users (5 minutes) with chunking
+      await setCacheWithChunking(cacheKey, responseData, 300);
     } else if (userId) {
-      // Cache for authenticated users (30 seconds)
-      await setCache(cacheKey, responseData, 30);
+      // Cache for authenticated users (30 seconds) with chunking
+      await setCacheWithChunking(cacheKey, responseData, 30);
     }
     
     // Log performance

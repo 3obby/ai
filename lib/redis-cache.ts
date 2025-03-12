@@ -159,4 +159,93 @@ export const clearCachePattern = async (pattern: string): Promise<boolean> => {
     console.error('[REDIS_CACHE_CLEAR_ERROR]', error)
     return false
   }
+}
+
+/**
+ * Split large data into chunks before caching to avoid Redis size limits
+ * @param key Base key for the data
+ * @param data Data to split
+ * @param maxChunkSize Maximum size in bytes for each chunk
+ * @param ttlInSeconds TTL for the cache
+ */
+export const setCacheWithChunking = async <T>(
+  key: string,
+  data: T,
+  ttlInSeconds = 60,
+  maxChunkSize = 500000 // ~500KB per chunk, well under the 1MB limit
+): Promise<boolean> => {
+  try {
+    const client = getClient()
+    if (!client) return false
+
+    // Serialize the data first
+    const serializedData = bigIntSerializer.stringify(data)
+    
+    // Check if we need chunking - if under max size, just use regular set
+    if (serializedData.length <= maxChunkSize) {
+      await client.set(key, serializedData, { ex: ttlInSeconds })
+      return true
+    }
+    
+    console.log(`[REDIS_CACHE] Large object detected (${serializedData.length} bytes), using chunking for ${key}`)
+    
+    // Split the data into chunks
+    const chunks: string[] = []
+    let pos = 0
+    while (pos < serializedData.length) {
+      chunks.push(serializedData.slice(pos, pos + maxChunkSize))
+      pos += maxChunkSize
+    }
+    
+    // Store chunk count under the main key
+    await client.set(`${key}:chunks`, chunks.length.toString(), { ex: ttlInSeconds })
+    
+    // Store each chunk separately
+    for (let i = 0; i < chunks.length; i++) {
+      await client.set(`${key}:chunk:${i}`, chunks[i], { ex: ttlInSeconds })
+    }
+    
+    return true
+  } catch (error) {
+    console.error('[REDIS_CACHE_CHUNKED_SET_ERROR]', error)
+    return false
+  }
+}
+
+/**
+ * Get chunked data from cache
+ */
+export const getChunkedFromCache = async <T>(key: string): Promise<T | null> => {
+  try {
+    const client = getClient()
+    if (!client) return null
+
+    // Check if this is a chunked cache entry
+    const chunkCount = await client.get(`${key}:chunks`)
+    if (!chunkCount) {
+      // Try getting as a normal non-chunked entry
+      return getFromCache(key)
+    }
+    
+    // Get all chunks
+    const chunks: string[] = []
+    for (let i = 0; i < parseInt(chunkCount, 10); i++) {
+      const chunk = await client.get(`${key}:chunk:${i}`)
+      if (chunk === null) {
+        console.error(`[REDIS_CACHE_CHUNK_ERROR] Missing chunk ${i} for key ${key}`)
+        return null
+      }
+      // Redis client should return a string for stored chunks
+      chunks.push(typeof chunk === 'string' ? chunk : JSON.stringify(chunk))
+    }
+    
+    // Reassemble the data
+    const reassembled = chunks.join('')
+    
+    // Parse and return
+    return bigIntSerializer.parse(reassembled) as T
+  } catch (error) {
+    console.error('[REDIS_CACHE_CHUNKED_GET_ERROR]', error)
+    return null
+  }
 } 

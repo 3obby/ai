@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "4187825",
+      "fullHash": "4187825468f7e711ebbb74c06a2e9057490611ba",
+      "date": "2025-03-12 16:24:11 +0700",
+      "author": "3obby",
+      "message": "Fix Redis cache size limit error and optimize dashboard queries",
+      "category": "bugfix"
+    },
+    {
       "hash": "13b4e53",
       "fullHash": "13b4e53f369c7d8cfe8cedf6a3ac87e4a970c836",
       "date": "2025-03-12 16:19:44 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-06 15:53:11 +0700",
       "author": "3obby",
       "message": "Update API routes to use custom auth instead of Clerk",
-      "category": "enhancement"
-    },
-    {
-      "hash": "1634b79",
-      "fullHash": "1634b791736b8e483626cecf2027e4c28c8a6dd4",
-      "date": "2025-03-06 15:39:25 +0700",
-      "author": "3obby",
-      "message": "Update remaining components to use custom auth instead of Clerk",
       "category": "enhancement"
     }
   ]

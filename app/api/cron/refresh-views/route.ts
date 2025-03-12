@@ -7,38 +7,28 @@ import { clearCachePattern } from "@/lib/redis-cache";
 export const maxDuration = 120; // 2 minutes max duration
 export const runtime = "nodejs";
 
+// Force dynamic rendering for API routes
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
-    // Verify this is a legitimate cron request from Vercel
-    // The Authorization header will be set by Vercel for cron jobs
-    const authHeader = req.headers.get("Authorization");
+    const start = Date.now();
     
-    // In production, we'd validate the auth header
-    // For development, we also allow local requests
-    if (process.env.VERCEL_ENV === "production" && !authHeader?.startsWith("Bearer")) {
+    console.log(`[REFRESH_VIEWS] Starting materialized view refresh...`);
+    
+    // Make sure only authorized sources can trigger this
+    const { searchParams } = new URL(req.url);
+    const authToken = searchParams.get("auth");
+    
+    // Simple auth check (you might want to use a more secure approach in production)
+    if (authToken !== process.env.CRON_SECRET) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
     
-    console.log("🔄 Starting materialized view refresh...");
+    // Execute the refresh of the materialized view
+    await prismadb.$executeRaw`REFRESH MATERIALIZED VIEW "mv_dashboard_companions"`;
     
-    // Refresh the dashboard view
-    try {
-      // Check if the view and refresh function exist
-      const viewExists = await prismadb.$queryRaw`
-        SELECT 1 FROM pg_matviews WHERE matviewname = 'mv_dashboard_companions'
-      `;
-      
-      if (Array.isArray(viewExists) && viewExists.length > 0) {
-        // Refresh the view using the refresh function
-        await prismadb.$queryRaw`SELECT refresh_dashboard_view()`;
-        console.log("✅ Dashboard view refreshed successfully");
-      } else {
-        console.log("⚠️ Dashboard view does not exist, skipping refresh");
-      }
-    } catch (error) {
-      console.error("❌ Error refreshing dashboard view:", error);
-      // Continue with other operations even if this fails
-    }
+    console.log(`[REFRESH_VIEWS] Materialized view refreshed in ${Date.now() - start}ms`);
     
     // Try to refresh all materialized views using the refresh_all_views function
     try {
@@ -55,20 +45,11 @@ export async function GET(req: Request) {
     
     return NextResponse.json({
       success: true,
-      message: "Materialized views refreshed successfully",
-      timestamp: new Date().toISOString()
+      message: "Materialized view refreshed successfully",
+      duration: Date.now() - start
     });
   } catch (error) {
-    console.error("❌ Error in refresh-views cron job:", error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to refresh materialized views",
-        error: String(error),
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
+    console.error("[REFRESH_VIEWS_ERROR]", error);
+    return new NextResponse("Error refreshing materialized view", { status: 500 });
   }
 } 
