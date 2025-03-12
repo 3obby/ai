@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "ebb23f5",
+      "fullHash": "ebb23f5775410b9b6a26fa4b24cee3ee2ade97c9",
+      "date": "2025-03-13 03:22:24 +0700",
+      "author": "3obby",
+      "message": "Remove plus button from companion cards, add group chat button, improve mobile responsiveness",
+      "category": "feature"
+    },
+    {
       "hash": "2446043",
       "fullHash": "24460437941aa59fed2004493f36a3b546382682",
       "date": "2025-03-13 03:01:45 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update user dropdown to link to /account page",
       "category": "enhancement"
-    },
-    {
-      "hash": "f7e4e86",
-      "fullHash": "f7e4e86b28c6e99aaf6621293fd926b654909897",
-      "date": "2025-03-07 23:58:52 +0700",
-      "author": "3obby",
-      "message": "Add enhanced account page with subscription details and personalized UI",
-      "category": "feature"
     }
   ]
 }

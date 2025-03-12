@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Companion } from "@prisma/client"
-import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot, Info, Settings } from "lucide-react";
+import { MessagesSquare, ChevronLeft, ChevronRight, Globe, Flame, Loader2, Bot, Info, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +129,19 @@ export const Companions = ({
     fetchUserTokens();
   }, [userId]);
 
+  // Function to handle group chat creation with predefined companions
+  const handleCreateGroupChat = () => {
+    const companionIds = [
+      'f2e1d0c9-b8a7-6543-21c0-9d8e7f6b5a4c', // Marcus Blackwell
+      'e3d2c1b0-a9f8-7654-3210-fedc9876b5a4', // Jake Wilson
+      '7d6e5f4c-3b2a-1908-7d65-4e3f2a1c0b9d', // Lotus-9
+      'a8b7c6d5-e4f3-2g1h-0i9j-8k7l6m5n4o3p'  // Maya Reyes
+    ];
+    
+    // Open a new window or navigate to the group chat
+    router.push('/api/create-group-chat?companions=' + companionIds.join(','));
+  };
+
   if (data.length === 0) {
     return (
       <div className="pt-10 flex flex-col items-center justify-center space-y-3">
@@ -150,6 +163,33 @@ export const Companions = ({
   return (
     <div className="space-y-4 mb-8 max-w-full overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 px-1 sm:px-2 md:px-4 max-w-full">
+        {/* Group Chat Button Card - First Card */}
+        <Card className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full w-full">
+          <div 
+            className="relative flex flex-col h-full p-4"
+            onClick={handleCreateGroupChat}
+          >
+            <div className="flex flex-col items-center justify-center space-y-4 h-full">
+              <div className="relative w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 flex-shrink-0 bg-indigo-800/50 rounded-full flex items-center justify-center">
+                <Users className="h-12 w-12 text-white" />
+              </div>
+              
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-lg text-white">Group Chat</h3>
+                <p className="text-sm text-indigo-200">Chat with Marcus, Jake, Lotus-9 & Maya</p>
+              </div>
+              
+              <Button 
+                className="mt-auto bg-white hover:bg-indigo-100 text-indigo-900 font-medium"
+                onClick={handleCreateGroupChat}
+              >
+                Start Group Chat
+              </Button>
+            </div>
+          </div>
+        </Card>
+        
+        {/* Regular companion cards */}
         {data.map((item, index) => (
           <Card key={item.name} className="bg-[#DEDEDE] dark:bg-zinc-800 rounded-xl cursor-pointer border border-zinc-300/50 dark:border-zinc-700 shadow-md overflow-hidden flex flex-col h-full max-w-full w-full">
             <div className="relative flex flex-col h-full">
@@ -168,7 +208,7 @@ export const Companions = ({
                 {/* Top section with image on left and stats on right */}
                 <div className="flex flex-row p-3 items-center justify-between">
                   {/* Left side: Avatar - now much larger but responsive */}
-                  <div className="relative w-24 h-24 xs:w-28 xs:h-28 sm:w-32 sm:h-32 flex-shrink-0 ml-2 xs:ml-4 sm:ml-6">
+                  <div className="relative w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 flex-shrink-0 ml-2 xs:ml-4 sm:ml-4">
                     {/* Show loader/placeholder while image is loading */}
                     {loadingImages[item.id] && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 dark:bg-zinc-700 rounded-xl">
@@ -186,7 +226,7 @@ export const Companions = ({
                       alt={item.name}
                       onLoad={() => handleImageLoaded(item.id)}
                       onError={() => handleImageError(item.id)}
-                      sizes="(max-width: 640px) 96px, (max-width: 768px) 112px, 128px"
+                      sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, (max-width: 1024px) 96px, 112px"
                       priority={index < 8} // Prioritize loading first 8 images
                       placeholder="blur"
                       blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAEhQJ/e2imzgAAAABJRU5ErkJggg=="
@@ -266,18 +306,6 @@ export const Companions = ({
                       </p>
                     </div>
                   )}
-                  
-                  {/* + Button in bottom right */}
-                  <button 
-                    className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-zinc-200 hover:bg-orange-500 dark:bg-zinc-700 dark:hover:bg-orange-500 flex items-center justify-center transition-colors shadow-sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.location.href = `/chat/${item.id}`;
-                    }}
-                  >
-                    <span className="text-zinc-800 hover:text-white dark:text-zinc-200 dark:hover:text-white text-lg font-semibold">+</span>
-                  </button>
                 </div>
                 
                 {/* Actions at the bottom */}
