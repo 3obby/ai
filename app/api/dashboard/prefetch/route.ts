@@ -64,10 +64,60 @@ export async function GET(req: Request) {
     
     // Create base query depending on whether we should use the materialized view
     let useView = true;
+    let availableColumns = {
+      description: true,
+      isFree: true,
+      global: true,
+      views: true,
+      votes: true
+    };
     
     try {
       // Check if the view exists
       await prismadb.$queryRaw`SELECT 1 FROM "mv_dashboard_companions" LIMIT 1`;
+      
+      // Check for each column individually
+      try {
+        await prismadb.$queryRaw`SELECT "description" FROM "mv_dashboard_companions" LIMIT 1`;
+      } catch (e) {
+        console.log("[DASHBOARD_PREFETCH] Description column not found in view");
+        availableColumns.description = false;
+      }
+      
+      try {
+        await prismadb.$queryRaw`SELECT "isFree" FROM "mv_dashboard_companions" LIMIT 1`;
+      } catch (e) {
+        console.log("[DASHBOARD_PREFETCH] isFree column not found in view");
+        availableColumns.isFree = false;
+      }
+      
+      try {
+        await prismadb.$queryRaw`SELECT global FROM "mv_dashboard_companions" LIMIT 1`;
+      } catch (e) {
+        console.log("[DASHBOARD_PREFETCH] global column not found in view");
+        availableColumns.global = false;
+      }
+      
+      try {
+        await prismadb.$queryRaw`SELECT views FROM "mv_dashboard_companions" LIMIT 1`;
+      } catch (e) {
+        console.log("[DASHBOARD_PREFETCH] views column not found in view");
+        availableColumns.views = false;
+      }
+      
+      try {
+        await prismadb.$queryRaw`SELECT votes FROM "mv_dashboard_companions" LIMIT 1`;
+      } catch (e) {
+        console.log("[DASHBOARD_PREFETCH] votes column not found in view");
+        availableColumns.votes = false;
+      }
+      
+      // If too many columns are missing, fallback to direct query
+      const missingColumns = Object.values(availableColumns).filter(v => !v).length;
+      if (missingColumns > 3) {
+        console.log(`[DASHBOARD_PREFETCH] Too many columns missing (${missingColumns}), falling back to direct query`);
+        useView = false;
+      }
     } catch (e) {
       console.log("[DASHBOARD_PREFETCH] Materialized view not found, falling back to direct queries");
       useView = false;
@@ -108,11 +158,39 @@ export async function GET(req: Request) {
         return [{ count: 100 }]; // Fallback to an estimate
       });
       
-      // Get data from view with pagination and optimized field selection
-      companionsPromise = prismadb.$queryRaw`
+      // Build a dynamic query that only includes available columns
+      let selectClause = Prisma.sql`
         SELECT 
-          id, name, src, description, "categoryId", "userName", 
-          "isFree", global, "createdAt", views, votes
+          id, name, src, "categoryId", "userName"
+      `;
+      
+      // Conditionally add columns that might be missing
+      if (availableColumns.description) {
+        selectClause = Prisma.sql`${selectClause}, "description"`;
+      }
+      
+      if (availableColumns.isFree) {
+        selectClause = Prisma.sql`${selectClause}, "isFree"`;
+      }
+      
+      if (availableColumns.global) {
+        selectClause = Prisma.sql`${selectClause}, global`;
+      }
+      
+      if (availableColumns.views) {
+        selectClause = Prisma.sql`${selectClause}, views`;
+      }
+      
+      if (availableColumns.votes) {
+        selectClause = Prisma.sql`${selectClause}, votes`;
+      }
+      
+      // Add other essential columns
+      selectClause = Prisma.sql`${selectClause}, "createdAt"`;
+      
+      // Build the full query
+      companionsPromise = prismadb.$queryRaw`
+        ${selectClause}
         FROM "mv_dashboard_companions"
         ${viewWhereClause}
         LIMIT ${pageSize} OFFSET ${skip}
@@ -226,14 +304,16 @@ export async function GET(req: Request) {
       id: companion.id,
       name: companion.name,
       src: companion.src,
-      description: companion.description.substring(0, 100) + (companion.description.length > 100 ? '...' : ''),
+      description: companion.description ? 
+        (companion.description.substring(0, 100) + (companion.description.length > 100 ? '...' : '')) : 
+        'No description available', // Fallback for missing description
       categoryId: companion.categoryId,
       userName: companion.userName,
-      isFree: companion.isFree,
-      global: companion.global,
+      isFree: companion.isFree !== undefined ? companion.isFree : false,
+      global: companion.global !== undefined ? companion.global : false,
       createdAt: companion.createdAt,
-      views: companion.views,
-      votes: companion.votes,
+      views: companion.views !== undefined ? companion.views : 0,
+      votes: companion.votes !== undefined ? companion.votes : 0,
       // Exclude large fields like instructions, seed, and configuration objects
     }));
     

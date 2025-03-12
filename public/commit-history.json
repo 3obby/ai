@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c39e10b",
+      "fullHash": "c39e10b8a4810467ab2073bfc96d46af83458e50",
+      "date": "2025-03-12 16:38:28 +0700",
+      "author": "3obby",
+      "message": "Enhance dashboard API resilience for missing materialized view columns",
+      "category": "enhancement"
+    },
+    {
       "hash": "91d58e0",
       "fullHash": "91d58e0f523e0812d3d6485d5f4d6774e56d8ec2",
       "date": "2025-03-12 16:33:39 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Implement Edge Runtime compatibility for database operations",
       "category": "other"
-    },
-    {
-      "hash": "f9c7541",
-      "fullHash": "f9c754165ed9f98d2de5885a4b1cfe0f5059ed9c",
-      "date": "2025-03-07 22:55:04 +0700",
-      "author": "3obby",
-      "message": "update gitignore and next config",
-      "category": "enhancement"
     }
   ]
 }
