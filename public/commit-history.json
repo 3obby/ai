@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "389e239",
+      "fullHash": "389e239a15f373df7b95f17b78cfc5a2d3b71982",
+      "date": "2025-03-13 13:39:59 +0700",
+      "author": "3obby",
+      "message": "Fix PostgreSQL JSONB type error in group chat creation",
+      "category": "bugfix"
+    },
+    {
       "hash": "f6752a2",
       "fullHash": "f6752a29e93c17699f9bd21cae4affca73baf917",
       "date": "2025-03-13 03:29:07 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Optimize project environment for Life OS platform: add Tailwind plugins, fix TypeScript errors, add Cursor config, and create UI components",
       "category": "bugfix"
-    },
-    {
-      "hash": "5725adc",
-      "fullHash": "5725adceff04094856dd522ac3236aa0a3506111",
-      "date": "2025-03-08 00:07:00 +0700",
-      "author": "3obby",
-      "message": "Add shadcn/ui components and UI demo page",
-      "category": "feature"
     }
   ]
 }

@@ -3,6 +3,7 @@ import prismadb from "@/lib/prismadb";
 import { getApiAuth } from "@/lib/api-auth";
 import { v4 as uuidv4 } from 'uuid';
 import { allocateAnonymousTokens } from "@/lib/token-usage";
+import { ResponseOrderingType, SessionPersistenceType, InputConsiderationType } from "@/types/chat-config";
 
 // Force dynamic rendering for API routes
 export const dynamic = "force-dynamic";
@@ -136,6 +137,69 @@ export async function GET(request: Request) {
         senderId: effectiveUserId,
       },
     });
+
+    // Create default ChatConfig for the group chat
+    try {
+      // Define default chat dynamics
+      const defaultDynamics = {
+        responseOrdering: ResponseOrderingType.ROUND_ROBIN,
+        sessionPersistence: SessionPersistenceType.PERSISTENT,
+        typingIndicatorDelay: 1000,
+        minResponseDelay: 500,
+        maxResponseDelay: 2000
+      };
+
+      // Define default input handling
+      const defaultInputHandling = {
+        inputConsideration: InputConsiderationType.USER_ONLY,
+        maxContextWindowSize: 10
+      };
+
+      // Define default execution rules
+      const defaultExecutionRules = {
+        toolPermissions: [],
+        computeIntensity: 5,
+        economyMode: true
+      };
+
+      // Define default UI config
+      const defaultUiConfig = {
+        showDebugPanel: false,
+        showTypingIndicator: true,
+        showParticipantAvatars: true,
+        compactMode: false
+      };
+
+      // Insert chat config using direct SQL to ensure proper JSON formatting
+      const insertConfigQuery = `
+        INSERT INTO "ChatConfig" (
+          "name", "description", "userId", "isTemplate", "templateCategory",
+          "dynamics", "inputHandling", "executionRules", "uiConfig",
+          "companionId", "groupChatId", "createdAt", "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      `;
+
+      await prismadb.$executeRawUnsafe(
+        insertConfigQuery,
+        "Team Chat Configuration",
+        "Default configuration for group chat",
+        effectiveUserId,
+        false,
+        null,
+        JSON.stringify(defaultDynamics),
+        JSON.stringify(defaultInputHandling),
+        JSON.stringify(defaultExecutionRules),
+        JSON.stringify(defaultUiConfig),
+        null,
+        groupChat.id
+      );
+      
+      console.log("Created default chat config for group chat:", groupChat.id);
+    } catch (configError) {
+      console.error("Error creating default chat config:", configError);
+      // Continue with the process even if config creation fails
+    }
 
     // Deduct tokens from user
     await prismadb.userUsage.update({
