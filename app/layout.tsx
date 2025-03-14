@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { withAuth } from "@/lib/auth"
 import NextAuthProvider from "@/components/providers/session-provider"
 import { NavigationProgress } from "@/components/ui/navigation-progress"
+import SWRProvider from "@/app/shared/components/SWRProvider"
 
 // Force dynamic rendering for authentication
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,18 @@ export const metadata: Metadata = {
   ],
   creator: "GCBB Team",
   publisher: "GCBB",
+  openGraph: {
+    title: "GCBB AI Companion",
+    description: "Engage with customizable AI companions for productivity, learning, and entertainment. Access a variety of companions with unique personalities and knowledge domains.",
+    siteName: "GCBB AI Companion",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GCBB AI Companion",
+    description: "Engage with customizable AI companions for productivity, learning, and entertainment. Access a variety of companions with unique personalities and knowledge domains.",
+  },
 }
 
 export default async function RootLayout({
@@ -93,22 +106,24 @@ export default async function RootLayout({
         <link rel="stylesheet" href={`/_next/static/css/app/layout.css?v=${Date.now()}`} />
       </head>
       <body className={cn("bg-secondary", inter.className)}>
-        <NextAuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <PromptsProvider>
-              <SettingsModalProvider>
-                <NavigationProgress />
-                {children}
-              </SettingsModalProvider>
-            </PromptsProvider>
-            <Toaster />
-          </ThemeProvider>
-        </NextAuthProvider>
+        <SWRProvider>
+          <NextAuthProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <PromptsProvider>
+                <SettingsModalProvider>
+                  <NavigationProgress />
+                  {children}
+                </SettingsModalProvider>
+              </PromptsProvider>
+              <Toaster />
+            </ThemeProvider>
+          </NextAuthProvider>
+        </SWRProvider>
       </body>
     </html>
   )

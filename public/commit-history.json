@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "8d665cf",
+      "fullHash": "8d665cfe9ba30c6cfc5c6770132ab7cc7046cd44",
+      "date": "2025-03-15 01:45:06 +0700",
+      "author": "3obby",
+      "message": "added demo route (173 files changed)",
+      "category": "feature"
+    },
+    {
       "hash": "389e239",
       "fullHash": "389e239a15f373df7b95f17b78cfc5a2d3b71982",
       "date": "2025-03-13 13:39:59 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-08 01:00:15 +0700",
       "author": "3obby",
       "message": "Fix routing conflicts and authentication issues in Next.js App Router",
-      "category": "bugfix"
-    },
-    {
-      "hash": "cc4962f",
-      "fullHash": "cc4962f22ae39c2e297ccd7ef679aeae330f48da",
-      "date": "2025-03-08 00:30:05 +0700",
-      "author": "3obby",
-      "message": "Optimize project environment for Life OS platform: add Tailwind plugins, fix TypeScript errors, add Cursor config, and create UI components",
       "category": "bugfix"
     }
   ]

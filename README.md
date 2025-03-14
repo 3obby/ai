@@ -2,6 +2,7 @@
 
 ## Architecture
 - Next.js 15 App Router with TypeScript (fully compatible with Next.js 15 breaking changes)
+- Domain-Driven Design architecture with feature-based organization
 - PostgreSQL database (Neon) with Prisma ORM v6.4.1
 - OpenAI integration (GPT models via API)
 - Authentication via NextAuth v4.24.11
@@ -12,12 +13,22 @@
 - Server-side streaming for real-time AI responses
 - Optimized connection pooling for serverless database
 
+## Project Structure
+- **Feature-Based Organization**: Code organized by domain/feature rather than by technical type
+- **Unified Data Models**: Simplified data models with a unified approach to chats, participants, and config
+- **Shared Components**: Common UI components and utilities available in `app/shared` directory
+- **API Domain Separation**: API routes organized by domain for better maintainability
+
 ## Next.js 15 Compatibility
 - All dynamic route parameters (`params`, `searchParams`) correctly awaited in server components
 - Middleware and API routes updated for Next.js 15 compatibility
 - Edge runtime API optimizations
 - Enhanced document flow with optimized components
 - See `DEVELOPMENT_AND_DEPLOYMENT.md` for detailed notes on breaking changes
+
+## Project Status
+- Currently undergoing architecture restructuring (see `RESTRUCTURING_PROGRESS.md`)
+- See `DEVELOPMENT_AND_DEPLOYMENT.md` for detailed information on the new architecture
 
 ## Key Data Models
 - **User**: Authentication, preferences, token balance
@@ -100,16 +111,29 @@
   - Runtime application during AI response generation
 
 ## Performance Optimizations
-- Strategic database indexes on frequently queried columns
-- Composite indexes for multi-column conditions
-- Materialized views for dashboard data
-- Tiered Redis caching:
-  - Anonymous users: 10-30 minute cache (depends on implementation)
-  - Authenticated users: 1-minute cache
-- Server-side streaming for immediate partial responses
-- Background processing for token tracking
-- Optimized image loading with progressive techniques
-- Multi-region deployment configuration
+- Strategic database indexing for common query patterns
+- Tiered Redis caching (5-minute TTL for frequently accessed data)
+- Server-side streaming for immediate responses
+- Optimized image loading with Next.js Image component
+- Lazy loading for non-critical components
+- Suspense boundaries for parallel data loading
+- Connection pooling for database queries
+
+## Demo Experience
+- Interactive demo available at `/demo` route
+- Pre-configured group chat with 3 AI companions (technical advisor, creative lead, project manager)
+- Real-time companion configuration with personality adjustments
+- No login required - instant access to core functionality
+- Mobile-optimized interface with responsive design
+- Configurable chat settings (response speed, typing indicators)
+- Serves as both demonstration and onboarding tool
+
+## UX Enhancements
+- Wizard flows for complex operations (companion creation, group chat setup)
+- Real-time previews for immediate feedback
+- Enhanced template system with advanced filtering and sharing
+- Progressive disclosure of complex features
+- Consistent design patterns across the application
 
 ## Anonymous User Experience
 - Public dashboard access without authentication
@@ -118,3 +142,32 @@
 - Seamless upgrade path to authenticated session
 - Optimized response time with simplified models
 - Automatic token allocation (1,000 tokens)
+
+## Architectural Restructuring (Coming Soon)
+
+We're planning a significant architectural restructuring to improve performance, reliability, and developer experience. Key changes include:
+
+- **Domain-Driven Design**: Reorganizing into domain-specific feature modules
+- **Simplified Data Model**: Unifying chat models and streamlining relationships
+- **Enhanced State Management**: Implementing more efficient state handling
+- **Performance Optimizations**: Server Components and progressive loading
+
+For details, see `restructuring-plan.md`, `DEVELOPMENT_AND_DEPLOYMENT.md` and `DATABASE_AND_MIGRATIONS.md`.
+
+## Key Features
+
+### Group Chat Experience
+- **Multi-AI Conversations**: Engage with multiple AI companions simultaneously in a single chat
+- **Parallel Responses**: All companions respond independently to provide diverse perspectives
+- **Typing Indicators**: Visual feedback showing which companions are currently composing responses
+- **Direct Addressing**: Target specific companions using "@Name" or "Name:" syntax
+- **Custom AI Teams**: Create specialized groups of companions with complementary skills
+
+## Demo Experience
+
+Try our interactive demo at `/demo` to experience:
+- Conversations with multiple AI companions responding in parallel
+- Direct addressing of specific companions for targeted questions
+- Real-time typing indicators showing which companions are responding
+- Companion personality adjustments with immediate effect on responses
+- No login required - start chatting immediately

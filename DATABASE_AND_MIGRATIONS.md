@@ -246,3 +246,101 @@ For CDN timeouts (like `cdn.jsdelivr.net`):
 1. Use local copies of essential JavaScript libraries
 2. Implement a proxy for external resources if needed
 3. Add timeout handling and retry logic for external services 
+
+## Planned Schema Simplification (Next.js 15 Restructuring)
+
+As part of our architectural restructuring efforts, we're planning to simplify the database schema to improve performance and maintainability. These changes are in planning stage and will be implemented in phases.
+
+### Unified Chat Model
+
+We plan to merge the individual chat and group chat models into a unified chat model:
+
+```prisma
+model Chat {
+  id          String      @id @default(uuid())
+  type        ChatType    // 'individual' or 'group'
+  name        String
+  creatorId   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  config      Json        // Embedded chat configuration
+  
+  // Relations
+  participants ChatParticipant[]
+  messages     Message[]
+  
+  @@index([creatorId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+enum ChatType {
+  INDIVIDUAL
+  GROUP
+}
+```
+
+### Unified Participant Model
+
+We'll standardize the participant model for both AI companions and human users:
+
+```prisma
+model ChatParticipant {
+  id              String    @id @default(uuid())
+  chatId          String
+  participantId   String    // Either userId or companionId
+  participantType String    // 'user' or 'companion' 
+  role            String?   // Optional role in the chat
+  joinedAt        DateTime  @default(now())
+  
+  // Relations
+  chat            Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@unique([chatId, participantId])
+  @@index([chatId])
+  @@index([participantId])
+  @@index([participantType])
+}
+```
+
+### Simplified Message Model
+
+The message model will be unified for all chat types:
+
+```prisma
+model Message {
+  id          String    @id @default(uuid())
+  chatId      String
+  senderId    String    // Either userId or companionId
+  senderType  String    // 'user' or 'companion'
+  content     String
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@index([chatId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([chatId, createdAt])
+}
+```
+
+### Configuration as Extension
+
+Chat configurations will be embedded directly in the Chat model rather than maintained as separate entities.
+
+### Migration Strategy
+
+1. **Create New Tables**: We'll create the new table structure alongside existing tables
+2. **Data Migration**: Migrate data from old tables to new structure
+3. **Feature Switching**: Implement feature flags to gradually switch from old to new schema
+4. **Validation Period**: Run both systems in parallel temporarily for validation
+5. **Retirement**: Remove old tables after successful validation
+
+### Performance Benefits
+
+- Reduced query complexity for chat operations
+- Fewer joins needed for common operations
+- More efficient caching of chat data
+- Simplified update operations for chat configurations 
