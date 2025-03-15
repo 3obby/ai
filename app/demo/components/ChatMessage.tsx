@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Message } from '../types/companions';
+import { Message, Companion } from '../types/companions';
 import { ServerAvatar } from '@/app/shared/components/ui/server-avatar';
 import { Card, CardContent, CardFooter } from '@/app/shared/components/ui/card';
 import { Button } from '@/app/shared/components/ui/button';
@@ -9,17 +9,33 @@ import { ChevronDown, ChevronUp, Sparkles, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/app/shared/components/ui/badge';
 import AudioPlayer from './AudioPlayer';
+import { VoiceChatSettings, AISettings } from '../types/settings';
 
 interface ChatMessageProps {
   message: Message;
+  companions?: Companion[];
+  onCompanionClick?: (companionId: string) => void;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ 
+  message, 
+  companions, 
+  onCompanionClick 
+}: ChatMessageProps) {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   const toggleDebugInfo = () => {
     setShowDebugInfo(!showDebugInfo);
   };
+
+  const handleCompanionAvatarClick = () => {
+    if (!message.isUser && onCompanionClick) {
+      onCompanionClick(message.senderId);
+    }
+  };
+
+  // Get companion details if it exists
+  const isCompanion = !message.isUser && companions?.some(c => c.id === message.senderId);
   
   // Format the time
   const formattedTime = formatDistanceToNow(new Date(message.timestamp), {
@@ -36,11 +52,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             {!message.isUser && (
-              <ServerAvatar
-                src={message.senderAvatar}
-                alt={message.senderName}
-                className="h-8 w-8"
-              />
+              <div 
+                className={isCompanion ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+                onClick={handleCompanionAvatarClick}
+                title={isCompanion ? "Click to edit companion settings" : ""}
+              >
+                <ServerAvatar
+                  src={message.senderAvatar}
+                  alt={message.senderName}
+                  className="h-8 w-8"
+                />
+              </div>
             )}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">

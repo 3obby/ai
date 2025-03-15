@@ -13,10 +13,13 @@ import { Message, Companion } from "../types/companions";
 import { PRE_CONFIGURED_COMPANIONS } from "../services/companions-service";
 import WebRTCTranscriptionService, { WhisperTranscriptionResult } from "../services/webrtc-transcription-service";
 import * as whisperService from "../services/whisper-service";
+import { DEFAULT_SETTINGS, DemoSettings } from "../types/settings";
 
 // Import our modular components
 import ChatContainer from "./chat/ChatContainer";
 import SettingsModal from "./settings/SettingsModal";
+import ChatMessage from "./ChatMessage";
+import CompanionSettingsModal from "./CompanionSettingsModal";
 
 export default function GroupChatDemo() {
   // State for chat interface
@@ -62,6 +65,10 @@ export default function GroupChatDemo() {
   
   // Settings modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Companion settings modal state
+  const [selectedCompanionId, setSelectedCompanionId] = useState<string | null>(null);
+  const [isCompanionSettingsOpen, setIsCompanionSettingsOpen] = useState(false);
   
   // Add state for tracking transcription details
   const [currentTranscription, setCurrentTranscription] = useState<WhisperTranscriptionResult | null>(null);
@@ -843,6 +850,12 @@ export default function GroupChatDemo() {
     setTranscriptionSegments([]);
   };
 
+  // Function to handle companion avatar click
+  const handleCompanionClick = (companionId: string) => {
+    setSelectedCompanionId(companionId);
+    setIsCompanionSettingsOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-background">
       <div className="flex items-center justify-between p-4 border-b">
@@ -901,15 +914,14 @@ export default function GroupChatDemo() {
           handleKeyDown={handleKeyDown}
           sendMessage={sendMessage}
           handleMicButtonClick={handleMicButtonClick}
+          onCompanionClick={handleCompanionClick}
         />
       </div>
 
       {/* Settings Modal */}
-      <SettingsModal 
+      <SettingsModal
         isOpen={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
-        companions={companions}
-        updateCompanionConfig={updateCompanionConfig}
         resetConfiguration={resetConfiguration}
         restartChat={restartChat}
         responseSpeed={responseSpeed}
@@ -923,6 +935,18 @@ export default function GroupChatDemo() {
         isStreaming={isStreaming}
         handleStopStream={stopAudioStreaming}
       />
+
+      {/* Companion Settings Modal */}
+      {selectedCompanionId && (
+        <CompanionSettingsModal
+          isOpen={isCompanionSettingsOpen}
+          onOpenChange={setIsCompanionSettingsOpen}
+          companion={companions.find(c => c.id === selectedCompanionId)!}
+          updateCompanionConfig={updateCompanionConfig}
+          globalVoiceSettings={DEFAULT_SETTINGS.voiceChat}
+          globalAISettings={DEFAULT_SETTINGS.ai}
+        />
+      )}
     </div>
   );
 } 

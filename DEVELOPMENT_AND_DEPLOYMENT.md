@@ -289,6 +289,144 @@ The application also supports bi-directional voice communication with the AI usi
    - Parameters like tone, pacing, pauses, and vocal variety
    - Instructions to use contractions, brief acknowledgments, and natural speech patterns
 
+### Comprehensive Settings Schema
+
+The demo application includes a robust settings framework to configure all aspects of the AI chat experience. These settings are organized into four main categories:
+
+#### 1. Real-time API Settings
+
+Configuration for the OpenAI Real-time API connection:
+
+```typescript
+interface RealtimeAPISettings {
+  // API Configuration
+  apiEndpoint?: string;           // OpenAI API endpoint URL
+  apiVersion?: string;            // API version to use
+  
+  // WebRTC Connection
+  iceServers?: {                  // STUN/TURN servers for WebRTC
+    urls: string[];
+    username?: string;
+    credential?: string;
+  }[];
+  reconnectAttempts?: number;     // Number of reconnection attempts (default: 3)
+  reconnectInterval?: number;     // Milliseconds between reconnection attempts
+  
+  // Session Management
+  sessionTimeout?: number;        // Session timeout in milliseconds
+  keepAliveInterval?: number;     // Keep-alive ping interval in milliseconds
+}
+```
+
+#### 2. Voice Chat Settings
+
+Detailed configuration for voice interaction:
+
+```typescript
+interface VoiceChatSettings {
+  // Voice Activity Detection
+  vadMode: 'auto' | 'sensitive' | 'manual';   // Detection sensitivity
+  vadThreshold?: number;                       // Sensitivity threshold (0.1-0.9)
+  prefixPaddingMs?: number;                    // Audio to include before speech
+  silenceDurationMs?: number;                  // Silence before ending segment
+  
+  // Audio Processing
+  audioFormat?: 'pcm16' | 'g711_ulaw' | 'g711_alaw';  // Encoding format
+  sampleRate?: number;                                // Audio sample rate
+  
+  // Turn Detection
+  turnDetection?: {
+    threshold?: number;           // When to consider a turn finished
+    prefixPaddingMs?: number;     // Padding before turn
+    silenceDurationMs?: number;   // Silence before ending turn
+    createResponse?: boolean;     // Auto-generate response when turn ends
+  };
+  
+  // Assistant Voice
+  voice?: 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';
+  modality?: 'both' | 'text' | 'audio';  // Response format
+}
+```
+
+#### 3. Tool Calling Settings
+
+Configure how AI companions can use external tools:
+
+```typescript
+interface ToolCallingSettings {
+  enabled: boolean;                      // Master toggle for tool calling
+  allowedTools?: string[];               // List of enabled tool IDs
+  toolDefinitions?: any[];               // Tool definitions/schemas
+  responseFormat?: 'json' | 'markdown' | 'text';  // Tool response format
+  maxToolCalls?: number;                 // Max calls per conversation
+  toolCallTimeout?: number;              // Timeout in milliseconds
+}
+```
+
+#### 4. AI Settings
+
+General AI behavior and model parameters:
+
+```typescript
+interface AISettings {
+  // Model Parameters
+  model?: string;                // Model name (e.g., 'gpt-4o')
+  temperature?: number;          // Sampling temperature (0.1-2.0)
+  topP?: number;                 // Nucleus sampling parameter (0.1-1.0)
+  frequencyPenalty?: number;     // Repetition penalty (-2.0 to 2.0)
+  presencePenalty?: number;      // Topic diversity parameter (-2.0 to 2.0)
+  maxResponseTokens?: number | 'inf';  // Token limit per response
+  
+  // Behavior Settings
+  responseSpeed?: number;        // How quickly companions respond (1-10)
+  allRespond?: boolean;          // Whether all companions respond to messages
+  
+  // System Message
+  systemMessage?: string;        // Base instructions for companions
+  
+  // Safety Settings
+  moderationEnabled?: boolean;   // Enable content moderation
+  contentFiltering?: {
+    hate?: 'none' | 'low' | 'medium' | 'high';
+    hateThreatening?: 'none' | 'low' | 'medium' | 'high';
+    selfHarm?: 'none' | 'low' | 'medium' | 'high';
+    sexual?: 'none' | 'low' | 'medium' | 'high';
+    sexualMinors?: 'none' | 'low' | 'medium' | 'high';
+    violence?: 'none' | 'low' | 'medium' | 'high';
+    violenceGraphic?: 'none' | 'low' | 'medium' | 'high';
+  };
+}
+```
+
+#### Combined Settings Interface
+
+All settings are combined into a unified interface:
+
+```typescript
+interface DemoSettings {
+  realtimeAPI: RealtimeAPISettings;
+  voiceChat: VoiceChatSettings;
+  toolCalling: ToolCallingSettings;
+  ai: AISettings;
+  companionSettings?: { 
+    [companionId: string]: Partial<AISettings & VoiceChatSettings> 
+  };
+}
+```
+
+#### Default Configuration
+
+The application includes reasonable defaults for all settings. Access the settings panel in the `/demo` route to customize these settings.
+
+#### Implementing Settings Changes
+
+When making changes to settings:
+
+1. Use the `updateSettings` methods provided by the settings components
+2. For real-time settings (like voice settings), changes take effect immediately
+3. Some settings require a restart of the chat session (model, system message)
+4. Companion-specific settings override global settings when that companion is active
+
 ### Troubleshooting Voice Quality Issues
 
 If you encounter voice quality issues:

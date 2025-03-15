@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "ae6e3be",
+      "fullHash": "ae6e3be78e91bd3b07d7be92c98c3aca9fd41ccd",
+      "date": "2025-03-15 14:07:31 +0700",
+      "author": "3obby",
+      "message": "settings updates",
+      "category": "enhancement"
+    },
+    {
       "hash": "d242422",
       "fullHash": "d2424229fbc23dda345fac9d8732fda00000fdb8",
       "date": "2025-03-15 13:04:18 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update Prisma to latest version 6.4.1",
       "category": "enhancement"
-    },
-    {
-      "hash": "7fdcf3d",
-      "fullHash": "7fdcf3d820be81286dbee7c1777b90548f2dbb4d",
-      "date": "2025-03-08 01:01:52 +0700",
-      "author": "3obby",
-      "message": "Update ESLint to ^8.56.0 to fix dependency conflict with TypeScript ESLint plugin",
-      "category": "bugfix"
     }
   ]
 }

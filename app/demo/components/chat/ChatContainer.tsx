@@ -29,6 +29,7 @@ interface ChatContainerProps {
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   sendMessage: () => Promise<void>;
   handleMicButtonClick: () => void;
+  onCompanionClick?: (companionId: string) => void;
 }
 
 export default function ChatContainer({
@@ -46,7 +47,8 @@ export default function ChatContainer({
   mediaStreamRef,
   handleKeyDown,
   sendMessage,
-  handleMicButtonClick
+  handleMicButtonClick,
+  onCompanionClick
 }: ChatContainerProps) {
   
   if (isLoading) {
@@ -80,7 +82,12 @@ export default function ChatContainer({
       <ScrollArea className="flex-1 pr-4">
         <div className="py-4 space-y-4">
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage 
+              key={message.id} 
+              message={message} 
+              companions={companions}
+              onCompanionClick={onCompanionClick}
+            />
           ))}
           
           {/* Only show connecting status when connecting, not streaming */}
