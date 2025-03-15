@@ -50,7 +50,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                 <span className="text-xs text-muted-foreground">
                   {formattedTime}
                 </span>
-                {message.messageType === 'audio' && (
+                {message.isInterim && (
+                  <Badge variant="destructive" className="text-xs animate-pulse">
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    {message.id === 'streaming-transcript' ? 'Transcribing...' : 'Listening...'}
+                  </Badge>
+                )}
+                {message.metadata?.transcriptionType === 'user-audio' && (
                   <Badge variant="secondary" className="text-xs">
                     <MessageSquare className="h-3 w-3 mr-1" />
                     Voice
@@ -63,7 +69,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   </Badge>
                 )}
               </div>
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+              <div className="text-sm whitespace-pre-wrap">
+                {/* Add message ID in dev mode for debugging */}
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="text-xs text-gray-500 block">ID: {message.id}</span>
+                )}
+                {message.content}
+              </div>
               
               {/* Audio Player for AI responses */}
               {!message.isUser && (

@@ -163,11 +163,15 @@ For details, see `restructuring-plan.md`, `DEVELOPMENT_AND_DEPLOYMENT.md` and `D
 - **Direct Addressing**: Target specific companions using "@Name" or "Name:" syntax
 - **Custom AI Teams**: Create specialized groups of companions with complementary skills
 
+### Voice Chat & Realtime Transcription
+- **Real-time Audio Conversations**: Direct voice interaction with AI companions using OpenAI's Realtime API
+- **Bidirectional Transcription**: Real-time transcription of both user and AI speech in the chat interface
+- **WebRTC Integration**: Low-latency audio streaming with optimized voice quality
+- **Detailed Transcription Metadata**: Rich metadata including timestamps, word boundaries, and segments
+- **Multi-modal Interaction**: Seamlessly switch between text and voice in the same conversation
+- **Whisper API Fallback**: Reliable non-streaming transcription for longer audio segments
+- **Visual Transcription Indicators**: Clear differentiation between interim and final transcriptions
+
 ## Demo Experience
 
-Try our interactive demo at `/demo` to experience:
-- Conversations with multiple AI companions responding in parallel
-- Direct addressing of specific companions for targeted questions
-- Real-time typing indicators showing which companions are responding
-- Companion personality adjustments with immediate effect on responses
-- No login required - start chatting immediately
+Try our interactive demo at `/demo`

@@ -1,8 +1,37 @@
 import { v4 as uuidv4 } from 'uuid';
 
+// Define types for transcript data 
+export interface WhisperTranscriptionResult {
+  task?: string;
+  language?: string;
+  duration?: number;
+  text: string;
+  segments?: WhisperSegment[];
+  words?: WhisperWord[];
+}
+
+export interface WhisperSegment {
+  id: number;
+  seek?: number;
+  start: number;
+  end: number;
+  text: string;
+  tokens?: number[];
+  temperature?: number;
+  avg_logprob?: number;
+  compression_ratio?: number;
+  no_speech_prob?: number;
+}
+
+export interface WhisperWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
 // Define types for callbacks
-export type TranscriptionUpdateCallback = (text: string) => void;
-export type ConnectionStatusCallback = (status: 'connecting' | 'connected' | 'disconnected' | 'error', message?: string) => void;
+export type TranscriptionUpdateCallback = (text: string, result?: WhisperTranscriptionResult) => void;
+export type ConnectionStatusCallback = (status: 'connecting' | 'connected' | 'disconnected' | 'error' | 'warning', message?: string) => void;
 export type AIResponseCallback = (text: string, isFinal: boolean) => void;
 
 export interface VoiceConfig {
@@ -19,6 +48,9 @@ export interface VoiceConfig {
   maxResponseTokens?: number | 'inf'; // Max tokens per response, default 'inf'
   audioFormat?: 'pcm16' | 'g711_ulaw' | 'g711_alaw'; // Audio format
 }
+
+// Update the ConnectionStatus type to include 'warning'
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error' | 'warning';
 
 /**
  * Service to handle real-time transcription using WebRTC directly with OpenAI's Realtime API
@@ -144,6 +176,13 @@ class WebRTCTranscriptionService {
       if (this.voiceConfig.audioFormat) {
         params.append('audio_format', this.voiceConfig.audioFormat);
       }
+      
+      // IMPORTANT: Enable input audio transcription explicitly with multiple settings
+      params.append('enable_input_transcription', 'true');
+      params.append('input_transcription_model', 'whisper-1');
+      params.append('input_transcription_language', 'en');
+      
+      console.log('Requesting ephemeral token with input transcription enabled');
       
       // Get an ephemeral token from our server with the config params
       const tokenResponse = await fetch(`/api/demo/realtime-transcription/ephemeral-token?${params.toString()}`);
@@ -389,17 +428,23 @@ class WebRTCTranscriptionService {
     }
     
     try {
-      // Create a message event
-      const messageEvent = {
-        type: "message.create",
-        message: {
-          content: text,
-          role: "user"
+      // Create a conversation item with text content
+      const conversationItemEvent = {
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: text
+            }
+          ]
         }
       };
       
       // Send the message to OpenAI
-      this.dataChannel.send(JSON.stringify(messageEvent));
+      this.dataChannel.send(JSON.stringify(conversationItemEvent));
       console.log('Sent text message for voice response:', text);
       return true;
     } catch (error) {
@@ -418,6 +463,22 @@ class WebRTCTranscriptionService {
     }
     
     try {
+      // First, enable input audio transcription by sending a session update
+      // Add more comprehensive settings for input transcription
+      const sessionUpdateEvent = {
+        type: "session.update",
+        session: {
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en", // Explicitly set language for better accuracy
+            prompt: "Accurately transcribe the user's speech" // Guide the transcription
+          }
+        }
+      };
+      
+      this.dataChannel.send(JSON.stringify(sessionUpdateEvent));
+      console.log('Enabled input audio transcription via session update with enhanced settings');
+      
       // Send a response.create event to start transcription with both text and audio modalities
       const responseCreate = {
         type: "response.create",
@@ -447,9 +508,31 @@ CONVERSATION STYLE:
       this.dataChannel.send(JSON.stringify(responseCreate));
       console.log('Sent initial transcription request with text and audio modalities');
       
-      // Send a greeting to start the conversation
+      // Send a greeting to start the conversation using conversation.item.create
       setTimeout(() => {
-        this.sendTextMessage("Hello, I'm your AI assistant. How can I help you today?");
+        // Make sure we still have a connection
+        if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+          console.warn('Data channel not open when trying to send greeting');
+          return;
+        }
+        
+        // Create a conversation item with the greeting message
+        const greetingEvent = {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: "Hello, I'm looking forward to our conversation. How can you help me today?"
+              }
+            ]
+          }
+        };
+        
+        this.dataChannel.send(JSON.stringify(greetingEvent));
+        console.log('Sent initial greeting using conversation.item.create');
       }, 1000);
     } catch (error) {
       console.error('Error sending initial transcription request:', error);
@@ -460,83 +543,486 @@ CONVERSATION STYLE:
    * Handle events from the Realtime API
    */
   private handleRealtimeEvent(event: any): void {
-    console.log('Received event:', event.type);
+    // Log all received events with more detail
+    console.log(`[WebRTC] Received event type: ${event.type}`);
     
-    // Handle different event types
+    // Common error message handling
+    if (event.error) {
+      console.error('[WebRTC] Error in event:', event.type, event.error);
+      this.notifyStatusChange('error', event.error.message || 'Unknown error');
+      return;
+    }
+    
     switch (event.type) {
-      case 'text.created':
-        this.handleTextEvent(event);
+      // Session establishment
+      case 'session.created':
+        this.sessionId = event.session_id;
+        console.log('[WebRTC] Session created, ID:', this.sessionId);
+        this.notifyStatusChange('connected');
+        this.isConnected = true;
+        
+        // Send initial configuration after connection
+        this.sendInitialTranscriptionRequest();
         break;
-      
-      case 'response.text.delta':
-        this.handleResponseTextDelta(event);
+
+      // Text transcription and response
+      case 'text.delta':
+        // Accumulate partial text response
+        this.currentAIResponse += event.delta;
+        this.notifyAIResponse(this.currentAIResponse, false);
         break;
-      
-      case 'response.text.done':
-        this.handleResponseTextDone(event);
+
+      case 'text.done':
+        // Process completed text response
+        this.notifyAIResponse(this.currentAIResponse, true);
+        this.currentAIResponse = '';
+        break;
+
+      // Audio generation and playback
+      case 'audio.chunk':
+        this.handleAudioChunk(event);
         break;
         
-      case 'audio.created':
-        // Audio events are automatically handled by the WebRTC audio stream
-        console.log('Audio event received - this is handled automatically by WebRTC');
+      case 'audio.done':
+        console.log('[WebRTC] Audio generation complete for item:', event.item_id);
+        break;
+      
+      // Full response handling
+      case 'response.created':
+        console.log('[WebRTC] Response created with ID:', event.response_id);
+        // Reset any existing response data
+        this.currentAIResponse = '';
+        break;
+      
+      case 'response.done':
+        console.log('[WebRTC] Response complete with ID:', event.response_id);
+        break;
+      
+      // Response items handling
+      case 'response.content_part.added':
+        console.log('[WebRTC] Content part added:', event.item_id);
+        break;
+        
+      case 'response.output_item.added':
+        console.log('[WebRTC] Output item added:', event.item_id);
+        this.handleOutputItemAdded(event);
+        break;
+        
+      case 'response.content_part.done':
+        console.log('[WebRTC] Content part complete for item:', event.item_id);
+        break;
+        
+      case 'response.output_item.done':
+        console.log('[WebRTC] Output item complete:', event.item_id);
+        break;
+      
+      // Handle audio transcript events
+      case 'response.audio_transcript.delta':
+        this.handleAudioTranscriptDelta(event);
+        break;
+      
+      case 'response.audio_transcript.done':
+        this.handleAudioTranscriptDone(event);
+        break;
+        
+      case 'response.audio.done':
+        console.log('[WebRTC] Audio playback complete for item:', event.item_id);
+        break;
+      
+      // Handle input audio buffer speech events
+      case 'input_audio_buffer.speech_started':
+        console.log('[WebRTC-DEBUG] Speech started:', JSON.stringify(event, null, 2));
+        this.handleSpeechStarted(event);
+        break;
+
+      case 'input_audio_buffer.speech_stopped':
+        console.log('[WebRTC-DEBUG] Speech stopped:', JSON.stringify(event, null, 2));
+        this.handleSpeechStopped(event);
+        break;
+
+      // Track when audio is committed for transcription
+      case 'input_audio_buffer.committed':
+        console.log('[WebRTC-DEBUG] Audio buffer committed:', JSON.stringify(event, null, 2));
+        break;
+
+      // Input transcription events - logging extensively to debug
+      case 'conversation.item.input_audio_transcription.completed':
+        console.log('[WebRTC-DEBUG] Input audio transcription completed:', JSON.stringify(event, null, 2));
+        this.handleUserAudioTranscription(event);
+        break;
+
+      case 'conversation.item.input_audio_transcription.delta':
+      case 'input_audio_transcription.delta':
+        console.log('[WebRTC-DEBUG] Input audio transcription delta:', JSON.stringify(event, null, 2));
+        this.handleInputTranscriptionDelta(event);
+        break;
+
+      case 'conversation.item.input_audio_transcription.done':
+      case 'input_audio_transcription.done':
+        console.log('[WebRTC-DEBUG] Input audio transcription done:', JSON.stringify(event, null, 2));
+        this.handleInputTranscriptionDone(event);
+        break;
+
+      // Handle rate limit and session events
+      case 'rate_limits.updated':
+        console.log('[WebRTC] Rate limits updated:', event.rate_limits);
+        this.handleRateLimitsUpdated(event);
+        break;
+        
+      case 'session.updated':
+        console.log('[WebRTC] Session update:', event.session);
+        this.handleSessionUpdate(event);
+        break;
+        
+      // Conversation item events
+      case 'conversation.item.created':
+        console.log('[WebRTC] Conversation item created:', event.item);
+        this.handleConversationItemCreated(event);
+        break;
+
+      // Handle completed conversation items
+      case 'conversation.item.completed':
+        console.log('[WebRTC] Conversation item completed:', event.item);
+        this.handleConversationItemCompleted(event);
         break;
         
       case 'error':
-        console.error('Error from OpenAI Realtime API:', event);
+        console.error('[WebRTC] Error from OpenAI Realtime API:', event);
         this.notifyStatusChange('error', event.error?.message || 'Unknown error from OpenAI');
         break;
-        
-      default:
-        // Handle other event types as needed
-        console.log('Unhandled event type:', event.type);
-        break;
-    }
-  }
 
-  /**
-   * Handle text events from the Realtime API
-   */
-  private handleTextEvent(event: any): void {
-    if (event.text && typeof event.text.value === 'string') {
-      const text = event.text.value.trim();
-      
-      // Append to existing transcription
-      const updatedText = this.lastTranscription 
-        ? `${this.lastTranscription} ${text}`
-        : text;
-      
-      this.lastTranscription = updatedText;
-      
-      // Notify listeners
-      this.notifyTranscriptionUpdate(updatedText);
-      
-      // Store the transcription server-side for potential retrieval
-      this.storeTranscriptionOnServer(updatedText);
+      // Handle truncated conversation items
+      case 'conversation.item.truncated':
+        console.log('[WebRTC] Conversation item truncated:', event);
+        // No specific handling needed, just acknowledge we've seen it
+        break;
+
+      default:
+        // Log unhandled event types for debugging
+        console.log('[WebRTC] Unhandled event type:', event.type, event);
+        break;
     }
   }
   
   /**
-   * Handle response text delta events (AI speaking)
+   * Handle conversation item created event
+   * This is triggered when a new item is added to the conversation history
    */
-  private handleResponseTextDelta(event: any): void {
+  private handleConversationItemCreated(event: any): void {
+    console.log('Conversation item created:', event);
+    
+    // Check if this is a user or assistant message with transcription
+    if (event.item && event.item.type === 'message') {
+      // Process item ID for reference
+      const itemId = event.item.id;
+      console.log('Processing conversation item:', itemId);
+      
+      // Check for text content
+      const content = event.item.content;
+      if (content && content.length > 0) {
+        for (const part of content) {
+          // Process user input text
+          if (part.type === 'input_text' && part.text) {
+            const text = part.text.trim();
+            console.log('User text input detected:', text);
+            
+            // Create a transcription result
+            const result: WhisperTranscriptionResult = {
+              text: text,
+              task: 'transcribe'
+            };
+            
+            // Update the last transcription
+            this.lastTranscription = text;
+            
+            // Notify transcription update - critical for UI display
+            this.notifyTranscriptionUpdate(text, result);
+            
+            // Store on server
+            this.storeTranscriptionOnServer(text);
+          } 
+          // Process assistant text
+          else if (part.type === 'text' && part.text) {
+            const text = part.text.trim();
+            console.log('Assistant text from conversation item:', text);
+            
+            // Notify as AI response
+            this.notifyAIResponse(text, true);
+          }
+          // Log unrecognized content types
+          else {
+            console.log('Unrecognized content part type:', part.type);
+          }
+        }
+      }
+      
+      // Check for audio transcription within the item
+      if (event.item.input_audio_transcription && event.item.input_audio_transcription.text) {
+        const transcript = event.item.input_audio_transcription.text.trim();
+        console.log('Audio transcription detected in conversation item:', transcript);
+        
+        // Create a detailed transcription result with metadata
+        const result: WhisperTranscriptionResult = {
+          text: transcript,
+          task: 'transcribe'
+        };
+        
+        // Add metadata if available
+        if (event.item.input_audio_transcription.duration) {
+          result.duration = event.item.input_audio_transcription.duration;
+        }
+        
+        if (event.item.input_audio_transcription.language) {
+          result.language = event.item.input_audio_transcription.language;
+        }
+        
+        if (event.item.input_audio_transcription.segments) {
+          result.segments = event.item.input_audio_transcription.segments;
+        }
+        
+        if (event.item.input_audio_transcription.words) {
+          result.words = event.item.input_audio_transcription.words;
+        }
+        
+        // Update the last transcription
+        this.lastTranscription = transcript;
+        
+        // Notify transcription update - this is critical for UI display
+        this.notifyTranscriptionUpdate(transcript, result);
+        
+        // Store on server
+        this.storeTranscriptionOnServer(transcript);
+        
+        console.log('Processed audio transcription with metadata:', 
+          `Duration: ${result.duration ?? 'unknown'}, ` +
+          `Language: ${result.language ?? 'unknown'}, ` +
+          `Segments: ${result.segments ? result.segments.length : 0}, ` +
+          `Words: ${result.words ? result.words.length : 0}`
+        );
+      }
+    }
+  }
+  
+  /**
+   * Handle completed conversation items
+   * This handles the completed event as described in the documentation
+   */
+  private handleConversationItemCompleted(event: any): void {
+    console.log('Conversation item completed:', JSON.stringify(event, null, 2));
+    
+    // Check if this is an assistant message
+    if (event.item && event.item.role === 'assistant' && event.item.content) {
+      // Per documentation, extract the text from content[0].text
+      if (event.item.content.length > 0 && event.item.content[0].text) {
+        const aiResponseText = event.item.content[0].text;
+        console.log('AI response text from completed item:', aiResponseText);
+        
+        // Notify as final AI response
+        this.notifyAIResponse(aiResponseText, true);
+      }
+    } 
+    // Check if this contains a user message with transcript
+    else if (event.item && event.item.role === 'user') {
+      // Per documentation, try to find user transcript
+      if (event.item.content && event.item.content.length > 0) {
+        if (event.item.content[0].transcript) {
+          const userTranscript = event.item.content[0].transcript;
+          console.log('User transcript from completed item:', userTranscript);
+          
+          // Process as user transcription
+          this.processTranscript(userTranscript, event);
+        }
+        else if (event.item.content[0].text) {
+          const userText = event.item.content[0].text;
+          console.log('User text from completed item:', userText);
+          
+          // Process as user text input
+          const result: WhisperTranscriptionResult = {
+            text: userText,
+            task: 'transcribe'
+          };
+          
+          this.notifyTranscriptionUpdate(userText, result);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Handle user audio transcription completed event
+   */
+  private handleUserAudioTranscription(event: any): void {
+    console.log('User audio transcription completed event received:', JSON.stringify(event, null, 2));
+    
+    // First check for direct transcript field in the event (based on observed structure)
+    if (event.transcript) {
+      const transcript = event.transcript.trim();
+      console.log('User transcript found directly in event.transcript:', transcript);
+      // Process the transcript
+      this.processTranscript(transcript, event);
+      return;
+    }
+    
+    // Then try to get transcript using the structure shown in the documentation example
+    if (event.item && event.item.content && event.item.content.length > 0) {
+      const transcript = event.item.content[0].transcript;
+      if (transcript) {
+        console.log('User transcript found in item.content[0].transcript:', transcript);
+        // Process the transcript
+        this.processTranscript(transcript, event);
+        return;
+      }
+    }
+    
+    // If not found using the above structure, try the structure we've been using
+    if (event.transcription && event.transcription.text) {
+      const transcript = event.transcription.text.trim();
+      console.log('User transcript found in transcription.text:', transcript);
+      // Process the transcript
+      this.processTranscript(transcript, event);
+      return;
+    }
+    
+    // If we still don't have a transcript, check for other possible structures
+    if (event.item && event.item.input_audio_transcription && event.item.input_audio_transcription.text) {
+      const transcript = event.item.input_audio_transcription.text.trim();
+      console.log('User transcript found in item.input_audio_transcription.text:', transcript);
+      // Process the transcript
+      this.processTranscript(transcript, event);
+      return;
+    }
+    
+    console.warn('No transcript found in the event. Full event structure:', event);
+  }
+  
+  /**
+   * Helper method to process a transcript from any source
+   */
+  private processTranscript(transcript: string, event: any): void {
+    if (!transcript || transcript.trim() === '') {
+      console.warn('[WebRTC] Received empty transcript, ignoring');
+      return;
+    }
+    
+    // Clean up the transcript (remove trailing newlines, etc.)
+    const cleanTranscript = transcript.trim();
+    console.log(`[WebRTC] Processing transcript: "${cleanTranscript}"`);
+    
+    // Update last transcription
+    this.lastTranscription = cleanTranscript;
+    
+    // Create a structured transcription result
+    const result: WhisperTranscriptionResult = {
+      text: cleanTranscript,
+      task: 'transcribe',
+    };
+    
+    // Add metadata if available - check multiple possible locations
+    let metadata = null;
+    if (event.transcription && event.transcription.metadata) {
+      metadata = event.transcription.metadata;
+    } else if (event.metadata) {
+      metadata = event.metadata;
+    } else if (event.item && event.item.metadata) {
+      metadata = event.item.metadata;
+    } else if (event.item && event.item.input_audio_transcription) {
+      metadata = event.item.input_audio_transcription;
+    }
+    
+    if (metadata) {
+      if (metadata.duration) result.duration = metadata.duration;
+      if (metadata.language) result.language = metadata.language;
+      if (metadata.segments) result.segments = metadata.segments;
+      if (metadata.words) result.words = metadata.words;
+      
+      console.log('[WebRTC] Audio transcription metadata:', {
+        duration: result.duration,
+        language: result.language,
+        segments: result.segments?.length || 0,
+        words: result.words?.length || 0
+      });
+    }
+    
+    // CRITICAL: Make sure we pass the transcript to the UI
+    console.log(`[WebRTC] Notifying subscribers about transcript: "${cleanTranscript}"`);
+    
+    // First call with just the text for immediate display
+    this.notifyTranscriptionUpdate(cleanTranscript);
+    
+    // Then call with the full result object for metadata
+    this.notifyTranscriptionUpdate(cleanTranscript, result);
+    
+    console.log('[WebRTC] Subscribers notified of user audio transcription');
+    
+    // Store on server
+    this.storeTranscriptionOnServer(cleanTranscript);
+    console.log('[WebRTC] Transcription stored on server');
+  }
+  
+  /**
+   * Handle output item added event
+   */
+  private handleOutputItemAdded(event: any): void {
+    console.log('Output item added:', event);
+    
+    // Check if the item contains transcriptions
+    if (event.item && event.item.content_block && event.item.content_block.type === 'text') {
+      const text = event.item.content_block.text?.trim();
+      if (text) {
+        console.log('Text from output item:', text);
+        
+        // Notify as AI response
+        this.notifyAIResponse(text, false);
+      }
+    }
+  }
+  
+  /**
+   * Handle rate limits updated event
+   */
+  private handleRateLimitsUpdated(event: any): void {
+    console.log('Rate limits updated:', event.rate_limits);
+    
+    // You can display this information to users or adjust behavior based on limits
+    if (event.rate_limits.resets_at) {
+      const resetTime = new Date(event.rate_limits.resets_at);
+      console.log('Rate limits reset at:', resetTime.toLocaleString());
+    }
+    
+    // Check for critical rate limit warnings
+    if (event.rate_limits.remaining && event.rate_limits.remaining.requests < 5) {
+      console.warn('Warning: Low remaining API requests:', event.rate_limits.remaining.requests);
+      this.notifyStatusChange('warning', `Rate limit: ${event.rate_limits.remaining.requests} requests remaining`);
+    }
+  }
+  
+  /**
+   * Handle audio transcript delta events
+   */
+  private handleAudioTranscriptDelta(event: any): void {
     if (event.delta) {
-      // Accumulate the AI's response
+      console.log('Audio transcript delta:', event.delta);
+      
+      // This is similar to response.text.delta but for audio transcript
+      // Accumulate the transcription of audio
       this.currentAIResponse += event.delta;
       
       // Notify AI response callbacks with partial response
       this.notifyAIResponse(this.currentAIResponse, false);
     }
   }
-  
+
   /**
-   * Handle response text done events (AI finished speaking)
+   * Handle audio transcript done events
    */
-  private handleResponseTextDone(event: any): void {
-    if (event.text) {
-      // Set the final AI response
-      this.currentAIResponse = event.text;
+  private handleAudioTranscriptDone(event: any): void {
+    if (event.transcript) {
+      console.log('Audio transcript done:', event.transcript);
       
-      // Notify AI response callbacks with final response
+      // This is the final transcript for the audio
+      this.currentAIResponse = event.transcript;
+      
+      // Notify AI response callbacks with final transcript
       this.notifyAIResponse(this.currentAIResponse, true);
       
       // Reset for next response
@@ -544,6 +1030,105 @@ CONVERSATION STYLE:
     }
   }
   
+  /**
+   * Handle session update events
+   */
+  private handleSessionUpdate(event: any): void {
+    console.log('Session updated:', event.session);
+    
+    // Check if input audio transcription configuration was updated
+    if (event.session.input_audio_transcription) {
+      console.log('Input audio transcription updated:', event.session.input_audio_transcription);
+    }
+  }
+  
+  /**
+   * Handle input transcription created event
+   */
+  private handleInputTranscriptionCreated(event: any): void {
+    console.log('Input transcription created:', event);
+    // Reset any previous transcription
+    this.lastTranscription = '';
+  }
+  
+  /**
+   * Handle input transcription delta event
+   */
+  private handleInputTranscriptionDelta(event: any): void {
+    console.log('[DEBUG] handleInputTranscriptionDelta called with event:', JSON.stringify(event, null, 2));
+    
+    if (event.delta) {
+      // Accumulate partial transcription
+      const prevTranscription = this.lastTranscription;
+      this.lastTranscription += event.delta;
+      
+      console.log(`[DEBUG] Input transcription delta: "${event.delta}"`);
+      console.log(`[DEBUG] Transcription updated from "${prevTranscription}" to "${this.lastTranscription}"`);
+      
+      // Create a simple transcription result
+      const result: WhisperTranscriptionResult = {
+        text: this.lastTranscription,
+        task: 'transcribe'
+      };
+      
+      // Notify subscribers with interim transcription - this is critical for UI display
+      console.log('[DEBUG] About to notify subscribers of interim transcription');
+      this.notifyTranscriptionUpdate(this.lastTranscription, result);
+    } else {
+      console.warn('[DEBUG] Received input_audio_transcription.delta event without delta property:', event);
+    }
+  }
+  
+  /**
+   * Handle input transcription done event
+   */
+  private handleInputTranscriptionDone(event: any): void {
+    console.log('[DEBUG] handleInputTranscriptionDone called with event:', JSON.stringify(event, null, 2));
+    
+    if (event.transcription) {
+      const transcription = event.transcription.trim();
+      console.log(`[DEBUG] Final input audio transcription: "${transcription}"`);
+      
+      // Update last transcription
+      this.lastTranscription = transcription;
+      
+      // Create a structured transcription result
+      let result: WhisperTranscriptionResult = {
+        text: transcription,
+        task: 'transcribe'
+      };
+      
+      // Add metadata if available
+      if (event.metadata) {
+        result = {
+          ...result,
+          duration: event.metadata.duration,
+          language: event.metadata.language,
+          segments: event.metadata.segments,
+          words: event.metadata.words
+        };
+        
+        console.log('[DEBUG] Transcription metadata received:', {
+          duration: event.metadata.duration,
+          language: event.metadata.language,
+          segments: event.metadata.segments?.length || 0,
+          words: event.metadata.words?.length || 0
+        });
+      }
+      
+      // Notify subscribers with final transcription - this is critical for UI display
+      console.log('[DEBUG] About to notify subscribers of final transcription');
+      this.notifyTranscriptionUpdate(transcription, result);
+      
+      // Store on server
+      this.storeTranscriptionOnServer(transcription);
+      
+      console.log('[DEBUG] Transcription finalized and notified to UI');
+    } else {
+      console.warn('[DEBUG] Received input_audio_transcription.done event without transcription property:', event);
+    }
+  }
+
   /**
    * Notify all AI response callbacks
    */
@@ -606,7 +1191,7 @@ CONVERSATION STYLE:
   /**
    * Notify all status callbacks
    */
-  private notifyStatusChange(status: 'connecting' | 'connected' | 'disconnected' | 'error', message?: string): void {
+  private notifyStatusChange(status: 'connecting' | 'connected' | 'disconnected' | 'error' | 'warning', message?: string): void {
     this.statusCallbacks.forEach(callback => {
       callback(status, message);
     });
@@ -615,9 +1200,21 @@ CONVERSATION STYLE:
   /**
    * Notify all transcription update callbacks
    */
-  private notifyTranscriptionUpdate(text: string): void {
-    this.updateCallbacks.forEach(callback => {
-      callback(text);
+  private notifyTranscriptionUpdate(text: string, result?: WhisperTranscriptionResult): void {
+    console.log(`[DEBUG] notifyTranscriptionUpdate called with text: "${text}" (${this.updateCallbacks.length} subscribers)`);
+    
+    if (this.updateCallbacks.length === 0) {
+      console.warn('[DEBUG] WARNING: No subscribers to transcription updates!');
+    }
+    
+    this.updateCallbacks.forEach((callback, index) => {
+      console.log(`[DEBUG] Calling transcription subscriber #${index}...`);
+      try {
+        callback(text, result);
+        console.log(`[DEBUG] Successfully called transcription subscriber #${index}`);
+      } catch (error) {
+        console.error(`[DEBUG] Error in transcription subscriber #${index}:`, error);
+      }
     });
   }
 
@@ -627,6 +1224,56 @@ CONVERSATION STYLE:
       ...config
     };
     console.log('Voice config updated:', this.voiceConfig);
+  }
+
+  /**
+   * Handle audio chunk events
+   */
+  private handleAudioChunk(event: any): void {
+    // Audio chunks are handled automatically by the WebRTC audio stream
+    // but we can log them if needed for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Audio chunk received for item:', event.item_id);
+    }
+  }
+
+  /**
+   * Handle speech started event
+   * This event is fired when the user starts speaking
+   */
+  private handleSpeechStarted(event: any): void {
+    console.log('User speech started:', event);
+    
+    // Reset any previous transcription when a new speech segment starts
+    // We don't reset lastTranscription yet since we might be getting
+    // partial updates for the previous segment
+    
+    // Notify subscribers that speech has started
+    // This can be used to update UI elements to show that the user is speaking
+    this.notifyStatusChange('connected', 'User is speaking');
+    
+    // You could emit an event or call a callback function here to update the UI
+    // to show that the user is speaking, like displaying a microphone icon
+    // or changing the color of a recording indicator
+  }
+  
+  /**
+   * Handle speech stopped event
+   * This event is fired when the user stops speaking
+   */
+  private handleSpeechStopped(event: any): void {
+    console.log('User speech stopped:', event);
+    
+    // At this point, we've detected the end of speech but we're still waiting
+    // for the transcription to complete, so we don't reset lastTranscription yet
+    
+    // Notify subscribers that speech has stopped
+    // This can be used to update UI elements to show that the user is no longer speaking
+    this.notifyStatusChange('connected', 'Processing speech');
+    
+    // You could emit an event or call a callback function here to update the UI
+    // to show that the system is processing the user's speech, like displaying
+    // a loading indicator or "Processing..." message
   }
 }
 

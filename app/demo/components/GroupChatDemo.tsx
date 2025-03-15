@@ -11,7 +11,8 @@ import { nanoid } from "nanoid";
 // Import our types and services
 import { Message, Companion } from "../types/companions";
 import { PRE_CONFIGURED_COMPANIONS } from "../services/companions-service";
-import WebRTCTranscriptionService from "../services/webrtc-transcription-service";
+import WebRTCTranscriptionService, { WhisperTranscriptionResult } from "../services/webrtc-transcription-service";
+import * as whisperService from "../services/whisper-service";
 
 // Import our modular components
 import ChatContainer from "./chat/ChatContainer";
@@ -61,6 +62,10 @@ export default function GroupChatDemo() {
   
   // Settings modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Add state for tracking transcription details
+  const [currentTranscription, setCurrentTranscription] = useState<WhisperTranscriptionResult | null>(null);
+  const [transcriptionSegments, setTranscriptionSegments] = useState<string[]>([]);
   
   // Initialize the chat
   useEffect(() => {
@@ -119,8 +124,95 @@ export default function GroupChatDemo() {
     setTranscriptionService(service);
     
     // Set up listeners for transcription updates
-    const unsubscribeUpdates = service.subscribeToUpdates((text) => {
-      setInterimTranscript(text);
+    const unsubscribeUpdates = service.subscribeToUpdates((text, result) => {
+      console.log(`[DEBUG-UI] 🎯 Transcription update received: "${text}"`);
+      
+      // Skip empty updates
+      if (!text) {
+        console.log('[DEBUG-UI] Empty transcript received, skipping update');
+        return;
+      }
+      
+      // Update the interim transcript
+      setInterimTranscript(prev => {
+        if (prev !== text) {
+          console.log(`[DEBUG-UI] ✅ Updated interimTranscript from "${prev}" to "${text}"`);
+        }
+        return text;
+      });
+      
+      // Store the full transcription result if available
+      if (result) {
+        console.log('[DEBUG-UI] Received WhisperTranscriptionResult:', result);
+        setCurrentTranscription(result);
+        
+        // Track segments for potential highlighting/visualization
+        if (result.segments && result.segments.length > 0) {
+          setTranscriptionSegments(result.segments.map(segment => segment.text));
+          console.log('[DEBUG-UI] Set transcription segments:', result.segments.map(segment => segment.text));
+        }
+      }
+      
+      // If text is non-empty, update or create a streaming message
+      if (text.trim()) {
+        console.log('[DEBUG-UI] Creating/updating streaming message with text:', text);
+        
+        // Create a unique ID for the streaming message
+        const streamingMessageId = 'streaming-transcript';
+        
+        // Check if a streaming message already exists
+        setMessages(prev => {
+          console.log('[DEBUG-UI] Current messages count before update:', prev.length);
+          const existingStreamingMessageIndex = prev.findIndex(msg => msg.id === streamingMessageId);
+          
+          const updatedMessages = [...prev];
+          if (existingStreamingMessageIndex >= 0) {
+            // Update the existing streaming message
+            console.log('[DEBUG-UI] Updating existing streaming message at index:', existingStreamingMessageIndex);
+            updatedMessages[existingStreamingMessageIndex] = {
+              ...updatedMessages[existingStreamingMessageIndex],
+              content: text,
+              // Add additional metadata if available
+              metadata: result ? {
+                duration: result.duration,
+                language: result.language,
+                segmentCount: result.segments?.length || 0,
+                wordCount: result.words?.length || 0,
+                transcriptionSource: result.segments?.length ? 'whisper-api' as const : 'realtime-api' as const,
+                transcriptionType: 'user-audio' as const // Identify this as user audio transcription
+              } : undefined
+            };
+            console.log('[DEBUG-UI] Updated message content:', updatedMessages[existingStreamingMessageIndex].content);
+          } else {
+            // Create a new streaming message
+            console.log('[DEBUG-UI] 🔶 Creating new streaming message with text:', text);
+            const newMessage = {
+              id: streamingMessageId,
+              content: text,
+              senderId: "user",
+              senderName: "You",
+              senderAvatar: "/images/user-icon.png",
+              timestamp: new Date(),
+              isUser: true,
+              isInterim: true,
+              // Add additional metadata if available
+              metadata: result ? {
+                duration: result.duration,
+                language: result.language,
+                segmentCount: result.segments?.length || 0,
+                wordCount: result.words?.length || 0,
+                transcriptionSource: result.segments?.length ? 'whisper-api' as const : 'realtime-api' as const,
+                transcriptionType: 'user-audio' as const // Identify this as user audio transcription
+              } : undefined
+            };
+            console.log('[DEBUG-UI] New streaming message created with ID:', newMessage.id);
+            updatedMessages.push(newMessage);
+          }
+          
+          console.log('[DEBUG-UI] Returning updated messages array with length:', updatedMessages.length);
+          return updatedMessages;
+        });
+      }
     });
     
     // Set up listeners for connection status changes
@@ -149,20 +241,44 @@ export default function GroupChatDemo() {
       if (text && activeCompanionId) {
         const activeCompanion = companions.find(c => c.id === activeCompanionId);
         
-        if (activeCompanion && isFinal) {
-          // If it's a final response, add it as a message in the chat
+        if (activeCompanion) {
+          // Create a unique ID for the AI response message
+          const aiResponseId = isFinal 
+            ? `${activeCompanion.id}-ai-voice-${Date.now()}` 
+            : `${activeCompanion.id}-ai-voice-interim`;
+          
+          // Create the AI message
           const aiMessage: Message = {
-            id: `${activeCompanion.id}-ai-voice-${Date.now()}`,
+            id: aiResponseId,
             content: text,
             senderId: activeCompanion.id,
             senderName: activeCompanion.name,
             senderAvatar: activeCompanion.imageUrl,
             timestamp: new Date(),
             isUser: false,
-            messageType: 'audio'
+            isInterim: !isFinal
           };
           
-          setMessages(prev => [...prev, aiMessage]);
+          // Update or add the message
+          setMessages(prev => {
+            // If this is an interim message, check if it already exists
+            if (!isFinal) {
+              const existingMessageIndex = prev.findIndex(msg => msg.id === aiResponseId);
+              
+              if (existingMessageIndex >= 0) {
+                // Update the existing message
+                const updatedMessages = [...prev];
+                updatedMessages[existingMessageIndex] = aiMessage;
+                return updatedMessages;
+              }
+            } else {
+              // If this is a final message, remove any interim message from this companion
+              prev = prev.filter(msg => msg.id !== `${activeCompanion.id}-ai-voice-interim`);
+            }
+            
+            // Add the new message
+            return [...prev, aiMessage];
+          });
         }
       }
     });
@@ -255,63 +371,70 @@ export default function GroupChatDemo() {
     }
   };
   
-  // Function to process audio recording
+  // Function to process audio recording with Whisper API
   const processAudioRecording = async (blob: Blob) => {
     try {
-      // Create a message to show the recording is being processed
-      const processingMessageId = `processing-${Date.now()}`;
-      setMessages(prev => [...prev, {
-        id: processingMessageId,
-        content: "Processing your voice message...",
-        senderId: "system",
-        senderName: "System",
-        senderAvatar: "/images/system-icon.png",
-        timestamp: new Date(),
-        isUser: false
-      }]);
+      setIsSending(true);
+      const { transcription, error, details } = await whisperService.transcribeAudio(blob);
       
-      // Transcribe the audio
-      const formData = new FormData();
-      formData.append('file', blob, 'recording.webm');
-      
-      const response = await fetch('/api/demo/whisper-transcription', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to transcribe audio');
+      if (error || !transcription) {
+        throw new Error(error || 'Failed to transcribe audio');
       }
       
-      const data = await response.json();
-      const transcription = data.transcription;
+      // Save the detailed transcription result if available
+      if (details) {
+        setCurrentTranscription({
+          text: details.text,
+          duration: details.duration,
+          language: details.language,
+          segments: details.segments,
+          words: details.words,
+          task: details.task
+        });
+        
+        // Track segments for potential highlighting/visualization
+        if (details.segments && details.segments.length > 0) {
+          setTranscriptionSegments(details.segments.map(segment => segment.text));
+        }
+      }
       
-      // Remove the processing message
-      setMessages(prev => prev.filter(msg => msg.id !== processingMessageId));
-      
-      // Add the transcribed message
+      // Create a user message from the transcription
       const userMessage: Message = {
-        id: `user-${Date.now()}`,
+        id: nanoid(),
         content: transcription,
-        senderId: "user",
-        senderName: "You",
-        senderAvatar: "/images/user-icon.png",
+        senderId: 'user',
+        senderName: 'You',
+        senderAvatar: '/images/user-icon.png',
         timestamp: new Date(),
         isUser: true,
-        messageType: 'audio'
+        // Include detailed transcription metadata if available
+        metadata: details ? {
+          duration: details.duration,
+          language: details.language,
+          segments: details.segments,
+          words: details.words,
+          transcriptionSource: 'whisper-api'
+        } : undefined
       };
       
+      // Remove any streaming transcript message
+      setMessages(prev => prev.filter(msg => msg.id !== 'streaming-transcript'));
+      
+      // Add the final user message
       setMessages(prev => [...prev, userMessage]);
       
-      // Generate responses from companions
-      handleCompanionResponses(userMessage);
+      // Trigger companion responses
+      await handleCompanionResponses(userMessage);
+      
+      setIsSending(false);
     } catch (error) {
-      console.error('Error processing audio:', error);
+      console.error('Error processing audio recording:', error);
       toast({
-        title: "Transcription failed",
-        description: "Could not transcribe your message. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: error instanceof Error ? error.message : String(error),
+        variant: 'destructive'
       });
+      setIsSending(false);
     }
   };
 
@@ -638,30 +761,23 @@ export default function GroupChatDemo() {
       // Stop the transcription service
       await transcriptionService.stopTranscription();
       
-      // Process the final transcript
+      // Commit any streaming transcription as a finalized message
+      commitStreamingTranscription();
+      
+      // If we have a final transcript, trigger companion responses
       if (interimTranscript.trim()) {
-        // Create a user message with the final transcript
         const userMessage: Message = {
-          id: `user-${Date.now()}`,
-          content: interimTranscript.trim(),
-          senderId: "user",
-          senderName: "You",
-          senderAvatar: "/images/user-icon.png",
+          id: nanoid(),
+          content: interimTranscript,
+          senderId: 'user',
+          senderName: 'You',
+          senderAvatar: '/images/user-icon.png',
           timestamp: new Date(),
-          isUser: true,
-          messageType: 'audio'
+          isUser: true
         };
         
-        // Add to messages
-        setMessages(prev => [...prev, userMessage]);
-        
-        // Generate responses from companions
+        // Trigger companion responses
         await handleCompanionResponses(userMessage);
-      } else {
-        toast({
-          title: "No speech detected",
-          description: "We couldn't detect any speech. Please try again.",
-        });
       }
       
       // Reset state
@@ -688,6 +804,43 @@ export default function GroupChatDemo() {
       // Start real-time streaming
       startAudioStreaming();
     }
+  };
+
+  // Modified function to commit the streaming transcription
+  const commitStreamingTranscription = () => {
+    if (!interimTranscript.trim()) return;
+    
+    // Remove the streaming transcript
+    setMessages(prev => {
+      const messages = prev.filter(msg => msg.id !== 'streaming-transcript');
+      
+      // Create finalized message with the full transcription data
+      const finalizedMessage: Message = {
+        id: nanoid(),
+        content: interimTranscript,
+        senderId: 'user',
+        senderName: 'You',
+        senderAvatar: '/images/user-icon.png',
+        timestamp: new Date(),
+        isUser: true,
+        // Include detailed transcription metadata if available
+        metadata: currentTranscription ? {
+          duration: currentTranscription.duration,
+          language: currentTranscription.language,
+          segments: currentTranscription.segments,
+          words: currentTranscription.words,
+          transcriptionSource: currentTranscription.segments ? 'whisper-api' as const : 'realtime-api' as const,
+          transcriptionType: 'user-audio' as const // Identify this as user audio transcription
+        } : undefined
+      };
+      
+      return [...messages, finalizedMessage];
+    });
+    
+    // Reset interim state
+    setInterimTranscript('');
+    setCurrentTranscription(null);
+    setTranscriptionSegments([]);
   };
 
   return (

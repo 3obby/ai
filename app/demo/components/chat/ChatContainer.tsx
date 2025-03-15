@@ -63,37 +63,41 @@ export default function ChatContainer({
 
   return (
     <>
+      {/* Debug display of messages and transcript */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="p-2 bg-slate-900 text-gray-300 text-xs mb-2 rounded-md">
+          <details>
+            <summary className="cursor-pointer">Debug Info</summary>
+            <div className="p-2 mt-2 bg-slate-800 rounded-md overflow-auto max-h-36">
+              <div>Interim Transcript: "{interimTranscript}"</div>
+              <div className="mt-1">Messages ({messages.length}):</div>
+              <pre>{JSON.stringify(messages, null, 2)}</pre>
+            </div>
+          </details>
+        </div>
+      )}
+      
       <ScrollArea className="flex-1 pr-4">
         <div className="py-4 space-y-4">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
           
-          {/* Show streaming status and transcript if streaming */}
-          {(isStreaming || isConnectingWebRTC) && (
+          {/* Only show connecting status when connecting, not streaming */}
+          {isConnectingWebRTC && (
             <div className="flex items-start gap-3 mt-4">
               <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border bg-background shadow">
-                {isConnectingWebRTC ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserIcon className="h-4 w-4" />
-                )}
+                <RefreshCw className="h-4 w-4 animate-spin" />
               </div>
               <div className="flex flex-col gap-2 min-w-0">
                 <div className="flex gap-2 items-center">
                   <span className="font-semibold">You</span>
                   <Badge variant="secondary" className="px-1 py-0 text-xs">
-                    {isConnectingWebRTC ? "Connecting..." : "Listening..."}
+                    Connecting...
                   </Badge>
                 </div>
                 <div className="prose dark:prose-invert">
-                  {isConnectingWebRTC ? (
-                    <p className="text-muted-foreground italic">Establishing secure connection...</p>
-                  ) : interimTranscript ? (
-                    <p>{interimTranscript}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">Listening to you speak...</p>
-                  )}
+                  <p className="text-muted-foreground italic">Establishing secure connection...</p>
                 </div>
               </div>
             </div>
@@ -116,13 +120,6 @@ export default function ChatContainer({
       </ScrollArea>
       
       <div className="pt-4 border-t mt-auto">
-        {/* Audio waveform */}
-        <AudioWaveform
-          isRecording={isRecording || isStreaming}
-          mediaStream={mediaStreamRef.current}
-          className="mb-2"
-        />
-        
         <div className="flex gap-2">
           <Input
             placeholder="Type a message..."
@@ -137,18 +134,30 @@ export default function ChatContainer({
             onClick={handleMicButtonClick}
             disabled={isSending}
             variant={(isRecording || isStreaming) ? "destructive" : "outline"}
-            className="relative"
+            className="relative overflow-hidden"
             title={(isRecording || isStreaming) ? "Stop recording" : "Record audio message"}
             data-recording={isRecording}
             data-streaming={isStreaming}
           >
-            {(isRecording || isStreaming) ? (
-              <TbMicrophoneOff className="h-4 w-4" />
-            ) : (
-              <TbMicrophone className="h-4 w-4" />
-            )}
             {(isRecording || isStreaming) && (
-              <span className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+              <div className="absolute inset-0 w-full h-full z-0">
+                <AudioWaveform
+                  isRecording={true}
+                  mediaStream={mediaStreamRef.current}
+                />
+              </div>
+            )}
+            
+            <div className="relative z-10">
+              {(isRecording || isStreaming) ? (
+                <TbMicrophoneOff className="h-4 w-4" />
+              ) : (
+                <TbMicrophone className="h-4 w-4" />
+              )}
+            </div>
+            
+            {(isRecording || isStreaming) && (
+              <span className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-full animate-pulse z-20" />
             )}
             <span className="sr-only">{(isRecording || isStreaming) ? "Stop recording" : "Record audio"}</span>
           </Button>

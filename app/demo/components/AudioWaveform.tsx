@@ -243,8 +243,8 @@ export default function AudioWaveform({
   return (
     <div 
       className={cn(
-        "rounded-md overflow-hidden bg-muted/20 h-10", 
-        isRecording ? "opacity-100" : "opacity-0 h-0",
+        "rounded-md overflow-hidden bg-transparent h-full w-full", 
+        isRecording ? "opacity-80" : "opacity-0",
         "transition-all duration-300 ease-in-out",
         className
       )}

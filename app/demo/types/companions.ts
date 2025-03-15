@@ -47,6 +47,17 @@ export interface Message {
   messageType?: 'text' | 'audio' | 'tool_call'; // Type of message
   audioUrl?: string; // URL to audio file if audio message
   toolCalls?: any[]; // Tool calls if tool_call message
+  isInterim?: boolean; // Whether this is an interim transcript message
+  metadata?: { // Additional metadata for the message (especially for transcriptions)
+    duration?: number;
+    language?: string;
+    segments?: any[];
+    words?: any[];
+    segmentCount?: number;
+    wordCount?: number;
+    transcriptionSource?: 'whisper-api' | 'realtime-api';
+    transcriptionType?: 'user-audio' | 'assistant-audio';
+  };
 }
 
 // Define type for audio message

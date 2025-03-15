@@ -569,7 +569,151 @@ If you still experience slow performance, try:
 - `getChunkedFromCache()`: Retrieves data, reassembling chunks if necessary
 - `setCacheByUserType()`: Sets cache with appropriate TTL based on user type
 - `clearCachePattern()`: Invalidates cache entries matching a pattern
-- `setAnonymousCache()`: Legacy function for anonymous user caching 
+
+## OpenAI Realtime API Transcription Event Handling
+
+### Key Event Types for Voice Transcription
+The OpenAI Realtime API sends various event types during a voice conversation. The most important ones for transcription handling are:
+
+#### User Speech Transcription Events
+- **`conversation.item.input_audio_transcription.completed`**: Final transcription of the user's speech
+- **`input_audio_transcription.delta`**: Partial/interim transcription updates as the user speaks
+- **`input_audio_transcription.done`**: Completed transcription for a speech segment
+- **`conversation.item.completed`**: May contain transcripts of user input when role is 'user'
+
+#### Assistant Response Events
+- **`conversation.item.completed`**: Contains assistant responses when role is 'assistant'
+- **`text.delta`**: Partial text response from the assistant
+- **`text.done`**: Completed text response from the assistant
+
+#### Voice Activity Detection (VAD) Events
+- **`input_audio_buffer.speech_started`**: Fired when user begins speaking
+- **`input_audio_buffer.speech_stopped`**: Fired when user stops speaking
+- **`input_audio_buffer.committed`**: Audio buffer has been processed
+
+### Event Structure Examples
+
+#### User Speech Transcription
+```javascript
+// conversation.item.input_audio_transcription.completed event
+{
+  type: "conversation.item.input_audio_transcription.completed",
+  item: {
+    content: [
+      {
+        transcript: "This is what the user said.",
+        // Additional metadata may be present
+      }
+    ]
+  }
+}
+
+// Alternative format sometimes used
+{
+  type: "conversation.item.input_audio_transcription.completed",
+  transcription: {
+    text: "This is what the user said.",
+    metadata: {
+      duration: 2.5,
+      language: "en",
+      segments: [...],
+      words: [...]
+    }
+  }
+}
+```
+
+#### Assistant Response
+```javascript
+// conversation.item.completed event for assistant
+{
+  type: "conversation.item.completed",
+  item: {
+    role: "assistant",
+    content: [
+      {
+        text: "This is the assistant's response."
+      }
+    ]
+  }
+}
+```
+
+### Handling Transcription Events
+To properly capture transcriptions, you need to handle multiple event types:
+
+1. **First enable transcription** in your session configuration:
+```javascript
+// Enable input audio transcription when starting the session
+const sessionUpdateEvent = {
+  type: "session.update",
+  session: {
+    input_audio_transcription: {
+      model: "whisper-1",
+      language: "en",
+      prompt: "Accurately transcribe the user's speech"
+    }
+  }
+};
+dataChannel.send(JSON.stringify(sessionUpdateEvent));
+```
+
+2. **Parse multiple possible event structures** since the API may send transcription data in different formats:
+```javascript
+// Check for transcript in different locations
+if (event.item?.content?.[0]?.transcript) {
+  // Format from documentation example
+  const transcript = event.item.content[0].transcript;
+  processTranscript(transcript);
+} else if (event.transcription?.text) {
+  // Alternative format we've observed
+  const transcript = event.transcription.text;
+  processTranscript(transcript);
+}
+```
+
+3. **Extract metadata** for enhanced transcription features:
+```javascript
+// Metadata might be in different locations
+let metadata = null;
+if (event.transcription?.metadata) {
+  metadata = event.transcription.metadata;
+} else if (event.item?.input_audio_transcription) {
+  metadata = event.item.input_audio_transcription;
+}
+
+// Use metadata for features like highlighting words as they're spoken
+if (metadata?.words) {
+  // Words with precise timestamps
+}
+```
+
+4. **Handle both interim and final transcriptions** to provide real-time feedback:
+```javascript
+// For interim updates (while speaking)
+function handleInterimTranscript(text) {
+  updateUIWithInterimTranscript(text);
+}
+
+// For final transcriptions
+function handleFinalTranscript(text, metadata) {
+  addMessageToChat({
+    role: 'user',
+    content: text,
+    metadata: metadata
+  });
+}
+```
+
+### Troubleshooting
+
+If you're not seeing transcriptions:
+
+1. **Check events in console logs** - Make sure `conversation.item.input_audio_transcription.completed` and other events are being received
+2. **Verify input_audio_transcription is enabled** - Make sure you've sent the session update event
+3. **Ensure your notification system is working** - Verify subscribers are being notified of transcription updates
+4. **Look for alternative event structures** - The API might send data in different formats than expected
+5. **Confirm message format** - Make sure you're sending user messages with `type: "input_text"` instead of `type: "text"`
 
 ## Companion Customization Architecture
 
@@ -1499,3 +1643,125 @@ The demo is implemented as a standalone feature that:
 - Serves as a marketing tool to showcase platform capabilities
 
 This implementation allows potential users to experience the core functionality of our platform without commitment, serving as both a demonstration and an onboarding tool.
+
+## Troubleshooting OpenAI Realtime API Transcription Issues
+
+When dealing with transcription issues in the WebRTC integration with OpenAI's Realtime API, we've added extensive debugging to help diagnose problems:
+
+### Console Logging
+
+The WebRTC service includes detailed logging of all events with specific prefixes:
+- `[WebRTC]` for general service logs
+- `[WebRTC-DEBUG]` for more detailed debugging information
+- `[DEBUG-UI]` for UI component integration logs
+
+### Key Events to Monitor
+
+Pay particular attention to these event types in the browser console:
+
+1. **Transcription Events**:
+   - `conversation.item.input_audio_transcription.completed` - Final transcription
+   - `conversation.item.input_audio_transcription.delta` - Interim transcription updates
+   - `conversation.item.input_audio_transcription.done` - Completion of transcription
+
+2. **Conversation Events**:
+   - `conversation.item.created` - New conversation item created
+   - `conversation.item.completed` - Conversation item completed
+
+3. **UI Updates**:
+   - Watch for `[DEBUG-UI]` logs showing state updates and message creation
+
+### Debug UI Panel
+
+In development mode, the chat interface includes a Debug Info panel (expandable at the top of the chat) showing:
+- Current interim transcript
+- Message array contents
+- Other relevant state
+
+### Common Issues
+
+1. **Transcriptions not appearing in UI**:
+   - Check if transcription events are being received (look for `[WebRTC-DEBUG]` logs)
+   - Verify that the UI is receiving updates (look for `[DEBUG-UI]` logs)
+   - Ensure messages state is being updated correctly
+
+2. **Missing events**:
+   - The OpenAI Realtime API may use different event types depending on the configuration
+   - Our service handles multiple event patterns (e.g., both `conversation.item.input_audio_transcription.delta` and `input_audio_transcription.delta`)
+
+3. **Event format changes**:
+   - The service includes flexible extraction of transcription text from multiple potential locations in the event
+   - Check `handleUserAudioTranscription` for the current transcript extraction logic
+
+### Verification Steps
+
+To verify end-to-end transcription:
+1. Start a voice conversation
+2. Check for speech detection logs (`speech_started`/`speech_stopped`)
+3. Watch for transcription events
+4. Verify that the UI is updating with received transcriptions
+5. Check the Debug Info panel to confirm state changes
+
+## OpenAI Realtime API Transcription Events
+
+The application integrates with OpenAI's Realtime API for voice conversations. Understanding the event structure is critical for proper handling of transcriptions.
+
+### Key Transcription Event Types
+
+1. **User Speech Transcription**:
+   - `conversation.item.input_audio_transcription.completed` - Final transcription with direct `transcript` field
+   - `conversation.item.input_audio_transcription.delta` - Interim transcription updates
+   - `conversation.item.input_audio_transcription.done` - Completion notification
+
+2. **Other Important Events**:
+   - `conversation.item.created` - New conversation item created (may contain transcription)
+   - `conversation.item.completed` - Conversation item completed
+   - `conversation.item.truncated` - Conversation item truncated (typically for long audio)
+   - `input_audio_buffer.speech_started` - Voice activity detection started
+   - `input_audio_buffer.speech_stopped` - Voice activity detection stopped
+
+### Event Structure Example for Transcription
+
+```json
+{
+  "type": "conversation.item.input_audio_transcription.completed",
+  "event_id": "event_XXXX",
+  "item_id": "item_XXXX",
+  "content_index": 0,
+  "transcript": "This is the transcribed text."
+}
+```
+
+### Transcript Field Location Variations
+
+The transcript text can appear in different locations depending on the event type:
+
+1. Direct field: `event.transcript`
+2. Nested in content: `event.item.content[0].transcript`
+3. In transcription object: `event.transcription.text`
+4. In input_audio_transcription: `event.item.input_audio_transcription.text`
+
+Our implementation checks all these locations to ensure robust handling of transcription events.
+
+### Handling Transcriptions in UI
+
+The transcription flow works as follows:
+
+1. WebRTC service receives events from OpenAI
+2. Extracts transcript from event using flexible extraction logic
+3. Calls `notifyTranscriptionUpdate()` with text and metadata
+4. Subscribers in UI components receive updates and update state
+5. Creates or updates streaming messages with the `isInterim` flag
+6. Finalizes messages when transcription is complete
+
+### Troubleshooting
+
+- If transcriptions aren't appearing, check browser console for `[WebRTC]` and `[DEBUG-UI]` prefixed logs
+- Enable the Debug Info panel in development mode to see current messages state
+- Verify event handlers are extracting the transcript correctly from the event structure
+
+### Optimization
+
+- Voice Activity Detection (VAD) events are used to provide real-time feedback
+- Streaming message with ID 'streaming-transcript' shows in-progress transcriptions
+- Final transcriptions replace the streaming message with a permanent one
