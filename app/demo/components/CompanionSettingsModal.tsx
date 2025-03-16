@@ -54,18 +54,44 @@ export default function CompanionSettingsModal({
   globalVoiceSettings,
   globalAISettings
 }: CompanionSettingsModalProps) {
+  // Early return if companion is undefined
+  if (!companion) {
+    return null;
+  }
+
+  const [personality, setPersonality] = useState<Record<string, number>>(
+    companion?.personality || {}
+  );
+  const [domainInterests, setDomainInterests] = useState<Record<string, number>>(
+    companion?.domainInterests || {}
+  );
+  const [effort, setEffort] = useState<number>(companion?.effort || 0.5);
+  const [voiceConfig, setVoiceConfig] = useState(companion?.voiceConfig || {});
+
+  const handleSave = () => {
+    updateCompanionConfig(companion.id, {
+      personality,
+      domainInterests,
+      effort,
+      voiceConfig,
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex flex-row items-center gap-3">
-          <ServerAvatar 
-            src={companion.imageUrl}
-            alt={companion.name}
-            className="h-12 w-12"
-          />
-          <div>
-            <DialogTitle>{companion.name}</DialogTitle>
-            <p className="text-sm text-muted-foreground">{companion.role}</p>
+          <div className="flex items-center gap-4 mb-4">
+            <ServerAvatar
+              src={companion.avatar}
+              alt={companion.name}
+              className="h-10 w-10"
+            />
+            <div>
+              <h3 className="text-lg font-semibold">{companion.name}</h3>
+              <p className="text-sm text-muted-foreground">{companion.role}</p>
+            </div>
           </div>
         </DialogHeader>
 
@@ -76,27 +102,24 @@ export default function CompanionSettingsModal({
               <h3 className="text-sm font-medium">Personality Traits</h3>
               <Separator />
               
-              {Object.entries(companion.personality).map(([trait, value]) => (
+              {Object.entries(personality).map(([trait, value]) => (
                 <div key={trait} className="space-y-2 mt-4">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor={`${companion.id}-${trait}`}>
+                    <Label htmlFor={trait}>
                       {trait.charAt(0).toUpperCase() + trait.slice(1)}
                     </Label>
-                    <span className="text-sm text-muted-foreground">{value}/10</span>
+                    <span className="text-sm text-muted-foreground">{value}/1</span>
                   </div>
                   <Slider
-                    id={`${companion.id}-${trait}`}
-                    min={1}
-                    max={10}
-                    step={1}
+                    id={trait}
+                    max={1}
+                    step={0.1}
                     value={[value]}
                     onValueChange={(val) => {
-                      updateCompanionConfig(companion.id, {
-                        personality: {
-                          ...companion.personality,
-                          [trait]: val[0]
-                        }
-                      });
+                      setPersonality((prev) => ({
+                        ...prev,
+                        [trait]: val[0],
+                      }));
                     }}
                   />
                 </div>
@@ -108,27 +131,24 @@ export default function CompanionSettingsModal({
               <h3 className="text-sm font-medium">Domain Interests</h3>
               <Separator />
               
-              {Object.entries(companion.domainInterests).map(([domain, value]) => (
+              {Object.entries(domainInterests).map(([domain, value]) => (
                 <div key={domain} className="space-y-2 mt-4">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor={`${companion.id}-${domain}`}>
+                    <Label htmlFor={domain}>
                       {domain.charAt(0).toUpperCase() + domain.slice(1)}
                     </Label>
-                    <span className="text-sm text-muted-foreground">{value}/10</span>
+                    <span className="text-sm text-muted-foreground">{value}/1</span>
                   </div>
                   <Slider
-                    id={`${companion.id}-${domain}`}
-                    min={1}
-                    max={10}
-                    step={1}
+                    id={domain}
+                    max={1}
+                    step={0.1}
                     value={[value]}
                     onValueChange={(val) => {
-                      updateCompanionConfig(companion.id, {
-                        domainInterests: {
-                          ...companion.domainInterests,
-                          [domain]: val[0]
-                        }
-                      });
+                      setDomainInterests((prev) => ({
+                        ...prev,
+                        [domain]: val[0],
+                      }));
                     }}
                   />
                 </div>
@@ -142,119 +162,82 @@ export default function CompanionSettingsModal({
               
               <div className="space-y-2 mt-4">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor={`${companion.id}-effort`}>
+                  <Label htmlFor="effort">
                     Effort Level
                   </Label>
-                  <span className="text-sm text-muted-foreground">{companion.effort}/10</span>
+                  <span className="text-sm text-muted-foreground">{effort}/1</span>
                 </div>
                 <Slider
-                  id={`${companion.id}-effort`}
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={[companion.effort]}
-                  onValueChange={(val) => {
-                    updateCompanionConfig(companion.id, {
-                      effort: val[0]
-                    });
-                  }}
+                  id="effort"
+                  max={1}
+                  step={0.1}
+                  value={[effort]}
+                  onValueChange={(val) => setEffort(val[0])}
                 />
-                <p className="text-sm text-muted-foreground">
-                  Higher effort results in more detailed responses but takes longer.
-                </p>
               </div>
             </div>
             
             {/* Voice Configuration */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Voice Settings</h3>
+              <h3 className="text-sm font-medium">Voice Configuration</h3>
               <Separator />
               
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`${companion.id}-voice`}>Voice</Label>
+                  <Label htmlFor="modality">Modality</Label>
                   <Select
-                    value={companion.voiceConfig?.voice || globalVoiceSettings.voice || 'sage'}
-                    onValueChange={(value) => {
-                      updateCompanionConfig(companion.id, {
-                        voiceConfig: {
-                          ...companion.voiceConfig,
-                          voice: value as any
-                        }
-                      });
-                    }}
+                    value={voiceConfig.modality}
+                    onValueChange={(value) =>
+                      setVoiceConfig((prev) => ({ ...prev, modality: value as 'text' | 'voice' | 'both' | 'audio' }))
+                    }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a voice" />
+                    <SelectTrigger id="modality">
+                      <SelectValue placeholder="Select modality" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="alloy">Alloy</SelectItem>
-                      <SelectItem value="ash">Ash</SelectItem>
-                      <SelectItem value="ballad">Ballad</SelectItem>
-                      <SelectItem value="coral">Coral</SelectItem>
-                      <SelectItem value="echo">Echo</SelectItem>
-                      <SelectItem value="sage">Sage</SelectItem>
-                      <SelectItem value="shimmer">Shimmer</SelectItem>
-                      <SelectItem value="verse">Verse</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="voice">Voice</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                      <SelectItem value="audio">Audio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor={`${companion.id}-modality`}>Response Type</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div 
-                      className={`px-3 py-2 rounded-md text-center text-sm cursor-pointer ${
-                        (companion.voiceConfig?.modality || globalVoiceSettings.modality) === 'both' 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}
-                      onClick={() => {
-                        updateCompanionConfig(companion.id, {
-                          voiceConfig: {
-                            ...companion.voiceConfig,
-                            modality: 'both'
-                          }
-                        });
-                      }}
-                    >
-                      Both
-                    </div>
-                    <div 
-                      className={`px-3 py-2 rounded-md text-center text-sm cursor-pointer ${
-                        (companion.voiceConfig?.modality || globalVoiceSettings.modality) === 'text' 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}
-                      onClick={() => {
-                        updateCompanionConfig(companion.id, {
-                          voiceConfig: {
-                            ...companion.voiceConfig,
-                            modality: 'text'
-                          }
-                        });
-                      }}
-                    >
-                      Text
-                    </div>
-                    <div 
-                      className={`px-3 py-2 rounded-md text-center text-sm cursor-pointer ${
-                        (companion.voiceConfig?.modality || globalVoiceSettings.modality) === 'audio' 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}
-                      onClick={() => {
-                        updateCompanionConfig(companion.id, {
-                          voiceConfig: {
-                            ...companion.voiceConfig,
-                            modality: 'audio'
-                          }
-                        });
-                      }}
-                    >
-                      Audio
-                    </div>
+                  <Label htmlFor="vadMode">VAD Mode</Label>
+                  <Select
+                    value={voiceConfig.vadMode}
+                    onValueChange={(value) =>
+                      setVoiceConfig((prev) => ({ ...prev, vadMode: value as 'auto' | 'manual' | 'hybrid' }))
+                    }
+                  >
+                    <SelectTrigger id="vadMode">
+                      <SelectValue placeholder="Select VAD mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="temperature">Temperature</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {voiceConfig.temperature || 0}/1
+                    </span>
                   </div>
+                  <Slider
+                    id="temperature"
+                    max={1}
+                    step={0.1}
+                    value={[voiceConfig.temperature || 0]}
+                    onValueChange={(val) =>
+                      setVoiceConfig((prev) => ({ ...prev, temperature: val[0] }))
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -406,6 +389,21 @@ export default function CompanionSettingsModal({
             </Accordion>
           </div>
         </ScrollArea>
+
+        <div className="mt-6 flex justify-end space-x-4">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="rounded-lg bg-gray-600 px-4 py-2 hover:bg-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

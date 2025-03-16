@@ -1,52 +1,115 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/app/shared/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/app/shared/components/ui/card";
+import { Card } from "@/app/shared/components/ui/card";
 import { Settings, MessageCircle, Bot, ChevronLeft, AlertCircle } from "lucide-react";
 import { useToast } from "@/app/shared/hooks/use-toast";
 import { Badge } from "@/app/shared/components/ui/badge";
 import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from "uuid";
+import { formatDistanceToNow } from 'date-fns';
 
 // Import our types and services
-import { Message, Companion } from "../types/companions";
+import { Message as MessageType, Companion, TranscriptionResult, VoiceConfig } from "../types/companions";
 import { PRE_CONFIGURED_COMPANIONS } from "../services/companions-service";
-import WebRTCTranscriptionService, { WhisperTranscriptionResult } from "../services/webrtc-transcription-service";
+import { WebRTCTranscriptionService, WhisperTranscriptionResult } from "../services/webrtc-transcription-service";
 import * as whisperService from "../services/whisper-service";
 import { DEFAULT_SETTINGS, DemoSettings } from "../types/settings";
 
 // Import our modular components
-import ChatContainer from "./chat/ChatContainer";
-import SettingsModal from "./settings/SettingsModal";
-import ChatMessage from "./ChatMessage";
-import CompanionSettingsModal from "./CompanionSettingsModal";
+import ChatContainer from './chat/ChatContainer';
+import SettingsModal from './settings/SettingsModal';
+import CompanionSettingsModal from './CompanionSettingsModal';
+import ChatMessage from './ChatMessage';
+import MessageComponent from './Message';
+import DebugInfo from './DebugInfo';
+import AudioWaveform from './AudioWaveform';
+import AudioPlayer from './AudioPlayer';
+import AudioControls from './audio/AudioControls';
+import DebugPanel from './debug/DebugPanel';
+import CompanionSettings from './settings/CompanionSettings';
+import AISettings from './settings/AISettings';
+import APISettings from './settings/APISettings';
+import EnhancedVoiceSettings from './settings/EnhancedVoiceSettings';
+import ToolCallingSettings from './settings/ToolCallingSettings';
+import VoiceSettings from './settings/VoiceSettings';
+
+// Hooks
+import { useGroupChat } from "../hooks/useGroupChat";
+import { useAudioTranscription } from "../hooks/useAudioTranscription";
+import { useToolCalling } from "../hooks/useToolCalling";
+import { useCompanions } from "../hooks/useCompanions";
+
+// Components
+import { ChatMessages } from "./ChatMessages";
+import { ChatInput } from "./ChatInput";
+import { TypingIndicator } from "./TypingIndicator";
+import TranscriptionStatus from './TranscriptionStatus';
+import { DemoSettingsDialog } from "./DemoSettingsDialog";
 
 export default function GroupChatDemo() {
+  const {
+    messages,
+    inputValue,
+    isLoading,
+    isSending,
+    typingCompanions,
+    setMessages,
+    setInputValue,
+    setIsLoading,
+    setIsSending,
+    setTypingCompanions,
+    sendMessage: handleSendMessage,
+    handleKeyDown: handleInputKeyDown,
+    restartChat: handleRestartChat
+  } = useGroupChat();
+
+  const {
+    isRecording,
+    isStreaming,
+    interimTranscript,
+    setIsRecording,
+    setIsStreaming,
+    setInterimTranscript,
+    handleMicButtonClick: handleMicClick,
+    startAudioStreaming,
+    stopAudioStreaming
+  } = useAudioTranscription();
+
+  const {
+    isToolCallingEnabled,
+    settings: toolSettings,
+    setIsToolCallingEnabled,
+    setSettings: setToolSettings,
+    updateToolCallingSettings
+  } = useToolCalling();
+
+  const {
+    companions,
+    activeCompanionId,
+    selectedCompanionId,
+    setCompanions,
+    setActiveCompanionId,
+    setSelectedCompanionId,
+    handleCompanionClick: onCompanionClick,
+    updateCompanionConfig: handleUpdateCompanion,
+    resetConfiguration: handleResetConfig
+  } = useCompanions();
+
   // State for chat interface
   const [groupChatId, setGroupChatId] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-  const [typingCompanions, setTypingCompanions] = useState<string[]>([]);
-  
-  // State for settings
-  const [companions, setCompanions] = useState<Companion[]>(PRE_CONFIGURED_COMPANIONS);
   const [responseSpeed, setResponseSpeed] = useState(5);
   const [allRespond, setAllRespond] = useState(false);
   
   // New state variables for tool calling and voice
-  const [isToolCallingEnabled, setIsToolCallingEnabled] = useState<boolean>(true);
-  const [isRecording, setIsRecording] = useState<boolean>(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
   
   // Audio streaming state
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [isConnectingWebRTC, setIsConnectingWebRTC] = useState<boolean>(false);
   const [streamingAudioChunks, setStreamingAudioChunks] = useState<Blob[]>([]);
   const [streamingSessionId, setStreamingSessionId] = useState<string | null>(null);
-  const [interimTranscript, setInterimTranscript] = useState<string>('');
   
   // Reference to track real-time transcription service
   const [transcriptionService, setTranscriptionService] = useState<ReturnType<typeof WebRTCTranscriptionService.getInstance> | null>(null);
@@ -57,27 +120,23 @@ export default function GroupChatDemo() {
   
   const { toast } = useToast();
   
-  // Add state for tracking the active companion
-  const [activeCompanionId, setActiveCompanionId] = useState<string | null>(null);
-  
   // Add state for local audio stream
   const [localAudioStream, setLocalAudioStream] = useState<MediaStream | null>(null);
   
-  // Settings modal state
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
-  // Companion settings modal state
-  const [selectedCompanionId, setSelectedCompanionId] = useState<string | null>(null);
-  const [isCompanionSettingsOpen, setIsCompanionSettingsOpen] = useState(false);
+  // Add state for the Brave Search API key
+  const [braveSearchApiKey, setBraveSearchApiKey] = useState<string>(process.env.NEXT_PUBLIC_BRAVE_BASE_AI || '');
   
   // Add state for tracking transcription details
   const [currentTranscription, setCurrentTranscription] = useState<WhisperTranscriptionResult | null>(null);
   const [transcriptionSegments, setTranscriptionSegments] = useState<string[]>([]);
   
-  // Add state for the Brave Search API key
-  const [braveSearchApiKey, setBraveSearchApiKey] = useState<string>(process.env.NEXT_PUBLIC_BRAVE_BASE_AI || '');
+  // Settings modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // Update the settings state to include the braveSearchApiKey
+  // Companion settings modal state
+  const [isCompanionSettingsOpen, setIsCompanionSettingsOpen] = useState(false);
+  
+  // Initialize settings state
   const [settings, setSettings] = useState<DemoSettings>({
     ...DEFAULT_SETTINGS,
     ai: {
@@ -88,12 +147,16 @@ export default function GroupChatDemo() {
     toolCalling: {
       ...DEFAULT_SETTINGS.toolCalling,
       enabled: true,
-      braveSearchApiKey: process.env.NEXT_PUBLIC_BRAVE_BASE_AI || '' // Initialize with env var if available
+      braveSearchApiKey: process.env.NEXT_PUBLIC_BRAVE_BASE_AI || ''
     },
     voiceChat: {
       ...DEFAULT_SETTINGS.voiceChat
     }
   });
+  
+  // Track WebRTC connection status
+  const [webrtcStatus, setWebrtcStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error' | 'warning'>('disconnected');
+  const [webrtcStatusMessage, setWebrtcStatusMessage] = useState<string>('');
   
   // Check for URL parameter with Brave Search API key on component mount
   useEffect(() => {
@@ -135,7 +198,7 @@ export default function GroupChatDemo() {
               content: "Welcome to the AI group chat demo! Ask a question and the AIs will respond based on their unique personalities and expertise.",
               senderId: "system",
               senderName: "System",
-              senderAvatar: "/images/system-icon.png",
+              senderAvatar: "/images/companions/default.png",
               timestamp: new Date(),
               isUser: false
             }
@@ -298,12 +361,12 @@ export default function GroupChatDemo() {
             : `${activeCompanion.id}-ai-voice-interim`;
           
           // Create the AI message
-          const aiMessage: Message = {
+          const aiMessage: MessageType = {
             id: aiResponseId,
             content: text,
             senderId: activeCompanion.id,
             senderName: activeCompanion.name,
-            senderAvatar: activeCompanion.imageUrl,
+            senderAvatar: activeCompanion.avatar,
             timestamp: new Date(),
             isUser: false,
             isInterim: !isFinal
@@ -347,6 +410,26 @@ export default function GroupChatDemo() {
     };
   }, [companions, activeCompanionId]);
 
+  // Subscribe to connection status updates
+  useEffect(() => {
+    const transcriptionService = WebRTCTranscriptionService.getInstance();
+    
+    // Subscribe to connection status updates
+    const unsubscribe = transcriptionService.subscribeToConnectionStatus((status, message) => {
+      setWebrtcStatus(status);
+      if (message) setWebrtcStatusMessage(message);
+      
+      // Update UI state based on status
+      setIsConnectingWebRTC(status === 'connecting');
+      setIsStreaming(status === 'connected');
+    });
+    
+    return () => {
+      // Clean up subscription
+      unsubscribe();
+    };
+  }, [setIsConnectingWebRTC, setIsStreaming]);
+
   // Function to toggle tool calling mode
   const toggleToolCalling = () => {
     const newValue = !isToolCallingEnabled;
@@ -362,27 +445,6 @@ export default function GroupChatDemo() {
         ? "You can now enable tool calling for individual companions in their settings." 
         : "Tool calling has been disabled globally for all companions.",
     });
-  };
-  
-  // Function to update tool calling settings
-  const updateToolCallingSettings = (toolSettings: Partial<typeof settings.toolCalling>) => {
-    setSettings(prev => ({
-      ...prev,
-      toolCalling: {
-        ...prev.toolCalling,
-        ...toolSettings
-      }
-    }));
-    
-    // Update the Brave API key state if it's provided
-    if (toolSettings.braveSearchApiKey !== undefined) {
-      setBraveSearchApiKey(toolSettings.braveSearchApiKey);
-      
-      // Store in localStorage for persistence
-      if (toolSettings.braveSearchApiKey) {
-        localStorage.setItem('BRAVE_BASE_AI', toolSettings.braveSearchApiKey);
-      }
-    }
   };
   
   // Function to handle starting voice recording
@@ -474,7 +536,7 @@ export default function GroupChatDemo() {
       }
       
       // Create a user message from the transcription
-      const userMessage: Message = {
+      const userMessage: MessageType = {
         id: nanoid(),
         content: transcription,
         senderId: 'user',
@@ -513,50 +575,17 @@ export default function GroupChatDemo() {
     }
   };
 
-  // Send a message
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isSending) return;
-    
-    setIsSending(true);
-    
-    try {
-      // Create the user message
-      const userMessage: Message = {
-        id: `user-${Date.now()}`,
-        content: inputValue,
-        senderId: "user",
-        senderName: "You",
-        senderAvatar: "/images/user-icon.png",
-        timestamp: new Date(),
-        isUser: true
-      };
-      
-      // Add to messages
-      setMessages(prev => [...prev, userMessage]);
-      
-      // If voice mode is active, send the message through the WebRTC service
-      if (isStreaming && transcriptionService) {
-        await transcriptionService.sendTextMessage(inputValue);
-      }
-      
-      setInputValue('');
-      
-      // Generate responses from companions
-      await handleCompanionResponses(userMessage);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
+  // Update component references to use the renamed functions
+  const sendMessage = handleSendMessage;
+  const handleKeyDown = handleInputKeyDown;
+  const restartChat = handleRestartChat;
+  const handleMicButtonClick = handleMicClick;
+  const handleCompanionClick = onCompanionClick;
+  const updateCompanionConfig = handleUpdateCompanion;
+  const resetConfiguration = handleResetConfig;
 
   // Handle companion responses
-  const handleCompanionResponses = async (userMessage: Message) => {
+  const handleCompanionResponses = async (userMessage: MessageType) => {
     // Determine which companions should respond
     const respondingCompanions = allRespond 
       ? companions 
@@ -648,12 +677,12 @@ export default function GroupChatDemo() {
         const responseData = await response.json();
         
         // Add the companion's response to messages
-        const companionMessage: Message = {
+        const companionMessage: MessageType = {
           id: `${companion.id}-${Date.now()}`,
           content: responseData.response,
           senderId: companion.id,
           senderName: companion.name,
-          senderAvatar: companion.imageUrl,
+          senderAvatar: companion.avatar,
           timestamp: new Date(),
           isUser: false,
           debugInfo: responseData.debugInfo,
@@ -672,12 +701,12 @@ export default function GroupChatDemo() {
         setTypingCompanions(prev => prev.filter(id => id !== companion.id));
         
         // Add error message
-        const errorMessage: Message = {
+        const errorMessage: MessageType = {
           id: `error-${companion.id}-${Date.now()}`,
           content: `Sorry, I'm having trouble responding right now.`,
           senderId: companion.id,
           senderName: companion.name,
-          senderAvatar: companion.imageUrl,
+          senderAvatar: companion.avatar,
           timestamp: new Date(),
           isUser: false
         };
@@ -687,218 +716,9 @@ export default function GroupChatDemo() {
     }
   };
 
-  // Update a companion's configuration
-  const updateCompanionConfig = (companionId: string, config: Partial<Companion>) => {
-    setCompanions(prev => prev.map(companion => {
-      if (companion.id === companionId) {
-        return { ...companion, ...config };
-      }
-      return companion;
-    }));
-  };
-
-  // Reset companions configuration to default
-  const resetConfiguration = () => {
-    setCompanions(PRE_CONFIGURED_COMPANIONS);
-    setResponseSpeed(5);
-    setAllRespond(false);
-    
-    toast({
-      title: "Settings reset",
-      description: "All companions have been reset to their default configurations.",
-    });
-  };
-
   // Get a random companion
   const getRandomCompanion = () => {
     return companions[Math.floor(Math.random() * companions.length)];
-  };
-
-  // Restart the chat
-  const restartChat = () => {
-    setMessages([
-      {
-        id: `system-restart-${Date.now()}`,
-        content: "Chat has been restarted. Previous messages are cleared.",
-        senderId: "system",
-        senderName: "System",
-        senderAvatar: "/images/system-icon.png",
-        timestamp: new Date(),
-        isUser: false
-      }
-    ]);
-    
-    toast({
-      title: "Chat restarted",
-      description: "The conversation has been reset.",
-    });
-  };
-
-  // Handle Enter key in input
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  // Start audio streaming using the realtime transcription service
-  const startAudioStreaming = async () => {
-    try {
-      if (isStreaming) {
-        console.log("Already streaming, ignoring request");
-        return;
-      }
-      
-      console.log("Initializing audio streaming...");
-      setIsConnectingWebRTC(true);
-      setInterimTranscript('');
-      
-      // Get or initialize the transcription service
-      const service = WebRTCTranscriptionService.getInstance();
-      setTranscriptionService(service);
-      
-      // Subscribe to status updates
-      const unsubscribeStatus = service.subscribeToConnectionStatus((status, message) => {
-        console.log(`Transcription service status: ${status}${message ? ` - ${message}` : ''}`);
-        
-        if (status === 'error') {
-          toast({
-            title: "Transcription Error",
-            description: message || "An error occurred with transcription",
-            variant: "destructive"
-          });
-          stopAudioStreaming();
-        }
-      });
-      
-      // Subscribe to text updates
-      const unsubscribeUpdates = service.subscribeToUpdates((text) => {
-        if (text && text !== interimTranscript) {
-          setInterimTranscript(text);
-        }
-      });
-
-      // Get voice settings from the active companion (if any)
-      const activeCompanion = companions.find(c => c.id === activeCompanionId) || companions[0];
-      
-      if (activeCompanion?.voiceConfig) {
-        // Create a complete voice configuration with all supported settings
-        const voiceConfig = {
-          // Basic settings
-          voice: activeCompanion.voiceConfig.voice || 'sage',
-          vadMode: activeCompanion.voiceConfig.vadMode || 'auto',
-          modality: activeCompanion.voiceConfig.modality || 'both',
-          
-          // Advanced settings
-          temperature: activeCompanion.voiceConfig.temperature,
-          maxResponseTokens: activeCompanion.voiceConfig.maxResponseTokens,
-          audioFormat: activeCompanion.voiceConfig.audioFormat,
-          
-          // Turn detection settings
-          turnDetection: activeCompanion.voiceConfig.turnDetection
-            ? {
-                threshold: activeCompanion.voiceConfig.turnDetection.threshold,
-                prefixPaddingMs: activeCompanion.voiceConfig.turnDetection.prefixPaddingMs,
-                silenceDurationMs: activeCompanion.voiceConfig.turnDetection.silenceDurationMs,
-                createResponse: activeCompanion.voiceConfig.turnDetection.createResponse
-              }
-            : undefined
-        };
-        
-        // Set the voice configuration in the transcription service
-        service.setVoiceConfig(voiceConfig);
-        console.log(`Using voice config from companion ${activeCompanion.name}:`, voiceConfig);
-        
-        // Set the active companion ID to indicate which bot we're talking to
-        setActiveCompanionId(activeCompanion.id);
-      }
-      
-      // Start the transcription service
-      const success = await service.startTranscription();
-      
-      if (!success) {
-        console.error("Failed to start transcription service");
-        setIsConnectingWebRTC(false);
-        stopAudioStreaming();
-        return;
-      }
-      
-      // Set up the audio media stream for recording
-      const audioStream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        } 
-      });
-      
-      setLocalAudioStream(audioStream);
-      
-      console.log("Audio streaming started successfully");
-    } catch (error) {
-      console.error("Error starting audio stream:", error);
-      toast({
-        title: "Microphone Error",
-        description: error instanceof Error ? error.message : "Could not access your microphone",
-        variant: "destructive"
-      });
-      setIsConnectingWebRTC(false);
-      stopAudioStreaming();
-    }
-  };
-  
-  // Stop audio streaming using the realtime transcription service
-  const stopAudioStreaming = async () => {
-    if (!transcriptionService) return;
-    
-    try {
-      // Stop the transcription service
-      await transcriptionService.stopTranscription();
-      
-      // Commit any streaming transcription as a finalized message
-      commitStreamingTranscription();
-      
-      // If we have a final transcript, trigger companion responses
-      if (interimTranscript.trim()) {
-        const userMessage: Message = {
-          id: nanoid(),
-          content: interimTranscript,
-          senderId: 'user',
-          senderName: 'You',
-          senderAvatar: '/images/user-icon.png',
-          timestamp: new Date(),
-          isUser: true
-        };
-        
-        // Trigger companion responses
-        await handleCompanionResponses(userMessage);
-      }
-      
-      // Reset state
-      mediaStreamRef.current = null;
-      setInterimTranscript('');
-      setIsStreaming(false);
-      setIsConnectingWebRTC(false);
-    } catch (error) {
-      console.error('Error stopping audio streaming:', error);
-      setIsStreaming(false);
-      setIsConnectingWebRTC(false);
-    }
-  };
-  
-  // Modified function for mic button click
-  const handleMicButtonClick = () => {
-    if (isRecording) {
-      // Stop regular recording
-      stopRecording();
-    } else if (isStreaming) {
-      // Stop real-time streaming
-      stopAudioStreaming();
-    } else {
-      // Start real-time streaming
-      startAudioStreaming();
-    }
   };
 
   // Modified function to commit the streaming transcription
@@ -910,7 +730,7 @@ export default function GroupChatDemo() {
       const messages = prev.filter(msg => msg.id !== 'streaming-transcript');
       
       // Create finalized message with the full transcription data
-      const finalizedMessage: Message = {
+      const finalizedMessage: MessageType = {
         id: nanoid(),
         content: interimTranscript,
         senderId: 'user',
@@ -922,8 +742,7 @@ export default function GroupChatDemo() {
         metadata: currentTranscription ? {
           duration: currentTranscription.duration,
           language: currentTranscription.language,
-          segments: currentTranscription.segments,
-          words: currentTranscription.words,
+          segmentCount: currentTranscription.segments?.length || 0,
           transcriptionSource: currentTranscription.segments ? 'whisper-api' as const : 'realtime-api' as const,
           transcriptionType: 'user-audio' as const // Identify this as user audio transcription
         } : undefined
@@ -938,14 +757,84 @@ export default function GroupChatDemo() {
     setTranscriptionSegments([]);
   };
 
-  // Function to handle companion avatar click
-  const handleCompanionClick = (companionId: string) => {
-    setSelectedCompanionId(companionId);
-    setIsCompanionSettingsOpen(true);
-  };
+  const handleTranscriptionUpdate = useCallback((transcript: string) => {
+    setInterimTranscript(transcript);
+    
+    // Add user message with transcript
+    const userMessage: MessageType = {
+      id: uuidv4(),
+      role: 'user',
+      content: transcript,
+      senderName: 'You',
+      senderAvatar: '/images/companions/default.png',
+      timestamp: new Date().toISOString(),
+      senderId: 'user',
+      isUser: true
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+
+    // Trigger companion responses
+    handleCompanionResponses(userMessage);
+  }, [setInterimTranscript, setMessages, handleCompanionResponses]);
+
+  const handleTranscriptionError = useCallback((error: string) => {
+    console.error('Transcription error:', error);
+    setIsStreaming(false);
+    setIsRecording(false);
+  }, [setIsStreaming, setIsRecording]);
+
+  const handleMicrophoneClick = useCallback(async () => {
+    if (isStreaming) {
+      // If already streaming, stop
+      const transcriptionService = WebRTCTranscriptionService.getInstance();
+      transcriptionService.stopTranscription();
+      setIsStreaming(false);
+      setIsRecording(false);
+      
+      // Clean up any existing streaming message
+      setMessages(prev => prev.filter(msg => msg.id !== 'streaming-transcript'));
+    } else {
+      try {
+        // Show loading toast
+        toast({
+          title: "Connecting to transcription service",
+          description: "Please wait while we connect to the transcription service...",
+        });
+        
+        // Get transcription service
+        const transcriptionService = WebRTCTranscriptionService.getInstance();
+        
+        // Start real transcription
+        await transcriptionService.startTranscription(
+          handleTranscriptionUpdate,
+          handleTranscriptionError
+        );
+        
+        setIsStreaming(true);
+        setIsRecording(true);
+        
+        // Show success message
+        toast({
+          title: "Ready for voice input",
+          description: "Please speak clearly. Your voice will be transcribed in real-time.",
+        });
+      } catch (error) {
+        console.error('Error starting transcription:', error);
+        setIsStreaming(false);
+        setIsRecording(false);
+        
+        toast({
+          title: "Transcription error",
+          description: "Failed to start voice transcription. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [isStreaming, setIsStreaming, setIsRecording, handleTranscriptionUpdate, handleTranscriptionError, toast, setMessages]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-background">
+    <Card className="flex flex-col h-full w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-2">
           <button
@@ -1006,7 +895,39 @@ export default function GroupChatDemo() {
         />
       </div>
 
-      {/* Settings Modal */}
+      <AudioControls
+        isRecording={isRecording}
+        isStreaming={isStreaming}
+        interimTranscript={interimTranscript}
+        onMicClick={handleMicButtonClick}
+        onStartStreaming={startAudioStreaming}
+        onStopStreaming={stopAudioStreaming}
+      />
+
+      <DebugPanel
+        companions={companions}
+        messages={messages}
+        settings={settings}
+        isToolCallingEnabled={isToolCallingEnabled}
+      />
+
+      {/* Only render the settings modal if we have a valid companion */}
+      {isCompanionSettingsOpen && selectedCompanionId && (
+        <CompanionSettingsModal
+          isOpen={true}
+          onOpenChange={(open) => {
+            setIsCompanionSettingsOpen(open);
+            if (!open) {
+              setSelectedCompanionId(null);
+            }
+          }}
+          companion={companions.find(c => c.id === selectedCompanionId) || companions[0]}
+          updateCompanionConfig={updateCompanionConfig}
+          globalVoiceSettings={DEFAULT_SETTINGS.voiceChat}
+          globalAISettings={DEFAULT_SETTINGS.ai}
+        />
+      )}
+
       <SettingsModal
         isOpen={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
@@ -1026,17 +947,20 @@ export default function GroupChatDemo() {
         updateToolCallingSettings={updateToolCallingSettings}
       />
 
-      {/* Companion Settings Modal */}
-      {selectedCompanionId && (
-        <CompanionSettingsModal
-          isOpen={isCompanionSettingsOpen}
-          onOpenChange={setIsCompanionSettingsOpen}
-          companion={companions.find(c => c.id === selectedCompanionId)!}
-          updateCompanionConfig={updateCompanionConfig}
-          globalVoiceSettings={DEFAULT_SETTINGS.voiceChat}
-          globalAISettings={DEFAULT_SETTINGS.ai}
-        />
+      {/* Status notification for WebRTC connection */}
+      {webrtcStatus !== 'disconnected' && (
+        <div className="px-4">
+          <TranscriptionStatus 
+            status={webrtcStatus}
+            message={webrtcStatusMessage}
+            onDismiss={() => {
+              if (webrtcStatus === 'error') {
+                setWebrtcStatus('disconnected');
+              }
+            }}
+          />
+        </div>
       )}
-    </div>
+    </Card>
   );
 } 

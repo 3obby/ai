@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "157aef6",
+      "fullHash": "157aef620fa4e1c119b752e615ad71dba3198db3",
+      "date": "2025-03-16 21:38:41 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
       "hash": "c1ac7c3",
       "fullHash": "c1ac7c381bb0b72ad7201136d14061ea6d462245",
       "date": "2025-03-16 14:07:16 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Full sync - push all changes including auth migration and API updates",
       "category": "enhancement"
-    },
-    {
-      "hash": "02f46ee",
-      "fullHash": "02f46ee1ca44025b59f900154b1ca0407d593078",
-      "date": "2025-03-08 12:26:43 +0700",
-      "author": "3obby",
-      "message": "Fix navbar layout and user display issues; fix admin API routes",
-      "category": "bugfix"
     }
   ]
 }

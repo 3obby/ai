@@ -2,106 +2,50 @@ import { Companion, ChatHistoryItem } from "../types/companions";
 import { generateCompanionResponse } from "./openai-service";
 import { DEFAULT_TOOL_SETTINGS } from "../types/tools";
 
+const DEFAULT_AVATAR = '/images/user-icon.png';
+
 // Pre-configured companions for the demo
 export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
   {
-    id: "assistant-1",
-    name: "Alex",
-    description: "Technical advisor with expertise in programming and systems architecture",
-    imageUrl: "/images/companion-1.png",
-    role: "Technical Advisor",
-    personality: {
-      openness: 7,
-      conscientiousness: 8,
-      extraversion: 4,
-      agreeableness: 6,
-      neuroticism: 3
-    },
-    domainInterests: {
-      technical: 9,
-      creative: 4,
-      management: 6
-    },
-    effort: 8,
+    id: 'sage',
+    name: 'Sage',
+    role: 'AI Research Assistant',
+    description: 'A knowledgeable and thoughtful AI research assistant.',
+    avatar: DEFAULT_AVATAR,
     toolCallingEnabled: true,
-    toolSettings: {
-      enabled: true,
-      toolConfig: DEFAULT_TOOL_SETTINGS
+    voiceConfig: {
+      voice: 'sage',
+      vadMode: 'auto',
+      modality: 'both',
+      temperature: 0.7
     }
   },
   {
-    id: "assistant-2",
-    name: "Morgan",
-    description: "Creative brainstormer who helps generate innovative ideas",
-    imageUrl: "/images/companion-2.png",
-    role: "Creative Lead",
-    personality: {
-      openness: 9,
-      conscientiousness: 5,
-      extraversion: 8,
-      agreeableness: 7,
-      neuroticism: 4
-    },
-    domainInterests: {
-      technical: 4,
-      creative: 9,
-      management: 5
-    },
-    effort: 7,
+    id: 'echo',
+    name: 'Echo',
+    role: 'Technical Expert',
+    description: 'A technical expert focused on coding and development.',
+    avatar: DEFAULT_AVATAR,
     toolCallingEnabled: true,
-    toolSettings: {
-      enabled: true,
-      toolConfig: DEFAULT_TOOL_SETTINGS
+    voiceConfig: {
+      voice: 'echo',
+      vadMode: 'auto',
+      modality: 'both',
+      temperature: 0.6
     }
   },
   {
-    id: "assistant-3",
-    name: "Taylor",
-    description: "Project manager who helps organize tasks and track progress",
-    imageUrl: "/images/companion-3.png",
-    role: "Project Manager",
-    personality: {
-      openness: 6,
-      conscientiousness: 9,
-      extraversion: 7,
-      agreeableness: 7,
-      neuroticism: 4
-    },
-    domainInterests: {
-      technical: 6,
-      creative: 5,
-      management: 9
-    },
-    effort: 8,
+    id: 'coral',
+    name: 'Coral',
+    role: 'Creative Assistant',
+    description: 'A creative assistant for brainstorming and ideation.',
+    avatar: DEFAULT_AVATAR,
     toolCallingEnabled: true,
-    toolSettings: {
-      enabled: true,
-      toolConfig: DEFAULT_TOOL_SETTINGS
-    }
-  },
-  {
-    id: "assistant-4",
-    name: "Jordan",
-    description: "Data analyst specializing in insights and metrics interpretation",
-    imageUrl: "/images/companion-4.png",
-    role: "Data Analyst",
-    personality: {
-      openness: 7,
-      conscientiousness: 8,
-      extraversion: 3,
-      agreeableness: 6,
-      neuroticism: 5
-    },
-    domainInterests: {
-      technical: 8,
-      creative: 3,
-      management: 7
-    },
-    effort: 9,
-    toolCallingEnabled: true,
-    toolSettings: {
-      enabled: true,
-      toolConfig: DEFAULT_TOOL_SETTINGS
+    voiceConfig: {
+      voice: 'coral',
+      vadMode: 'auto',
+      modality: 'both',
+      temperature: 0.8
     }
   }
 ];

@@ -4,6 +4,6 @@ import { redirect } from "next/navigation"
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Simply redirect all users to dashboard - we'll handle anonymous users there
-  redirect("/dashboard")
+  // Redirect all users to the demo page by default
+  redirect("/demo")
 } 

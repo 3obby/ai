@@ -1,0 +1,4 @@
+# Demo Route
+
+## Overview
+The `/demo` route provides a comprehensive, fully-defined set of interfaces that enable users to experience a customizeable group chat environment with multiple AI companions. This demo showcases the integration of various AI capabilities including text chat, voice interaction, and tool usage that all resolves into one unified chat- voice and text unified and transcribed to the text chat interface, and tooling/debugging info fully logged under each previous message. additionally, this typescript project allows us to define the types for all bot and chat customization through a multi-layered modal system that queries and modifies our internal typings.

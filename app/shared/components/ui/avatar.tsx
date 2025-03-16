@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
-import Image from 'next/image';
 
 import { cn } from "@/lib/utils"
 
@@ -47,27 +46,5 @@ const AvatarFallback = React.forwardRef<
   />
 ))
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
-
-interface AvatarProps {
-  src: string;
-  alt: string;
-  className?: string;
-}
-
-export function Avatar({ src, alt, className }: AvatarProps) {
-  return (
-    <div className={cn(
-      "relative h-10 w-10 rounded-full overflow-hidden bg-muted", 
-      className
-    )}>
-      <Image
-        src={src || '/images/placeholder.jpg'}
-        alt={alt || 'Avatar'}
-        fill
-        className="object-cover"
-      />
-    </div>
-  );
-}
 
 export { Avatar, AvatarImage, AvatarFallback }
