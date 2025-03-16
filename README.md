@@ -172,6 +172,23 @@ For details, see `restructuring-plan.md`, `DEVELOPMENT_AND_DEPLOYMENT.md` and `D
 - **Whisper API Fallback**: Reliable non-streaming transcription for longer audio segments
 - **Visual Transcription Indicators**: Clear differentiation between interim and final transcriptions
 
+### Per-Companion Tool Calling
+
+The application supports granular control over which companions can use external tools:
+
+- **Global Toggle**: Controls the tool calling infrastructure in the application
+- **Per-Companion Toggle**: Determines which specific companions can use tools
+- **Brave Search Integration**: Companions with tool calling enabled use the Brave Search API to retrieve real-time information
+
+In the `/demo` route, all companions have tool calling enabled by default, and they are configured to use the Brave Search tool in every response. This ensures companions always provide up-to-date information from the web rather than relying solely on their training data.
+
+To customize tool calling behavior:
+1. Open the settings modal (gear icon) to manage global tool calling infrastructure
+2. Click on any companion's avatar to access their individual settings
+3. Toggle "Enable tool calling" for specific companions based on your preferences
+
+For detailed configuration options and API integration instructions, see [DEVELOPMENT_AND_DEPLOYMENT.md](./DEVELOPMENT_AND_DEPLOYMENT.md#brave-search-integration).
+
 ## Demo Experience
 
 Try our interactive demo at `/demo`

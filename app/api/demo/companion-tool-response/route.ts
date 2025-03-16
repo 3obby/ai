@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
 import { ChatCompletionTool } from "openai/resources/chat/completions";
+import { 
+  BRAVE_WEB_SEARCH_TOOL,
+  BRAVE_SUMMARIZER_TOOL,
+  BraveSearchTool
+} from "@/app/demo/types/tools";
 
 // Initialize the OpenAI client (server-side)
 const openai = new OpenAI({
@@ -9,6 +14,48 @@ const openai = new OpenAI({
 
 // Define available tools
 const availableTools: ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: BRAVE_WEB_SEARCH_TOOL.functionName,
+      description: BRAVE_WEB_SEARCH_TOOL.description,
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query",
+          },
+          count: {
+            type: "integer",
+            description: "Number of results to return (default: 5, max: 10)",
+          }
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: BRAVE_SUMMARIZER_TOOL.functionName,
+      description: BRAVE_SUMMARIZER_TOOL.description,
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query to summarize results for",
+          },
+          count: {
+            type: "integer",
+            description: "Number of results to include in summary (default: 5)",
+          }
+        },
+        required: ["query"],
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -90,6 +137,15 @@ const availableTools: ChatCompletionTool[] = [
 function createSystemMessageForCompanion(companion: any): string {
   const { personality, domainInterests, name, role, description } = companion;
   
+  let toolInstructions = "You have access to tools that you can use when needed. Use them when the user's request requires additional information or actions.";
+  
+  // Add stronger instructions for tool use if tool calling is enabled for this companion
+  const toolCallingEnabled = companion.toolSettings?.enabled || companion.toolCallingEnabled;
+  
+  if (toolCallingEnabled) {
+    toolInstructions = `You have access to tools that you must use proactively. For most user questions, especially those about facts, current events, or information that might be recent or constantly changing, USE THE ${BRAVE_WEB_SEARCH_TOOL.functionName} TOOL to find up-to-date information. For questions where a summary of web information would be helpful, use the ${BRAVE_SUMMARIZER_TOOL.functionName} tool. Before responding, always check if the question could benefit from web search or summarization and use the appropriate tool. Don't rely solely on your training data for factual information.`;
+  }
+  
   return `You are ${name}, a ${role}. ${description}
 
 Your personality traits are:
@@ -113,7 +169,7 @@ Guidelines:
 6. Always stay in character as ${name}.
 7. Never mention that you are an AI model - act as though you are truly ${name} with these personality traits.
 
-You have access to tools that you can use when needed. Use them when the user's request requires additional information or actions.
+${toolInstructions}
 
 Your response format should be natural conversation, not labeling your traits. Show your personality through your tone, word choice, and perspective.`;
 }
@@ -164,7 +220,7 @@ function getTraitDescription(trait: string, score: number): string {
 }
 
 // Function to handle tool calls
-async function handleToolCalls(toolCalls: any[]) {
+async function handleToolCalls(toolCalls: any[], braveSearchApiKey: string | undefined) {
   const results = [];
 
   for (const toolCall of toolCalls) {
@@ -172,6 +228,148 @@ async function handleToolCalls(toolCalls: any[]) {
     const functionArgs = JSON.parse(toolCall.function.arguments);
 
     switch (functionName) {
+      case BRAVE_WEB_SEARCH_TOOL.functionName:
+        try {
+          console.log(`Processing ${BRAVE_WEB_SEARCH_TOOL.functionName} tool call for query: "${functionArgs.query}"`);
+          console.log(`Brave Search API key available: ${!!braveSearchApiKey}`);
+          
+          // Call our internal Brave Search API with absolute URL since this is server-side code
+          const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+          const host = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_APP_URL || 'localhost:3000';
+          
+          // Construct the API URL, ensuring we don't duplicate the protocol
+          let apiUrl;
+          if (host.startsWith('http://') || host.startsWith('https://')) {
+            // If host already includes protocol, use it directly
+            apiUrl = `${host}/api/demo/brave-search`;
+          } else {
+            // Otherwise, add the protocol
+            apiUrl = `${protocol}://${host}/api/demo/brave-search`;
+          }
+          
+          console.log(`Calling Brave Search API at: ${apiUrl}`);
+          
+          const searchResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: functionArgs.query,
+              count: functionArgs.count || 5,
+              apiKey: braveSearchApiKey, // Pass the API key to the search endpoint
+              tool: BRAVE_WEB_SEARCH_TOOL.id // Specify which tool to use
+            }),
+          });
+          
+          if (!searchResponse.ok) {
+            const errorText = await searchResponse.text();
+            console.error(`Brave Search API error (${searchResponse.status}): ${errorText}`);
+            
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch (e) {
+              errorData = { error: errorText || "Unknown error" };
+            }
+            
+            throw new Error(errorData.error || `Failed to perform search: ${searchResponse.status}`);
+          }
+          
+          const searchResults = await searchResponse.json();
+          console.log(`Brave Search returned ${searchResults.results?.length || 0} results`);
+          
+          results.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: functionName,
+            content: JSON.stringify(searchResults),
+          });
+        } catch (error) {
+          console.error("Error in brave_search tool:", error);
+          results.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: functionName,
+            content: JSON.stringify({ 
+              error: error instanceof Error ? error.message : "Failed to perform search",
+              query: functionArgs.query,
+              results: []
+            }),
+          });
+        }
+        break;
+
+      case BRAVE_SUMMARIZER_TOOL.functionName:
+        try {
+          console.log(`Processing ${BRAVE_SUMMARIZER_TOOL.functionName} tool call for query: "${functionArgs.query}"`);
+          console.log(`Brave Search API key available: ${!!braveSearchApiKey}`);
+          
+          // Call our internal Brave Search API with absolute URL since this is server-side code
+          const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+          const host = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_APP_URL || 'localhost:3000';
+          
+          // Construct the API URL, ensuring we don't duplicate the protocol
+          let apiUrl;
+          if (host.startsWith('http://') || host.startsWith('https://')) {
+            // If host already includes protocol, use it directly
+            apiUrl = `${host}/api/demo/brave-search`;
+          } else {
+            // Otherwise, add the protocol
+            apiUrl = `${protocol}://${host}/api/demo/brave-search`;
+          }
+          
+          console.log(`Calling Brave Search API at: ${apiUrl}`);
+          
+          const searchResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: functionArgs.query,
+              count: functionArgs.count || 5,
+              apiKey: braveSearchApiKey, // Pass the API key to the search endpoint
+              tool: BRAVE_SUMMARIZER_TOOL.id, // Specify which tool to use (summarizer)
+              summarize: true // Flag to request summarization
+            }),
+          });
+          
+          if (!searchResponse.ok) {
+            const errorText = await searchResponse.text();
+            console.error(`Brave Search API error (${searchResponse.status}): ${errorText}`);
+            
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch (e) {
+              errorData = { error: errorText || "Unknown error" };
+            }
+            
+            throw new Error(errorData.error || `Failed to perform search summarization: ${searchResponse.status}`);
+          }
+          
+          const searchResults = await searchResponse.json();
+          console.log(`Brave Summarizer returned summary: ${!!searchResults.summary}`);
+          
+          results.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: functionName,
+            content: JSON.stringify(searchResults),
+          });
+        } catch (error) {
+          console.error(`Error in ${BRAVE_SUMMARIZER_TOOL.functionName} tool:`, error);
+          results.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: functionName,
+            content: JSON.stringify({ 
+              error: error instanceof Error ? error.message : "Failed to perform search summarization",
+              query: functionArgs.query,
+              results: [],
+              summary: null
+            }),
+          });
+        }
+        break;
+
       case "get_current_weather":
         // Mock weather data
         results.push({
@@ -263,7 +461,7 @@ function calculateMaxTokensFromEffort(companion: any): number {
 
 export async function POST(request: Request) {
   try {
-    const { companion, userMessage, chatHistory } = await request.json();
+    const { companion, userMessage, chatHistory, braveApiKey, alwaysUseTool, preferredTool } = await request.json();
 
     if (!companion || !userMessage) {
       return NextResponse.json(
@@ -271,6 +469,17 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // Store Brave API key for use in the brave_search tool
+    const braveSearchApiKey = braveApiKey || process.env.BRAVE_BASE_AI;
+    
+    console.log(`Tool calling request received for companion: ${companion.name}`);
+    console.log(`Brave Search API key available: ${!!braveSearchApiKey}`);
+    console.log(`Always use tool: ${alwaysUseTool}`);
+    console.log(`Preferred tool: ${preferredTool || 'none specified'}`);
+    
+    // Log available tools
+    console.log(`Available tools: ${availableTools.map(t => t.function.name).join(', ')}`);
 
     // Create a system message based on companion's personality
     const systemMessage = createSystemMessageForCompanion(companion);
@@ -290,14 +499,61 @@ export async function POST(request: Request) {
       messages.push({ role: 'user', content: "Transcription: " + userMessage.transcription });
     }
 
+    // Configure tool choice based on alwaysUseTool parameter and preferredTool
+    let toolChoice: any = "auto";
+    
+    // If alwaysUseTool is true, force the model to use a specific tool
+    if (alwaysUseTool) {
+      // Determine which tool to force based on preferredTool or default to web search
+      const toolToUse = preferredTool === BRAVE_SUMMARIZER_TOOL.id ? 
+        BRAVE_SUMMARIZER_TOOL.functionName : 
+        BRAVE_WEB_SEARCH_TOOL.functionName;
+      
+      toolChoice = {
+        type: "function",
+        function: {
+          name: toolToUse
+        }
+      };
+      
+      // Modify the user message to encourage web search
+      const lastUserMessage = messages[messages.length - 1];
+      if (lastUserMessage.role === 'user') {
+        lastUserMessage.content += " Please search the web for the most current information on this topic.";
+      }
+    }
+
+    // Check companion tool settings to filter available tools
+    const enabledTools = availableTools.filter(tool => {
+      // If tool calling is disabled for this companion, no tools are available
+      if (!companion.toolSettings?.enabled && !companion.toolCallingEnabled) {
+        return false;
+      }
+      
+      // Check if this specific tool is enabled
+      const toolId = tool.function.name === BRAVE_WEB_SEARCH_TOOL.functionName ? 
+        BRAVE_WEB_SEARCH_TOOL.id : 
+        tool.function.name === BRAVE_SUMMARIZER_TOOL.functionName ?
+        BRAVE_SUMMARIZER_TOOL.id :
+        tool.function.name;
+      
+      // If no specific tool settings, allow all tools when tool calling is enabled
+      if (!companion.toolSettings?.toolConfig) {
+        return true;
+      }
+      
+      // Check if this tool is specifically disabled (default to enabled)
+      return companion.toolSettings.toolConfig[toolId] !== false;
+    });
+
     // Call the OpenAI API with GPT-4o for tool use
     const response = await openai.chat.completions.create({
       model: 'gpt-4o', // Using GPT-4o for tool calling
       messages: messages as any,
       temperature: calculateTemperatureFromPersonality(companion),
       max_tokens: calculateMaxTokensFromEffort(companion),
-      tools: availableTools,
-      tool_choice: "auto",
+      tools: enabledTools.length > 0 ? enabledTools : undefined,
+      tool_choice: enabledTools.length > 0 ? toolChoice : undefined,
     });
 
     // Check if there are tool calls
@@ -307,7 +563,7 @@ export async function POST(request: Request) {
 
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       // Handle tool calls
-      const toolResponses = await handleToolCalls(responseMessage.tool_calls);
+      const toolResponses = await handleToolCalls(responseMessage.tool_calls, braveSearchApiKey);
       
       // Add the assistant's message and tool responses to the conversation
       const updatedMessages = [

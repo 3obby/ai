@@ -22,7 +22,8 @@ import {
 import { Badge } from "@/app/shared/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/app/shared/components/ui/radio-group";
 import { ToolCallingSettings } from "../../types/settings";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ToolCallingSettingsComponentProps {
   settings: ToolCallingSettings;
@@ -36,8 +37,12 @@ export default function ToolCallingSettingsComponent({
   // Local state for tool search
   const [toolSearch, setToolSearch] = useState("");
   
+  // State for API key visibility
+  const [showApiKey, setShowApiKey] = useState(false);
+  
   // Available tools (in a real implementation, these would be fetched from an API)
   const availableTools = [
+    { id: 'brave_search', name: 'Brave Search', description: 'Search the web for information using Brave Search API' },
     { id: 'web_search', name: 'Web Search', description: 'Search the web for information' },
     { id: 'code_interpreter', name: 'Code Interpreter', description: 'Run code and return results' },
     { id: 'image_generator', name: 'Image Generator', description: 'Generate images from text prompts' },
@@ -52,6 +57,23 @@ export default function ToolCallingSettingsComponent({
     tool.description.toLowerCase().includes(toolSearch.toLowerCase())
   );
   
+  // Check if Brave Search is enabled
+  const isBraveSearchEnabled = (settings.allowedTools || []).includes('brave_search');
+  
+  // Ensure Brave Search is enabled when tool calling is enabled
+  useEffect(() => {
+    if (settings.enabled && !isBraveSearchEnabled) {
+      // If tool calling is enabled but Brave Search isn't in the allowed tools, add it
+      const currentTools = settings.allowedTools || [];
+      if (!currentTools.includes('brave_search')) {
+        console.log('Automatically enabling Brave Search tool');
+        updateSettings({ 
+          allowedTools: [...currentTools, 'brave_search'] 
+        });
+      }
+    }
+  }, [settings.enabled, isBraveSearchEnabled, settings.allowedTools, updateSettings]);
+
   return (
     <div className="space-y-4 bg-card rounded-lg p-4 shadow-sm">
       <h2 className="text-xl font-semibold">Tool Calling Settings</h2>
@@ -64,8 +86,12 @@ export default function ToolCallingSettingsComponent({
             checked={settings.enabled}
             onCheckedChange={(value) => updateSettings({ enabled: value })}
           />
-          <Label htmlFor="tool-calling" className="text-base">Enable tool calling for companions</Label>
+          <Label htmlFor="tool-calling" className="text-base">Enable tool calling capability</Label>
         </div>
+        
+        <p className="text-xs text-muted-foreground">
+          This enables the tool calling infrastructure. You'll still need to enable tool calling for individual companions in their settings.
+        </p>
         
         {settings.enabled && (
           <Accordion type="single" collapsible className="w-full">
@@ -89,7 +115,7 @@ export default function ToolCallingSettingsComponent({
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{tool.name}</span>
                           {(settings.allowedTools || []).includes(tool.id) && (
-                            <Badge variant="outline" className="text-xs">Enabled</Badge>
+                            <Badge variant="secondary" className="text-xs">Enabled</Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">{tool.description}</p>
@@ -107,6 +133,43 @@ export default function ToolCallingSettingsComponent({
                     </div>
                   ))}
                 </div>
+
+                {/* Brave Search API key input if Brave Search is enabled */}
+                {isBraveSearchEnabled && (
+                  <div className="mt-4 p-3 space-y-3 bg-secondary/20 rounded-md">
+                    <h3 className="font-medium text-sm">Brave Search Configuration</h3>
+                    <p className="text-xs text-muted-foreground">
+                      To enable Brave Search, provide a valid API key.
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="brave-search-api-key" className="text-sm">API Key</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="brave-search-api-key"
+                          type={showApiKey ? "text" : "password"}
+                          placeholder="Enter your Brave Search API key"
+                          value={settings.braveSearchApiKey || ''}
+                          onChange={(e) => updateSettings({ 
+                            braveSearchApiKey: e.target.value 
+                          })}
+                        />
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="icon"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                        >
+                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">{showApiKey ? 'Hide' : 'Show'} API key</span>
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        You can also specify the API key in the URL using ?BRAVE_BASE_AI=your_key
+                      </p>
+                    </div>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
             

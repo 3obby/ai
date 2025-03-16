@@ -28,6 +28,14 @@ import {
 import { Companion } from "../types/companions";
 import { VoiceChatSettings, AISettings } from "../types/settings";
 import { ServerAvatar } from "@/app/shared/components/ui/server-avatar";
+import { 
+  ALL_TOOLS, 
+  BRAVE_SEARCH_TOOLS, 
+  BRAVE_WEB_SEARCH_TOOL, 
+  BRAVE_SUMMARIZER_TOOL,
+  DEFAULT_TOOL_SETTINGS
+} from "../types/tools";
+import { Card } from "@/app/shared/components/ui/card";
 
 interface CompanionSettingsModalProps {
   isOpen: boolean;
@@ -248,6 +256,104 @@ export default function CompanionSettingsModal({
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Tool Calling Settings */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Tool Calling</h3>
+              <Separator />
+              
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center space-x-2 py-2">
+                  <Switch
+                    id={`${companion.id}-tool-calling`}
+                    checked={companion.toolCallingEnabled || 
+                            (companion.toolSettings?.enabled !== undefined ? 
+                             companion.toolSettings.enabled : 
+                             companion.toolCallingEnabled || false)}
+                    onCheckedChange={(value) => {
+                      // Update both the legacy field and the new structure
+                      updateCompanionConfig(companion.id, {
+                        toolCallingEnabled: value,
+                        toolSettings: {
+                          enabled: value,
+                          toolConfig: companion.toolSettings?.toolConfig || DEFAULT_TOOL_SETTINGS
+                        }
+                      });
+                    }}
+                  />
+                  <Label htmlFor={`${companion.id}-tool-calling`} className="text-base">
+                    Enable tool calling
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, this companion will have access to external tools like web search.
+                </p>
+                
+                {(companion.toolCallingEnabled || (companion.toolSettings?.enabled ?? false)) && (
+                  <div className="mt-4 space-y-4">
+                    <h4 className="text-sm font-medium">Tool Configuration</h4>
+                    
+                    {/* Brave Search Tools Section */}
+                    <Card className="p-4 space-y-3">
+                      <h5 className="text-sm font-medium">Brave Search</h5>
+                      <p className="text-xs text-muted-foreground">
+                        Tools powered by the Brave Search API for retrieving information from the web.
+                      </p>
+                      
+                      <div className="space-y-2 pt-1">
+                        {/* Web Search Tool */}
+                        <div className="flex items-center justify-between py-1">
+                          <div className="space-y-0.5">
+                            <Label className="text-sm">{BRAVE_WEB_SEARCH_TOOL.name}</Label>
+                            <p className="text-xs text-muted-foreground">{BRAVE_WEB_SEARCH_TOOL.description}</p>
+                          </div>
+                          <Switch
+                            id={`${companion.id}-${BRAVE_WEB_SEARCH_TOOL.id}`}
+                            checked={companion.toolSettings?.toolConfig?.[BRAVE_WEB_SEARCH_TOOL.id] !== false}
+                            onCheckedChange={(value) => {
+                              updateCompanionConfig(companion.id, {
+                                toolSettings: {
+                                  enabled: companion.toolSettings?.enabled ?? companion.toolCallingEnabled ?? false,
+                                  toolConfig: {
+                                    ...(companion.toolSettings?.toolConfig || DEFAULT_TOOL_SETTINGS),
+                                    [BRAVE_WEB_SEARCH_TOOL.id]: value
+                                  }
+                                }
+                              });
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Summarizer Tool */}
+                        <div className="flex items-center justify-between py-1">
+                          <div className="space-y-0.5">
+                            <Label className="text-sm">{BRAVE_SUMMARIZER_TOOL.name}</Label>
+                            <p className="text-xs text-muted-foreground">{BRAVE_SUMMARIZER_TOOL.description}</p>
+                          </div>
+                          <Switch
+                            id={`${companion.id}-${BRAVE_SUMMARIZER_TOOL.id}`}
+                            checked={companion.toolSettings?.toolConfig?.[BRAVE_SUMMARIZER_TOOL.id] !== false}
+                            onCheckedChange={(value) => {
+                              updateCompanionConfig(companion.id, {
+                                toolSettings: {
+                                  enabled: companion.toolSettings?.enabled ?? companion.toolCallingEnabled ?? false,
+                                  toolConfig: {
+                                    ...(companion.toolSettings?.toolConfig || DEFAULT_TOOL_SETTINGS),
+                                    [BRAVE_SUMMARIZER_TOOL.id]: value
+                                  }
+                                }
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                    
+                    {/* Other tool categories can be added here as they're implemented */}
+                  </div>
+                )}
               </div>
             </div>
 

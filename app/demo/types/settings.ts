@@ -53,6 +53,7 @@ export interface ToolCallingSettings {
   responseFormat?: 'json' | 'markdown' | 'text';
   maxToolCalls?: number;
   toolCallTimeout?: number;
+  braveSearchApiKey?: string; // API key for the Brave Search API
 }
 
 // General AI settings

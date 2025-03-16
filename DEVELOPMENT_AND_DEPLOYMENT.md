@@ -1800,10 +1800,10 @@ Pay particular attention to these event types in the browser console:
 1. **Transcription Events**:
    - `conversation.item.input_audio_transcription.completed` - Final transcription
    - `conversation.item.input_audio_transcription.delta` - Interim transcription updates
-   - `conversation.item.input_audio_transcription.done` - Completion of transcription
+   - `conversation.item.input_audio_transcription.done` - Completion notification
 
 2. **Conversation Events**:
-   - `conversation.item.created` - New conversation item created
+   - `conversation.item.created` - New conversation item created (may contain transcription)
    - `conversation.item.completed` - Conversation item completed
 
 3. **UI Updates**:
@@ -1903,3 +1903,74 @@ The transcription flow works as follows:
 - Voice Activity Detection (VAD) events are used to provide real-time feedback
 - Streaming message with ID 'streaming-transcript' shows in-progress transcriptions
 - Final transcriptions replace the streaming message with a permanent one
+
+## Brave Search Integration
+
+The application integrates with the Brave Search API to enable web search capabilities for both voice and text interactions. This allows companions to retrieve current information from the web.
+
+### Brave Search Tools
+
+The application supports multiple Brave Search tools:
+
+1. **Web Search**: The primary search tool that retrieves and returns search results from the web for a given query.
+
+2. **Summarizer**: A tool that generates concise summaries of search results, providing a more digestible overview of information related to a query.
+
+### Configuration
+
+To use the Brave Search API, you need to set up an API key:
+
+1. **URL Parameter**: Access the demo route with `?BRAVE_BASE_AI=your_key`
+2. **Settings UI**: Enter the key in the settings modal
+3. **Environment Variable**: Set `BRAVE_BASE_AI` in your environment
+
+### Implementation
+
+The Brave Search implementation consists of:
+
+1. **Brave Search Service**: Core service that handles API communication
+   - Located at: `app/demo/services/brave-search-service.ts`
+   - Provides methods for both web search and summarization
+
+2. **API Route**: Server endpoint that handles requests
+   - Located at: `app/api/demo/brave-search/route.ts`
+   - Manages request validation and routing to appropriate service methods
+
+3. **Tool Definition**: Structure defining available tools
+   - Located at: `app/demo/types/tools.ts`
+   - Defines interfaces and configurations for each tool type
+
+4. **Tool Handler**: Integration with the OpenAI function calling system
+   - Located at: `app/api/demo/companion-tool-response/route.ts`
+   - Maps tool calls to the appropriate API endpoints
+
+### Usage
+
+1. Navigate to the `/demo` route
+2. Enable tool calling in the settings modal
+3. Use the search functionality by asking questions that require current information
+
+### Per-Companion Tool Settings
+
+Each companion can have granular tool settings:
+
+1. **Global Toggle**: Enable/disable all tools for a companion
+2. **Individual Tool Toggles**: Enable/disable specific tools like Web Search or Summarizer
+
+To configure:
+1. Click on the companion's avatar to open the companion settings
+2. Under "Tool Calling", enable or disable specific tools
+3. All tools are enabled by default
+
+### API Key Issues
+
+If you encounter issues with the Brave Search API:
+
+1. Check that the key is correctly entered in the settings
+2. Try using the URL parameter method for testing
+3. Verify that the key is valid and has not expired
+4. Monitor the console for detailed error messages
+
+### Pro Plan Features
+
+The Summarizer tool requires a Brave Search Pro plan. If you're using the free tier, only the Web Search tool will work properly.

@@ -18,7 +18,7 @@ import EnhancedVoiceSettings from "./EnhancedVoiceSettings";
 import AISettingsComponent from "./AISettings";
 import ToolCallingSettingsComponent from "./ToolCallingSettings";
 import APISettings from "./APISettings";
-import { DemoSettings, DEFAULT_SETTINGS } from "../../types/settings";
+import { DemoSettings, DEFAULT_SETTINGS, ToolCallingSettings } from "../../types/settings";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -36,6 +36,8 @@ interface SettingsModalProps {
   setActiveCompanionId: (id: string | null) => void;
   isStreaming: boolean;
   handleStopStream?: () => void;
+  toolCallingSettings?: Partial<ToolCallingSettings>;
+  updateToolCallingSettings?: (settings: Partial<ToolCallingSettings>) => void;
 }
 
 export default function SettingsModal({
@@ -53,7 +55,9 @@ export default function SettingsModal({
   activeCompanionId,
   setActiveCompanionId,
   isStreaming,
-  handleStopStream
+  handleStopStream,
+  toolCallingSettings,
+  updateToolCallingSettings
 }: SettingsModalProps) {
   const { toast } = useToast();
   
@@ -143,7 +147,7 @@ export default function SettingsModal({
     }
   };
   
-  const updateToolCallingSettings = (toolSettings: Partial<typeof settings.toolCalling>) => {
+  const handleToolCallingSettingsUpdate = (toolSettings: Partial<typeof settings.toolCalling>) => {
     setSettings(prev => ({
       ...prev,
       toolCalling: {
@@ -155,6 +159,11 @@ export default function SettingsModal({
     // Sync with parent component state where needed
     if (toolSettings.enabled !== undefined && toolSettings.enabled !== isToolCallingEnabled) {
       toggleToolCalling();
+    }
+    
+    // If external handler is provided, call it too
+    if (updateToolCallingSettings) {
+      updateToolCallingSettings(toolSettings);
     }
   };
 
@@ -186,8 +195,8 @@ export default function SettingsModal({
             
             {/* Tool Calling Settings Section */}
             <ToolCallingSettingsComponent
-              settings={settings.toolCalling}
-              updateSettings={updateToolCallingSettings}
+              settings={toolCallingSettings || settings.toolCalling}
+              updateSettings={handleToolCallingSettingsUpdate}
             />
             
             {/* API Settings Section */}

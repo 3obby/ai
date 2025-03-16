@@ -18,6 +18,11 @@ export interface Companion {
     management: number;
   };
   effort: number;             // How much effort in response generation (1-10)
+  toolCallingEnabled?: boolean; // Whether tool calling is enabled for this companion (legacy - for backwards compatibility)
+  toolSettings?: {            // Detailed tool settings configuration
+    enabled: boolean;         // Master toggle for this companion's tool access
+    toolConfig: Record<string, boolean>; // Configuration for individual tools (tool_id -> enabled/disabled)
+  };
   voiceConfig?: {             // Voice and audio stream configuration
     voice?: 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';
     vadMode?: 'auto' | 'sensitive' | 'manual'; // Voice activity detection mode

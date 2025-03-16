@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c1ac7c3",
+      "fullHash": "c1ac7c381bb0b72ad7201136d14061ea6d462245",
+      "date": "2025-03-16 14:07:16 +0700",
+      "author": "3obby",
+      "message": "brave search",
+      "category": "other"
+    },
+    {
       "hash": "ae6e3be",
       "fullHash": "ae6e3be78e91bd3b07d7be92c98c3aca9fd41ccd",
       "date": "2025-03-15 14:07:31 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix navbar layout and user display issues; fix admin API routes",
       "category": "bugfix"
-    },
-    {
-      "hash": "5068e11",
-      "fullHash": "5068e11d776708b2c74cea99e239c6cb1a929eb9",
-      "date": "2025-03-08 01:05:50 +0700",
-      "author": "3obby",
-      "message": "Update Prisma to latest version 6.4.1",
-      "category": "enhancement"
     }
   ]
 }

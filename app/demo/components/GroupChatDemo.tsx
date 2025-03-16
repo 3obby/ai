@@ -36,7 +36,7 @@ export default function GroupChatDemo() {
   const [allRespond, setAllRespond] = useState(false);
   
   // New state variables for tool calling and voice
-  const [isToolCallingEnabled, setIsToolCallingEnabled] = useState<boolean>(false);
+  const [isToolCallingEnabled, setIsToolCallingEnabled] = useState<boolean>(true);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
@@ -74,11 +74,54 @@ export default function GroupChatDemo() {
   const [currentTranscription, setCurrentTranscription] = useState<WhisperTranscriptionResult | null>(null);
   const [transcriptionSegments, setTranscriptionSegments] = useState<string[]>([]);
   
+  // Add state for the Brave Search API key
+  const [braveSearchApiKey, setBraveSearchApiKey] = useState<string>(process.env.NEXT_PUBLIC_BRAVE_BASE_AI || '');
+  
+  // Update the settings state to include the braveSearchApiKey
+  const [settings, setSettings] = useState<DemoSettings>({
+    ...DEFAULT_SETTINGS,
+    ai: {
+      ...DEFAULT_SETTINGS.ai,
+      responseSpeed,
+      allRespond
+    },
+    toolCalling: {
+      ...DEFAULT_SETTINGS.toolCalling,
+      enabled: true,
+      braveSearchApiKey: process.env.NEXT_PUBLIC_BRAVE_BASE_AI || '' // Initialize with env var if available
+    },
+    voiceChat: {
+      ...DEFAULT_SETTINGS.voiceChat
+    }
+  });
+  
+  // Check for URL parameter with Brave Search API key on component mount
+  useEffect(() => {
+    // Check for URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlApiKey = urlParams.get('BRAVE_BASE_AI');
+    
+    if (urlApiKey) {
+      console.log('Using Brave Search API key from URL parameter');
+      setBraveSearchApiKey(urlApiKey);
+      updateToolCallingSettings({ braveSearchApiKey: urlApiKey });
+    } else {
+      // Check localStorage for previously saved key
+      const savedApiKey = localStorage.getItem('BRAVE_BASE_AI');
+      if (savedApiKey) {
+        console.log('Using Brave Search API key from localStorage');
+        setBraveSearchApiKey(savedApiKey);
+        updateToolCallingSettings({ braveSearchApiKey: savedApiKey });
+      }
+    }
+  }, []);
+  
   // Initialize the chat
   useEffect(() => {
     const initializeChat = async () => {
       try {
         setIsLoading(true);
+
         // In a real implementation, we would call the API to create a new group chat
         // For demo purposes, we'll use a timeout to simulate the API call
         setTimeout(() => {
@@ -306,15 +349,40 @@ export default function GroupChatDemo() {
 
   // Function to toggle tool calling mode
   const toggleToolCalling = () => {
-    setIsToolCallingEnabled(!isToolCallingEnabled);
+    const newValue = !isToolCallingEnabled;
+    setIsToolCallingEnabled(newValue);
+    
+    // Also update the settings object to keep them in sync
+    updateToolCallingSettings({ enabled: newValue });
     
     // Notify the user about the mode change
     toast({
-      title: isToolCallingEnabled ? "Tool calling disabled" : "Tool calling enabled",
-      description: isToolCallingEnabled 
-        ? "Companions will now respond normally without using tools." 
-        : "Companions can now use tools to provide more interactive responses.",
+      title: newValue ? "Tool calling capability enabled" : "Tool calling capability disabled",
+      description: newValue 
+        ? "You can now enable tool calling for individual companions in their settings." 
+        : "Tool calling has been disabled globally for all companions.",
     });
+  };
+  
+  // Function to update tool calling settings
+  const updateToolCallingSettings = (toolSettings: Partial<typeof settings.toolCalling>) => {
+    setSettings(prev => ({
+      ...prev,
+      toolCalling: {
+        ...prev.toolCalling,
+        ...toolSettings
+      }
+    }));
+    
+    // Update the Brave API key state if it's provided
+    if (toolSettings.braveSearchApiKey !== undefined) {
+      setBraveSearchApiKey(toolSettings.braveSearchApiKey);
+      
+      // Store in localStorage for persistence
+      if (toolSettings.braveSearchApiKey) {
+        localStorage.setItem('BRAVE_BASE_AI', toolSettings.braveSearchApiKey);
+      }
+    }
   };
   
   // Function to handle starting voice recording
@@ -527,7 +595,25 @@ export default function GroupChatDemo() {
         
         // Call the appropriate API based on whether tool calling is enabled
         let response;
-        if (isToolCallingEnabled) {
+        
+        // Check if tool calling is enabled for this companion and in settings
+        const toolCallingActive = settings.toolCalling.enabled && (companion.toolCallingEnabled ?? false);
+        
+        if (toolCallingActive) {
+          console.log(`Tool calling is enabled for companion ${companion.name}, using companion-tool-response endpoint`);
+          console.log('Brave Search API key available:', !!settings.toolCalling.braveSearchApiKey);
+          
+          // Get the API key from settings
+          const apiKeyToUse = settings.toolCalling.braveSearchApiKey || braveSearchApiKey;
+          
+          // Make sure brave_search is in the allowed tools list
+          const currentAllowedTools = settings.toolCalling.allowedTools || [];
+          if (!currentAllowedTools.includes('brave_search')) {
+            updateToolCallingSettings({ 
+              allowedTools: [...currentAllowedTools, 'brave_search'] 
+            });
+          }
+          
           // Use the tool-enabled endpoint
           response = await fetch('/api/demo/companion-tool-response', {
             method: 'POST',
@@ -537,7 +623,9 @@ export default function GroupChatDemo() {
               userMessage: userMessage.messageType === 'audio' 
                 ? { type: 'audio', transcription: userMessage.content }
                 : userMessage.content,
-              chatHistory
+              chatHistory,
+              braveApiKey: apiKeyToUse, // Pass the Brave Search API key
+              alwaysUseTool: true // Always use the tool in responses
             }),
           });
         } else {
@@ -569,7 +657,7 @@ export default function GroupChatDemo() {
           timestamp: new Date(),
           isUser: false,
           debugInfo: responseData.debugInfo,
-          messageType: isToolCallingEnabled && responseData.debugInfo?.toolsCalled ? 'tool_call' : 'text',
+          messageType: companion.toolCallingEnabled && responseData.debugInfo?.toolsCalled ? 'tool_call' : 'text',
           toolCalls: responseData.debugInfo?.toolsCalled
         };
         
@@ -934,6 +1022,8 @@ export default function GroupChatDemo() {
         setActiveCompanionId={setActiveCompanionId}
         isStreaming={isStreaming}
         handleStopStream={stopAudioStreaming}
+        toolCallingSettings={settings.toolCalling}
+        updateToolCallingSettings={updateToolCallingSettings}
       />
 
       {/* Companion Settings Modal */}

@@ -1,5 +1,6 @@
 import { Companion, ChatHistoryItem } from "../types/companions";
 import { generateCompanionResponse } from "./openai-service";
+import { DEFAULT_TOOL_SETTINGS } from "../types/tools";
 
 // Pre-configured companions for the demo
 export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
@@ -21,7 +22,12 @@ export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
       creative: 4,
       management: 6
     },
-    effort: 8
+    effort: 8,
+    toolCallingEnabled: true,
+    toolSettings: {
+      enabled: true,
+      toolConfig: DEFAULT_TOOL_SETTINGS
+    }
   },
   {
     id: "assistant-2",
@@ -41,7 +47,12 @@ export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
       creative: 9,
       management: 5
     },
-    effort: 7
+    effort: 7,
+    toolCallingEnabled: true,
+    toolSettings: {
+      enabled: true,
+      toolConfig: DEFAULT_TOOL_SETTINGS
+    }
   },
   {
     id: "assistant-3",
@@ -61,7 +72,12 @@ export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
       creative: 5,
       management: 9
     },
-    effort: 8
+    effort: 8,
+    toolCallingEnabled: true,
+    toolSettings: {
+      enabled: true,
+      toolConfig: DEFAULT_TOOL_SETTINGS
+    }
   },
   {
     id: "assistant-4",
@@ -81,7 +97,12 @@ export const PRE_CONFIGURED_COMPANIONS: Companion[] = [
       creative: 3,
       management: 7
     },
-    effort: 9
+    effort: 9,
+    toolCallingEnabled: true,
+    toolSettings: {
+      enabled: true,
+      toolConfig: DEFAULT_TOOL_SETTINGS
+    }
   }
 ];
 
@@ -175,8 +196,8 @@ export async function generateCompanionResponseWithHistory(
   messageHistory: { content: string; isUser: boolean; senderId: string }[]
 ): Promise<{ response: string; debugInfo: any }> {
   // Convert message history to the format expected by the OpenAI service
-  const chatHistory: ChatHistoryItem[] = messageHistory.map(msg => ({
-    role: msg.isUser ? 'user' : 'assistant',
+  const chatHistory = messageHistory.map(msg => ({
+    role: msg.isUser ? 'user' as const : 'assistant' as const,
     content: msg.content,
     name: !msg.isUser ? msg.senderId : undefined
   }));
