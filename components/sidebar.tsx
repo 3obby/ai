@@ -145,8 +145,8 @@ export const Sidebar = ({ userId }: SidebarProps) => {
     },
     {
       icon: Zap,
-      href: "/demo",
-      label: "Demo",
+      href: "/groupchatcontext",
+      label: "Group Chat",
       requiredXP: 0,
     },
   ]

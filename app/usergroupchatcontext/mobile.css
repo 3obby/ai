@@ -1,0 +1,88 @@
+/* Mobile-specific styles for GroupChatContext */
+
+/* Hide scrollbars but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Touch-friendly target sizes */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Improved touch targets for mobile */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  /* Reduce padding on mobile */
+  .mobile-p-reduced {
+    padding: 0.5rem;
+  }
+  
+  /* Full-width elements on mobile */
+  .mobile-full-width {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Bottom safe area padding for notched devices */
+  .mobile-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+}
+
+/* Mobile input optimizations */
+.input-accessible:focus {
+  font-size: 16px; /* Prevents iOS zoom on input focus */
+}
+
+/* Optimize for mobile devices */
+@media (max-width: 640px) {
+  .input-container {
+    position: sticky;
+    bottom: 0;
+    background-color: hsl(var(--background));
+    z-index: 10;
+  }
+  
+  .message-container {
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Bottom sheet animation for mobile modals */
+.bottom-sheet-enter {
+  transform: translateY(100%);
+}
+
+.bottom-sheet-enter-active {
+  transform: translateY(0);
+  transition: transform 300ms ease-out;
+}
+
+.bottom-sheet-exit {
+  transform: translateY(0);
+}
+
+.bottom-sheet-exit-active {
+  transform: translateY(100%);
+  transition: transform 300ms ease-in;
+} 

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "15695d3",
+      "fullHash": "15695d36104f3e8e8ac83fa1fb16d93f8da5bc88",
+      "date": "2025-03-16 23:04:46 +0700",
+      "author": "3obby",
+      "message": "deleted the most important directory as we vibe code",
+      "category": "other"
+    },
+    {
       "hash": "157aef6",
       "fullHash": "157aef620fa4e1c119b752e615ad71dba3198db3",
       "date": "2025-03-16 21:38:41 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix deployment errors by forcing dynamic rendering on all API routes",
       "category": "bugfix"
-    },
-    {
-      "hash": "9c4aa31",
-      "fullHash": "9c4aa31f00f58694e8b24432ec92d6d2d3dafded",
-      "date": "2025-03-08 12:27:28 +0700",
-      "author": "3obby",
-      "message": "Full sync - push all changes including auth migration and API updates",
-      "category": "enhancement"
     }
   ]
 }
