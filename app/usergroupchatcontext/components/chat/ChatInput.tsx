@@ -6,7 +6,6 @@ import { VoiceInputButton } from './VoiceInputButton';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
-import VoiceConversationController from '../voice/VoiceConversationController';
 
 interface ChatInputProps {
   className?: string;
@@ -63,9 +62,6 @@ export function ChatInput({
 
   return (
     <>
-      {/* Voice conversation controller to handle synthesis events */}
-      <VoiceConversationController />
-      
       <form 
         onSubmit={handleSubmit} 
         className={cn(

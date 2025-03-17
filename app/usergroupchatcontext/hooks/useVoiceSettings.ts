@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGroupChatContext } from '../context/GroupChatContext';
 import voiceActivityService from '../services/livekit/voice-activity-service';
 import { VoiceSettings } from '../types';
+import { useLiveKitIntegration } from '../context/LiveKitIntegrationProvider';
 
 interface UseVoiceSettingsReturn {
   voiceSettings: VoiceSettings;
@@ -18,11 +19,19 @@ interface UseVoiceSettingsReturn {
 
 export function useVoiceSettings(): UseVoiceSettingsReturn {
   const { state, dispatch } = useGroupChatContext();
-  const [isListening, setIsListening] = useState(false);
+  const liveKitIntegration = useLiveKitIntegration();
+  const [isListening, setIsListening] = useState(liveKitIntegration?.isListening || false);
   const [isAutoAdjusting, setIsAutoAdjusting] = useState(false);
   const [currentVadThreshold, setCurrentVadThreshold] = useState(
     state.settings?.voiceSettings?.vadThreshold || 0.3
   );
+
+  // Update local state when LiveKit integration state changes
+  useEffect(() => {
+    if (liveKitIntegration) {
+      setIsListening(liveKitIntegration.isListening);
+    }
+  }, [liveKitIntegration?.isListening]);
 
   // Get current voice settings from global context
   const voiceSettings = state.settings?.voiceSettings || {
@@ -81,20 +90,24 @@ export function useVoiceSettings(): UseVoiceSettingsReturn {
     }
   }, [voiceSettings, dispatch]);
 
-  // Start listening (handled by parent components that use this hook)
+  // Start listening using LiveKit integration
   const startListening = useCallback(async () => {
-    // This is a placeholder - actual implementation would connect to
-    // multimodalAgentService or turnTakingService
-    setIsListening(true);
-    return true;
-  }, []);
+    if (!liveKitIntegration) return false;
+    
+    try {
+      await liveKitIntegration.startListening();
+      return true;
+    } catch (error) {
+      console.error('Failed to start listening:', error);
+      return false;
+    }
+  }, [liveKitIntegration]);
 
   // Stop listening
   const stopListening = useCallback(() => {
-    // This is a placeholder - actual implementation would connect to
-    // multimodalAgentService or turnTakingService
-    setIsListening(false);
-  }, []);
+    if (!liveKitIntegration) return;
+    liveKitIntegration.stopListening();
+  }, [liveKitIntegration]);
 
   // Auto-adjust VAD sensitivity
   const autoAdjustVadSensitivity = useCallback(async () => {

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "ec42337",
+      "fullHash": "ec423375782394058fddd0c827cf58a87fed2dfc",
+      "date": "2025-03-17 23:58:20 +0700",
+      "author": "3obby",
+      "message": "trashpush 35",
+      "category": "other"
+    },
+    {
       "hash": "8fdaa97",
       "fullHash": "8fdaa97b4ac52e48c7e8ad56e0abd9205471a22a",
       "date": "2025-03-17 18:46:29 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Remove Apple OAuth provider and update login UI",
       "category": "enhancement"
-    },
-    {
-      "hash": "da372b6",
-      "fullHash": "da372b68d26b30d859dfce3e7f98fd459574a83b",
-      "date": "2025-03-08 13:09:35 +0700",
-      "author": "3obby",
-      "message": "Add basic Privacy Policy and Terms of Service pages",
-      "category": "feature"
     }
   ]
 }

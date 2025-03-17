@@ -296,6 +296,24 @@ export class VoiceActivityService {
     this.threshold = originalThreshold;
     return this.threshold;
   }
+
+  /**
+   * Resume the AudioContext if suspended
+   * This should be called in response to a user gesture
+   */
+  public async resumeAudioContext(): Promise<boolean> {
+    try {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        console.log('Resuming AudioContext after user interaction');
+        await this.audioContext.resume();
+        return true;
+      }
+      return this.audioContext ? this.audioContext.state === 'running' : false;
+    } catch (error) {
+      console.error('Failed to resume AudioContext:', error);
+      return false;
+    }
+  }
 }
 
 // Create a singleton instance

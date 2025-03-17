@@ -59,6 +59,9 @@ export default function VoiceInputButton({
     } else {
       setIsInitializing(true);
       try {
+        // First, resume the AudioContext (user gesture required)
+        await multimodalAgentService.resumeAudioContext();
+        
         const success = await startVoiceListening();
         if (success) {
           await multimodalAgentService.startListening();

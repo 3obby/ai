@@ -159,7 +159,14 @@ function groupChatReducer(state: GroupChatState, action: GroupChatAction): Group
     case 'RESET_CHAT':
       return {
         ...state,
-        messages: [createSystemMessage("New chat started. How can I help you today?")],
+        messages: [{
+          id: 'new-chat-message',
+          content: "New chat started. How can I help you today?",
+          sender: 'system',
+          senderName: 'System',
+          timestamp: new Date(),
+          type: 'text'
+        }],
         typingBots: [],
         error: null,
         interimTranscript: null,
@@ -190,7 +197,7 @@ export function GroupChatProvider({
   initialBots = [],
   initialSettings = {}
 }: GroupChatProviderProps) {
-  // Initialize state with welcome message and any initial bots
+  // Initialize state with any initial bots but NO welcome message
   const initializedState = useMemo(() => {
     return {
       ...initialState,
@@ -199,9 +206,7 @@ export function GroupChatProvider({
         ...initialSettings
       },
       bots: initialBots,
-      messages: [
-        createSystemMessage("Welcome to the AI group chat! How can I help you today?")
-      ]
+      messages: [] // Remove the welcome message here
     };
   }, [initialBots, initialSettings]);
 

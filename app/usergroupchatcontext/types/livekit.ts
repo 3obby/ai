@@ -1,5 +1,6 @@
 import { Room } from 'livekit-client';
 import { RoomSession } from './voice';
+import { VideoGrant } from 'livekit-server-sdk';
 
 // LiveKit Context Type
 export interface LiveKitContextType {
@@ -55,8 +56,9 @@ export interface MultimodalAgentHook {
 export interface LiveKitTokenOptions {
   identity: string;
   name?: string;
+  ttl?: number;
   metadata?: string;
-  ttl?: number; // seconds
+  room?: string;
   permissions?: {
     canPublish?: boolean;
     canSubscribe?: boolean;
@@ -93,4 +95,17 @@ export interface AudioTrackInfo {
   muted: boolean;
   audioLevel: number;
   type: 'local' | 'remote';
+}
+
+export interface RoomSession {
+  roomName: string;
+  token: string;
+  url: string;
+}
+
+export interface LiveKitConnectionOptions {
+  url: string;
+  token: string;
+  roomName: string;
+  autoConnect?: boolean;
 } 

@@ -113,10 +113,59 @@ export const LiveKitProvider: React.FC<LiveKitProviderProps> = ({
     multimodalAgentService.stopListening();
   };
 
+  // Default connection to LiveKit for OpenAI integration
+  const createDefaultSession = async () => {
+    try {
+      // Check if LiveKit credentials are configured
+      const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+      
+      if (!livekitUrl) {
+        console.error('LiveKit URL not configured. Please add NEXT_PUBLIC_LIVEKIT_URL to your .env.local file');
+        setError(new Error('LiveKit credentials missing. Please configure NEXT_PUBLIC_LIVEKIT_URL in your environment.'));
+        return;
+      }
+      
+      console.log('Attempting to connect to LiveKit using URL:', livekitUrl);
+      
+      // Fetch token from the API endpoint within the usergroupchatcontext directory
+      const response = await fetch('/usergroupchatcontext/api/livekit/token?type=user&roomName=default-room&id=default-user');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}${errorData.details ? ` - ${errorData.details}` : ''}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.token) {
+        console.log('Connecting to LiveKit with URL:', livekitUrl);
+        
+        // Initialize multimodal agent service before connecting to ensure proper setup
+        multimodalAgentService.initialize({
+          model: 'gpt-4o',
+          voice: 'nova',
+          voiceSpeed: 1.0
+        });
+        
+        await connect('default-room', data.token, livekitUrl);
+        console.log('Connected to default LiveKit room');
+      } else {
+        console.error('No token received from LiveKit token API');
+        setError(new Error('Failed to get LiveKit token - no token in response'));
+      }
+    } catch (err) {
+      console.error('Failed to create default LiveKit session:', err);
+      setError(err instanceof Error ? err : new Error('Unable to connect to LiveKit services'));
+    }
+  };
+
   // Effect to handle auto-connect if credentials are provided
   useEffect(() => {
     if (autoConnect && initialRoomName && initialToken && initialUrl) {
       connect(initialRoomName, initialToken, initialUrl);
+    } else {
+      // Call the default session creation if no credentials provided
+      createDefaultSession();
     }
 
     // Cleanup on unmount

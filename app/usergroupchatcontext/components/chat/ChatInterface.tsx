@@ -87,10 +87,24 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         <div ref={bottomRef} />
       </div>
       
-      <ChatInput
-        disabled={state.isLoading}
-        placeholder={state.isLoading ? "Processing..." : "Type your message..."}
-      />
+      <div className="border-t p-3">
+        <div className="flex items-center">
+          <ChatInput 
+            disabled={state.isProcessing}
+            placeholder={state.isProcessing ? "Processing..." : "Type your message..."}
+            className="flex-1"
+          />
+        </div>
+        
+        {state.isRecording && (
+          <div className="flex items-center justify-center mt-2">
+            <VoiceActivityIndicator isActive={true} />
+            <span className="ml-2 text-xs text-muted-foreground">
+              Listening...
+            </span>
+          </div>
+        )}
+      </div>
       
       {/* Settings Modal */}
       <SettingsModal 

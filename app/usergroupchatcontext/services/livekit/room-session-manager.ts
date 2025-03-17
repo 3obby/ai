@@ -1,4 +1,4 @@
-import { Room, RemoteParticipant, LocalParticipant, ParticipantEvent, Track, LocalTrack, LocalAudioTrack, AudioTrack } from 'livekit-client';
+import { Room, RemoteParticipant, LocalParticipant, ParticipantEvent, Track, LocalTrack, LocalAudioTrack, AudioTrack, ConnectionState, RoomEvent, ConnectionQuality, RemoteTrack, RemoteTrackPublication, createLocalTracks } from 'livekit-client';
 import livekitService from './livekit-service';
 
 export interface RoomSession {
@@ -95,8 +95,17 @@ export class RoomSessionManager {
     if (!localParticipant) return;
 
     try {
-      // Create a local audio track
-      const audioTrack = await LocalAudioTrack.create();
+      // Create a local audio track using the createLocalTracks function instead of LocalAudioTrack.create
+      const localTracks = await createLocalTracks({
+        audio: true,
+        video: false
+      });
+      
+      if (localTracks.length === 0 || !localTracks[0].kind.includes('audio')) {
+        throw new Error('Failed to create audio track');
+      }
+      
+      const audioTrack = localTracks[0] as LocalAudioTrack;
       
       // Publish the track
       await localParticipant.publishTrack(audioTrack);
