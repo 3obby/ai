@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useGroupChat } from '../../context/GroupChatContext';
+import { useGroupChat } from '../../hooks/useGroupChat';
 import { GroupSettingsPanel } from './GroupSettingsPanel';
 import { BotConfigPanel } from './BotConfigPanel';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { state, dispatch } = useGroupChat();
   const [activeTab, setActiveTab] = useState<'group' | 'bot'>('group');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   
   // Handle animation on open/close
   useEffect(() => {
@@ -33,7 +35,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
   
   const handleConfigureBot = (botId: string) => {
-    dispatch({ type: 'SET_SELECTED_BOT', payload: botId });
+    setSelectedBotId(botId);
     setActiveTab('bot');
   };
   
@@ -44,16 +46,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
+      className={cn(
+        "fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300",
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}
     >
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={handleClose} />
       
       <div 
-        className={`bg-background border shadow-lg w-full overflow-hidden transition-transform duration-300 
-          ${isOpen ? 'translate-y-0 sm:scale-100' : 'translate-y-10 sm:scale-95'}
-          sm:static sm:h-auto sm:rounded-lg sm:w-auto sm:max-w-3xl`}
+        className={cn(
+          "bg-background border shadow-lg w-full overflow-hidden transition-transform duration-300",
+          isOpen ? "translate-y-0 sm:scale-100" : "translate-y-10 sm:scale-95",
+          "sm:static sm:h-auto sm:rounded-lg sm:w-auto sm:max-w-3xl"
+        )}
         style={{
           margin: '0 auto',
           height: 'calc(100vh - 1rem)',
@@ -69,24 +74,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex items-center border-b sticky top-0 bg-background z-10">
           <div className="flex overflow-x-auto hide-scrollbar">
             <button
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${
+              className={cn(
+                "px-4 py-3 text-sm font-medium whitespace-nowrap",
                 activeTab === 'group' 
-                  ? 'bg-muted border-b-2 border-primary' 
-                  : 'hover:bg-muted/50'
-              }`}
+                  ? "bg-muted border-b-2 border-primary" 
+                  : "hover:bg-muted/50"
+              )}
               onClick={() => handleTabChange('group')}
             >
               Group Settings
             </button>
             
             <button
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${
+              className={cn(
+                "px-4 py-3 text-sm font-medium whitespace-nowrap",
                 activeTab === 'bot' 
-                  ? 'bg-muted border-b-2 border-primary' 
-                  : 'hover:bg-muted/50'
-              }`}
+                  ? "bg-muted border-b-2 border-primary" 
+                  : "hover:bg-muted/50"
+              )}
               onClick={() => handleTabChange('bot')}
-              disabled={!state.selectedBotId}
+              disabled={!selectedBotId}
             >
               Bot Configuration
             </button>
@@ -111,7 +118,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             />
           ) : (
             <BotConfigPanel 
-              botId={state.selectedBotId as string} 
+              botId={selectedBotId || ''} 
               onClose={handleClose} 
             />
           )}

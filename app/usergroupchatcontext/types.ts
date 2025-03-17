@@ -39,6 +39,7 @@ export interface Message {
   sender: string; // Bot ID or 'user'
   senderName?: string; // Display name of the sender
   timestamp: number;
+  type: 'text' | 'voice' | 'tool_result';
   metadata?: {
     toolResults?: ToolResult[];
     processing?: ProcessingMetadata;
@@ -65,6 +66,24 @@ export interface ProcessingMetadata {
   usedMockService?: boolean;
 }
 
+// Voice-related settings
+export interface VoiceSettings {
+  vadMode: 'auto' | 'sensitive' | 'manual';
+  vadThreshold?: number; // 0.1-0.9
+  prefixPaddingMs?: number;
+  silenceDurationMs?: number;
+  audioFormat?: 'pcm16' | 'g711_ulaw' | 'g711_alaw';
+  sampleRate?: number;
+  turnDetection?: {
+    threshold?: number;
+    prefixPaddingMs?: number;
+    silenceDurationMs?: number;
+    createResponse?: boolean;
+  };
+  defaultVoice?: string;
+  modality?: 'both' | 'text' | 'audio';
+}
+
 // Settings types
 export type ResponseMode = 'sequential' | 'roundRobin' | 'all';
 
@@ -74,6 +93,7 @@ export interface GroupChatSettings {
   responseMode: 'sequential' | 'parallel';
   maxRecursionDepth: number;
   systemPrompt: string;
+  voiceSettings?: VoiceSettings;
   processing: {
     enablePreProcessing: boolean;
     enablePostProcessing: boolean;
@@ -114,6 +134,7 @@ export type GroupChatAction =
   | { type: 'ADD_BOT'; bot: Bot }
   | { type: 'REMOVE_BOT'; botId: BotId }
   | { type: 'UPDATE_BOT'; botId: BotId; updates: Partial<Bot> }
+  | { type: 'UPDATE_VOICE_SETTINGS'; payload: Partial<VoiceSettings> }
   | { type: 'SET_LOADING'; isLoading: boolean }
   | { type: 'SET_TYPING_BOTS'; botIds: BotId[] }
   | { type: 'ADD_TYPING_BOT'; botId: BotId }

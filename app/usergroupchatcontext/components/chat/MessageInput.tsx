@@ -1,95 +1,91 @@
 'use client';
 
-import React, { useState, useRef, KeyboardEvent } from 'react';
-import { Send, Mic, MicOff } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { SendHorizontal } from 'lucide-react';
+import { useGroupChat } from '../../hooks/useGroupChat';
+import { OpenAIVoiceButton } from './OpenAIVoiceButton';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useGroupChatContext } from '../../context/GroupChatProvider';
+import { Textarea } from '@/components/ui/textarea';
 
 interface MessageInputProps {
-  onSendMessage: (text: string) => void;
-  isProcessing: boolean;
+  className?: string;
   placeholder?: string;
-  disabled?: boolean;
 }
 
-export function MessageInput({
-  onSendMessage,
-  isProcessing,
-  placeholder = 'Type a message...',
-  disabled = false
-}: MessageInputProps) {
-  const [inputValue, setInputValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { state, dispatch } = useGroupChatContext();
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+export function MessageInput({ className, placeholder = "Type a message..." }: MessageInputProps) {
+  const { sendMessage, isProcessing } = useGroupChat();
+  const [message, setMessage] = useState<string>('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [message]);
+
+  const handleSendMessage = () => {
+    if (message.trim() && !isProcessing) {
+      sendMessage(message.trim());
+      setMessage('');
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    }
   };
-  
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isProcessing && inputValue.trim()) {
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendClick();
+      handleSendMessage();
     }
   };
-  
-  const handleSendClick = () => {
-    if (inputValue.trim() && !isProcessing) {
-      onSendMessage(inputValue.trim());
-      setInputValue('');
+
+  const handleVoiceTranscription = (transcript: string) => {
+    if (transcript) {
+      setMessage(prev => prev ? `${prev} ${transcript}` : transcript);
     }
   };
-  
-  const toggleRecording = () => {
-    dispatch({
-      type: 'TOGGLE_RECORDING'
-    });
-    
-    // When stopping recording, focus the input
-    if (state.isRecording && inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-  
+
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        size="icon"
-        variant={state.isRecording ? "destructive" : "outline"}
-        onClick={toggleRecording}
-        disabled={disabled}
-        className="flex-shrink-0"
-        aria-label={state.isRecording ? 'Stop recording' : 'Start recording'}
-      >
-        {state.isRecording ? (
-          <MicOff className="h-4 w-4" />
-        ) : (
-          <Mic className="h-4 w-4" />
-        )}
-      </Button>
+    <div className={cn("relative flex items-center space-x-2", className)}>
+      <div className="relative flex-1">
+        <Textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isProcessing}
+          className="min-h-[40px] w-full resize-none rounded-md border border-input bg-background p-3 pr-12 text-sm focus-visible:ring-1 focus-visible:ring-offset-1 disabled:opacity-50"
+          rows={1}
+        />
+      </div>
       
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputValue}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={isProcessing ? "Processing..." : placeholder}
-        disabled={disabled || state.isRecording}
-        className="flex-1 p-2 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-      />
-      
-      <Button
-        type="button"
-        size="icon"
-        onClick={handleSendClick}
-        disabled={!inputValue.trim() || isProcessing || disabled}
-        className="flex-shrink-0"
-        aria-label="Send message"
-      >
-        <Send className="h-4 w-4" />
-      </Button>
+      <div className="flex shrink-0 space-x-2">
+        <OpenAIVoiceButton 
+          onTranscriptionComplete={handleVoiceTranscription}
+          disabled={isProcessing}
+        />
+        
+        <Button
+          type="button"
+          size="icon"
+          onClick={handleSendMessage}
+          disabled={!message.trim() || isProcessing}
+          aria-label="Send message"
+          className={cn(
+            "h-10 w-10 rounded-full shrink-0",
+            !message.trim() && "opacity-50"
+          )}
+        >
+          <SendHorizontal className="h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 } 

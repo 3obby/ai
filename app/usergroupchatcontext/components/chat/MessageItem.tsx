@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Message } from '../../types';
+import { Message } from '../../types/messages';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MessageItemProps {
@@ -71,7 +71,7 @@ export function MessageItem({
                 {toolResults.map((tool, index) => (
                   <div key={index} className="mb-1 last:mb-0">
                     <div className="font-medium">{tool.toolName}</div>
-                    <div className="truncate">{typeof tool.output === 'string' ? tool.output : JSON.stringify(tool.output).slice(0, 100) + '...'}</div>
+                    <div className="truncate">{typeof tool.result === 'string' ? tool.result : JSON.stringify(tool.result).slice(0, 100) + '...'}</div>
                   </div>
                 ))}
               </div>

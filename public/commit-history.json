@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "35cf597",
+      "fullHash": "35cf59700721548170181472055054a69fc5929c",
+      "date": "2025-03-17 15:57:11 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
       "hash": "15695d3",
       "fullHash": "15695d36104f3e8e8ac83fa1fb16d93f8da5bc88",
       "date": "2025-03-16 23:04:46 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Add redirect for logged-in users at login page and OAuth provider support",
       "category": "feature"
-    },
-    {
-      "hash": "be813e9",
-      "fullHash": "be813e92b547a64c4f23d967d2afca4c7c975dc6",
-      "date": "2025-03-08 12:32:11 +0700",
-      "author": "3obby",
-      "message": "Fix deployment errors by forcing dynamic rendering on all API routes",
-      "category": "bugfix"
     }
   ]
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import { Bot } from '../types/bots';
+import { Bot } from '../types';
 import { Message, createBotMessage } from '../types/messages';
 import { GroupChatSettings } from '../types/settings';
+import { getMockBotResponse } from './mockBotService';
 
 export interface ProcessingContext {
   settings: GroupChatSettings;
@@ -174,18 +175,29 @@ export async function processMessage(
   userMessage: Message,
   bot: Bot,
   context: ProcessingContext,
-  onBotResponse: (botMessage: Message) => void
+  onBotResponse: (botMessage: Message) => void,
+  toolOptions?: {
+    includeToolCalls?: boolean;
+    availableTools?: any[];
+  }
 ): Promise<void> {
   // Pre-process the user message
   const preProcessed = await preProcessMessage(userMessage, bot, context);
   
-  // In a real implementation, this would call an AI API to get a response
-  // For now, we'll just simulate a bot response
-  const simulatedBotResponse = `This is a response from ${bot.name} to: "${preProcessed.content}"`;
+  // Get response from the mock bot service (in a real app, this would call an LLM API)
+  const botResponse = await getMockBotResponse(
+    bot, 
+    preProcessed.content, 
+    context.messages,
+    {
+      includeToolCalls: toolOptions?.includeToolCalls,
+      availableTools: toolOptions?.availableTools
+    }
+  );
   
   // Post-process the bot response
   const postProcessed = await postProcessMessage(
-    simulatedBotResponse,
+    botResponse,
     userMessage,
     bot,
     context
@@ -225,17 +237,23 @@ export async function processMessage(
     
     // Process recursively after a short delay
     setTimeout(() => {
-      processMessage(userMessage, bot, newContext, (recursiveMessage) => {
-        // Add recursion info to the message
-        recursiveMessage.metadata = {
-          ...recursiveMessage.metadata,
-          processingInfo: {
-            ...recursiveMessage.metadata?.processingInfo,
-            recursionDepth: newContext.currentDepth
-          }
-        };
-        onBotResponse(recursiveMessage);
-      });
+      processMessage(
+        userMessage, 
+        bot, 
+        newContext, 
+        (recursiveMessage) => {
+          // Add recursion info to the message
+          recursiveMessage.metadata = {
+            ...recursiveMessage.metadata,
+            processingInfo: {
+              ...recursiveMessage.metadata?.processingInfo,
+              recursionDepth: newContext.currentDepth
+            }
+          };
+          onBotResponse(recursiveMessage);
+        },
+        toolOptions
+      );
     }, 500);
   }
 } 

@@ -1,35 +1,116 @@
 'use client';
 
-import React, { useState } from 'react';
-import { GroupChatProvider } from './context/GroupChatContext';
+import React, { useState, useMemo, useEffect, useId } from 'react';
+import { GroupChatProvider, useGroupChatContext } from './context/GroupChatContext';
+import { BotRegistryProvider, useBotRegistry } from './context/BotRegistryProvider';
+import { ToolCallProvider } from './context/ToolCallProvider';
+import { ToolIntegrationProvider } from './components/tools/ToolIntegrationProvider';
 import { sampleBots } from './data/sampleBots';
 import { defaultGroupChatSettings } from './data/defaultSettings';
 import { ChatInterface } from './components/chat/ChatInterface';
-import { Info, X } from 'lucide-react';
+import { Info, X, Wrench } from 'lucide-react';
+import { ToolPanel } from './components/tools/ToolPanel';
+
+// Component to initialize bots after mounting
+function BotsInitializer() {
+  const { state, dispatch } = useGroupChatContext();
+  const botRegistry = useBotRegistry();
+  const stableId = useId(); // Use a stable ID instead of Date.now()
+  
+  useEffect(() => {
+    // Get the three diverse bots
+    const botIds = ['researcher', 'creative', 'critic'];
+    const availableBots = botRegistry.state.availableBots;
+    
+    // Only initialize if not already initialized
+    if (availableBots.length > 0 && state.messages.length === 0) {
+      // Update group chat settings to include active bots
+      dispatch({
+        type: 'SET_SETTINGS',
+        payload: {
+          activeBotIds: botIds,
+          name: 'AI Team Chat'
+        }
+      });
+      
+      // Add initial system message with a stable ID instead of using Date.now()
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `welcome-message-${stableId}`,
+          content: "Welcome! You're now chatting with a team of three AI assistants - a Research Assistant, a Creative Ideator, and a Critical Thinker. Each has different strengths to help with your questions.",
+          role: 'system',
+          sender: 'system',
+          timestamp: 0, // Use 0 as a stable timestamp for initial message
+          type: 'text'
+        }
+      });
+      
+      console.log("Bots initialized:", availableBots);
+    } else if (availableBots.length === 0) {
+      console.warn("No bots available for initialization");
+    }
+  }, [botRegistry.state.availableBots, dispatch, state.messages.length, stableId]);
+  
+  return null;
+}
 
 export default function GroupChatContextPage() {
   const [infoOpen, setInfoOpen] = useState(false);
+  const [toolPanelOpen, setToolPanelOpen] = useState(false);
+  
+  // Select three diverse bots from the sample bots
+  const activeBots = useMemo(() => {
+    // Using the researcher, creative, and critic for diversity
+    return sampleBots.filter(bot => 
+      ['researcher', 'creative', 'critic'].includes(bot.id)
+    ).map(bot => ({
+      ...bot,
+      enabled: true
+    }));
+  }, []);
 
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden">
       <header className="py-2 px-3 border-b bg-background z-10 flex items-center justify-between">
         <h1 className="text-xl font-bold">Group Chat Context</h1>
-        <button 
-          className="text-muted-foreground hover:text-primary p-1 rounded-full"
-          onClick={() => setInfoOpen(!infoOpen)}
-          aria-label="Toggle information"
-        >
-          <Info className="h-4 w-4" />
-        </button>
+        <div className="flex items-center space-x-2">
+          <button 
+            className="text-muted-foreground hover:text-primary p-1 rounded-full"
+            onClick={() => setToolPanelOpen(!toolPanelOpen)}
+            aria-label="Toggle tool panel"
+          >
+            <Wrench className="h-4 w-4" />
+          </button>
+          <button 
+            className="text-muted-foreground hover:text-primary p-1 rounded-full"
+            onClick={() => setInfoOpen(!infoOpen)}
+            aria-label="Toggle information"
+          >
+            <Info className="h-4 w-4" />
+          </button>
+        </div>
       </header>
       
       <div className="flex-1 overflow-hidden relative">
-        <GroupChatProvider 
-          initialSettings={defaultGroupChatSettings}
-          availableBots={sampleBots}
-        >
-          <ChatInterface className="h-full" />
-        </GroupChatProvider>
+        <BotRegistryProvider initialBots={activeBots}>
+          <ToolCallProvider>
+            <GroupChatProvider>
+              <ToolIntegrationProvider>
+                <BotsInitializer />
+                <div className="flex h-full">
+                  <ChatInterface className="flex-1 h-full" />
+                  
+                  {toolPanelOpen && (
+                    <div className="w-80 border-l h-full overflow-auto">
+                      <ToolPanel className="h-full" />
+                    </div>
+                  )}
+                </div>
+              </ToolIntegrationProvider>
+            </GroupChatProvider>
+          </ToolCallProvider>
+        </BotRegistryProvider>
         
         {/* Mobile-optimized info panel */}
         {infoOpen && (

@@ -1,45 +1,40 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
+import { useGroupChatContext } from '../../context/GroupChatContext';
 import { Message } from '../../types';
-import { MessageItem } from './MessageItem';
-import { useGroupChat } from '../../context/GroupChatContext';
+import { MessageBubble } from './MessageBubble';
+import { cn } from '@/lib/utils';
 
-interface MessageListProps {
-  messages: Message[];
-  className?: string;
-}
-
-export function MessageList({ messages, className = '' }: MessageListProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { state } = useGroupChat();
+export function MessageList() {
+  const { state } = useGroupChatContext();
+  const bottomRef = useRef<HTMLDivElement>(null);
   
-  const { showTimestamps, showAvatars, showDebugInfo } = state.settings.ui;
-
-  // Scroll to bottom when messages change
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [state.messages]);
+  
+  if (state.messages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+        <p className="text-sm">No messages yet</p>
+        <p className="text-xs mt-1">Start a conversation to begin</p>
+      </div>
+    );
+  }
+  
   return (
-    <div className={`flex flex-col w-full h-full overflow-y-auto p-4 ${className}`}>
-      {messages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-          <p>No messages yet</p>
-          <p className="text-sm">Start a conversation to see messages here</p>
-        </div>
-      ) : (
-        messages.map((message) => (
-          <MessageItem 
-            key={message.id} 
-            message={message} 
-            showTimestamp={showTimestamps}
-            showAvatar={showAvatars}
-            showDebugInfo={showDebugInfo}
-          />
-        ))
-      )}
-      <div ref={messagesEndRef} />
+    <div className="flex flex-col p-4 gap-4">
+      {state.messages.map((message) => (
+        <MessageBubble
+          key={message.id}
+          message={message}
+          isUser={message.sender === 'user'}
+          showDebug={state.settings.ui?.showDebugInfo}
+        />
+      ))}
+      <div ref={bottomRef} />
     </div>
   );
 } 

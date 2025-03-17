@@ -4,6 +4,6 @@ import { redirect } from "next/navigation"
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Redirect all users to the groupchatcontext page by default
-  redirect("/groupchatcontext")
+  // Redirect all users to the usergroupchatcontext page by default
+  redirect("/usergroupchatcontext")
 } 
