@@ -41,7 +41,7 @@ function BotsInitializer() {
           content: "Welcome! You're now chatting with a team of three AI assistants - a Research Assistant, a Creative Ideator, and a Critical Thinker. Each has different strengths to help with your questions.",
           role: 'system',
           sender: 'system',
-          timestamp: 0, // Use 0 as a stable timestamp for initial message
+          timestamp: Date.now(), // Use current timestamp instead of 0
           type: 'text'
         }
       });
@@ -72,26 +72,6 @@ export default function GroupChatContextPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden">
-      <header className="py-2 px-3 border-b bg-background z-10 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Group Chat Context</h1>
-        <div className="flex items-center space-x-2">
-          <button 
-            className="text-muted-foreground hover:text-primary p-1 rounded-full"
-            onClick={() => setToolPanelOpen(!toolPanelOpen)}
-            aria-label="Toggle tool panel"
-          >
-            <Wrench className="h-4 w-4" />
-          </button>
-          <button 
-            className="text-muted-foreground hover:text-primary p-1 rounded-full"
-            onClick={() => setInfoOpen(!infoOpen)}
-            aria-label="Toggle information"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-      
       <div className="flex-1 overflow-hidden relative">
         <BotRegistryProvider initialBots={activeBots}>
           <ToolCallProvider>

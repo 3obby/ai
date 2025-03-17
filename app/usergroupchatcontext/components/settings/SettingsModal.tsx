@@ -85,18 +85,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               Group Settings
             </button>
             
-            <button
-              className={cn(
-                "px-4 py-3 text-sm font-medium whitespace-nowrap",
-                activeTab === 'bot' 
-                  ? "bg-muted border-b-2 border-primary" 
-                  : "hover:bg-muted/50"
-              )}
-              onClick={() => handleTabChange('bot')}
-              disabled={!selectedBotId}
-            >
-              Bot Configuration
-            </button>
+            {/* Only show Bot Configuration tab when a bot is selected */}
+            {selectedBotId && (
+              <button
+                className={cn(
+                  "px-4 py-3 text-sm font-medium whitespace-nowrap",
+                  activeTab === 'bot' 
+                    ? "bg-muted border-b-2 border-primary" 
+                    : "hover:bg-muted/50"
+                )}
+                onClick={() => handleTabChange('bot')}
+              >
+                Bot Configuration
+              </button>
+            )}
           </div>
           
           <div className="ml-auto">

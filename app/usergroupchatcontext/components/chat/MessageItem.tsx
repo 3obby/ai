@@ -21,7 +21,12 @@ export function MessageItem({
   const [showDetails, setShowDetails] = useState(false);
   const isUser = message.sender === 'user';
   const timestamp = new Date(message.timestamp);
-  const timeAgo = formatDistanceToNow(timestamp, { addSuffix: true });
+  
+  // Only show timeAgo if timestamp is valid and not too far in the past
+  // This prevents the "55 years ago" issue with Unix epoch or very old dates
+  const timeAgo = timestamp.getTime() > 1000000000000 
+    ? formatDistanceToNow(timestamp, { addSuffix: true })
+    : '';
 
   // Tool results
   const toolResults = message.metadata?.toolResults || [];
@@ -50,7 +55,7 @@ export function MessageItem({
           <div className="whitespace-pre-wrap text-sm">{message.content}</div>
         </div>
         
-        {showTimestamp && (
+        {showTimestamp && timeAgo && (
           <div className="text-[10px] text-muted-foreground mt-0.5 px-1">
             {timeAgo}
           </div>

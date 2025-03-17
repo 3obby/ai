@@ -1,6 +1,7 @@
 import { AudioTrack } from 'livekit-client';
 import roomSessionManager from './room-session-manager';
 import voiceActivityService, { VoiceActivityState } from './voice-activity-service';
+import { EventEmitter } from 'events';
 
 // Interface for the configuration of the multimodal agent
 export interface MultimodalAgentConfig {
@@ -49,6 +50,9 @@ export class MultimodalAgentService {
   private audioOutputHandlers: AudioOutputHandler[] = [];
   private localAudioTrack: AudioTrack | null = null;
   private activeRoomName: string | null = null;
+  private isSynthesizing: boolean = false;
+  private synthQueue: Array<{ text: string; options: { voice?: string; speed?: number; } }> = [];
+  private emitter: EventEmitter = new EventEmitter();
 
   /**
    * Initialize the multimodal agent with the given configuration
@@ -267,6 +271,24 @@ export class MultimodalAgentService {
         console.error('Error in audio output handler:', error);
       }
     });
+  }
+
+  /**
+   * Subscribe to speech synthesis events
+   * @param event Event type
+   * @param listener Event listener
+   */
+  public onSynthesisEvent(event: 'synthesis:start' | 'synthesis:complete' | 'synthesis:error', listener: (...args: any[]) => void): void {
+    this.emitter.on(event, listener);
+  }
+
+  /**
+   * Unsubscribe from speech synthesis events
+   * @param event Event type
+   * @param listener Event listener
+   */
+  public offSynthesisEvent(event: 'synthesis:start' | 'synthesis:complete' | 'synthesis:error', listener: (...args: any[]) => void): void {
+    this.emitter.off(event, listener);
   }
 }
 

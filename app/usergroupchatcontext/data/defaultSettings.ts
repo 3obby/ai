@@ -5,26 +5,20 @@ export const defaultGroupChatSettings: GroupChatSettings = {
   activeBotIds: ['researcher', 'critic', 'creative'],
   responseMode: 'sequential',
   maxRecursionDepth: 3,
-  systemPrompt: `You are participating in a group chat with multiple AI assistants and a human user. 
-  Each assistant has different expertise and personalities. 
-  Respond in a helpful, concise manner staying within your defined role.
-  The user's name is {{userName}}.
-  Current active assistants: {{activeBots}}.
-  Current date and time: {{datetime}}.`,
+  systemPrompt: 'This is a group chat with multiple conversational bots.',
   processing: {
     enablePreProcessing: true,
     enablePostProcessing: true,
-    preprocessingPrompt: 'Analyze this user message and clarify any ambiguities. If the message seems incomplete, unclear, or could benefit from more context, suggest ways to improve it.',
-    postprocessingPrompt: 'Review this response for accuracy, relevance, and helpfulness. Ensure it directly addresses the user\'s query in a clear and concise manner. Correct any factual errors and improve clarity where needed.'
+    preProcessingPrompt: 'Analyze this user message and clarify any ambiguities. If the message seems incomplete, unclear, or could benefit from more context, suggest ways to improve it.',
+    postProcessingPrompt: 'Analyze the assistant response and ensure it is helpful, accurate, and appropriately formatted. Add information where necessary. Remove repetition.',
   },
   ui: {
     theme: 'dark',
     messageBubbleStyle: 'modern',
-    enabledFeatures: {
-      voice: true,
-      debugInfo: true,
-      metadata: false,
-      typing: true
-    }
+    enableVoice: true,
+    enableTyping: true,
+    showTimestamps: true,
+    showAvatars: true,
+    showDebugInfo: true
   }
 }; 

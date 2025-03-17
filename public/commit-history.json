@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "8fdaa97",
+      "fullHash": "8fdaa97b4ac52e48c7e8ad56e0abd9205471a22a",
+      "date": "2025-03-17 18:46:29 +0700",
+      "author": "3obby",
+      "message": "again trash push",
+      "category": "other"
+    },
+    {
       "hash": "35cf597",
       "fullHash": "35cf59700721548170181472055054a69fc5929c",
       "date": "2025-03-17 15:57:11 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-08 13:09:35 +0700",
       "author": "3obby",
       "message": "Add basic Privacy Policy and Terms of Service pages",
-      "category": "feature"
-    },
-    {
-      "hash": "5d2451a",
-      "fullHash": "5d2451a8ea8f3e30b03434c6b8920de3094d74f8",
-      "date": "2025-03-08 12:55:31 +0700",
-      "author": "3obby",
-      "message": "Add redirect for logged-in users at login page and OAuth provider support",
       "category": "feature"
     }
   ]

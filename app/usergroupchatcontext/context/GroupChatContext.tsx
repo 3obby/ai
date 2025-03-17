@@ -59,7 +59,8 @@ function groupChatReducer(state: GroupChatState, action: GroupChatAction): Group
         settings: {
           ...state.settings,
           voiceSettings: {
-            ...state.settings.voiceSettings,
+            vadMode: 'auto', // Default value
+            ...(state.settings.voiceSettings || {}),
             ...action.payload
           }
         }
