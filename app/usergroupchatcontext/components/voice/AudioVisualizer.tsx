@@ -1,86 +1,66 @@
-import React, { useEffect, useRef } from 'react';
+'use client';
+
+import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 interface AudioVisualizerProps {
-  className?: string;
+  audioLevel: number; // 0-1 scale
+  color?: string;
   barCount?: number;
-  barWidth?: number;
-  barGap?: number;
-  minBarHeight?: number;
-  barColor?: string;
-  activeColor?: string;
-  backgroundColor?: string;
-  height?: number;
-  level: number;
+  className?: string;
 }
 
 export default function AudioVisualizer({
-  className = '',
-  barCount = 30,
-  barWidth = 3,
-  barGap = 2,
-  minBarHeight = 3,
-  barColor = '#64748b',
-  activeColor = '#0ea5e9',
-  backgroundColor = 'transparent',
-  height = 40,
-  level = 0,
+  audioLevel,
+  color = 'bg-primary',
+  barCount = 20,
+  className
 }: AudioVisualizerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isActive = level > 0.1;
-  
-  // Calculate the total width based on bar count, width, and gap
-  const totalWidth = barCount * (barWidth + barGap) - barGap;
-  
-  // Effect to draw the audio visualization
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // Generate visualization bars based on current audio level
+  const bars = useMemo(() => {
+    const bars = [];
+    const normalizedLevel = Math.min(Math.max(audioLevel, 0), 1);
     
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Generate random bar heights based on the level
-    // In a real implementation, this would be based on frequency data
-    const bars = Array.from({ length: barCount }, () => {
-      const randomFactor = 0.5 + Math.random() * 0.5;
-      const heightFactor = level * randomFactor;
-      return minBarHeight + heightFactor * (height - minBarHeight);
-    });
-    
-    // Draw the bars
     for (let i = 0; i < barCount; i++) {
-      const barHeight = bars[i];
-      const x = i * (barWidth + barGap);
-      const y = (height - barHeight) / 2;
+      // Calculate height for this bar (0-100%)
+      let heightPercentage = 0;
       
-      // Use active color when speaking, otherwise use the regular bar color
-      ctx.fillStyle = isActive ? activeColor : barColor;
-      ctx.fillRect(x, y, barWidth, barHeight);
+      // Generate a smooth, natural-looking visualization
+      // Each bar has a different threshold at which it becomes visible
+      const barThreshold = i / barCount;
+      
+      if (normalizedLevel > barThreshold) {
+        // Calculate how far above threshold this level is (0-1)
+        const aboveThreshold = (normalizedLevel - barThreshold) / (1 - barThreshold);
+        
+        // Add some randomness for a more natural look
+        const randomFactor = 0.8 + Math.random() * 0.4; // 0.8-1.2
+        heightPercentage = Math.min(aboveThreshold * randomFactor * 100, 100);
+      }
+      
+      bars.push(
+        <div 
+          key={i} 
+          className={cn("w-1 rounded-sm mx-0.5", color)}
+          style={{ 
+            height: `${heightPercentage}%`,
+            transition: 'height 50ms ease'
+          }}
+        />
+      );
     }
-  }, [
-    isActive,
-    level,
-    barCount,
-    barWidth,
-    barGap,
-    minBarHeight,
-    height,
-    barColor,
-    activeColor,
-    backgroundColor
-  ]);
-  
+    
+    return bars;
+  }, [audioLevel, barCount, color]);
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={totalWidth}
-      height={height}
-      className={`rounded ${className}`}
-    />
+    <div 
+      className={cn(
+        "w-full h-full flex items-end justify-center", 
+        className
+      )}
+    >
+      {bars}
+    </div>
   );
 } 

@@ -20,6 +20,7 @@ export interface VoiceSettings {
   
   // Default Voice
   defaultVoice?: string;
+  voiceSpeed?: number; // 0.5 to 2.0, controls speech rate
   modality?: 'both' | 'text' | 'audio';
 }
 

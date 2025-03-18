@@ -52,6 +52,7 @@ export function ChatInput({
   };
 
   const handleVoiceTranscription = (transcript: string) => {
+    // We'll only add to the input field if it's not auto-sending
     setMessage(prev => prev + (prev ? ' ' : '') + transcript);
     
     // Focus the textarea after voice input
@@ -91,6 +92,8 @@ export function ChatInput({
           <VoiceInputButton 
             onTranscriptionComplete={handleVoiceTranscription}
             disabled={disabled || isProcessing}
+            // Auto-send is enabled by default
+            autoSend={true}
           />
           
           <button

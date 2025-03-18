@@ -118,6 +118,7 @@ export interface GroupChatSettings {
 export interface GroupChatState {
   settings: GroupChatSettings;
   messages: Message[];
+  bots: Bot[];
   isRecording: boolean;
   isProcessing: boolean;
   settingsOpen: boolean;

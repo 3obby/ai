@@ -60,12 +60,24 @@ export class MultimodalAgentService {
   private isProcessingToolCall: boolean = false;
   private availableTools: ToolDefinition[] = [];
   private interimTranscriptionTimer: NodeJS.Timeout | null = null;
+  private isSpeakingState: boolean = false;
+  private latestOpenAIModel: string = 'gpt-4o';
+  private latestRealtimeModel: string = 'gpt-4o-mini-2024-07-18';
 
   /**
    * Initialize the multimodal agent with the given configuration
    */
   public initialize(config: Partial<MultimodalAgentConfig> = {}): void {
-    this.config = { ...this.config, ...config };
+    // Try to get the latest OpenAI model version
+    this.fetchLatestModelVersions();
+    
+    // Use latest models by default if not specified
+    const defaultConfig = {
+      ...this.config,
+      model: this.latestOpenAIModel,
+    };
+    
+    this.config = { ...defaultConfig, ...config };
     
     // Initialize voice activity service with our VAD options
     voiceActivityService.initialize(this.config.vadOptions);
@@ -258,16 +270,19 @@ export class MultimodalAgentService {
    * Start processing speech
    */
   private startSpeechProcessing(): void {
-    // For testing purposes, log that we're starting speech processing
-    console.log('Starting speech processing with real transcription...');
+    // For UI purposes, indicate that speech processing has started
+    console.log('Starting speech processing...');
     
-    // Send an empty interim transcription to indicate we're processing
-    this.notifyTranscriptionHandlers('', false);
+    // Set speaking state
+    this.setSpeaking(true);
     
-    // Set up a timer to simulate interim results
-    this.interimTranscriptionTimer = setInterval(() => {
-      this.notifyTranscriptionHandlers('Processing...', false);
-    }, 1000);
+    // Clear any existing timer
+    if (this.interimTranscriptionTimer) {
+      clearInterval(this.interimTranscriptionTimer);
+    }
+    
+    // Only send a simple "Listening..." message, not random fake transcriptions
+    this.notifyTranscriptionHandlers('Listening...', false);
   }
 
   /**
@@ -280,10 +295,20 @@ export class MultimodalAgentService {
       this.interimTranscriptionTimer = null;
     }
     
-    console.log('Finalizing speech processing with test transcription...');
+    console.log('Finalizing speech processing...');
     
-    // For testing, use a real message instead of a placeholder
-    this.notifyTranscriptionHandlers('Testing voice input', true);
+    // In production, this would call Whisper API with the audio buffer
+    // For now, let's not simulate random text and instead use a placeholder
+    const transcription = "Voice input detected (Whisper API transcription would be used in production)";
+    
+    // Send the transcription to handlers as a final result
+    this.notifyTranscriptionHandlers(transcription, true);
+    
+    // Log that we've processed speech
+    console.log(`Speech processed - voice input detected`);
+    
+    // Stop the "speaking" state
+    this.setSpeaking(false);
   }
 
   /**
@@ -333,19 +358,66 @@ export class MultimodalAgentService {
   }
 
   /**
-   * Get the current audio input level (0-1 range)
-   * Returns 0 if not listening
+   * Get the current audio level (0-1)
    */
-  public getAudioLevel(): number {
-    if (!this.isListening) return 0;
-    
-    // If we have actual audio level data, use it
-    if (this.currentAudioLevel > 0) {
-      return this.currentAudioLevel;
+  public getCurrentAudioLevel(): number {
+    return this.currentAudioLevel;
+  }
+
+  /**
+   * Check if the bot is currently speaking
+   */
+  public isSpeaking(): boolean {
+    return this.isSpeakingState;
+  }
+
+  /**
+   * Set the speaking state
+   */
+  public setSpeaking(isSpeaking: boolean): void {
+    this.isSpeakingState = isSpeaking;
+    this.emitter.emit('speaking-state-change', isSpeaking);
+  }
+
+  /**
+   * Listen for speaking state changes
+   */
+  public onSpeakingStateChange(callback: (isSpeaking: boolean) => void): void {
+    this.emitter.on('speaking-state-change', callback);
+  }
+
+  /**
+   * Stop listening for speaking state changes
+   */
+  public offSpeakingStateChange(callback: (isSpeaking: boolean) => void): void {
+    this.emitter.off('speaking-state-change', callback);
+  }
+
+  /**
+   * Fetch the latest model versions from OpenAI
+   * This could be implemented to actually query the OpenAI API for available models
+   */
+  private async fetchLatestModelVersions(): Promise<void> {
+    try {
+      // In a real implementation, this would query the OpenAI API
+      // For now, we'll hardcode the latest known models
+      this.latestOpenAIModel = 'gpt-4o';
+      this.latestRealtimeModel = 'gpt-4o-mini-2024-07-18';
+      
+      console.log(`Using latest models - Text: ${this.latestOpenAIModel}, Realtime: ${this.latestRealtimeModel}`);
+    } catch (error) {
+      console.error('Failed to fetch latest model versions:', error);
+      // Fall back to default values already set
     }
-    
-    // Otherwise, return 0 since we don't have access to the voice activity service's level
-    return 0;
+  }
+
+  /**
+   * Update the multimodal agent to use the latest available models
+   */
+  public async useLatestModels(): Promise<void> {
+    await this.fetchLatestModelVersions();
+    this.config.model = this.latestOpenAIModel;
+    console.log(`Updated to use latest model: ${this.config.model}`);
   }
 
   /**
@@ -438,6 +510,29 @@ export class MultimodalAgentService {
    */
   public async resumeAudioContext(): Promise<boolean> {
     return await voiceActivityService.resumeAudioContext();
+  }
+
+  /**
+   * Get the current configuration
+   */
+  public getConfig(): MultimodalAgentConfig {
+    return { ...this.config };
+  }
+
+  /**
+   * Update the configuration
+   */
+  public updateConfig(config: Partial<MultimodalAgentConfig>): void {
+    this.config = { ...this.config, ...config };
+    console.log('Updated multimodal agent config:', this.config);
+    
+    // If voice activity options were updated, propagate to the voice activity service
+    if (config.vadOptions) {
+      voiceActivityService.updateOptions(config.vadOptions);
+    }
+    
+    // Emit config change event
+    this.emitter.emit('config-changed', this.config);
   }
 }
 

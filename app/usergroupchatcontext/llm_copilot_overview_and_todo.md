@@ -365,7 +365,7 @@ export type GroupChatAction =
 ├── k.md (21.1KB)
 ├── ka.md (7.8KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (19KB)
+├── llm_copilot_overview_and_todo.md (15.6KB)
 ├── mobile.css (1.7KB)
 ├── page.tsx (5.2KB)
 ├── scripts/

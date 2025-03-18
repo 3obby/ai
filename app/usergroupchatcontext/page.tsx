@@ -87,7 +87,8 @@ export default function GroupChatContextPage() {
                     <ChatInterface className="flex-1 h-full" />
                     <VoiceIntegration />
                     <VoiceResponseManager />
-                    <VoiceCommandController commandPrefix="system" />
+                    {/* Commenting out to prevent unwanted transcriptions */}
+                    {/* <VoiceCommandController commandPrefix="system" /> */}
                   </div>
                 </ToolIntegrationProvider>
               </LiveKitIntegrationProvider>
