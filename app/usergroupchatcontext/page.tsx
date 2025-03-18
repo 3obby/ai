@@ -157,18 +157,25 @@ function BotsInitializer() {
         }
       });
       
-      // Add initial system message with a fixed ID
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: 'welcome-message',
-          content: "Hello! I'm your AI assistant powered by the latest GPT model. I can help with a wide range of questions and tasks. You can type your messages and I'll respond with text. If you'd like to use voice input and hear my responses, click the microphone button in the message box to activate voice mode.",
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
+      // Check if a welcome message already exists before adding a new one
+      const hasWelcomeMessage = state.messages.some(msg => 
+        msg.role === 'system' && msg.sender === 'system' && msg.content.includes("I'm your AI assistant")
+      );
+      
+      if (!hasWelcomeMessage) {
+        // Add initial system message with a unique ID including timestamp
+        dispatch({
+          type: 'ADD_MESSAGE',
+          payload: {
+            id: `welcome-message-${Date.now()}`,
+            content: "Hello! I'm your AI assistant powered by the latest GPT model. I can help with a wide range of questions and tasks. You can type your messages and I'll respond with text. If you'd like to use voice input and hear my responses, click the microphone button in the message box to activate voice mode.",
+            role: 'system',
+            sender: 'system',
+            timestamp: Date.now(),
+            type: 'text'
+          }
+        });
+      }
       
       console.log("Bot initialized:", availableBots.find(bot => bot.id === botId));
     } else if (availableBots.length === 0) {

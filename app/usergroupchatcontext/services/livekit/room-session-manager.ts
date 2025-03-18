@@ -6,7 +6,7 @@ export interface RoomSession {
   participants: Map<string, RemoteParticipant | LocalParticipant>;
   audioTracks: Map<string, AudioTrack>;
   connectionState: ConnectionState;
-  reconnectAttempts?: number;
+  reconnectAttempts: number;
 }
 
 export class RoomSessionManager {
@@ -16,27 +16,36 @@ export class RoomSessionManager {
   private reconnectInterval: number = 2000; // 2 seconds between reconnect attempts
   private lastTokens: Map<string, string> = new Map(); // Store tokens for reconnection
   private lastUrls: Map<string, string> = new Map(); // Store URLs for reconnection
+  private voiceModeActive: boolean = false; // Track if user is in voice mode
 
   /**
    * Creates a new room session with retry logic
    */
-  public async createSession(roomName: string, token: string, livekitUrl: string): Promise<RoomSession> {
+  public async createSession(roomName: string, token: string | {token: string}, livekitUrl: string): Promise<RoomSession> {
     console.log(`Creating LiveKit session for room ${roomName}`);
     
+    // Set voice mode as active when creating a session
+    this.voiceModeActive = true;
+    
+    // Extract token string if it's an object
+    const tokenString = typeof token === 'object' && token !== null && 'token' in token 
+      ? token.token 
+      : token;
+    
     // Store token and URL for potential reconnection
-    this.lastTokens.set(roomName, token);
+    this.lastTokens.set(roomName, tokenString);
     this.lastUrls.set(roomName, livekitUrl);
 
     try {
       // Initialize the LiveKit service with the room details
       livekitService.initialize({
         url: livekitUrl,
-        token: token, 
+        token: tokenString, 
         roomName: roomName
       });
 
       // Connect to the room with retries built in to the service
-      const room = await livekitService.connect(livekitUrl, token, {
+      const room = await livekitService.connect(livekitUrl, tokenString, {
         maxRetries: this.maxReconnectAttempts,
         retryDelayMs: this.reconnectInterval
       });
@@ -81,7 +90,8 @@ export class RoomSessionManager {
         roomName,
         participants: new Map(),
         audioTracks: new Map(),
-        connectionState: ConnectionState.Disconnected
+        connectionState: ConnectionState.Disconnected,
+        reconnectAttempts: 0
       };
       
       this.sessions.set(roomName, failedSession);
@@ -100,10 +110,16 @@ export class RoomSessionManager {
       console.log(`LiveKit connection state changed for room ${session.roomName}: ${state}`);
       session.connectionState = state;
       
-      // Handle disconnection with automatic reconnection attempts
+      // Handle disconnection with automatic reconnection attempts - only if voice mode is still active
       if (state === ConnectionState.Disconnected) {
-        // Ensure reconnectAttempts is initialized
-        session.reconnectAttempts = session.reconnectAttempts ?? 0;
+        // Skip reconnection if voice mode is no longer active
+        if (!this.voiceModeActive) {
+          console.log(`Not attempting reconnection because voice mode is inactive for room ${session.roomName}`);
+          return;
+        }
+        
+        // Initialize reconnection attempts tracking if needed
+        session.reconnectAttempts = typeof session.reconnectAttempts === 'number' ? session.reconnectAttempts : 0;
         
         // Get stored token and URL
         const token = this.lastTokens.get(session.roomName);
@@ -182,6 +198,9 @@ export class RoomSessionManager {
     const session = this.sessions.get(roomName);
     if (!session) return;
 
+    // Set voice mode to inactive when closing the session
+    this.voiceModeActive = false;
+    
     // Clean up token and URL storage
     this.lastTokens.delete(roomName);
     this.lastUrls.delete(roomName);
@@ -195,9 +214,26 @@ export class RoomSessionManager {
   }
 
   /**
+   * Set voice mode active state
+   */
+  public setVoiceModeActive(active: boolean): void {
+    console.log(`Setting voice mode active: ${active}`);
+    this.voiceModeActive = active;
+    
+    // If voice mode is turned off, disconnect immediately
+    if (!active && this.activeRoomName) {
+      console.log(`Voice mode deactivated, closing session for ${this.activeRoomName}`);
+      this.closeSession(this.activeRoomName);
+    }
+  }
+
+  /**
    * Enables local audio publication with enhanced error handling
    */
   public async enableLocalAudio(): Promise<LocalAudioTrack | undefined> {
+    // Set voice mode active when enabling audio
+    this.voiceModeActive = true;
+    
     const room = livekitService.getRoom();
     if (!room || !this.activeRoomName) {
       console.warn('Cannot enable local audio: no active room');
@@ -237,7 +273,14 @@ export class RoomSessionManager {
       
       // Create a local audio track using the createLocalTracks function
       const localTracks = await createLocalTracks({
-        audio: audioConstraints,
+        audio: {
+          // Set specific audio constraints to improve WebRTC connection stability
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,  // Use mono for better bandwidth/stability
+          sampleRate: 44100 // CD quality is sufficient and more stable
+        },
         video: false
       });
       
@@ -254,7 +297,22 @@ export class RoomSessionManager {
       
       while (!publishSuccess && publishAttempts < maxPublishAttempts) {
         try {
-          await localParticipant.publishTrack(audioTrack);
+          // Add a slight delay before publishing to allow WebRTC connection to stabilize
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // First ensure we have a stable ICE connection
+          if (room.state !== 'connected') {
+            console.log('Room not fully connected, waiting before publishing track...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          // Now try to publish with lower bitrate for better stability
+          await localParticipant.publishTrack(audioTrack, {
+            simulcast: false,  // Disable simulcast for audio (not needed)
+            audioBitrate: 32000, // Use 32 kbps for voice (good quality, better stability)
+            dtx: true  // Enable discontinuous transmission for better bandwidth
+          });
+          
           publishSuccess = true;
           console.log('Successfully published audio track');
         } catch (publishError) {
@@ -265,8 +323,8 @@ export class RoomSessionManager {
             throw publishError;
           }
           
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Wait longer before retrying (increasing delay)
+          await new Promise(resolve => setTimeout(resolve, 1000 * publishAttempts));
         }
       }
 
@@ -293,7 +351,7 @@ export class RoomSessionManager {
         }
       }
       
-      // Emit an event for the UI to handle
+      // Dispatch event to notify UI
       if (typeof document !== 'undefined') {
         document.dispatchEvent(new CustomEvent('livekit-audio-error', {
           detail: { error: errorMessage }
@@ -417,4 +475,4 @@ export class RoomSessionManager {
 
 // Create a singleton instance
 const roomSessionManager = new RoomSessionManager();
-export default roomSessionManager; 
+export default roomSessionManager;

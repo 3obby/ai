@@ -859,7 +859,7 @@ export class MultimodalAgentService {
       }
       
       // Get a LiveKit token from our API with error handling and retry logic
-      let token = '';
+      let tokenData = null;
       let roomName = 'default-room';
       let retryCount = 0;
       const maxRetries = 3;
@@ -867,19 +867,18 @@ export class MultimodalAgentService {
       while (retryCount < maxRetries) {
         try {
           console.log(`Fetching LiveKit token (attempt ${retryCount + 1}/${maxRetries})...`);
-          const response = await fetch('/api/livekit-token');
+          const response = await fetch('/usergroupchatcontext/api/livekit-token');
           
           if (!response.ok) {
             throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
           }
           
-          const data = await response.json();
-          if (!data.token) {
+          tokenData = await response.json();
+          if (!tokenData.token) {
             throw new Error('No token received from LiveKit token API');
           }
           
-          token = data.token;
-          roomName = data.roomName || 'default-room';
+          roomName = tokenData.roomName || 'default-room';
           break; // Successfully got token, exit retry loop
         } catch (tokenError) {
           console.error(`Token fetch error (attempt ${retryCount + 1}):`, tokenError);
@@ -897,8 +896,9 @@ export class MultimodalAgentService {
       
       // Connect to LiveKit using roomSessionManager with proper error handling
       try {
-        console.log('Creating LiveKit session with token, length:', token.length);
-        await roomSessionManager.createSession(roomName, token, livekitUrl);
+        // Important fix: Pass the entire tokenData object, not just the token string
+        console.log('Creating LiveKit session with token data');
+        await roomSessionManager.createSession(roomName, tokenData, livekitUrl);
         console.log('LiveKit connection established successfully');
         return true;
       } catch (sessionError) {

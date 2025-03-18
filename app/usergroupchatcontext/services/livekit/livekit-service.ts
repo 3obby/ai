@@ -47,7 +47,7 @@ export class LiveKitService {
    */
   public async connect(
     url: string, 
-    token: string, 
+    token: string | {token: string}, 
     options?: {
       maxRetries?: number;
       retryDelayMs?: number;
@@ -56,10 +56,20 @@ export class LiveKitService {
     const maxRetries = options?.maxRetries || 3;
     const retryDelayMs = options?.retryDelayMs || 1000;
     
+    // Extract token string if it's an object (fix for common issue with API responses)
+    let tokenString: string;
+    if (typeof token === 'object' && token !== null && 'token' in token) {
+      tokenString = token.token;
+    } else if (typeof token === 'string') {
+      tokenString = token;
+    } else {
+      throw new Error('Invalid token format. Expected string or object with token property.');
+    }
+    
     // Enhanced debugging
     console.log('LiveKit connect attempt:', {
       url: url,
-      tokenLength: token ? token.length : 'token is undefined',
+      tokenLength: tokenString ? tokenString.length : 'token is undefined',
       existingRoomState: this.room ? this.room.state : 'no room',
       hasRoom: !!this.room
     });
@@ -69,7 +79,7 @@ export class LiveKitService {
       throw new Error('LiveKit URL is required for connection');
     }
     
-    if (!token) {
+    if (!tokenString) {
       throw new Error('LiveKit token is required for connection');
     }
     
@@ -126,7 +136,7 @@ export class LiveKitService {
         }
         
         console.log('Connecting to LiveKit room...');
-        await this.room.connect(url, token);
+        await this.room.connect(url, tokenString);
         console.log('Successfully connected to LiveKit room');
         
         // Store the current URL

@@ -40,6 +40,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [state.messages, state.typingBotIds]);
 
+  // Reset interrupt toggle when voice mode changes
+  useEffect(() => {
+    // When entering voice mode, ensure interruptions are disabled by default
+    if (isInVoiceMode) {
+      setAllowInterruptions(false);
+    }
+  }, [isInVoiceMode]);
+
   // Listen for bot speaking state changes and disable listening when speaking
   useEffect(() => {
     const handleSpeakingChange = (isSpeaking: boolean) => {
@@ -57,7 +65,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     return () => {
       multimodalAgentService.offSpeakingStateChange(handleSpeakingChange);
     };
-  }, [allowInterruptions]);
+  }, [allowInterruptions, isListening]);
 
   const toggleSettings = () => {
     setSettingsOpen(!settingsOpen);

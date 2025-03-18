@@ -9,6 +9,12 @@ import { useVoiceSettings } from '../../hooks/useVoiceSettings';
 import VoiceOverlay from '../voice/VoiceOverlay';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import React from 'react';
+import { VoiceSynthesisService } from '../../services/voiceSynthesisService';
+import roomSessionManager from '../../services/livekit/room-session-manager';
+import { useLiveKit } from '../../context/LiveKitProvider';
+
+// Create a single instance of the service for use in this component
+const voiceSynthesisService = new VoiceSynthesisService();
 
 interface VoiceInputButtonProps {
   onTranscriptionComplete: (transcript: string) => void;
@@ -44,6 +50,8 @@ export function VoiceInputButton({
     stopListening: stopVoiceListening
   } = useVoiceSettings();
   
+  const liveKit = useLiveKit(); // Get LiveKit context
+  
   const {
     isRecording,
     transcript,
@@ -61,6 +69,10 @@ export function VoiceInputButton({
 
   // Handle transcription from LiveKit
   useEffect(() => {
+    // Skip setting up LiveKit transcription handler if not in voice mode
+    // This prevents duplicate processing of transcriptions
+    if (!isVoiceEnabled || !isLiveKitListening) return;
+    
     const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
       if (isFinal && text.trim()) {
         console.log('Final transcription received:', text.trim());
@@ -75,7 +87,8 @@ export function VoiceInputButton({
           // Update the last sent message
           lastSentMessageRef.current = text.trim();
           
-          // Add to chat and send message - explicitly mark as voice message type
+          // LiveKitIntegrationProvider will also handle this message, but we need to
+          // make sure it's explicitly sent as a 'voice' message type for proper routing
           sendMessage(text.trim(), 'voice');
         } else {
           // Just add to input field
@@ -93,7 +106,7 @@ export function VoiceInputButton({
     return () => {
       multimodalAgentService.offTranscription(handleLiveKitTranscription);
     };
-  }, [onTranscriptionComplete, autoSend, sendMessage, lastSentMessageRef]);
+  }, [onTranscriptionComplete, autoSend, sendMessage, lastSentMessageRef, isVoiceEnabled, isLiveKitListening]);
 
   // When recording is complete and we have a transcript
   useEffect(() => {
@@ -157,6 +170,45 @@ export function VoiceInputButton({
       } else {
         setIsInitializing(true);
         try {
+          // Check if LiveKit is already connected, if not initialize it
+          if (!liveKit.isConnected) {
+            try {
+              // Get LiveKit URL from environment variable
+              const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+              if (!livekitUrl) {
+                throw new Error('LiveKit URL not configured');
+              }
+              
+              console.log('Initializing LiveKit connection after user interaction...');
+              
+              // Fetch token
+              const response = await fetch('/usergroupchatcontext/api/livekit/token?type=user&roomName=default-room&id=default-user');
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`Failed to get LiveKit token: ${response.status} ${errorData.details || ''}`);
+              }
+              
+              const data = await response.json();
+              if (!data.token) {
+                throw new Error('Invalid LiveKit token response');
+              }
+              
+              // Initialize the multimodal agent
+              multimodalAgentService.initialize({
+                model: 'gpt-4o',
+                voice: 'nova',
+                voiceSpeed: 1.0
+              });
+              
+              // Connect to LiveKit
+              await liveKit.connect('default-room', data.token, livekitUrl);
+              console.log('LiveKit initialized after user interaction');
+            } catch (initError) {
+              console.error('Error initializing LiveKit connection:', initError);
+              throw new Error('Failed to establish voice connection: ' + (initError instanceof Error ? initError.message : String(initError)));
+            }
+          }
+          
           // First, try to resume the AudioContext (this requires user interaction)
           // Add retry logic for AudioContext resume
           let audioContextResumed = false;
@@ -197,9 +249,39 @@ export function VoiceInputButton({
               success = await startVoiceListening();
               
               if (success) {
-                await multimodalAgentService.startListening();
-                setShowVoiceOverlay(true);
-                break; // Success! Exit the retry loop
+                // Before starting to listen, ensure roomSessionManager knows we're in voice mode
+                roomSessionManager.setVoiceModeActive(true);
+                
+                // Wait a moment to ensure everything is initialized properly
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Start the multimodal agent listening - this should trigger the voice recognition
+                try {
+                  await multimodalAgentService.startListening();
+                  
+                  // Add a message to chat to confirm voice mode activation
+                  sendMessage("Voice mode activated. You can speak now.", "text");
+                  
+                  // Show the voice overlay
+                  setShowVoiceOverlay(true);
+                  break; // Success! Exit the retry loop
+                } catch (listenerError) {
+                  console.error('Error starting multimodal agent listening:', listenerError);
+                  
+                  // Try to recover automatically
+                  roomSessionManager.setVoiceModeActive(true);
+                  
+                  // Use a more basic approach as fallback
+                  const webSpeechAvailable = multimodalAgentService.isWebSpeechAvailable();
+                  if (webSpeechAvailable) {
+                    console.log('Using Web Speech API as fallback');
+                    sendMessage("Voice mode activated with fallback transcription. You can speak now.", "text");
+                    setShowVoiceOverlay(true);
+                    break;
+                  } else {
+                    throw new Error('Voice recognition unavailable. Please try another browser.');
+                  }
+                }
               } else {
                 console.log(`Failed to start voice listening (attempt ${retryCount + 1})...`);
                 retryCount++;
@@ -226,6 +308,9 @@ export function VoiceInputButton({
         } catch (error) {
           console.error('Failed to start listening:', error);
           setAudioContextError(error instanceof Error ? error.message : 'Failed to initialize audio');
+          
+          // Add error message to chat
+          sendMessage(`Voice mode error: ${error instanceof Error ? error.message : 'Failed to initialize audio'}`, "text");
         } finally {
           setIsInitializing(false);
         }
@@ -268,11 +353,19 @@ export function VoiceInputButton({
 
   // Function to stop LiveKit voice mode
   const stopLiveKitVoiceMode = () => {
-    if (isVoiceEnabled) {
-      stopVoiceListening();
-      multimodalAgentService.stopListening();
-      setShowVoiceOverlay(false);
-    }
+    // Reset any audio-related state
+    lastSentMessageRef.current = '';
+    setShowVoiceOverlay(false);
+    
+    // Clear any flags or indicators
+    multimodalAgentService.stopListening();
+    stopVoiceListening();
+    
+    // Set voice mode inactive in room session manager to prevent reconnections
+    roomSessionManager.setVoiceModeActive(false);
+    
+    // Stop any active audio
+    voiceSynthesisService.stop();
   };
 
   // Get a more user-friendly error message

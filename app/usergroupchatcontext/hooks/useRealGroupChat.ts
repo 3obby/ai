@@ -29,8 +29,16 @@ export function useRealGroupChat() {
       sender: 'user',
       senderName: 'You',
       timestamp: Date.now(),
-      type: messageType
+      type: messageType,
+      metadata: {
+        processing: {
+          originalContent: content.trim(),
+          fromVoiceMode: messageType === 'voice'
+        }
+      }
     };
+    
+    console.log(`Sending ${messageType} message: "${content.trim().substring(0, 30)}..."`);
     
     // Add the message to the chat
     dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
@@ -65,65 +73,42 @@ export function useRealGroupChat() {
       dispatch({ type: 'SET_TYPING_BOT_IDS', payload: [...state.typingBotIds, botId] });
       
       try {
-        // For voice messages, we'll bypass the normal processing pipeline to avoid delays
+        // For voice messages, we need to use a different processing path
+        // that takes advantage of the real-time voice models
         if (isVoiceMessage) {
-          // Make a direct API call for voice messages
-          try {
-            // Get history/context from previous messages
-            const messageHistory = state.messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            }));
-            
-            // Make direct API call to OpenAI
-            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: [...messageHistory, { role: 'user', content }],
-                model: bot.model || 'gpt-4o',
-                temperature: bot.temperature || 0.7,
-                max_tokens: bot.maxTokens || 1024,
-              }),
-            });
-            
-            if (!response.ok) {
-              throw new Error(`API request failed with status ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('Voice API response data:', data);
-            
-            // Extract the content from the OpenAI response structure
-            const responseContent = data.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
-            
-            // Create bot response message
-            const botResponse = {
-              id: uuidv4(),
-              content: responseContent,
-              role: 'assistant' as const,
-              sender: botId,
-              senderName: bot.name,
-              timestamp: Date.now(),
-              type: 'text' as const,
-              metadata: {
-                processing: {
-                  originalContent: responseContent,
-                  preProcessed: false,
-                  postProcessed: false,
-                  fromVoiceMode: true
+          // Make a direct API call for voice messages using the LiveKitIntegrationProvider
+          // The generateBotResponse will handle selecting the appropriate voice model
+          const processingContext: ProcessingContext = {
+            settings: state.settings,
+            messages: state.messages,
+            currentDepth: 0
+          };
+          
+          // Process the message through the voice-optimized path
+          await processMessage(
+            userMessage,
+            bot,
+            processingContext,
+            (botResponse) => {
+              // Ensure the response is marked as a voice response
+              const voiceResponse = {
+                ...botResponse,
+                metadata: {
+                  ...(botResponse.metadata || {}),
+                  processing: {
+                    ...(botResponse.metadata?.processing || {}),
+                    fromVoiceMode: true
+                  }
                 }
-              }
-            };
-            
-            // Add the bot's message to the chat
-            dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
-          } catch (apiError) {
-            console.error(`Error getting direct response from OpenAI for bot ${botId}:`, apiError);
-            throw apiError; // Propagate to the outer catch block
-          }
+              };
+              
+              // Add the bot's message to the chat
+              dispatch({ type: 'ADD_MESSAGE', payload: voiceResponse });
+            },
+            { 
+              includeToolCalls: false // Disable tool calls for voice messages for now
+            }
+          );
         } else {
           // Normal text message processing with pre/post processing pipeline
           // Create processing context that matches the expected type

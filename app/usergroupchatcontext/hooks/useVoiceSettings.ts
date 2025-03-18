@@ -92,21 +92,57 @@ export function useVoiceSettings(): UseVoiceSettingsReturn {
 
   // Start listening using LiveKit integration
   const startListening = useCallback(async () => {
-    if (!liveKitIntegration) return false;
-    
-    try {
-      await liveKitIntegration.startListening();
-      return true;
-    } catch (error) {
-      console.error('Failed to start listening:', error);
+    if (!liveKitIntegration) {
+      console.error('LiveKit integration is not available');
       return false;
     }
-  }, [liveKitIntegration]);
+    
+    try {
+      console.log('Starting voice listening via hooks...');
+      
+      // First, make sure we have a valid voice settings configuration
+      const currentSettings = state.settings?.voiceSettings;
+      if (!currentSettings) {
+        console.warn('No voice settings found in state, using defaults');
+      }
+      
+      // Ensure voice activity service is properly configured
+      voiceActivityService.updateOptions({
+        mode: currentSettings?.vadMode || 'auto',
+        threshold: currentSettings?.vadThreshold || 0.3,
+        silenceDurationMs: currentSettings?.silenceDurationMs || 1000,
+        prefixPaddingMs: currentSettings?.prefixPaddingMs || 500
+      });
+      
+      // Start the multimodal agent's listening service first
+      await liveKitIntegration.resumeAudioContext();
+      
+      // This will call into LiveKitIntegrationProvider's startListening
+      await liveKitIntegration.startListening();
+      setIsListening(true);
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to start listening in useVoiceSettings:', error);
+      setIsListening(false);
+      return false;
+    }
+  }, [liveKitIntegration, state.settings?.voiceSettings]);
 
   // Stop listening
   const stopListening = useCallback(() => {
-    if (!liveKitIntegration) return;
-    liveKitIntegration.stopListening();
+    if (!liveKitIntegration) {
+      console.error('LiveKit integration is not available');
+      return;
+    }
+    
+    try {
+      console.log('Stopping voice listening via hooks...');
+      liveKitIntegration.stopListening();
+      setIsListening(false);
+    } catch (error) {
+      console.error('Error stopping voice listening:', error);
+    }
   }, [liveKitIntegration]);
 
   // Auto-adjust VAD sensitivity

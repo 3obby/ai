@@ -14,6 +14,7 @@ import { VoiceSynthesisService } from '../services/voiceSynthesisService';
 import { ToolCallService } from '../services/toolCallService';
 import voiceToolCallingService from '../services/voiceToolCallingService';
 import turnTakingService from '../services/livekit/turn-taking-service';
+import roomSessionManager from '../services/livekit/room-session-manager';
 
 // Create instances of required services
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -56,7 +57,7 @@ interface LiveKitIntegrationProviderProps {
 
 export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProviderProps) {
   const { state, dispatch } = useGroupChatContext();
-  const { room, isConnected } = useLiveKit();
+  const { room, isConnected: liveKitIsConnected } = useLiveKit();
   const { state: botRegistryState } = useBotRegistry();
   const { executeToolCalls } = useToolCall();
   
@@ -64,6 +65,32 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   const [isBotSpeaking, setIsBotSpeaking] = useState(false);
   const [isInVoiceMode, setIsInVoiceMode] = useState(false);
   const [currentSpeakingBotId, setCurrentSpeakingBotId] = useState<BotId | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Sync connection state from LiveKit hook
+  useEffect(() => {
+    setIsConnected(liveKitIsConnected);
+    console.log('LiveKit connection state changed in provider:', liveKitIsConnected);
+  }, [liveKitIsConnected]);
+
+  // Handle room state changes directly
+  useEffect(() => {
+    if (room) {
+      const handleStateChange = (state: any) => {
+        console.log('Room connection state changed:', state);
+        setIsConnected(state === 'connected');
+      };
+      
+      room.on('stateChanged', handleStateChange);
+      
+      // Initialize state immediately
+      setIsConnected(room.state === 'connected');
+      
+      return () => {
+        room.off('stateChanged', handleStateChange);
+      };
+    }
+  }, [room]);
 
   // Handle transcription results from LiveKit
   useEffect(() => {
@@ -72,6 +99,12 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     const handleTranscription = async (text: string, isFinal: boolean) => {
       if (!isFinal || !text.trim()) return; // Only process final, non-empty transcriptions
       console.log('LiveKitIntegrationProvider received transcription:', text, 'isFinal:', isFinal);
+      
+      // Check if we're still connected and in voice mode
+      if (!isInVoiceMode || !isConnected) {
+        console.log('Skipping transcription processing - no longer in voice mode or not connected');
+        return;
+      }
       
       // Check if it contains a tool call
       const isToolCall = await detectToolsInTranscription(text);
@@ -113,7 +146,7 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     return () => {
       multimodalAgentService.offTranscription(handleTranscription);
     };
-  }, [room, isConnected, dispatch]);
+  }, [room, isConnected, dispatch, isInVoiceMode]);
   
   // Process user message through bot response system
   const processUserMessage = async (message: Message) => {
@@ -303,29 +336,106 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         // If this is a voice mode response and we need to bypass pre/post processing,
         // generate the response directly from OpenAI without using the prompt processor
         if (options.isVoiceMode && options.skipPrePostProcessing) {
-          // Direct API call to OpenAI for voice mode responses
-          const response = await fetch('/usergroupchatcontext/api/openai/chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              messages: [...messageHistory, { role: 'user', content: userMessage }],
-              model: bot.model || 'gpt-4o',
-              temperature: bot.parameters.temperature || 0.7,
-              max_tokens: bot.parameters.maxTokens || 1024,
-              // No tools in voice mode
-              tools: []
-            }),
-          }).then(res => res.json());
-          
-          // Log the response structure to debug
-          console.log('Voice mode OpenAI response:', response);
-          
-          // Extract content from the OpenAI response structure
-          content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
-        }
-        else {
+          try {
+            console.log('Generating voice response using multimodal agent service');
+            
+            // Ensure we're using a realtime model for voice mode
+            const realtimeModel = bot.model?.includes('realtime') 
+              ? bot.model 
+              : 'gpt-4o-realtime-preview';
+            
+            // Configure multimodal agent with realtime model if not already configured
+            if (multimodalAgentService.getConfig().model !== realtimeModel) {
+              multimodalAgentService.updateConfig({
+                model: realtimeModel,
+                voice: bot.voiceSettings?.voice || 'alloy',
+                voiceSpeed: bot.voiceSettings?.speed || 1.0,
+                voiceQuality: 'high-quality'
+              });
+              
+              console.log('Updated multimodal agent config:', multimodalAgentService.getConfig());
+            }
+            
+            // Use standard API first to generate text response without audio,
+            // which helps ensure we have a text response even if voice synthesis fails
+            const textResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages: [...messageHistory, { role: 'user', content: userMessage }],
+                model: 'gpt-4o', // Use standard model for text response
+                temperature: bot.parameters.temperature || 0.7,
+                max_tokens: bot.parameters.maxTokens || 1024,
+              }),
+            }).then(res => res.json());
+            
+            // Extract content from the OpenAI response structure
+            content = textResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+            console.log('Generated text response first:', content);
+            
+            // Now synthesize speech for this content
+            try {
+              // Configure voice settings
+              const voiceSettings = {
+                voice: bot.voiceSettings?.voice || 'alloy',
+                speed: bot.voiceSettings?.speed || 1.0,
+                quality: 'high-quality' as const
+              };
+              
+              // Use VoiceSynthesisService directly instead of multimodalAgentService
+              // This provides better reliability for voice output
+              const speechService = new VoiceSynthesisService(voiceSettings);
+              
+              // Start voice synthesis asynchronously - don't wait for it to complete
+              // This ensures we don't block the UI while synthesis is in progress
+              speechService.speak(content, voiceSettings)
+                .then(() => {
+                  console.log('Voice synthesis completed successfully');
+                })
+                .catch(synthError => {
+                  console.error('Voice synthesis error (non-blocking):', synthError);
+                });
+                
+              console.log('Initiated voice synthesis for response');
+            } catch (synthError) {
+              console.error('Failed to initiate voice synthesis:', synthError);
+              // Continue with text-only response if voice synthesis fails
+            }
+          } catch (error) {
+            console.error('Error generating voice response:', error);
+            content = `I'm sorry, I encountered an error while processing your voice request. ${error instanceof Error ? error.message : ''}`;
+            
+            // Fall back to standard API if multimodal agent fails
+            try {
+              // Direct API call to OpenAI for voice mode responses as fallback
+              const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messages: [...messageHistory, { role: 'user', content: userMessage }],
+                  model: bot.model || 'gpt-4o',
+                  temperature: bot.parameters.temperature || 0.7,
+                  max_tokens: bot.parameters.maxTokens || 1024,
+                  // No tools in voice mode
+                  tools: []
+                }),
+              }).then(res => res.json());
+              
+              // Log the response structure to debug
+              console.log('Fallback voice mode OpenAI response:', response);
+              
+              // Extract content from the OpenAI response structure
+              content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+            } catch (fallbackError) {
+              console.error('Fallback API also failed:', fallbackError);
+            }
+          }
+        } else {
+          // Normal text message processing flow remains unchanged
           // Generate response with appropriate tools if bot has tools enabled
           if (bot.useTools) {
             // Get the bot's enabled tools
@@ -443,25 +553,70 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   
   // Start listening for voice input
   const startListening = async () => {
-    if (!isConnected) return;
+    // First check if we're already connected through the room object directly
+    if (room && room.state === 'connected') {
+      setIsConnected(true);
+    }
+    
+    // Now verify connection state, using both our local state and direct room check
+    if (!isConnected && (!room || room.state !== 'connected')) {
+      console.error('Cannot start listening - not connected to LiveKit');
+      
+      // Add a helpful message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: uuidv4(),
+          content: "Voice mode failed to initialize. Please try again or check your connection.",
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+      
+      return;
+    }
     
     try {
-      const success = await multimodalAgentService.startListening();
-      if (success) {
-        setIsListening(true);
-        setIsInVoiceMode(true);
-        dispatch({ type: 'TOGGLE_RECORDING' });
-      }
+      console.log('Starting voice listening mode...');
+      await multimodalAgentService.resumeAudioContext();
+      await multimodalAgentService.startListening();
+      roomSessionManager.setVoiceModeActive(true);
+      setIsListening(true);
+      setIsInVoiceMode(true);
     } catch (error) {
-      console.error("Error starting listening:", error);
+      console.error('Failed to start voice listening:', error);
+      
+      // Add error message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: uuidv4(),
+          content: `Voice mode error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+      
+      throw error;
     }
   };
   
   // Stop listening for voice input
   const stopListening = () => {
+    if (!isListening) return;
+    
+    console.log('Stopping voice listening mode...');
     multimodalAgentService.stopListening();
+    roomSessionManager.setVoiceModeActive(false);
     setIsListening(false);
-    dispatch({ type: 'TOGGLE_RECORDING' });
+    setIsInVoiceMode(false);
+    
+    // Stop any ongoing speech
+    stopBotSpeech();
   };
   
   // Play bot response using text-to-speech
@@ -474,6 +629,20 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       if (!bot) {
         throw new Error(`Bot with ID ${botId} not found`);
       }
+      
+      // First generate the text response, as a fallback if voice fails
+      const responseTextId = uuidv4();
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: responseTextId,
+          content: text,
+          role: 'assistant',
+          sender: botId,
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
       
       // Set the current speaking bot
       setIsBotSpeaking(true);
@@ -492,54 +661,66 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       
       console.log(`Using voice settings for bot ${bot.name}:`, voiceOptions);
       
-      // Create a new instance of VoiceSynthesisService for each response to avoid playback conflicts
-      const responseSynthesisService = new VoiceSynthesisService(voiceOptions);
+      // Use the standard voice synthesis service directly instead of going through multimodal service
+      // This provides more reliability and better error handling
+      let synthesisSuccess = false;
+      let retryCount = 0;
+      const maxRetries = 2;
       
-      // Use the voice synthesis service with speak method and bot-specific voice settings
-      await responseSynthesisService.speak(text, voiceOptions);
-      
-      return new Promise<void>((resolve) => {
-        responseSynthesisService.onEnd(() => {
-          setIsBotSpeaking(false);
-          setCurrentSpeakingBotId(null);
-          resolve();
-        });
-        
-        responseSynthesisService.onError((error) => {
-          console.error('Voice synthesis error:', error);
-          // Add error message to the chat
-          dispatch({
-            type: 'ADD_MESSAGE',
-            payload: {
-              id: `voice-error-${Date.now()}`,
-              content: `Voice synthesis error: ${error}. Try selecting another voice in settings.`,
-              role: 'system',
-              sender: 'system',
-              timestamp: Date.now(),
-              type: 'text'
-            }
+      while (!synthesisSuccess && retryCount <= maxRetries) {
+        try {
+          // Create a new service instance for each attempt to avoid stale state
+          const responseSynthesisService = new VoiceSynthesisService(voiceOptions);
+          
+          // Add event listeners for progress
+          const startTime = Date.now();
+          responseSynthesisService.onStart(() => {
+            console.log(`Speech synthesis started for bot ${bot.name}`);
           });
-          setIsBotSpeaking(false);
-          setCurrentSpeakingBotId(null);
-          resolve();
-        });
-      });
-    } catch (error) {
-      console.error("Error playing bot response:", error);
-      // Add error message to the chat
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: `voice-error-${Date.now()}`,
-          content: `Error playing bot response: ${error instanceof Error ? error.message : String(error)}`,
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
+          
+          // Begin voice synthesis asynchronously
+          const speakPromise = responseSynthesisService.speak(text, voiceOptions);
+          
+          // Wait for completion or timeout
+          const timeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Speech synthesis timed out')), 15000));
+          
+          await Promise.race([speakPromise, timeout]);
+          synthesisSuccess = true;
+          
+          // Log success
+          const duration = Date.now() - startTime;
+          console.log(`Speech synthesis completed in ${duration}ms`);
+          
+        } catch (synthError) {
+          retryCount++;
+          console.error(`Speech synthesis attempt ${retryCount} failed:`, synthError);
+          
+          if (retryCount >= maxRetries) {
+            console.error(`Failed to synthesize speech after ${maxRetries} attempts`);
+            break;
+          }
+          
+          // Wait before retrying with different settings
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Try with different voice on retry
+          if (retryCount === 1) {
+            voiceOptions.voice = 'echo'; // Try a different voice for retry
+          }
         }
-      });
+      }
+      
+      // Always resolve regardless of synthesis success, since we already added the text message
       setIsBotSpeaking(false);
       setCurrentSpeakingBotId(null);
+      return Promise.resolve();
+      
+    } catch (error) {
+      console.error('Error playing bot response:', error);
+      setIsBotSpeaking(false);
+      setCurrentSpeakingBotId(null);
+      return Promise.resolve(); // Resolve anyway to avoid hanging the UI
     }
   };
   

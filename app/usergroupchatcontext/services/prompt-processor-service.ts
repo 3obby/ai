@@ -211,102 +211,188 @@ async function processWithLLM(
   }
 }
 
-// Main function to process messages with reprocessing control
-export async function processMessage(
+/**
+ * Process a message through the bot's response pipeline
+ * Handles pre-processing, API calls, and post-processing
+ */
+export const processMessage = async (
   userMessage: Message,
   bot: Bot,
   context: ProcessingContext,
-  onBotResponse: (botMessage: Message) => void,
-  toolOptions?: {
+  onBotResponse: (botResponse: Message) => void,
+  options: {
     includeToolCalls?: boolean;
     availableTools?: any[];
-  }
-): Promise<void> {
-  // Pre-process the user message
-  const preProcessed = await preProcessMessage(userMessage, bot, context);
-  
-  // Get response from the OpenAI API, falling back to mock service if needed
-  let botResponse;
-  try {
-    botResponse = await getOpenAIChatResponse(
-      bot,
-      preProcessed.content,
-      context.messages,
-      {
-        includeToolCalls: toolOptions?.includeToolCalls,
-        availableTools: toolOptions?.availableTools
-      }
-    );
-  } catch (error) {
-    console.error("Error calling OpenAI, falling back to mock:", error);
-    // Fall back to mock service if there's an error with OpenAI
-    botResponse = await getMockBotResponse(
-      bot, 
-      preProcessed.content, 
-      context.messages,
-      {
-        includeToolCalls: toolOptions?.includeToolCalls,
-        availableTools: toolOptions?.availableTools
-      }
-    );
-  }
-  
-  // Post-process the bot response
-  const postProcessed = await postProcessMessage(
-    botResponse,
-    userMessage,
-    bot,
-    context
-  );
-  
-  // Create the bot message directly with the correct type
-  const botMessage: Message = {
-    id: uuidv4(),
-    content: postProcessed.content,
-    role: 'assistant',
-    sender: bot.id,
-    senderName: bot.name,
-    timestamp: Date.now(),
-    type: 'text',
-    metadata: {
-      processing: {
-        reprocessingDepth: context.currentDepth,
-        preProcessed: preProcessed.metadata.originalContent !== userMessage.content,
-        postProcessed: postProcessed.metadata.modifiedContent !== botResponse,
-        processingTime: preProcessed.metadata.processingTime + postProcessed.metadata.processingTime,
-        originalContent: userMessage.content,
-        modifiedContent: postProcessed.content
-      }
-    }
+  } = {}
+) => {
+  let content = userMessage.content;
+  let processingMetadata: ProcessingMetadata = {
+    originalContent: content,
+    preProcessed: false,
+    postProcessed: false,
+    fromVoiceMode: userMessage.type === 'voice'
   };
   
-  // Send the bot response
-  onBotResponse(botMessage);
+  // Log the message processing
+  console.log(`Processing message for bot ${bot.name}, type: ${userMessage.type}, voice mode: ${userMessage.type === 'voice'}`);
   
-  // Check if we need to reprocess
-  if (needsReprocessing(postProcessed, bot, context)) {
-    // Create a new context with increased depth
-    const newContext: ProcessingContext = {
-      ...context,
-      currentDepth: context.currentDepth + 1,
-      messages: [...context.messages, botMessage]
+  // Apply pre-processing if enabled and not at max reprocessing depth
+  if (
+    context.settings.processing.enablePreProcessing &&
+    bot.preProcessingPrompt &&
+    context.currentDepth < context.settings.maxReprocessingDepth
+  ) {
+    const preprocessedContent = await preProcessMessage(userMessage, bot, context);
+    if (preprocessedContent !== content) {
+      content = preprocessedContent;
+      processingMetadata.preProcessed = true;
+      processingMetadata.preprocessedContent = content;
+    }
+  }
+  
+  // Get messages for context
+  const messageHistory = context.messages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
+  
+  // Set up API options based on whether this is a voice message
+  const isVoiceMessage = userMessage.type === 'voice';
+  const modelToUse = isVoiceMessage && bot.voiceSettings?.model ? 
+    bot.voiceSettings.model : 
+    bot.model || 'gpt-4o';
+    
+  // Log the model selection
+  console.log(`Using model ${modelToUse} for ${isVoiceMessage ? 'voice' : 'text'} message`);
+  
+  // Make API call to OpenAI
+  let apiResponseContent = '';
+  let toolResults: ToolResult[] = [];
+  
+  try {
+    if (process.env.NEXT_PUBLIC_USE_MOCK_SERVICE === 'true') {
+      // Use mock service for testing/dev
+      const { content: mockContent } = await getMockBotResponse(content, bot.name);
+      apiResponseContent = mockContent;
+      processingMetadata.usedMockService = true;
+    } else {
+      // Prepare request body
+      let requestBody: any = {
+        messages: [...messageHistory, { role: 'user', content }],
+        model: modelToUse,
+        temperature: bot.temperature || 0.7,
+        max_tokens: bot.maxTokens || 1024
+      };
+      
+      // Add tools if enabled and not a voice message
+      if (options.includeToolCalls && bot.useTools && !isVoiceMessage) {
+        requestBody.tools = options.availableTools || [];
+      }
+      
+      // Make API call
+      const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Check if response includes tool calls
+      if (data.choices?.[0]?.message?.tool_calls && data.choices[0].message.tool_calls.length > 0) {
+        // Extract tool calls and execute them
+        const formattedToolCalls = data.choices[0].message.tool_calls.map((call: any) => ({
+          id: call.id,
+          name: call.function.name,
+          arguments: JSON.parse(call.function.arguments)
+        }));
+        
+        // Execute tool calls and get results
+        toolResults = await executeToolCalls(formattedToolCalls);
+        
+        // Add tool results to the message history for a follow-up completion
+        const toolResponseMessages = toolResults.map(result => ({
+          role: 'tool' as const,
+          content: JSON.stringify(result.output),
+          tool_call_id: result.id
+        }));
+        
+        // Get final response that includes tool outputs
+        const finalResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [
+              ...messageHistory, 
+              { role: 'user', content },
+              ...toolResponseMessages
+            ],
+            model: modelToUse,
+            temperature: bot.temperature || 0.7,
+            max_tokens: bot.maxTokens || 1024,
+          }),
+        });
+        
+        if (!finalResponse.ok) {
+          throw new Error(`Final API request failed with status ${finalResponse.status}`);
+        }
+        
+        const finalData = await finalResponse.json();
+        apiResponseContent = finalData.choices?.[0]?.message?.content || "I couldn't generate a response.";
+      } else {
+        // Extract the content from a regular response
+        apiResponseContent = data.choices?.[0]?.message?.content || "I couldn't generate a response.";
+      }
+    }
+    
+    // Update metadata
+    processingMetadata.modifiedContent = apiResponseContent;
+    
+    // Apply post-processing if enabled and not at max reprocessing depth
+    if (
+      context.settings.processing.enablePostProcessing &&
+      bot.postProcessingPrompt &&
+      context.currentDepth < context.settings.maxReprocessingDepth &&
+      !isVoiceMessage // Skip post-processing for voice messages
+    ) {
+      const postprocessedContent = await postProcessMessage(apiResponseContent, userMessage, bot, context);
+      if (postprocessedContent !== apiResponseContent) {
+        apiResponseContent = postprocessedContent;
+        processingMetadata.postProcessed = true;
+        processingMetadata.postprocessedContent = apiResponseContent;
+      }
+    }
+    
+    // Create bot response message
+    const botResponse: Message = {
+      id: uuidv4(),
+      content: apiResponseContent,
+      role: 'assistant',
+      sender: bot.id,
+      senderName: bot.name,
+      timestamp: Date.now(),
+      type: isVoiceMessage ? 'voice' : 'text', // Mark voice responses accordingly
+      metadata: {
+        processing: processingMetadata,
+        toolResults
+      }
     };
     
-    // Process recursively after a short delay
-    setTimeout(() => {
-      processMessage(
-        userMessage, 
-        bot, 
-        newContext, 
-        (reprocessedMessage) => {
-          // Add reprocessing info to the message
-          if (reprocessedMessage.metadata?.processing) {
-            reprocessedMessage.metadata.processing.reprocessingDepth = newContext.currentDepth;
-          }
-          onBotResponse(reprocessedMessage);
-        },
-        toolOptions
-      );
-    }, 500);
+    // Call the callback with the bot response
+    onBotResponse(botResponse);
+    
+    // Return the response content
+    return apiResponseContent;
+  } catch (error) {
+    console.error('Error processing message:', error);
+    throw error;
   }
 } 

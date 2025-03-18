@@ -11,7 +11,7 @@ interface LiveKitContextType {
   room: Room | null;
   activeSession: RoomSession | undefined;
   error: Error | null;
-  connect: (roomName: string, token: string, url: string) => Promise<void>;
+  connect: (roomName: string, token: string | {token: string}, url: string) => Promise<void>;
   disconnect: () => Promise<void>;
   startListening: () => Promise<boolean>;
   stopListening: () => void;
@@ -60,7 +60,7 @@ export const LiveKitProvider: React.FC<LiveKitProviderProps> = ({
   const activeSession = roomSessionManager.getActiveSession();
 
   // Connect to a LiveKit room
-  const connect = async (roomName: string, token: string, url: string) => {
+  const connect = async (roomName: string, token: string | {token: string}, url: string) => {
     if (isConnected || isConnecting) {
       console.log('Already connected or connecting to LiveKit');
       return;
@@ -164,8 +164,9 @@ export const LiveKitProvider: React.FC<LiveKitProviderProps> = ({
     if (autoConnect && initialRoomName && initialToken && initialUrl) {
       connect(initialRoomName, initialToken, initialUrl);
     } else {
-      // Call the default session creation if no credentials provided
-      createDefaultSession();
+      // Remove the automatic default session creation on page load
+      // Only initialize when the user explicitly clicks the voice mode button
+      // createDefaultSession();
     }
 
     // Cleanup on unmount
