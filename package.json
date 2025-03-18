@@ -22,7 +22,8 @@
     "optimize-anon": "node scripts/optimize-dev.js",
     "dev:fast": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev",
     "dev:browser": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev & npx wait-on http://localhost:3000 && open -na 'Google Chrome' --args --auto-open-devtools-for-tabs --user-data-dir=$(mktemp -d) --no-first-run http://localhost:3000",
-    "postinstall:dev": "chmod +x scripts/db-check.js scripts/optimize-dev.js"
+    "postinstall:dev": "chmod +x scripts/db-check.js scripts/optimize-dev.js",
+    "update-readme": "node scripts/update-readme.js"
   },
   "dependencies": {
     "@auth/core": "0.34.2",
@@ -137,6 +138,7 @@
     "kill-port": "^2.0.1",
     "prisma": "^6.4.1",
     "randomfill": "^1.0.4",
+    "ts-morph": "^25.0.1",
     "ts-node": "^10.9.2",
     "wait-on": "^8.0.3",
     "wait-port": "^1.1.0"

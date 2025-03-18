@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c75efd2",
+      "fullHash": "c75efd2d480e7d30753d9bddc8e59153bb9aa223",
+      "date": "2025-03-18 13:41:42 +0700",
+      "author": "3obby",
+      "message": "ya trashpush",
+      "category": "other"
+    },
+    {
       "hash": "ff82ae1",
       "fullHash": "ff82ae17d9b90070e26bcfeb1b7b32300260a8ce",
       "date": "2025-03-18 13:08:21 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Enhance OAuth profile picture handling to display Google profile pictures",
       "category": "enhancement"
-    },
-    {
-      "hash": "6e35db9",
-      "fullHash": "6e35db97d411e9c8e6027722048ea978e36302d2",
-      "date": "2025-03-08 13:24:44 +0700",
-      "author": "3obby",
-      "message": "Enable account linking for Google and GitHub OAuth providers",
-      "category": "other"
     }
   ]
 }
