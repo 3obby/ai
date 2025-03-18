@@ -106,6 +106,20 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         return;
       }
       
+      // Add a deduplication check to prevent duplicate messages
+      const recentMessages = state.messages.slice(-5);
+      const isDuplicate = recentMessages.some(msg => 
+        msg.role === 'user' && 
+        msg.type === 'voice' && 
+        msg.content.trim() === text.trim() &&
+        Date.now() - msg.timestamp < 5000 // Within last 5 seconds
+      );
+      
+      if (isDuplicate) {
+        console.log('Skipping duplicate transcription message:', text);
+        return;
+      }
+      
       // Check if it contains a tool call
       const isToolCall = await detectToolsInTranscription(text);
       
@@ -289,39 +303,35 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     } = {}
   ): Promise<{content: string, toolResults?: ToolResult[]}> => {
     try {
-      // Find the bot in registry
-      const botFromRegistry = botRegistryState.availableBots.find(b => b.id === botId);
-      if (!botFromRegistry) {
+      console.log(`Generating response for bot ${botId} ${options.isVoiceMode ? 'in voice mode' : ''}`);
+      
+      // Get the bot details
+      const bot = botRegistryState.availableBots.find(b => b.id === botId);
+      if (!bot) {
         throw new Error(`Bot with ID ${botId} not found`);
       }
       
-      // Cast the bot to the correct type or use appropriate properties
-      // This is a workaround for type mismatches between the two Bot interfaces in the codebase
-      // Proper fix would be to consolidate the interfaces
-      const bot = {
-        ...botFromRegistry,
-        parameters: {
-          temperature: botFromRegistry.temperature || 0.7,
-          maxTokens: botFromRegistry.maxTokens || 1024,
-          enabledTools: [] as string[]
-        },
-        // If options.disableToolCalling is true, force useTools to be false regardless of bot settings
-        tools: [] as ToolDefinition[],
-        useTools: options.disableToolCalling ? false : (botFromRegistry.useTools || false)
-      };
-
+      // Get conversation history
+      const history = state.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        name: msg.sender !== 'user' ? msg.sender : undefined
+      }));
+      
+      // If in voice mode, add a system message to prevent echoing transcriptions
+      let systemPrompt = bot.systemPrompt || state.settings.systemPrompt || '';
+      if (options.isVoiceMode) {
+        systemPrompt += '\nThis conversation includes voice transcriptions. Respond to the user naturally without echoing or repeating their transcribed words. Focus on addressing their questions or requests directly.';
+      }
+      
+      // If options.disableToolCalling is true, force useTools to be false regardless of bot settings
+      const useTools = options.disableToolCalling ? false : bot.useTools;
+      
       // Set the bot as typing
       dispatch({ 
         type: 'SET_TYPING_BOT_IDS', 
         payload: [...state.typingBotIds, botId] 
       });
-
-      // Get history/context from previous messages
-      const messageHistory = state.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-        sender: msg.sender
-      }));
 
       // Generate response
       let content = '';
@@ -364,10 +374,10 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                messages: [...messageHistory, { role: 'user', content: userMessage }],
+                messages: [...history, { role: 'user', content: userMessage }],
                 model: 'gpt-4o', // Use standard model for text response
-                temperature: bot.parameters.temperature || 0.7,
-                max_tokens: bot.parameters.maxTokens || 1024,
+                temperature: bot.temperature || 0.7,
+                max_tokens: bot.maxTokens || 1024,
               }),
             }).then(res => res.json());
             
@@ -416,10 +426,10 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  messages: [...messageHistory, { role: 'user', content: userMessage }],
+                  messages: [...history, { role: 'user', content: userMessage }],
                   model: bot.model || 'gpt-4o',
-                  temperature: bot.parameters.temperature || 0.7,
-                  max_tokens: bot.parameters.maxTokens || 1024,
+                  temperature: bot.temperature || 0.7,
+                  max_tokens: bot.maxTokens || 1024,
                   // No tools in voice mode
                   tools: []
                 }),
@@ -437,7 +447,7 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         } else {
           // Normal text message processing flow remains unchanged
           // Generate response with appropriate tools if bot has tools enabled
-          if (bot.useTools) {
+          if (useTools) {
             // Get the bot's enabled tools
             // Since we're dealing with type inconsistencies, just use an empty array for now
             // In a real implementation, this would filter the tools based on enabled tools
@@ -453,10 +463,10 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                messages: [...messageHistory, { role: 'user', content: userMessage }],
+                messages: [...history, { role: 'user', content: userMessage }],
                 model: bot.model || 'gpt-4o',
-                temperature: bot.parameters.temperature || 0.7,
-                max_tokens: bot.parameters.maxTokens || 1024,
+                temperature: bot.temperature || 0.7,
+                max_tokens: bot.maxTokens || 1024,
                 tools: toolDefinitions
               }),
             }).then(res => res.json());
@@ -497,13 +507,13 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                 },
                 body: JSON.stringify({
                   messages: [
-                    ...messageHistory, 
+                    ...history, 
                     { role: 'user', content: userMessage },
                     ...toolResponseMessages
                   ],
                   model: bot.model || 'gpt-4o',
-                  temperature: bot.parameters.temperature || 0.7,
-                  max_tokens: bot.parameters.maxTokens || 1024,
+                  temperature: bot.temperature || 0.7,
+                  max_tokens: bot.maxTokens || 1024,
                 }),
               }).then(res => res.json());
               
@@ -520,10 +530,10 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                messages: [...messageHistory, { role: 'user', content: userMessage }],
+                messages: [...history, { role: 'user', content: userMessage }],
                 model: bot.model || 'gpt-4o',
-                temperature: bot.parameters.temperature || 0.7,
-                max_tokens: bot.parameters.maxTokens || 1024,
+                temperature: bot.temperature || 0.7,
+                max_tokens: bot.maxTokens || 1024,
               }),
             }).then(res => res.json());
             

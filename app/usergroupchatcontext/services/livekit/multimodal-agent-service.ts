@@ -859,7 +859,7 @@ export class MultimodalAgentService {
       }
       
       // Get a LiveKit token from our API with error handling and retry logic
-      let tokenData = null;
+      let token = '';
       let roomName = 'default-room';
       let retryCount = 0;
       const maxRetries = 3;
@@ -873,12 +873,13 @@ export class MultimodalAgentService {
             throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
           }
           
-          tokenData = await response.json();
-          if (!tokenData.token) {
+          const data = await response.json();
+          if (!data.token) {
             throw new Error('No token received from LiveKit token API');
           }
           
-          roomName = tokenData.roomName || 'default-room';
+          token = data.token;
+          roomName = data.roomName || 'default-room';
           break; // Successfully got token, exit retry loop
         } catch (tokenError) {
           console.error(`Token fetch error (attempt ${retryCount + 1}):`, tokenError);
@@ -896,9 +897,8 @@ export class MultimodalAgentService {
       
       // Connect to LiveKit using roomSessionManager with proper error handling
       try {
-        // Important fix: Pass the entire tokenData object, not just the token string
-        console.log('Creating LiveKit session with token data');
-        await roomSessionManager.createSession(roomName, tokenData, livekitUrl);
+        console.log('Creating LiveKit session with token, length:', token.length);
+        await roomSessionManager.createSession(roomName, token, livekitUrl);
         console.log('LiveKit connection established successfully');
         return true;
       } catch (sessionError) {

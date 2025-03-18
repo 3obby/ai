@@ -25,6 +25,25 @@ export class LiveKitService {
         audioPreset: AudioPresets.music,
       },
     });
+    
+    // Add specific error handling for room events
+    if (this.room) {
+      this.room.on(RoomEvent.SignalConnected, () => {
+        console.log('Signal connection established to LiveKit server');
+      });
+      
+      this.room.on(RoomEvent.Reconnecting, () => {
+        console.log('Reconnecting to LiveKit after connection interruption...');
+      });
+      
+      this.room.on(RoomEvent.Disconnected, () => {
+        console.log('Disconnected from LiveKit - will attempt reconnection if needed');
+        // If we have connection details, trigger reconnect
+        if (this._currentUrl) {
+          setTimeout(() => this.reconnect(), 2000);
+        }
+      });
+    }
   }
 
   /**
@@ -191,6 +210,14 @@ export class LiveKitService {
       })
       .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
         console.log(`Connection state changed: ${state}`);
+        
+        // Add automatic reconnection on certain disconnection states
+        if (state === ConnectionState.Disconnected && this._currentUrl) {
+          console.log('Disconnected from LiveKit room, attempting automatic reconnection...');
+          
+          // Add a delay to avoid immediate reconnection attempts
+          setTimeout(() => this.reconnect(), 2000);
+        }
       })
       .on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality) => {
         console.log(`Connection quality changed: ${quality}`);
@@ -203,7 +230,41 @@ export class LiveKitService {
       })
       .on(RoomEvent.Reconnected, () => {
         console.log('Reconnected to room');
+      })
+      .on(RoomEvent.MediaDevicesError, (error: Error) => {
+        console.error('Media devices error:', error);
+      })
+      .on(RoomEvent.RoomMetadataChanged, (metadata: string) => {
+        console.log('Room metadata changed:', metadata);
       });
+  }
+
+  /**
+   * Attempt to reconnect to the room after an error
+   */
+  public async reconnect(): Promise<void> {
+    // Only attempt reconnection if we have connection details
+    if (!this._currentUrl || !this.options) {
+      console.warn('Cannot reconnect - no previous connection details available');
+      return;
+    }
+    
+    try {
+      console.log('Reconnecting to LiveKit after error...');
+      
+      // Disconnect first if currently connected
+      if (this.room && this.room.state === ConnectionState.Connected) {
+        await this.room.disconnect();
+      }
+      
+      // Short delay before reconnecting
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Attempt to reconnect using saved token and URL
+      await this.connect(this._currentUrl, this.options.token);
+    } catch (error) {
+      console.error('Failed to reconnect to LiveKit:', error);
+    }
   }
 }
 

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "be8bfea",
+      "fullHash": "be8bfeae851c97cbcd0a2fb22a6cc42fe87bffb9",
+      "date": "2025-03-18 23:50:50 +0700",
+      "author": "3obby",
+      "message": "working slowly with duplicates.",
+      "category": "other"
+    },
+    {
       "hash": "de3fe59",
       "fullHash": "de3fe5944def3be8784be394e7f709d079a4f9de",
       "date": "2025-03-18 23:37:57 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "FEATURE: Add auto-documentation system with /updates page and version tracking",
       "category": "feature"
-    },
-    {
-      "hash": "25c1fb9",
-      "fullHash": "25c1fb9745a39ed55a3991b5122a09d9c2c02098",
-      "date": "2025-03-08 14:26:58 +0700",
-      "author": "3obby",
-      "message": "Disable OAuth buttons with pending review message",
-      "category": "other"
     }
   ]
 }
