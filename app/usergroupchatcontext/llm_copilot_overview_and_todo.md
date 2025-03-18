@@ -12,6 +12,25 @@ GroupChatContext provides a minimalist, mobile-first group chat interface where 
 - Optional post-processing
 - Final bot output
 
+## Development Direction
+
+We are no longer building samples or demos. Our new default configuration:
+
+1. **Latest OpenAI Models by Default**:
+   - Text interactions should always use the latest GPT model (e.g., gpt-4o)
+   - Voice interactions should use the latest available realtime model
+
+2. **LiveKit Integration with OpenAI**:
+   - For realtime models: Use the MultimodalAgent class with RealtimeModel
+   - Specify the latest model version (e.g., gpt-4o-realtime-preview-yyyy-mm-dd)
+   - For text models: Use the LLM class with latest models (gpt-4o)
+   - Query for the most current model version names at build time
+
+3. **Single-Bot Experience**:
+   - Default to a single bot powered by the latest OpenAI model
+   - Seamless transition between text and voice interactions with the same bot
+   - Unified history and context across modalities
+
 ## Core Architecture
 
 ```
@@ -152,10 +171,30 @@ export interface ProcessingMetadata {
 - [ ] Signal chain visualization in debug panel
 - [ ] Tool execution logging with detailed steps
 - [ ] Pre/post processing visualization
+- [ ] Implement default single-bot experience with latest OpenAI models
+- [ ] Query system for latest model versions from OpenAI
+- [ ] LiveKit integration with OpenAI MultimodalAgent and LLM classes
 - [ ] Improve voice command recognition accuracy with machine learning models
 - [ ] Add multi-language support for voice commands
 - [ ] Implement voice emotion detection for more natural responses
 - [ ] Create user-customizable voice command system
+
+## Next Implementation Steps
+
+1. **Single Bot Experience**:
+   - Update bot initialization to use a single latest-model bot
+   - Remove multi-bot UI/UX elements not relevant to single-bot experience
+   - Ensure all messages (text and voice) route to the same bot
+
+2. **OpenAI Model Version Management**:
+   - Create a service to query and cache latest model versions
+   - Implement version fallback mechanism if preferred version unavailable
+   - Add model capability detection to match features with supported models
+
+3. **LiveKit Integration Enhancement**:
+   - Update MultimodalAgent implementation for latest model versions
+   - Ensure proper audio streaming and transcription with latest models
+   - Optimize latency for realtime voice interactions
 
 ## Directory Structure
 

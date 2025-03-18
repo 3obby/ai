@@ -1,9 +1,10 @@
 'use client';
 
-import { Bot } from '../types';
-import { Message, createBotMessage } from '../types/messages';
+import { Bot, Message, ProcessingMetadata } from '../types';
 import { GroupChatSettings } from '../types/settings';
 import { getMockBotResponse } from './mockBotService';
+import { getOpenAIChatResponse } from './openaiChatService';
+import { createBotMessage } from '../types/messages';
 
 export interface ProcessingContext {
   settings: GroupChatSettings;
@@ -32,7 +33,7 @@ export async function preProcessMessage(
   const startTime = performance.now();
   
   // Skip if pre-processing is disabled
-  if (!context.settings.promptProcessor.preProcessingEnabled) {
+  if (!context.settings.processing?.enablePreProcessing) {
     return {
       content: message.content,
       metadata: {
@@ -89,7 +90,7 @@ export async function postProcessMessage(
   const startTime = performance.now();
   
   // Skip if post-processing is disabled
-  if (!context.settings.promptProcessor.postProcessingEnabled) {
+  if (!context.settings.processing?.enablePostProcessing) {
     return {
       content: botResponse,
       metadata: {
@@ -142,7 +143,7 @@ export function needsRecursiveProcessing(
   context: ProcessingContext
 ): boolean {
   // Don't recurse if we've hit the maximum depth
-  if (context.currentDepth >= context.settings.promptProcessor.maxRecursionDepth) {
+  if (context.currentDepth >= context.settings.maxRecursionDepth) {
     return false;
   }
   
@@ -184,16 +185,31 @@ export async function processMessage(
   // Pre-process the user message
   const preProcessed = await preProcessMessage(userMessage, bot, context);
   
-  // Get response from the mock bot service (in a real app, this would call an LLM API)
-  const botResponse = await getMockBotResponse(
-    bot, 
-    preProcessed.content, 
-    context.messages,
-    {
-      includeToolCalls: toolOptions?.includeToolCalls,
-      availableTools: toolOptions?.availableTools
-    }
-  );
+  // Get response from the OpenAI API, falling back to mock service if needed
+  let botResponse;
+  try {
+    botResponse = await getOpenAIChatResponse(
+      bot,
+      preProcessed.content,
+      context.messages,
+      {
+        includeToolCalls: toolOptions?.includeToolCalls,
+        availableTools: toolOptions?.availableTools
+      }
+    );
+  } catch (error) {
+    console.error("Error calling OpenAI, falling back to mock:", error);
+    // Fall back to mock service if there's an error with OpenAI
+    botResponse = await getMockBotResponse(
+      bot, 
+      preProcessed.content, 
+      context.messages,
+      {
+        includeToolCalls: toolOptions?.includeToolCalls,
+        availableTools: toolOptions?.availableTools
+      }
+    );
+  }
   
   // Post-process the bot response
   const postProcessed = await postProcessMessage(
@@ -212,15 +228,17 @@ export async function processMessage(
   );
   
   // Add metadata
+  const metadata: ProcessingMetadata = {
+    recursionDepth: context.currentDepth,
+    preProcessed: preProcessed.metadata.originalContent !== userMessage.content ? true : false,
+    postProcessed: postProcessed.metadata.modifiedContent !== botResponse ? true : false,
+    processingTime: preProcessed.metadata.processingTime + postProcessed.metadata.processingTime,
+    originalContent: userMessage.content,
+    modifiedContent: postProcessed.content
+  };
+  
   botMessage.metadata = {
-    processingInfo: {
-      preProcessed: preProcessed.metadata.preProcessed,
-      postProcessed: postProcessed.metadata.postProcessed,
-      recursionDepth: context.currentDepth,
-      processingTime: preProcessed.metadata.processingTime + postProcessed.metadata.processingTime,
-      originalContent: userMessage.content,
-      modifiedContent: postProcessed.content
-    }
+    processing: metadata
   };
   
   // Send the bot response

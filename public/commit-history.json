@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "0fac5de",
+      "fullHash": "0fac5de5a50f1782cf37b691c52c0983ba7a4825",
+      "date": "2025-03-18 10:54:29 +0700",
+      "author": "3obby",
+      "message": "trashpush iv",
+      "category": "other"
+    },
+    {
       "hash": "ec42337",
       "fullHash": "ec423375782394058fddd0c827cf58a87fed2dfc",
       "date": "2025-03-17 23:58:20 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix OAuth authentication by adding missing User-Account-Session relations and add logo.png",
       "category": "bugfix"
-    },
-    {
-      "hash": "acf881b",
-      "fullHash": "acf881b5628697a3a9228cecd0a29fc108442341",
-      "date": "2025-03-08 13:16:58 +0700",
-      "author": "3obby",
-      "message": "Remove Apple OAuth provider and update login UI",
-      "category": "enhancement"
     }
   ]
 }

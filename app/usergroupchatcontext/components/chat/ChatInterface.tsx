@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useGroupChat } from '../../hooks/useGroupChat';
+import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
 import { SettingsModal } from '../settings/SettingsModal';
-import { Settings, Users } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
@@ -19,7 +19,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ className = '' }: ChatInterfaceProps) {
-  const { state, dispatch } = useGroupChat();
+  const { state, dispatch } = useRealGroupChat();
   const { state: botState } = useBotRegistry();
   const bots = botState.availableBots;
   
@@ -42,13 +42,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
       
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/10">
         <div className="flex items-center">
-          <h2 className="font-medium text-sm">Group Chat</h2>
-          <div className="ml-2 flex items-center">
-            <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-xs text-primary">
-              {state.settings?.activeBotIds?.length || 0}
-            </span>
-            <Users className="h-3 w-3 ml-1 text-muted-foreground" />
-          </div>
+          <h2 className="font-medium text-sm">AI Assistant</h2>
+          {bots.length > 0 && bots[0] && (
+            <div className="ml-2 flex items-center">
+              <span className="text-xs text-muted-foreground">
+                {bots[0].model}
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={toggleSettings}

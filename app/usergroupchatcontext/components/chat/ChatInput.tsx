@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2, Mic, MicOff } from 'lucide-react';
 import { VoiceInputButton } from './VoiceInputButton';
-import { useGroupChat } from '../../hooks/useGroupChat';
+import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { sendMessage, isProcessing } = useGroupChat();
+  const { sendMessage, isProcessing } = useRealGroupChat();
 
   // Auto-resize textarea based on content
   useEffect(() => {

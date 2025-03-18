@@ -1,0 +1,137 @@
+'use client';
+
+import { useGroupChatContext } from '../context/GroupChatContext';
+import { useBotRegistry } from '../context/BotRegistryProvider';
+import { v4 as uuidv4 } from 'uuid';
+import { getMockBotResponse } from '../services/mockBotService';
+
+export function useRealGroupChat() {
+  const context = useGroupChatContext();
+  const botRegistry = useBotRegistry();
+  
+  if (!context) {
+    throw new Error('useRealGroupChat must be used within a GroupChatProvider');
+  }
+  
+  const { state, dispatch } = context;
+  
+  // Helper function to send a user message
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return;
+    
+    // Create a user message
+    const userMessage = {
+      id: uuidv4(),
+      content: content.trim(),
+      role: 'user' as const,
+      sender: 'user',
+      senderName: 'You',
+      timestamp: Date.now(),
+      type: 'text' as const
+    };
+    
+    // Add the message to the chat
+    dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
+    
+    // Set processing state
+    dispatch({ type: 'SET_PROCESSING', payload: true });
+    
+    // Trigger bot responses
+    // Get active bot IDs from settings
+    const activeBotIds = state.settings?.activeBotIds || [];
+    
+    // If no active bots, just end processing
+    if (activeBotIds.length === 0) {
+      console.warn("No active bots configured to respond");
+      dispatch({ type: 'SET_PROCESSING', payload: false });
+      return;
+    }
+    
+    // Process responses for each active bot sequentially
+    for (const botId of activeBotIds) {
+      const bot = botRegistry.getBot(botId);
+      
+      if (!bot) {
+        console.warn(`Bot with ID ${botId} not found in registry`);
+        continue;
+      }
+      
+      // Set typing indicator for this bot
+      dispatch({ type: 'SET_TYPING_BOT_IDS', payload: [...state.typingBotIds, botId] });
+      
+      try {
+        // Get a real response from the bot
+        const botResponseContent = await getMockBotResponse(
+          bot, 
+          content, 
+          state.messages,
+          { includeToolCalls: bot.useTools }
+        );
+        
+        // Create a response message
+        const botResponse = {
+          id: uuidv4(),
+          content: botResponseContent,
+          role: 'assistant' as const,
+          sender: botId,
+          senderName: bot.name,
+          timestamp: Date.now(),
+          type: 'text' as const
+        };
+        
+        // Add the bot's message
+        dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
+      } catch (error) {
+        console.error(`Error getting response from bot ${botId}:`, error);
+        
+        // Create an error message if the bot fails to respond
+        const errorResponse = {
+          id: uuidv4(),
+          content: "Sorry, I encountered an error while processing your request.",
+          role: 'assistant' as const,
+          sender: botId,
+          senderName: bot.name,
+          timestamp: Date.now(),
+          type: 'text' as const
+        };
+        
+        dispatch({ type: 'ADD_MESSAGE', payload: errorResponse });
+      } finally {
+        // Remove typing indicator
+        dispatch({ 
+          type: 'SET_TYPING_BOT_IDS', 
+          payload: state.typingBotIds.filter(id => id !== botId)
+        });
+      }
+    }
+    
+    // End processing
+    dispatch({ type: 'SET_PROCESSING', payload: false });
+  };
+  
+  // Helper function to reset the chat
+  const resetChat = () => {
+    dispatch({ type: 'RESET_CHAT' });
+  };
+  
+  // Helper function to update settings
+  const updateSettings = (settings: any) => {
+    dispatch({ type: 'SET_SETTINGS', payload: settings });
+  };
+  
+  // Computed property for whether the system is processing
+  const isProcessing = state.isProcessing || state.isLoading;
+  
+  return {
+    // State
+    state,
+    messages: state.messages,
+    isProcessing,
+    
+    // Actions
+    dispatch,
+    sendMessage,
+    resetChat,
+    updateSettings,
+  };
+} 

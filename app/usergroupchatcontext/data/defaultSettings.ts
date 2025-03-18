@@ -1,11 +1,11 @@
 import { GroupChatSettings } from '../types';
 
 export const defaultGroupChatSettings: GroupChatSettings = {
-  name: 'AI Group Chat',
-  activeBotIds: ['researcher', 'critic', 'creative'],
+  name: 'AI Assistant Chat',
+  activeBotIds: ['default'],
   responseMode: 'sequential',
   maxRecursionDepth: 3,
-  systemPrompt: 'This is a group chat with multiple conversational bots.',
+  systemPrompt: 'This is a chat with an AI assistant powered by the latest GPT model.',
   processing: {
     enablePreProcessing: true,
     enablePostProcessing: true,
@@ -15,7 +15,7 @@ export const defaultGroupChatSettings: GroupChatSettings = {
   ui: {
     theme: 'dark',
     messageBubbleStyle: 'modern',
-    enableVoice: true,
+    enableVoice: false,
     enableTyping: true,
     showTimestamps: true,
     showAvatars: true,

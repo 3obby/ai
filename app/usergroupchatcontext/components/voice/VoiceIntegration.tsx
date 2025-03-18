@@ -31,8 +31,9 @@ export default function VoiceIntegration() {
   useEffect(() => {
     if (!isVoiceEnabled) return;
     
-    // Update recording state if it doesn't match LiveKit state
-    if (state.isRecording !== isListening) {
+    // Only update the recording state when transitioning from recording to not recording
+    // This prevents automatic activation of voice mode
+    if (state.isRecording && !isListening) {
       dispatch({ type: 'TOGGLE_RECORDING' });
     }
     

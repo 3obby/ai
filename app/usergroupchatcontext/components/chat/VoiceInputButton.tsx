@@ -142,6 +142,7 @@ export function VoiceInputButton({
         onClick={handleToggleRecording}
         disabled={disabled || isInitializing}
         aria-label={isActive ? "Stop recording" : "Start voice recording"}
+        title={isActive ? "Stop voice mode" : "Click to activate voice mode"}
       >
         {isInitializing ? (
           <Loader2 className="h-5 w-5 animate-spin" />

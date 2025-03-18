@@ -17,13 +17,96 @@ function seededRandom(seed: string): () => number {
   };
 }
 
+// Helper function to call real OpenAI API for the default bot
+async function callOpenAIApi(bot: Bot, userMessage: string, chatHistory: Message[], options: MockBotResponseOptions = {}): Promise<string> {
+  try {
+    // Convert our message format to OpenAI's format
+    const messages: any[] = [];
+    
+    // Add system prompt
+    messages.push({
+      role: 'system',
+      content: bot.systemPrompt
+    });
+    
+    // Add chat history (limited to last 20 messages to manage context window)
+    for (const message of chatHistory.slice(-20)) {
+      // Skip system messages
+      if (message.role === 'system') continue;
+      
+      messages.push({
+        role: message.role,
+        content: message.content
+      });
+    }
+    
+    // Add the current user message
+    messages.push({
+      role: 'user',
+      content: userMessage
+    });
+    
+    // Prepare the API call
+    const requestBody: any = {
+      model: bot.model,
+      messages,
+      temperature: bot.temperature,
+      max_tokens: bot.maxTokens
+    };
+    
+    // Add tools if the bot is configured to use them
+    if (options.includeToolCalls && bot.useTools && options.availableTools && options.availableTools.length > 0) {
+      requestBody.tools = options.availableTools;
+      requestBody.tool_choice = 'auto';
+    }
+    
+    // Call the OpenAI API
+    const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    // Check for errors
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    // Parse the response
+    const data = await response.json();
+    
+    // Extract the assistant's message
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content || '';
+    } else {
+      throw new Error('No response content received from OpenAI');
+    }
+  } catch (error) {
+    console.error('Error calling OpenAI:', error);
+    return "Sorry! I can't reach the internet right now. Please check your network settings.";
+  }
+}
+
 // This function generates a mock response for testing purposes
+// For default bot, it tries to use the real OpenAI API
 export async function getMockBotResponse(
   bot: Bot, 
   userMessage: string, 
   chatHistory: Message[],
   options: MockBotResponseOptions = {}
 ): Promise<string> {
+  // For the default bot, try to use the real OpenAI API
+  if (bot.id === 'default') {
+    try {
+      return await callOpenAIApi(bot, userMessage, chatHistory, options);
+    } catch (error) {
+      console.error('Failed to call OpenAI API, falling back to mock response:', error);
+      // Fall back to mock response if API call fails
+    }
+  }
+  
   // Create a deterministic random function based on user message and bot ID
   const random = seededRandom(bot.id + userMessage.slice(0, 20));
   
@@ -33,6 +116,17 @@ export async function getMockBotResponse(
     options.availableTools && 
     options.availableTools.length > 0 &&
     random() > 0.6; // 40% chance when tools are available
+  
+  // Default response for the default bot
+  if (bot.id === 'default') {
+    const defaultResponses = [
+      `I'm your AI assistant. About "${userMessage}" - I'd like to help, but I'm currently in offline mode. Please check your connection settings.`,
+      `Regarding "${userMessage}" - I'm currently operating in offline mode. Please check your connection to access my full capabilities.`,
+      `I'd like to respond to "${userMessage}" but I'm currently in offline mode. Please check your network connection.`
+    ];
+    const randomIndex = Math.floor(random() * defaultResponses.length);
+    return defaultResponses[randomIndex];
+  }
   
   // Simple response generation based on bot's name and user message
   const responses = {

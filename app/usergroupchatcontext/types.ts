@@ -8,6 +8,8 @@ export interface Bot {
   avatar: string;
   model: string;
   systemPrompt: string;
+  preProcessingPrompt?: string;
+  postProcessingPrompt?: string;
   temperature: number;
   maxTokens: number;
   enabled: boolean;

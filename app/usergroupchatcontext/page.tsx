@@ -10,11 +10,9 @@ import { LiveKitIntegrationProvider } from './context/LiveKitIntegrationProvider
 import { sampleBots } from './data/sampleBots';
 import { defaultGroupChatSettings } from './data/defaultSettings';
 import { ChatInterface } from './components/chat/ChatInterface';
-import { Info, X, Wrench, Activity } from 'lucide-react';
-import { ToolPanel } from './components/tools/ToolPanel';
+import { Info, X } from 'lucide-react';
 import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
-import VoiceAnalytics from './components/voice/VoiceAnalytics';
 import VoiceCommandController from './components/voice/VoiceCommandController';
 import './mobile.css';
 
@@ -25,27 +23,27 @@ function BotsInitializer() {
   const stableId = useId(); // Use a stable ID instead of Date.now()
   
   useEffect(() => {
-    // Get the three diverse bots
-    const botIds = ['researcher', 'creative', 'critic'];
+    // Get the default bot
+    const botId = 'default';
     const availableBots = botRegistry.state.availableBots;
     
     // Only initialize if not already initialized AND messages are empty
     if (availableBots.length > 0 && state.messages.length === 0) {
-      // Update group chat settings to include active bots
+      // Update group chat settings to include the default bot
       dispatch({
         type: 'SET_SETTINGS',
         payload: {
-          activeBotIds: botIds,
-          name: 'AI Team Chat'
+          activeBotIds: [botId],
+          name: 'AI Assistant Chat'
         }
       });
       
-      // Add initial system message with a fixed ID instead of using a generated one
+      // Add initial system message with a fixed ID
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
           id: 'welcome-message',
-          content: "Welcome! You're now chatting with a team of three AI assistants - a Research Assistant, a Creative Ideator, and a Critical Thinker. Each has different strengths to help with your questions.",
+          content: "Hello! I'm your AI assistant powered by the latest GPT model. I can help with a wide range of questions and tasks. You can type your messages and I'll respond with text. If you'd like to use voice input and hear my responses, click the microphone button in the message box to activate voice mode.",
           role: 'system',
           sender: 'system',
           timestamp: Date.now(),
@@ -53,7 +51,7 @@ function BotsInitializer() {
         }
       });
       
-      console.log("Bots initialized:", availableBots);
+      console.log("Bot initialized:", availableBots.find(bot => bot.id === botId));
     } else if (availableBots.length === 0) {
       console.warn("No bots available for initialization");
     }
@@ -64,14 +62,12 @@ function BotsInitializer() {
 
 export default function GroupChatContextPage() {
   const [infoOpen, setInfoOpen] = useState(false);
-  const [toolPanelOpen, setToolPanelOpen] = useState(false);
-  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   
-  // Select three diverse bots from the sample bots
-  const activeBots = useMemo(() => {
-    // Using the researcher, creative, and critic for diversity
+  // Select just the default bot
+  const activeBot = useMemo(() => {
+    // Using only the default bot
     return sampleBots.filter(bot => 
-      ['researcher', 'creative', 'critic'].includes(bot.id)
+      bot.id === 'default'
     ).map(bot => ({
       ...bot,
       enabled: true
@@ -80,7 +76,7 @@ export default function GroupChatContextPage() {
 
   return (
     <div className="h-full w-full">
-      <BotRegistryProvider initialBots={activeBots}>
+      <BotRegistryProvider initialBots={activeBot}>
         <ToolCallProvider>
           <GroupChatProvider>
             <LiveKitProvider>
@@ -92,18 +88,6 @@ export default function GroupChatContextPage() {
                     <VoiceIntegration />
                     <VoiceResponseManager />
                     <VoiceCommandController commandPrefix="system" />
-                    
-                    {toolPanelOpen && (
-                      <div className="w-80 border-l h-full overflow-auto">
-                        <ToolPanel className="h-full" />
-                      </div>
-                    )}
-                    
-                    {analyticsOpen && (
-                      <div className="w-80 border-l h-full overflow-auto">
-                        <VoiceAnalytics className="h-full" />
-                      </div>
-                    )}
                   </div>
                 </ToolIntegrationProvider>
               </LiveKitIntegrationProvider>
@@ -117,7 +101,7 @@ export default function GroupChatContextPage() {
         <div className="absolute inset-0 bg-background z-20 overflow-auto">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">About Group Chat Context</h2>
+              <h2 className="text-xl font-bold">About AI Assistant Chat</h2>
               <button 
                 onClick={() => setInfoOpen(false)}
                 className="p-1 text-muted-foreground hover:text-foreground"
@@ -128,32 +112,18 @@ export default function GroupChatContextPage() {
             </div>
             
             <p className="text-sm text-muted-foreground">
-              The Group Chat Context system provides a flexible framework for managing conversations with multiple AI assistants. 
-              It handles state management, bot configuration, and message processing in a unified interface.
+              This chat interface allows you to interact with an AI assistant powered by the latest GPT model.
+              You can communicate through text or voice, with transcripts seamlessly integrated into the conversation.
             </p>
             
             <div>
               <h3 className="font-medium mb-2">Key Features</h3>
               <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li>Multiple bot personalities in one chat</li>
-                <li>Configurable response modes</li>
-                <li>Individual bot configuration</li>
-                <li>Pre and post-processing of messages</li>
-                <li>Tool usage capabilities</li>
-                <li>Voice input support</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">Implementation Details</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Built using React Context API and custom hooks for state management.
-              </p>
-              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li>GroupChatContext - Core state management</li>
-                <li>BotRegistryContext - Bot configuration</li>
-                <li>MessageList - Rendering messages</li>
-                <li>SettingsModal - Configuration UI</li>
+                <li>Text and voice interactions with the same AI assistant</li>
+                <li>Unified conversation history across modalities</li>
+                <li>Powered by the latest GPT model (GPT-4o)</li>
+                <li>Mobile-optimized interface</li>
+                <li>Voice commands support</li>
               </ul>
             </div>
           </div>

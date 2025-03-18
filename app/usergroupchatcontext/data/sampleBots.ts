@@ -2,6 +2,18 @@ import { Bot } from '../types';
 
 export const sampleBots: Bot[] = [
   {
+    id: 'default',
+    name: 'AI Assistant',
+    description: 'A helpful and knowledgeable assistant powered by the latest GPT model',
+    avatar: 'https://ui-avatars.com/api/?name=AI&background=8b5cf6&color=fff',
+    model: 'gpt-4o',
+    systemPrompt: 'You are a helpful, knowledgeable, and friendly AI assistant. Answer questions accurately, clearly, and conversationally. Provide relevant information and follow the user\'s instructions carefully.',
+    temperature: 0.7,
+    maxTokens: 2048,
+    enabled: true,
+    useTools: false
+  },
+  {
     id: 'researcher',
     name: 'Research Assistant',
     description: 'Specializes in finding and analyzing information',
