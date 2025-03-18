@@ -2,99 +2,109 @@
 
 ## Overview
 
-GroupChatContext provides a minimalist, mobile-first group chat interface where users can interact with multiple AI bots through text and voice. The system enables seamless transitions between text and voice inputs, with full transcription capabilities powered by OpenAI Whisper and LiveKit's WebRTC infrastructure. Each bot can be individually configured with custom prompts, processing rules, and tool capabilities.
+GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system ensures a seamless transition from text chat to voice chat at any time. When a user presses the “voice mode” button, the latest and most capable realtime OpenAI voice model is automatically selected, preserving full context from the ongoing text-based conversation. While in voice mode, each exchange between the user and the bot is transcribed in real time and injected into the unified text output, maintaining a consistent history for both text and voice interactions.
 
-**Key Focus**: All data flows (tools, bots, text, transcriptions) must flow to a unified text output system, both under the hood and in the UI. By default, only bot outputs are displayed, but clicking a bot message should reveal the full signal chain:
-- Original input
-- Optional pre-processing steps
-- Tool calling logic (if applicable)
-- Tool execution and debugging information
-- Optional post-processing
-- Final bot output
+By default, only the final outputs from each bot are displayed. However, users can expand any bot message to reveal the complete signal chain, which includes:
+- Original user input (text or transcribed voice)  
+- Optional pre-processing steps  
+- Tool calling logic (if applicable)  
+- Tool execution details and debugging information  
+- Optional post-processing steps  
+- Final bot output  
+
+This design ensures that tool usage, pre- and post-processing, and any rework attempts remain available to all users in both text and voice contexts with no gaps in functionality.
 
 ## Development Direction
 
-We are no longer building samples or demos. Our new default configuration:
+We have shifted our efforts to create a robust production-ready system. By default:
 
-1. **Latest OpenAI Models by Default**:
-   - Text interactions should always use the latest GPT model (e.g., gpt-4o)
-   - Voice interactions should use the latest available realtime model
+1. **Latest OpenAI Models by Default**  
+   - Text interactions use the latest GPT model (e.g., gpt-4o)  
+   - Voice interactions automatically switch to the newest realtime OpenAI model for an optimal experience  
 
-2. **LiveKit Integration with OpenAI**:
-   - For realtime models: Use the MultimodalAgent class with RealtimeModel
-   - Specify the latest model version (e.g., gpt-4o-realtime-preview-yyyy-mm-dd)
-   - For text models: Use the LLM class with latest models (gpt-4o)
-   - Query for the most current model version names at build time
+2. **LiveKit Integration with OpenAI**  
+   - For realtime models: Use the MultimodalAgent class with RealtimeModel (e.g., gpt-4o-realtime-preview-yyyy-mm-dd)  
+   - For text models: Use the LLM class (e.g., gpt-4o)  
+   - Model versions are dynamically queried at build time to ensure currency  
 
-3. **Single-Bot Experience**:
-   - Default to a single bot powered by the latest OpenAI model
-   - Seamless transition between text and voice interactions with the same bot
-   - Unified history and context across modalities
+3. **Single-Bot Experience**  
+   - A single default bot leverages the latest OpenAI models for both text and voice interactions  
+   - The system maintains unified context across text and voice so that switching modes is instant and retains conversational history  
+   - All message flows (text and transcribed voice) route through the same bot, ensuring a consistent, high-quality exchange  
 
 ## Core Architecture
 
 ### Component Hierarchy and Relationships
 
-**Top Level: GroupChatContext**
-- Contains and orchestrates all other components
+**Top Level: GroupChatContext**  
+- Orchestrates and contains all other components
 
-**Main Components and Their Relationships:**
-1. User I/O (Text & Voice)
-   - Bidirectional connection with Bot Manager
-   - Bidirectional connection with LiveKit Integration
+**Main Components and Their Relationships**:
+1. **User I/O (Text & Voice)**
+   - Bidirectional connection with Bot Manager  
+   - Bidirectional connection with LiveKit Integration  
 
-2. Bot Manager
-   - Connected to User I/O
-   - Connected to Settings System (bidirectional)
-   - Controls Bot Instance Registry
+2. **Bot Manager**
+   - Connected to User I/O  
+   - Connected to Settings System (bidirectional)  
+   - Controls Bot Instance Registry  
 
-3. Settings System
-   - Connected to Bot Manager (bidirectional)
-   - Connected to Prompt Processor (bidirectional)
+3. **Settings System**
+   - Connected to Bot Manager (bidirectional)  
+   - Connected to Prompt Processor (bidirectional)  
 
-4. LiveKit Integration
-   - Connected to User I/O
-   - Connected to Bot Instance Registry (bidirectional)
+4. **LiveKit Integration**
+   - Connected to User I/O  
+   - Connected to Bot Instance Registry (bidirectional)  
 
-5. Bot Instance Registry
-   - Controlled by Bot Manager
-   - Connected to LiveKit Integration (bidirectional)
-   - Connected to Prompt Processor (bidirectional)
-   - Controls Bot Response Pipeline
+5. **Bot Instance Registry**
+   - Controlled by Bot Manager  
+   - Connected to LiveKit Integration (bidirectional)  
+   - Connected to Prompt Processor (bidirectional)  
+   - Manages the Bot Response Pipeline  
 
-6. Prompt Processor (Pre/Post Hooks)
-   - Connected to Bot Instance Registry (bidirectional)
-   - Connected to Settings System (bidirectional)
-   - Connected to Reprocessing Control System (bidirectional)
+6. **Prompt Processor (Pre/Post Hooks)**
+   - Connected to Bot Instance Registry (bidirectional)  
+   - Connected to Settings System (bidirectional)  
+   - Connected to Reprocessing Control System (bidirectional)  
 
-7. Tool Calling System
-   - Connected to Bot Response Pipeline (bidirectional)
+7. **Tool Calling System**
+   - Connected to Bot Response Pipeline (bidirectional)  
 
-8. Bot Response Pipeline
-   - Controlled by Bot Instance Registry
-   - Connected to Tool Calling System (bidirectional)
-   - Connected to Reprocessing Control System (bidirectional)
+8. **Bot Response Pipeline**
+   - Controlled by Bot Instance Registry  
+   - Connected to Tool Calling System (bidirectional)  
+   - Connected to Reprocessing Control System (bidirectional)  
 
-9. Reprocessing Control System
-   - Connected to Bot Response Pipeline (bidirectional)
-   - Connected to Prompt Processor (bidirectional)
+9. **Reprocessing Control System**
+   - Connected to Bot Response Pipeline (bidirectional)  
+   - Connected to Prompt Processor (bidirectional)  
 
 ## Key Components
 
 ### Core Components
-1. **GroupChatProvider** - Top-level context provider managing global state and configuration
-2. **BotRegistry** - Manages available and active bots with their configurations
-3. **MessageProcessor** - Central message handling pipeline for routing and sequencing
+1. **GroupChatProvider**  
+   - Top-level context provider managing global state, including user and bot data
+2. **BotRegistry**  
+   - Manages the set of available bots and their configurations  
+3. **MessageProcessor**  
+   - Central message-handling pipeline for routing and sequencing  
 
 ### Input/Output Components
-1. **ChatInterface** - Minimal, mobile-first UI with text input and microphone toggle
-2. **LiveKitService** - Wraps LiveKit's WebRTC infrastructure for high-quality voice communication
-3. **BotResponseRenderer** - Renders bot responses with appropriate styling and animations
+1. **ChatInterface**  
+   - Minimal, mobile-first UI supporting text input and a “voice mode” toggle  
+2. **LiveKitService**  
+   - Wraps LiveKit’s WebRTC functionalities for high-quality voice streaming and automatic transcription  
+3. **BotResponseRenderer**  
+   - Displays bot responses with a collapsible view for advanced debugging and signal chain exploration  
 
 ### Configuration Components
-1. **GroupSettingsPanel** - Global chat settings UI for bot selection, response mode configuration, and processing settings
-2. **BotConfigPanel** - Per-bot configuration for prompts, tools, and processing settings (pre/post-processing, reprocessing)
-3. **PromptEditor** - Advanced prompt editing with pre/post-processing support
+1. **GroupSettingsPanel**  
+   - Global chat settings panel controlling bot selections, response configurations, and advanced processing  
+2. **BotConfigPanel**  
+   - Per-bot configuration, including prompts, tools, and pre/post-processing rules  
+3. **PromptEditor**  
+   - Advanced configuration interface for refining prompts and hooking into reprocessing logic  
 
 ## Signal Chain Logging System
 
@@ -102,20 +112,19 @@ We are no longer building samples or demos. Our new default configuration:
 
 **Main Container: Unified Text Output System**
 
-**Processing Flow:**
-1. User Input (Text & Voice) → Pre-Process Logging → Tool Resolution Logging
-2. Tool Resolution Logging → Tool Execution Logging → Post-Process Logging → Final Output
-3. Final Output → Message Display Component
+**Processing Flow**:  
+1. User Input (Text & Voice) → Pre-Process Logging → Tool Resolution Logging  
+2. Tool Resolution Logging → Tool Execution Logging → Post-Process Logging → Final Output  
+3. Final Output → Message Display Component  
 
-**Message Display Component:**
-- Contains two views:
-  - Default View: Shows only final bot response
-  - Expanded View: Shows complete processing signal chain
+**Message Display Component**:  
+- Default View: Displays only the final output from each bot  
+- Expanded View: Shows all intermediate steps, configuration details, and debug logs  
 
 ### Flow Direction:
-- User Input flows forward through Pre-Process and Tool Resolution
-- Tool Execution results flow back through Post-Process to Final Output
-- Final Output is displayed in the Message Display Component
+- User Input travels through pre-processing and tool resolution stages  
+- Tool results flow back through post-processing to produce the final output  
+- The final output is then presented in the Message Display Component with optional expanded logs  
 
 
 ## Type System
@@ -241,6 +250,7 @@ export interface GroupChatSettings {
 export interface GroupChatState {
   settings: GroupChatSettings;
   messages: Message[];
+  bots: Bot[];
   isRecording: boolean;
   isProcessing: boolean;
   settingsOpen: boolean;
@@ -288,23 +298,30 @@ export type GroupChatAction =
 
 ```
 /app/usergroupchatcontext/
+├── README.md (4.1KB)
 ├── api/
   ├── companion-response/
+  ├── latest-openai-models/
+    ├── route.ts (1.9KB)
   ├── livekit/
     ├── room/
       ├── route.ts (5.6KB)
     ├── token/
       ├── route.ts (5.4KB)
+  ├── livekit-token/
+    ├── route.ts (2.1KB)
   ├── openai/
     ├── chat/
       ├── route.ts (2.2KB)
+  ├── synthesize-speech/
+    ├── route.ts (2.4KB)
 ├── components/
   ├── bots/
     ├── BotCard.tsx (3.5KB)
   ├── chat/
     ├── ChatContainer.tsx (0.4KB)
     ├── ChatHeader.tsx (1KB)
-    ├── ChatInput.tsx (3.5KB)
+    ├── ChatInput.tsx (3.7KB)
     ├── ChatInterface.tsx (4.5KB)
     ├── MessageBubble.tsx (3.5KB)
     ├── MessageInput.tsx (2.7KB)
@@ -313,7 +330,7 @@ export type GroupChatAction =
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
     ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (5.8KB)
+    ├── VoiceInputButton.tsx (11KB)
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
     ├── ProcessingInfo.tsx (3.5KB)
@@ -331,19 +348,21 @@ export type GroupChatAction =
     ├── ToolPanel.tsx (5KB)
     ├── VoiceToolConfirmation.tsx (4.7KB)
   ├── voice/
-    ├── AudioVisualizer.tsx (2.2KB)
+    ├── AudioVisualizer.tsx (1.7KB)
     ├── VoiceActivityIndicator.tsx (0.7KB)
     ├── VoiceAnalytics.tsx (7.2KB)
     ├── VoiceCommandController.tsx (14.4KB)
     ├── VoiceConversationController.tsx (12.8KB)
     ├── VoiceInputButton.tsx (3.1KB)
     ├── VoiceIntegration.tsx (3.1KB)
+    ├── VoiceOverlay.tsx (14.9KB)
     ├── VoicePlaybackControls.tsx (3.4KB)
     ├── VoiceResponseManager.tsx (6KB)
+    ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
   ├── BotRegistryProvider.tsx (3.4KB) # State/service provider
-  ├── GroupChatContext.tsx (3.1KB) # Context definition
+  ├── GroupChatContext.tsx (3.4KB) # Context definition
   ├── GroupChatProvider.tsx (6.5KB) # State/service provider
   ├── LiveKitIntegrationProvider.tsx (19.4KB) # State/service provider
   ├── LiveKitProvider.tsx (6.2KB) # State/service provider
@@ -365,20 +384,20 @@ export type GroupChatAction =
 ├── k.md (21.1KB)
 ├── ka.md (7.8KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (15.6KB)
-├── mobile.css (1.7KB)
-├── page.tsx (5.2KB)
+├── llm_copilot_overview_and_todo.md (17.1KB)
+├── mobile.css (2.3KB)
+├── page.tsx (5.3KB)
 ├── scripts/
   ├── generate-test.js (1.9KB)
   ├── update-readme.js (1.7KB)
 ├── services/
   ├── livekit/
     ├── livekit-api-client.ts (3.8KB)
-    ├── livekit-service.ts (3.3KB)
-    ├── multimodal-agent-service.ts (14KB)
-    ├── room-session-manager.ts (6.4KB)
+    ├── livekit-service.ts (6KB)
+    ├── multimodal-agent-service.ts (29.6KB)
+    ├── room-session-manager.ts (15KB)
     ├── turn-taking-service.ts (20.3KB)
-    ├── voice-activity-service.ts (9.5KB)
+    ├── voice-activity-service.ts (16.4KB)
   ├── mockBotService.ts (8.1KB) # Service implementation
   ├── openaiChatService.ts (2.7KB) # Service implementation
   ├── openaiRealtimeService.ts (13.1KB) # Service implementation
@@ -395,56 +414,67 @@ export type GroupChatAction =
   ├── voiceToolCallingService.ts (11.7KB) # Service implementation
   ├── voiceToolRegistry.ts (2.9KB)
   ├── voiceTranscriptionService.ts (7.3KB) # Service implementation
+├── speech-test/
+  ├── page.tsx (0.9KB)
 ├── types/
   ├── bots.ts (1.5KB)
   ├── index.ts (0.1KB)
   ├── livekit.ts (2.4KB)
   ├── messages.ts (2.7KB)
   ├── settings.ts (3.1KB)
-  ├── voice.ts (2.8KB)
+  ├── voice.ts (2.9KB)
 ├── types.ts (4KB) # Type definitions
 ├── utils/
   ├── generateReadme.js (5.2KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (6.8KB)
+  ├── llm_copilot_part1.md (8.2KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```
 
 ## Next Implementation Steps
 
-1. **Model Version Management**:
-   - Create a service to query and cache latest model versions
-   - Implement version fallback mechanism if preferred version unavailable
-   - Add model capability detection to match features with supported models
+1. **Model Version Management**  
+   - Implement a service to discover and cache the latest model versions  
+   - Fallback gracefully if a preferred model version is unavailable  
+   - Integrate a feature detection system for each model’s capabilities  
 
-2. **Single Bot Experience**:
-   - Update bot initialization to use a single latest-model bot
-   - Remove multi-bot UI/UX elements not relevant to single-bot experience
-   - Ensure all messages (text and voice) route to the same bot
+2. **Single Bot Experience**  
+   - Use a single latest-model bot for all incoming user interactions (text or voice)  
+   - Remove or refine any multi-bot UI elements that are no longer relevant  
+   - Guarantee that text-based and voice-based messages unify under one straightforward conversation flow  
 
-3. **Enhanced Signal Chain Visualization**:
-   - Improve visual representation of pre/post processing effects
-   - Add detailed view of reprocessing iterations
-   - Create dedicated timeline view of complete signal chain
+3. **Enhanced Signal Chain Visualization**  
+   - Provide more detailed views of how each message is processed at each step  
+   - Highlight reprocessing or refinement logic when user or system intervention occurs  
+   - Consider a timeline layout for more complex debugging sessions  
 
-4. **Tool System Integration**:
-   - Complete the tool configuration UI
-   - Integrate tool system with voice capabilities
-   - Implement tool selection based on context and user needs
+4. **Tool System Integration**  
+   - Complete tool configuration options in the UI  
+   - Enable tool calling via natural voice commands  
+   - Select the most appropriate tools based on context, usage patterns, or user preference  
 
-5. **LiveKit Integration Enhancement**:
-   - Update MultimodalAgent implementation for latest model versions
-   - Ensure proper audio streaming and transcription with latest models
-   - Optimize latency for realtime voice interactions
+5. **LiveKit Integration Enhancement**  
+   - Ensure minimal latency for real-time voice streaming and OpenAI transcription  
+   - Automate voice session startup and shutdown for an easy “voice mode” toggle  
+   - Maintain context across text and voice seamlessly to enable one continuous conversation  
 
 ## Architectural Advantages
 
-- **WebRTC Benefits**: Lower latency, global edge network, simplified implementation
-- **Voice Activity Detection**: Natural conversation flow, efficient audio transmission
-- **Multi-modal Integration**: Unified context across text and voice interactions
-- **Mobile-First Design**: Responsive design, touch-friendly interface, efficient resource usage
-- **Voice Tool Optimization**: Natural language tool calling, format responses for speech 
-- **Unified Signal Chain**: Complete visibility into all processing steps with expandable UI
-- **Pre/Post Processing**: Enhanced message quality and customization at both global and bot levels
-- **Reprocessing System**: Intelligent detection of content changes with configurable depth limits
-- **Unified Bot Settings**: Consistent configuration across all bots with individual overrides 
+- **WebRTC Benefits**  
+  Provides low latency, optimized global edge networking, and straightforward implementation  
+- **Voice Activity Detection**  
+  Enables natural conversation flow, with real-time detection of speaking intervals  
+- **Multi-modal Integration**  
+  Merges text and voice in a single conversation thread with shared context  
+- **Mobile-First Design**  
+  Offers an efficient, touch-friendly interface that adapts gracefully to smaller screens  
+- **Voice Tool Optimization**  
+  Transforms user voice commands into natural language tool calls  
+- **Unified Signal Chain**  
+  Centralizes logs, making it easy to trace data from pre-processing to final bot output  
+- **Pre/Post Processing**  
+  Allows flexible, high-quality control over messages, both globally and per bot  
+- **Reprocessing System**  
+  Provides iterative refinement, automatically or on user demand, within clearly defined limits  
+- **Unified Bot Settings**  
+  Maintains consistent global defaults across all bots, with flexible overrides per individual bot  

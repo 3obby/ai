@@ -11,9 +11,21 @@ import { VoiceSettings, MultimodalAgentConfig } from '../../types/voice';
 
 interface VoiceOverlayProps {
   onClose: () => void;
+  isActive?: boolean;
+  interimText?: string;
+  errorMessage?: { title: string; message: string } | null;
+  lowVolumeWarning?: boolean;
+  buttonText?: string;
 }
 
-export default function VoiceOverlay({ onClose }: VoiceOverlayProps) {
+export default function VoiceOverlay({ 
+  onClose,
+  isActive = true,
+  interimText = '',
+  errorMessage = null,
+  lowVolumeWarning = false,
+  buttonText = 'Voice Mode'
+}: VoiceOverlayProps) {
   const { voiceSettings, updateVoiceSettings, autoAdjustVadSensitivity } = useVoiceSettings();
   const { state } = useGroupChatContext();
   const [userAudioLevel, setUserAudioLevel] = useState(0);
@@ -27,6 +39,10 @@ export default function VoiceOverlay({ onClose }: VoiceOverlayProps) {
     devices: [],
     stream: null
   });
+  const [voiceSpeed, setVoiceSpeed] = useState(1);
+  const [currentVoice, setCurrentVoice] = useState<string>(
+    multimodalAgentService.getConfig().voice || 'ash'
+  );
 
   // Get the most recently interacted with bot
   useEffect(() => {
@@ -135,7 +151,7 @@ export default function VoiceOverlay({ onClose }: VoiceOverlayProps) {
       <div className="container px-4 py-3 mx-auto">
         {/* Top bar with close button */}
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium">Voice Mode</h3>
+          <h3 className="text-sm font-medium">{buttonText}</h3>
           <button 
             className="p-1 rounded-full hover:bg-muted"
             onClick={onClose}
@@ -145,22 +161,28 @@ export default function VoiceOverlay({ onClose }: VoiceOverlayProps) {
           </button>
         </div>
 
-        {/* Development mode notice */}
-        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
-          <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
-            Development Mode: Real-time speech transcription is disabled in local development.
-          </p>
-          <p className="text-xs text-yellow-500/80 mt-1">
-            In production, this would connect to OpenAI Whisper for high-quality speech recognition.
-          </p>
-        </div>
+        {/* Error message display */}
+        {errorMessage && (
+          <div className="mb-3 p-2 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-md">
+            <p className="text-xs font-medium">{errorMessage.title}</p>
+            <p className="text-xs">{errorMessage.message}</p>
+          </div>
+        )}
+
+        {/* Low volume warning */}
+        {lowVolumeWarning && (
+          <div className="mb-3 p-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-md">
+            <p className="text-xs font-medium">Low microphone volume detected</p>
+            <p className="text-xs">Check your microphone or speak louder</p>
+          </div>
+        )}
 
         {/* Current transcription status */}
-        {isTranscribing && (
+        {(isTranscribing || interimText) && (
           <div className="mb-3 p-2 bg-primary/10 rounded-md">
             <p className="text-xs font-medium">
-              {currentTranscription ? (
-                <>Transcribing: <span className="italic">{currentTranscription}</span></>
+              {currentTranscription || interimText ? (
+                <>Transcribing: <span className="italic">{currentTranscription || interimText}</span></>
               ) : (
                 'Listening...'
               )}
@@ -284,47 +306,85 @@ export default function VoiceOverlay({ onClose }: VoiceOverlayProps) {
         {/* Voice settings (collapsible) */}
         {showSettings && (
           <div className="mt-3 pt-3 border-t border-border">
-            <div className="mb-3">
-              <label className="flex justify-between text-xs mb-1">
-                <span>Microphone sensitivity</span>
-                <span>{(voiceSettings.vadThreshold || 0.3).toFixed(2)}</span>
-              </label>
-              <input 
-                type="range" 
-                min="0.1" 
-                max="0.9" 
-                step="0.05"
-                value={voiceSettings.vadThreshold || 0.3}
-                onChange={handleVadSensitivityChange}
-                className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
+            <h4 className="text-sm font-medium mb-2">Voice Settings</h4>
             
-            <div className="mb-3">
-              <label className="flex justify-between text-xs mb-1">
-                <span>Voice speed</span>
-                <span>{(multimodalAgentService.getConfig()?.voiceSpeed || 1).toFixed(1)}x</span>
-              </label>
-              <input 
-                type="range" 
-                min="0.5" 
-                max="2.0" 
-                step="0.1"
-                value={multimodalAgentService.getConfig()?.voiceSpeed || 1}
-                onChange={handleVoiceSpeedChange}
-                className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <button className="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2 py-2 rounded flex items-center justify-center">
-                <Volume2 className="w-3 h-3 mr-1" />
-                Test voice
-              </button>
-              <button className="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2 py-2 rounded flex items-center justify-center">
-                <VolumeX className="w-3 h-3 mr-1" />
-                Mute
-              </button>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs block mb-1">Voice</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    className={`text-xs px-2 py-1 rounded ${currentVoice === 'ash' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => {
+                      multimodalAgentService.updateConfig({ voice: 'ash' });
+                      setCurrentVoice('ash');
+                    }}
+                  >
+                    Ash (Female)
+                  </button>
+                  <button 
+                    className={`text-xs px-2 py-1 rounded ${currentVoice === 'coral' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => {
+                      multimodalAgentService.updateConfig({ voice: 'coral' });
+                      setCurrentVoice('coral');
+                    }}
+                  >
+                    Coral (Female)
+                  </button>
+                  <button 
+                    className={`text-xs px-2 py-1 rounded ${currentVoice === 'alloy' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => {
+                      multimodalAgentService.updateConfig({ voice: 'alloy' });
+                      setCurrentVoice('alloy');
+                    }}
+                  >
+                    Alloy (Neutral)
+                  </button>
+                  <button 
+                    className={`text-xs px-2 py-1 rounded ${currentVoice === 'echo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => {
+                      multimodalAgentService.updateConfig({ voice: 'echo' });
+                      setCurrentVoice('echo');
+                    }}
+                  >
+                    Echo (Male)
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-xs block mb-1">Voice Quality</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground"
+                    onClick={() => multimodalAgentService.updateConfig({ voiceQuality: 'high-quality' })}
+                  >
+                    High Quality
+                  </button>
+                  <button 
+                    className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground"
+                    onClick={() => multimodalAgentService.updateConfig({ voiceQuality: 'standard' })}
+                  >
+                    Standard
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-xs block mb-1">Voice Speed: {voiceSpeed.toFixed(1)}x</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={voiceSpeed}
+                  onChange={(e) => {
+                    const newSpeed = parseFloat(e.target.value);
+                    setVoiceSpeed(newSpeed);
+                    multimodalAgentService.updateConfig({ voiceSpeed: newSpeed });
+                  }}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         )}

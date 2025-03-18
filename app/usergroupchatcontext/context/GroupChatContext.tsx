@@ -18,6 +18,7 @@ const GroupChatContext = createContext<GroupChatContextType | undefined>(undefin
 const initialState: GroupChatState = {
   settings: defaultGroupChatSettings,
   messages: [],
+  bots: [],
   isRecording: false,
   isProcessing: false,
   settingsOpen: false,
@@ -59,8 +60,8 @@ function groupChatReducer(state: GroupChatState, action: GroupChatAction): Group
         settings: {
           ...state.settings,
           voiceSettings: {
-            vadMode: 'auto', // Default value
-            ...(state.settings.voiceSettings || {}),
+            vadMode: state.settings.voiceSettings?.vadMode || 'auto',
+            ...state.settings.voiceSettings,
             ...action.payload
           }
         }
@@ -99,6 +100,18 @@ function groupChatReducer(state: GroupChatState, action: GroupChatAction): Group
       return {
         ...state,
         messages: [],
+      };
+    case 'TOGGLE_RECORDING':
+      return {
+        ...state,
+        isRecording: !state.isRecording,
+        settings: {
+          ...state.settings,
+          ui: {
+            ...state.settings.ui,
+            enableVoice: !state.isRecording
+          }
+        }
       };
     default:
       return state;

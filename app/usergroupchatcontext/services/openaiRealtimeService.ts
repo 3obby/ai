@@ -22,7 +22,7 @@ export interface TranscriptionOptions {
 export interface SpeechOptions {
   voice?: string; // alloy, echo, fable, onyx, nova, shimmer
   speed?: number; // 0.25 to 4.0
-  model?: string; // tts-1, tts-1-hd
+  model?: string; // tts-1, tts-1-hd, gpt-4o-realtime-preview
 }
 
 export interface TranscriptionResult {
@@ -223,59 +223,62 @@ export class OpenAIRealtimeService {
         this.onSpeechStartCallback();
       }
       
-      // In a real implementation, this would call the OpenAI TTS API
-      // For now, simulate with browser's built-in TTS
-      
-      // IMPORTANT: In production, all API calls should be proxied through your server
-      // to protect your API key. Never expose your OpenAI API key in client-side code.
-      
-      // Here's how you'd call the API in a server-side function:
-      /*
-      const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      // Use the OpenAI realtime model through our server API
+      const response = await fetch('/usergroupchatcontext/api/synthesize-speech', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: options.model || 'tts-1',
-          voice: options.voice || 'nova',
-          input: text,
-          speed: options.speed || 1.0
+          text,
+          options: {
+            model: options.model || 'gpt-4o-realtime-preview',
+            voice: options.voice || 'alloy',
+            speed: options.speed || 1.0
+          }
         })
       });
       
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Speech synthesis API error: ${response.status} ${response.statusText}`);
       }
       
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      */
       
-      // For now, use the browser's Speech Synthesis API as fallback
+      // Play the audio
+      const audio = new Audio(audioUrl);
+      
+      // Set up event listeners
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        if (this.onSpeechEndCallback) {
+          this.onSpeechEndCallback();
+        }
+      };
+      
+      audio.onerror = (event) => {
+        URL.revokeObjectURL(audioUrl);
+        if (this.onSpeechErrorCallback) {
+          this.onSpeechErrorCallback(`Audio playback error: ${event}`);
+        }
+      };
+      
+      // Start playing
+      audio.play().catch(error => {
+        if (this.onSpeechErrorCallback) {
+          this.onSpeechErrorCallback(`Failed to play audio: ${error.message}`);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error generating speech:', error);
+      
+      // Only fall back to browser's Speech Synthesis as a last resort
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        console.warn('Falling back to browser speech synthesis');
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = options.speed || 1.0;
-        
-        const voices = window.speechSynthesis.getVoices();
-        // Try to match requested voice style
-        if (options.voice) {
-          const voiceMap: {[key: string]: string} = {
-            'alloy': 'Google UK English Male',
-            'echo': 'Google UK English Female',
-            'fable': 'Google US English',
-            'onyx': 'Microsoft David',
-            'nova': 'Microsoft Zira',
-            'shimmer': 'Microsoft Mark'
-          };
-          
-          const matchedVoiceName = voiceMap[options.voice] || '';
-          const matchedVoice = voices.find(v => v.name === matchedVoiceName);
-          if (matchedVoice) {
-            utterance.voice = matchedVoice;
-          }
-        }
         
         utterance.onend = () => {
           if (this.onSpeechEndCallback) {
@@ -290,10 +293,7 @@ export class OpenAIRealtimeService {
         };
         
         window.speechSynthesis.speak(utterance);
-      }
-    } catch (error) {
-      console.error('Error generating speech:', error);
-      if (this.onSpeechErrorCallback) {
+      } else if (this.onSpeechErrorCallback) {
         this.onSpeechErrorCallback('Failed to generate speech: ' + (error as Error).message);
       }
     }

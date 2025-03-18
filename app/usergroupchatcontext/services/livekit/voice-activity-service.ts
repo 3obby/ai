@@ -449,6 +449,43 @@ export class VoiceActivityService {
       return false;
     }
   }
+
+  /**
+   * Configure audio processing for better echo cancellation and quality
+   */
+  public async configureAudioProcessing(constraints: MediaTrackConstraints = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true
+  }): Promise<boolean> {
+    try {
+      // We don't have direct access to the mediaStream in this architecture
+      // Instead, we'll store these constraints to be used when starting detection
+      if (typeof window !== 'undefined') {
+        (window as any).__enhancedAudioConstraints = constraints;
+        console.log('Stored enhanced audio constraints for future use:', constraints);
+      }
+      
+      // If we have an active audio track, try to apply constraints
+      if (this.audioTrack && this.audioTrack.mediaStreamTrack) {
+        await this.audioTrack.mediaStreamTrack.applyConstraints(constraints);
+        console.log('Applied audio constraints to existing track:', constraints);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Failed to configure audio processing:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Simplified auto-adjust sensitivity that works with our architecture
+   */
+  public async autoAdjustSensitivity(durationMs: number = 3000): Promise<number> {
+    return this.autoAdjustVadSensitivity(durationMs);
+  }
 }
 
 // Create a singleton instance

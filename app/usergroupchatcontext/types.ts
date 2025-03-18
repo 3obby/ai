@@ -1,6 +1,13 @@
 // Bot types
 export type BotId = string;
 
+export interface VoiceSettings {
+  voice?: string;
+  speed?: number;
+  quality?: 'standard' | 'high-quality';
+  model?: string;
+}
+
 export interface Bot {
   id: string;
   name: string;
@@ -15,6 +22,7 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
+  voiceSettings?: VoiceSettings;
 }
 
 // Message types

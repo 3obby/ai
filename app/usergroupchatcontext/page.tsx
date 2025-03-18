@@ -22,6 +22,125 @@ function BotsInitializer() {
   const botRegistry = useBotRegistry();
   const stableId = useId(); // Use a stable ID instead of Date.now()
   
+  const [latestModels, setLatestModels] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const testModelsEndpoint = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/latest-openai-models');
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setLatestModels(data);
+      console.log('Latest models fetched:', data);
+      
+      // Add message to chat about the models
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `model-test-${Date.now()}`,
+          content: `Latest OpenAI models fetched:\n\nStandard: ${data.latestModel}\nRealtime: ${data.latestRealtimeModel}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+    } catch (err) {
+      console.error('Error fetching latest models:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      
+      // Add error message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `model-test-error-${Date.now()}`,
+          content: `Error fetching latest models: ${err instanceof Error ? err.message : String(err)}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const testSpeechSynthesis = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // First get the latest models
+      const modelResponse = await fetch('/usergroupchatcontext/api/latest-openai-models');
+      if (!modelResponse.ok) {
+        throw new Error(`Models API returned ${modelResponse.status}: ${modelResponse.statusText}`);
+      }
+      const modelData = await modelResponse.json();
+      
+      // Try synthesizing speech with the latest realtime model
+      const response = await fetch('/usergroupchatcontext/api/synthesize-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: "Hello! I'm using the latest realtime model for voice synthesis. Can you hear me clearly?",
+          options: {
+            model: modelData.latestRealtimeModel,
+            voice: 'alloy',
+            speed: 1.0
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Speech API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      // Play the audio
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+      
+      // Add message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `speech-test-${Date.now()}`,
+          content: `Testing speech synthesis with model: ${modelData.latestRealtimeModel}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+    } catch (err) {
+      console.error('Error testing speech synthesis:', err);
+      setError(err instanceof Error ? err.message : String(err));
+      
+      // Add error message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `speech-test-error-${Date.now()}`,
+          content: `Error testing speech synthesis: ${err instanceof Error ? err.message : String(err)}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   useEffect(() => {
     // Get the default bot
     const botId = 'default';
@@ -57,7 +176,24 @@ function BotsInitializer() {
     }
   }, [botRegistry.state.availableBots, dispatch, state.messages.length]);
   
-  return null;
+  return (
+    <div className="fixed bottom-20 right-4 z-10 flex flex-col gap-2">
+      <button 
+        onClick={testModelsEndpoint}
+        className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Loading...' : 'Test Models API'}
+      </button>
+      <button 
+        onClick={testSpeechSynthesis}
+        className="bg-green-600 text-white p-2 rounded-full shadow-lg"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Loading...' : 'Test Voice Synthesis'}
+      </button>
+    </div>
+  );
 }
 
 export default function GroupChatContextPage() {

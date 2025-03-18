@@ -14,6 +14,8 @@ interface VoiceInputButtonProps {
   className?: string;
   disabled?: boolean;
   autoSend?: boolean;
+  title?: string;
+  'aria-label'?: string;
 }
 
 export function VoiceInputButton({
@@ -21,6 +23,8 @@ export function VoiceInputButton({
   className,
   disabled = false,
   autoSend = true,
+  title,
+  'aria-label': ariaLabel,
 }: VoiceInputButtonProps) {
   const [isRecordingComplete, setIsRecordingComplete] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -66,12 +70,7 @@ export function VoiceInputButton({
           // Just add to input field
           onTranscriptionComplete(text.trim());
         }
-        
-        // Hide overlay after successful transcription
-        if (showVoiceOverlay) {
-          stopLiveKitVoiceMode();
-        }
-      } else if (!isFinal && text.trim()) {
+      } else if (!isFinal && text.trim() && text !== 'Listening...' && text !== 'Processing...') {
         // For interim results, we could update a state to show this is being transcribed
         console.log('Interim transcription:', text);
       }
@@ -82,7 +81,7 @@ export function VoiceInputButton({
     return () => {
       multimodalAgentService.offTranscription(handleLiveKitTranscription);
     };
-  }, [onTranscriptionComplete, autoSend, sendMessage, showVoiceOverlay]);
+  }, [onTranscriptionComplete, autoSend, sendMessage]);
 
   // When recording is complete and we have a transcript
   useEffect(() => {
@@ -142,9 +141,7 @@ export function VoiceInputButton({
     if (isVoiceEnabled) {
       // Use LiveKit for voice mode
       if (isLiveKitListening) {
-        stopVoiceListening();
-        multimodalAgentService.stopListening();
-        setShowVoiceOverlay(false);
+        stopLiveKitVoiceMode();
       } else {
         setIsInitializing(true);
         try {
@@ -169,13 +166,50 @@ export function VoiceInputButton({
             throw new Error('Could not initialize audio. Please try clicking the button again.');
           }
           
-          // Then proceed with starting the voice listening
-          const success = await startVoiceListening();
-          if (success) {
-            await multimodalAgentService.startListening();
-            setShowVoiceOverlay(true);
-          } else {
-            throw new Error('Failed to start voice listening');
+          // Request microphone permission explicitly
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Stop the stream after getting permission
+            stream.getTracks().forEach(track => track.stop());
+          } catch (micError) {
+            throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
+          }
+          
+          // Initialize LiveKit with retry attempts
+          let success = false;
+          retryCount = 0;
+          
+          while (!success && retryCount < maxRetries) {
+            try {
+              // Try to start voice listening
+              success = await startVoiceListening();
+              
+              if (success) {
+                await multimodalAgentService.startListening();
+                setShowVoiceOverlay(true);
+                break; // Success! Exit the retry loop
+              } else {
+                console.log(`Failed to start voice listening (attempt ${retryCount + 1})...`);
+                retryCount++;
+                
+                if (retryCount >= maxRetries) {
+                  throw new Error('Failed to start voice mode after multiple attempts');
+                }
+                
+                // Wait before retrying (increasing delay for each retry)
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              }
+            } catch (listenError) {
+              console.error(`Error in voice mode start attempt ${retryCount + 1}:`, listenError);
+              retryCount++;
+              
+              if (retryCount >= maxRetries) {
+                throw listenError;
+              }
+              
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
           }
         } catch (error) {
           console.error('Failed to start listening:', error);
@@ -229,74 +263,68 @@ export function VoiceInputButton({
     }
   };
 
+  // Get a more user-friendly error message
+  const getErrorMessage = (error: string): { title: string, message: string } => {
+    if (error.includes('permission') || error.includes('denied')) {
+      return {
+        title: 'Microphone access denied',
+        message: 'Please allow microphone access in your browser settings.'
+      };
+    } else if (error.includes('initialize') || error.includes('AudioContext')) {
+      return {
+        title: 'Audio initialization failed',
+        message: 'Try clicking again or refreshing the page.'
+      };
+    } else if (error.includes('no-speech')) {
+      return {
+        title: 'No speech detected',
+        message: 'Please try speaking more clearly or check your microphone.'
+      };
+    } else {
+      return {
+        title: 'Voice input error',
+        message: 'Please try again or use text input instead.'
+      };
+    }
+  };
+
   if (!isSupported && !isVoiceEnabled) {
     return null;
   }
 
   const isActive = isVoiceEnabled ? isLiveKitListening : isRecording;
+  const errorDetails = audioContextError ? getErrorMessage(audioContextError) : null;
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
         className={cn(
-          "relative rounded-full p-2 transition-colors",
-          isActive 
-            ? "bg-red-500 text-white hover:bg-red-600" 
-            : "bg-primary/10 text-primary hover:bg-primary/20",
+          "rounded-full p-2 transition-colors touch-target",
+          isActive
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse"
+            : "bg-muted text-muted-foreground hover:bg-muted/90",
           className
         )}
         onClick={handleToggleRecording}
-        disabled={disabled || isInitializing}
-        aria-label={isActive ? "Stop recording" : "Start voice recording"}
-        title={isActive ? "Stop voice mode" : "Click to activate voice mode"}
+        disabled={disabled || !isSupported}
+        aria-label={ariaLabel || (isActive ? "Stop voice mode" : "Start voice mode")}
+        title={title || (isActive ? "End Voice Mode" : "Voice Mode")}
       >
         {getMicIcon()}
       </button>
       
-      {/* Pulsing indicator when recording */}
-      {isActive && (
-        <span className="absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4 flex h-3.5 w-3.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
-        </span>
+      {/* Only show overlay when voice is active */}
+      {showVoiceOverlay && (
+        <VoiceOverlay 
+          isActive={isActive}
+          interimText={interimTranscript || ''}
+          errorMessage={audioContextError ? getErrorMessage(audioContextError) : null}
+          onClose={stopLiveKitVoiceMode}
+          lowVolumeWarning={showLowVolumeWarning}
+          buttonText={isActive ? "End Voice Mode" : "Voice Mode"}
+        />
       )}
-
-      {/* Error message */}
-      {audioContextError && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800 rounded-lg py-1 px-3 text-xs shadow-lg whitespace-nowrap">
-          <p className="font-medium">Audio initialization failed</p>
-          <p className="text-xs opacity-80">Try clicking again or check browser permissions</p>
-        </div>
-      )}
-
-      {/* Low volume warning */}
-      {showLowVolumeWarning && isActive && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 rounded-lg py-1 px-3 text-xs shadow-lg whitespace-nowrap">
-          <p className="font-medium">Low microphone volume detected</p>
-          <p className="text-xs opacity-80">Check your microphone or speak louder</p>
-        </div>
-      )}
-
-      {/* Transcript indicator */}
-      {((transcript || interimTranscript) && isRecording) && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border rounded-lg py-1 px-3 text-xs shadow-lg">
-          <p className="font-medium">{transcript} <span className="text-muted-foreground">{interimTranscript}</span></p>
-        </div>
-      )}
-      
-      {/* Voice overlay */}
-      {showVoiceOverlay && isActive && (
-        <VoiceOverlay onClose={() => {
-          if (isVoiceEnabled) {
-            stopLiveKitVoiceMode();
-          } else {
-            stopRecording();
-            setIsRecordingComplete(true);
-          }
-          setShowVoiceOverlay(false);
-        }} />
-      )}
-    </div>
+    </>
   );
 } 

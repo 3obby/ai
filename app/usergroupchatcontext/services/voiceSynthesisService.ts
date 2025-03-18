@@ -7,6 +7,8 @@ export interface VoiceSynthesisOptions {
   rate?: number;
   pitch?: number;
   volume?: number;
+  model?: string;
+  speed?: number;
 }
 
 export interface VoiceSynthesisState {
@@ -16,6 +18,7 @@ export interface VoiceSynthesisState {
   utterance: SpeechSynthesisUtterance | null;
   error: string | null;
   availableVoices: SpeechSynthesisVoice[];
+  audioElement: HTMLAudioElement | null;
 }
 
 export class VoiceSynthesisService {
@@ -25,17 +28,83 @@ export class VoiceSynthesisService {
   private onEndCallback: (() => void) | null = null;
   private onErrorCallback: ((error: string) => void) | null = null;
   private onBoundaryCallback: ((boundary: { name: string, charIndex: number, charLength: number }) => void) | null = null;
+  private audioElement: HTMLAudioElement | null = null;
+  private audioUrl: string | null = null;
 
   constructor(options: VoiceSynthesisOptions = {}) {
     this.options = {
       rate: 1,
       pitch: 1,
       volume: 1,
+      model: 'gpt-4o-realtime-preview',
+      voice: 'alloy',
       ...options,
     };
   }
 
-  public speak(text: string): void {
+  public async speak(text: string, options?: VoiceSynthesisOptions): Promise<void> {
+    const mergedOptions = {
+      ...this.options,
+      ...options,
+    };
+
+    try {
+      const response = await fetch('/api/synthesize-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          options: {
+            model: mergedOptions.model || 'gpt-4o-realtime-preview',
+            voice: mergedOptions.voice || 'alloy',
+            speed: mergedOptions.rate || 1.0,
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      
+      this.cleanup();
+      
+      this.audioUrl = URL.createObjectURL(audioBlob);
+      
+      this.audioElement = new Audio(this.audioUrl);
+      this.audioElement.volume = mergedOptions.volume || 1.0;
+      
+      if (this.onStartCallback) {
+        this.audioElement.onplay = this.onStartCallback;
+      }
+      
+      if (this.onEndCallback) {
+        this.audioElement.onended = () => {
+          this.cleanup();
+          if (this.onEndCallback) this.onEndCallback();
+        };
+      }
+      
+      this.audioElement.onerror = (event) => {
+        this.cleanup();
+        if (this.onErrorCallback) {
+          this.onErrorCallback(`Audio playback error: ${event}`);
+        }
+      };
+      
+      await this.audioElement.play();
+      
+    } catch (error) {
+      console.error('Error using OpenAI API for speech synthesis:', error);
+      
+      this.fallbackToSpeechSynthesis(text, mergedOptions);
+    }
+  }
+
+  private fallbackToSpeechSynthesis(text: string, options: VoiceSynthesisOptions): void {
     if (!this.isSupported()) {
       if (this.onErrorCallback) {
         this.onErrorCallback('Speech synthesis not supported in this browser');
@@ -43,33 +112,30 @@ export class VoiceSynthesisService {
       return;
     }
 
-    // Cancel any ongoing speech
+    console.warn('Falling back to browser speech synthesis');
+    
     this.stop();
 
-    // Create a new utterance
     this.utterance = new SpeechSynthesisUtterance(text);
 
-    // Set options
-    if (this.options.rate !== undefined) {
-      this.utterance.rate = this.options.rate;
+    if (options.rate !== undefined) {
+      this.utterance.rate = options.rate;
     }
-    if (this.options.pitch !== undefined) {
-      this.utterance.pitch = this.options.pitch;
+    if (options.pitch !== undefined) {
+      this.utterance.pitch = options.pitch;
     }
-    if (this.options.volume !== undefined) {
-      this.utterance.volume = this.options.volume;
+    if (options.volume !== undefined) {
+      this.utterance.volume = options.volume;
     }
 
-    // Set voice if specified
-    if (this.options.voice) {
+    if (options.voice) {
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => v.name === this.options.voice);
+      const voice = voices.find(v => v.name === options.voice);
       if (voice) {
         this.utterance.voice = voice;
       }
     }
 
-    // Set event handlers
     this.utterance.onstart = () => {
       if (this.onStartCallback) this.onStartCallback();
     };
@@ -92,23 +158,44 @@ export class VoiceSynthesisService {
       }
     };
 
-    // Start speaking
     window.speechSynthesis.speak(this.utterance);
   }
 
+  private cleanup(): void {
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = '';
+      this.audioElement.load();
+      this.audioElement = null;
+    }
+    
+    if (this.audioUrl) {
+      URL.revokeObjectURL(this.audioUrl);
+      this.audioUrl = null;
+    }
+  }
+
   public pause(): void {
-    if (this.isSupported()) {
+    if (this.audioElement) {
+      this.audioElement.pause();
+    } else if (this.isSupported()) {
       window.speechSynthesis.pause();
     }
   }
 
   public resume(): void {
-    if (this.isSupported()) {
+    if (this.audioElement) {
+      this.audioElement.play().catch(e => {
+        console.error('Error resuming audio:', e);
+      });
+    } else if (this.isSupported()) {
       window.speechSynthesis.resume();
     }
   }
 
   public stop(): void {
+    this.cleanup();
+    
     if (this.isSupported()) {
       window.speechSynthesis.cancel();
     }
@@ -142,7 +229,6 @@ export class VoiceSynthesisService {
   }
 }
 
-// React hook for using voice synthesis
 export function useVoiceSynthesis(options?: VoiceSynthesisOptions) {
   const [state, setState] = useState<VoiceSynthesisState>({
     isPlaying: false,
@@ -151,6 +237,7 @@ export function useVoiceSynthesis(options?: VoiceSynthesisOptions) {
     utterance: null,
     error: null,
     availableVoices: [],
+    audioElement: null,
   });
 
   const serviceRef = useRef<VoiceSynthesisService | null>(null);
@@ -187,7 +274,6 @@ export function useVoiceSynthesis(options?: VoiceSynthesisOptions) {
         }));
       });
 
-      // Update available voices
       const updateVoices = () => {
         const voices = synthesisService.getVoices();
         setState(prev => ({
@@ -196,12 +282,9 @@ export function useVoiceSynthesis(options?: VoiceSynthesisOptions) {
         }));
       };
 
-      // Some browsers load voices asynchronously
       if (window.speechSynthesis) {
-        // Initial load of voices
         updateVoices();
         
-        // Chrome needs this event to get all voices
         window.speechSynthesis.onvoiceschanged = updateVoices;
       }
 
@@ -215,9 +298,18 @@ export function useVoiceSynthesis(options?: VoiceSynthesisOptions) {
     };
   }, []);
 
-  const speak = (text: string) => {
+  const speak = (text: string, speakOptions?: VoiceSynthesisOptions) => {
     if (serviceRef.current) {
-      serviceRef.current.speak(text);
+      serviceRef.current.speak(text, speakOptions).catch(error => {
+        console.error('Error in speak:', error);
+        setState(prev => ({
+          ...prev,
+          error: error.message,
+          isPlaying: false,
+          isPaused: false,
+          isSpeaking: false,
+        }));
+      });
     }
   };
 

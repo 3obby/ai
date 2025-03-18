@@ -11,6 +11,8 @@ export interface MultimodalAgentConfig {
   model: string;
   voice: string;
   voiceSpeed?: number;
+  voiceQuality?: 'standard' | 'high-quality';
+  preferredVoices?: string[];
   vadOptions?: {
     mode: 'auto' | 'sensitive' | 'manual';
     threshold?: number;
@@ -19,7 +21,11 @@ export interface MultimodalAgentConfig {
   turnDetectionOptions?: {
     threshold?: number;
     silenceDuration?: number;
+    createResponse?: boolean;
   };
+  preventEchoDetection?: boolean;
+  enhancedAudioProcessing?: boolean;
+  audioSampleRate?: number;
 }
 
 // Type for transcription handlers
@@ -34,8 +40,10 @@ export type AudioOutputHandler = (audioChunk: ArrayBuffer) => void;
 export class MultimodalAgentService {
   private config: MultimodalAgentConfig = {
     model: 'gpt-4o',
-    voice: 'nova',
+    voice: 'alloy',
     voiceSpeed: 1.0,
+    voiceQuality: 'high-quality',
+    preferredVoices: ['ash', 'coral'],
     vadOptions: {
       mode: 'auto',
       threshold: 0.3,
@@ -44,7 +52,10 @@ export class MultimodalAgentService {
     turnDetectionOptions: {
       threshold: 0.3,
       silenceDuration: 1500
-    }
+    },
+    preventEchoDetection: true,
+    enhancedAudioProcessing: true,
+    audioSampleRate: 48000
   };
 
   private isListening: boolean = false;
@@ -54,7 +65,7 @@ export class MultimodalAgentService {
   private localAudioTrack: AudioTrack | null = null;
   private activeRoomName: string | null = null;
   private isSynthesizing: boolean = false;
-  private synthQueue: Array<{ text: string; options: { voice?: string; speed?: number; } }> = [];
+  private synthQueue: Array<{ text: string; options: { voice?: string; speed?: number; quality?: 'standard' | 'high-quality'; } }> = [];
   private emitter: EventEmitter = new EventEmitter();
   private currentAudioLevel: number = 0;
   private isProcessingToolCall: boolean = false;
@@ -62,7 +73,12 @@ export class MultimodalAgentService {
   private interimTranscriptionTimer: NodeJS.Timeout | null = null;
   private isSpeakingState: boolean = false;
   private latestOpenAIModel: string = 'gpt-4o';
-  private latestRealtimeModel: string = 'gpt-4o-mini-2024-07-18';
+  private latestRealtimeModel: string = 'gpt-4o-realtime-preview-2024-12-17';
+  private speechRecognition: any = null;
+  private recognitionActive: boolean = false;
+  private recognitionTranscript: string = '';
+  private speechRecognitionErrorCount: number = 0;
+  private _connected: boolean = false;
 
   /**
    * Initialize the multimodal agent with the given configuration
@@ -71,10 +87,18 @@ export class MultimodalAgentService {
     // Try to get the latest OpenAI model version
     this.fetchLatestModelVersions();
     
-    // Use latest models by default if not specified
+    // Initialize Web Speech API if available
+    this.initializeSpeechRecognition();
+    
+    // Use latest realtime models by default if not specified
     const defaultConfig = {
       ...this.config,
-      model: this.latestOpenAIModel,
+      model: this.latestRealtimeModel || 'gpt-4o-realtime-preview-2024-12-17',
+      voice: config.voice || 'ash',
+      preferredVoices: config.preferredVoices || ['ash', 'coral'],
+      voiceQuality: 'high-quality' as 'high-quality',
+      enhancedAudioProcessing: true,
+      audioSampleRate: 48000
     };
     
     this.config = { ...defaultConfig, ...config };
@@ -86,11 +110,141 @@ export class MultimodalAgentService {
     voiceToolCallingService.on('voiceTool:executed', this.handleToolExecution);
     voiceToolCallingService.on('voiceTool:error', this.handleToolError);
     
+    // Configure echo cancellation and audio processing
+    this.setupAudioProcessing();
+    
     console.log('Multimodal agent initialized with config:', this.config);
   }
 
   /**
-   * Start listening for speech input
+   * Configure advanced audio processing options
+   */
+  private setupAudioProcessing(): void {
+    if (typeof window !== 'undefined' && this.config.enhancedAudioProcessing) {
+      // Set up audio processing constraints
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: this.config.audioSampleRate,
+        channelCount: 1
+      };
+      
+      // Store these constraints for later use when starting the audio
+      (window as any).__enhancedAudioConstraints = audioConstraints;
+      
+      console.log('Enhanced audio processing configured:', audioConstraints);
+    }
+  }
+
+  /**
+   * Initialize Web Speech API for speech recognition
+   */
+  private initializeSpeechRecognition(): void {
+    // Reset error count
+    this.speechRecognitionErrorCount = 0;
+    
+    // Check if browser supports speech recognition
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        this.speechRecognition = new SpeechRecognition();
+        this.speechRecognition.continuous = true;
+        this.speechRecognition.interimResults = true;
+        this.speechRecognition.lang = 'en-US';
+        
+        // Set up event handlers
+        this.speechRecognition.onresult = (event: any) => {
+          const lastResult = event.results[event.results.length - 1];
+          const transcript = lastResult[0].transcript;
+          const isFinal = lastResult.isFinal;
+          
+          this.recognitionTranscript = transcript;
+          
+          // Notify handlers with the transcription
+          this.notifyTranscriptionHandlers(transcript, isFinal);
+        };
+        
+        this.speechRecognition.onerror = (event: any) => {
+          this.speechRecognitionErrorCount++;
+          console.error('Speech recognition error:', event.error, `(Count: ${this.speechRecognitionErrorCount})`);
+          
+          if (this.recognitionActive) {
+            // Only try to restart if we haven't had too many errors
+            if (this.speechRecognitionErrorCount < 5) {
+              // Try to restart recognition
+              this.stopSpeechRecognition();
+              setTimeout(() => {
+                if (this.recognitionActive) {
+                  this.startSpeechRecognition();
+                }
+              }, 1000);
+            } else {
+              // Too many errors, stop trying to restart
+              console.warn('Too many speech recognition errors, stopping auto-restart');
+              this.recognitionActive = false;
+              this.emitter.emit('speech-recognition-failed', {
+                errorCount: this.speechRecognitionErrorCount,
+                lastError: event.error
+              });
+            }
+          }
+        };
+        
+        this.speechRecognition.onend = () => {
+          if (this.recognitionActive) {
+            // Restart recognition if it ends unexpectedly
+            // But only if we haven't had too many errors
+            if (this.speechRecognitionErrorCount < 5) {
+              console.log('Speech recognition ended unexpectedly, restarting...');
+              this.speechRecognition.start();
+            }
+          }
+        };
+        
+        console.log('Speech recognition initialized successfully');
+      } else {
+        console.warn('Speech recognition not supported in this browser');
+      }
+    }
+  }
+  
+  /**
+   * Start speech recognition
+   */
+  private startSpeechRecognition(): void {
+    if (!this.speechRecognition) {
+      console.warn('Speech recognition not initialized');
+      return;
+    }
+    
+    try {
+      this.speechRecognition.start();
+      this.recognitionActive = true;
+      console.log('Speech recognition started');
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+    }
+  }
+  
+  /**
+   * Stop speech recognition
+   */
+  private stopSpeechRecognition(): void {
+    if (!this.speechRecognition || !this.recognitionActive) return;
+    
+    try {
+      this.speechRecognition.stop();
+      this.recognitionActive = false;
+      console.log('Speech recognition stopped');
+    } catch (error) {
+      console.error('Error stopping speech recognition:', error);
+    }
+  }
+
+  /**
+   * Start listening for speech input with enhanced audio quality
    */
   public async startListening(): Promise<boolean> {
     if (this.isListening) {
@@ -99,6 +253,9 @@ export class MultimodalAgentService {
     }
 
     try {
+      // Ensure LiveKit is connected - attempt to initialize connection if needed
+      await this.ensureLiveKitConnection();
+
       // Get active session
       const session = roomSessionManager.getActiveSession();
       if (!session) {
@@ -110,13 +267,36 @@ export class MultimodalAgentService {
           livekitRoomState: livekitService.getRoom()?.state,
           livekitURL: process.env.NEXT_PUBLIC_LIVEKIT_URL
         });
-        return false;
+        
+        // Try to automatically initialize LiveKit
+        try {
+          console.log('Attempting to automatically initialize LiveKit connection...');
+          const liveKitInitialized = await this.initializeLiveKitConnection();
+          if (liveKitInitialized) {
+            console.log('Successfully initialized LiveKit connection automatically');
+            // Try getting session again
+            const newSession = roomSessionManager.getActiveSession();
+            if (!newSession) {
+              console.error('Still no active LiveKit session after initialization');
+              return false;
+            }
+            this.activeRoomName = newSession.roomName;
+          } else {
+            return false;
+          }
+        } catch (initError) {
+          console.error('Failed to automatically initialize LiveKit:', initError);
+          return false;
+        }
+      } else {
+        this.activeRoomName = session.roomName;
       }
-
-      this.activeRoomName = session.roomName;
       
-      // Enable local audio in the room session
-      console.log('Enabling local audio...');
+      // Enable local audio in the room session with enhanced quality
+      console.log('Enabling local audio with enhanced quality settings...');
+      const audioConstraints = this.config.enhancedAudioProcessing ? 
+        (window as any).__enhancedAudioConstraints : undefined;
+      
       const audioTrack = await roomSessionManager.enableLocalAudio();
       if (!audioTrack) {
         console.error('Failed to enable local audio. Check microphone permissions and browser compatibility.');
@@ -133,10 +313,10 @@ export class MultimodalAgentService {
       voiceActivityService.onVoiceActivity(this.handleVoiceActivity);
       
       this.isListening = true;
-      console.log('Started listening for speech input');
+      console.log('Started listening for speech input with enhanced quality');
       return true;
     } catch (error) {
-      console.error('Error starting speech input:', error);
+      console.error('Error starting listening:', error);
       console.log('Error details:', {
         errorName: error instanceof Error ? error.name : 'Unknown error type',
         errorMessage: error instanceof Error ? error.message : String(error),
@@ -155,6 +335,9 @@ export class MultimodalAgentService {
    */
   public stopListening(): void {
     if (!this.isListening) return;
+    
+    // Stop speech recognition
+    this.stopSpeechRecognition();
     
     // Stop voice activity detection
     voiceActivityService.stopDetection();
@@ -205,40 +388,109 @@ export class MultimodalAgentService {
   }
 
   /**
-   * Synthesize speech from text
+   * Synthesize speech with enhanced quality
    */
   public async synthesizeSpeech(text: string, options: {
     voice?: string;
     speed?: number;
+    quality?: 'standard' | 'high-quality';
   } = {}): Promise<void> {
-    const voice = options.voice || this.config.voice;
-    const speed = options.speed || this.config.voiceSpeed;
+    // Add to synthesis queue
+    this.synthQueue.push({
+      text,
+      options: {
+        voice: options.voice || this.getNextVoice(),
+        speed: options.speed || this.config.voiceSpeed,
+        quality: options.quality || this.config.voiceQuality
+      }
+    });
     
-    try {
-      // This will be implemented using OpenAI TTS API integration
-      console.log(`Synthesizing speech: "${text}" using voice ${voice} at speed ${speed}`);
-      
-      // TODO: Implement actual TTS via OpenAI
-      // For now, logging placeholder for eventual integration
-      
-      // Notify handlers (would normally be done with actual audio chunks)
-      // this.notifyAudioOutputHandlers(audioChunk);
-    } catch (error) {
-      console.error('Error synthesizing speech:', error);
+    // Start processing if not already in progress
+    if (!this.isSynthesizing) {
+      await this.processNextSynthesisItem();
     }
   }
 
   /**
-   * Process the next item in the speech synthesis queue
+   * Get the next voice in the rotation for more natural conversations
    */
+  private getNextVoice(): string {
+    // If we have preferred voices, alternate between them
+    if (this.config.preferredVoices && this.config.preferredVoices.length > 0) {
+      const nextVoiceIndex = Math.floor(Math.random() * this.config.preferredVoices.length);
+      return this.config.preferredVoices[nextVoiceIndex];
+    }
+    
+    // Otherwise, use the default voice
+    return this.config.voice;
+  }
+
+  // Update the process synthesis method to handle the new high-quality option
   private processNextSynthesisItem = async (): Promise<void> => {
-    if (this.synthQueue.length === 0 || this.isSynthesizing) {
+    if (this.synthQueue.length === 0) {
+      this.isSynthesizing = false;
       return;
     }
-
-    const nextItem = this.synthQueue.shift();
-    if (nextItem) {
-      await this.synthesizeSpeech(nextItem.text, nextItem.options);
+    
+    const next = this.synthQueue.shift();
+    if (!next) {
+      this.isSynthesizing = false;
+      return;
+    }
+    
+    this.isSynthesizing = true;
+    this.emitter.emit('synthesis:start', { text: next.text });
+    
+    try {
+      // Set speaking state before audio starts
+      this.setSpeaking(true);
+      
+      // Configure synthesis options based on quality setting
+      const synthesisOptions: any = {
+        voice: next.options.voice || this.config.voice,
+        speed: next.options.speed || this.config.voiceSpeed,
+        model: next.options.quality === 'high-quality' ? 'tts-1-hd' : 'tts-1'
+      };
+      
+      // If preventing echo, temporarily suspend voice activity detection
+      // This will be controlled by the interrupt toggle in the UI
+      if (this.config.preventEchoDetection) {
+        // We don't need to manually disable voice activity here anymore
+        // The interrupt toggle will handle this through the speaking-state-change event
+        console.log('Bot starting to speak - echo prevention handled by interrupt toggle');
+      }
+      
+      // Request speech synthesis with high quality settings
+      const response = await fetch('/api/synthesize-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: next.text,
+          options: synthesisOptions
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Speech synthesis failed: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get audio data and play it
+      const audioData = await response.arrayBuffer();
+      this.notifyAudioOutputHandlers(audioData);
+      
+      this.emitter.emit('synthesis:complete', { text: next.text });
+    } catch (error) {
+      console.error('Error synthesizing speech:', error);
+      this.emitter.emit('synthesis:error', { 
+        text: next.text, 
+        error 
+      });
+    } finally {
+      // Reset speaking state
+      this.setSpeaking(false);
+      
+      // Process next item in queue
+      await this.processNextSynthesisItem();
     }
   };
 
@@ -271,17 +523,20 @@ export class MultimodalAgentService {
    */
   private startSpeechProcessing(): void {
     // For UI purposes, indicate that speech processing has started
-    console.log('Starting speech processing...');
+    console.log('Starting speech processing with real transcription...');
     
     // Set speaking state
     this.setSpeaking(true);
+    
+    // Start speech recognition
+    this.startSpeechRecognition();
     
     // Clear any existing timer
     if (this.interimTranscriptionTimer) {
       clearInterval(this.interimTranscriptionTimer);
     }
     
-    // Only send a simple "Listening..." message, not random fake transcriptions
+    // Send initial listening message
     this.notifyTranscriptionHandlers('Listening...', false);
   }
 
@@ -297,15 +552,23 @@ export class MultimodalAgentService {
     
     console.log('Finalizing speech processing...');
     
-    // In production, this would call Whisper API with the audio buffer
-    // For now, let's not simulate random text and instead use a placeholder
-    const transcription = "Voice input detected (Whisper API transcription would be used in production)";
+    // Stop speech recognition
+    this.stopSpeechRecognition();
     
-    // Send the transcription to handlers as a final result
-    this.notifyTranscriptionHandlers(transcription, true);
+    // If we have a transcript from speech recognition, use it
+    if (this.recognitionTranscript) {
+      // Send the final transcription
+      this.notifyTranscriptionHandlers(this.recognitionTranscript, true);
+      
+      // Reset the transcript
+      this.recognitionTranscript = '';
+    } else {
+      // Fallback if no transcript was captured
+      this.notifyTranscriptionHandlers("Sorry, I couldn't understand that. Please try again.", true);
+    }
     
     // Log that we've processed speech
-    console.log(`Speech processed - voice input detected`);
+    console.log('Speech processed - voice input detected');
     
     // Stop the "speaking" state
     this.setSpeaking(false);
@@ -394,20 +657,30 @@ export class MultimodalAgentService {
   }
 
   /**
-   * Fetch the latest model versions from OpenAI
-   * This could be implemented to actually query the OpenAI API for available models
+   * Fetch the latest available OpenAI models
    */
   private async fetchLatestModelVersions(): Promise<void> {
     try {
-      // In a real implementation, this would query the OpenAI API
-      // For now, we'll hardcode the latest known models
-      this.latestOpenAIModel = 'gpt-4o';
-      this.latestRealtimeModel = 'gpt-4o-mini-2024-07-18';
-      
-      console.log(`Using latest models - Text: ${this.latestOpenAIModel}, Realtime: ${this.latestRealtimeModel}`);
+      // Try to fetch the latest model versions from an API endpoint
+      const response = await fetch('/usergroupchatcontext/api/latest-openai-models');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.latestModel) {
+          this.latestOpenAIModel = data.latestModel;
+        }
+        if (data.latestRealtimeModel) {
+          this.latestRealtimeModel = data.latestRealtimeModel;
+        }
+        console.log('Fetched latest OpenAI models:', {
+          standard: this.latestOpenAIModel,
+          realtime: this.latestRealtimeModel
+        });
+      }
     } catch (error) {
-      console.error('Failed to fetch latest model versions:', error);
-      // Fall back to default values already set
+      console.warn('Failed to fetch latest model versions:', error);
+      // Fallback to hardcoded recent versions
+      this.latestOpenAIModel = 'gpt-4o';
+      this.latestRealtimeModel = 'gpt-4o-realtime-preview-2024-12-17';
     }
   }
 
@@ -533,6 +806,109 @@ export class MultimodalAgentService {
     
     // Emit config change event
     this.emitter.emit('config-changed', this.config);
+  }
+
+  /**
+   * Get Web Speech API status
+   */
+  public getWebSpeechStatus(): { available: boolean, active: boolean, errorCount?: number } {
+    return {
+      available: !!this.speechRecognition,
+      active: this.recognitionActive,
+      errorCount: this.speechRecognitionErrorCount
+    };
+  }
+
+  /**
+   * Check if the Web Speech API is available
+   */
+  public isWebSpeechAvailable(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!(
+      (window as any).SpeechRecognition || 
+      (window as any).webkitSpeechRecognition
+    );
+  }
+
+  /**
+   * Ensure LiveKit is connected before starting voice mode
+   */
+  private async ensureLiveKitConnection(): Promise<boolean> {
+    // Check if LiveKit is already connected
+    if (livekitService.getRoom()?.state === 'connected') {
+      console.log('LiveKit connection already established');
+      return true;
+    }
+    
+    // If not connected, initialize the connection
+    return await this.initializeLiveKitConnection();
+  }
+
+  /**
+   * Initialize LiveKit connection
+   */
+  private async initializeLiveKitConnection(): Promise<boolean> {
+    try {
+      console.log('Initializing LiveKit connection...');
+      
+      // Get LiveKit URL from environment
+      const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+      if (!livekitUrl) {
+        console.error('LiveKit URL not configured in environment variables');
+        return false;
+      }
+      
+      // Get a LiveKit token from our API with error handling and retry logic
+      let token = '';
+      let roomName = 'default-room';
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          console.log(`Fetching LiveKit token (attempt ${retryCount + 1}/${maxRetries})...`);
+          const response = await fetch('/api/livekit-token');
+          
+          if (!response.ok) {
+            throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          if (!data.token) {
+            throw new Error('No token received from LiveKit token API');
+          }
+          
+          token = data.token;
+          roomName = data.roomName || 'default-room';
+          break; // Successfully got token, exit retry loop
+        } catch (tokenError) {
+          console.error(`Token fetch error (attempt ${retryCount + 1}):`, tokenError);
+          retryCount++;
+          
+          if (retryCount >= maxRetries) {
+            console.error('Failed to get LiveKit token after multiple attempts');
+            return false;
+          }
+          
+          // Wait before retrying (increasing delay)
+          await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+        }
+      }
+      
+      // Connect to LiveKit using roomSessionManager with proper error handling
+      try {
+        console.log('Creating LiveKit session with token, length:', token.length);
+        await roomSessionManager.createSession(roomName, token, livekitUrl);
+        console.log('LiveKit connection established successfully');
+        return true;
+      } catch (sessionError) {
+        console.error('Failed to create LiveKit session:', sessionError);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to initialize LiveKit connection:', error);
+      return false;
+    }
   }
 }
 

@@ -19,6 +19,15 @@ import turnTakingService from '../services/livekit/turn-taking-service';
 const voiceSynthesisService = new VoiceSynthesisService();
 const toolCallService = new ToolCallService();
 
+// Define high-quality voice settings
+const VOICE_SETTINGS = {
+  model: 'gpt-4o-realtime-preview',
+  voice: 'alloy', // High-quality OpenAI voice
+  speed: 1.0,
+  audioFormat: 'mp3',
+  sampleRate: 44100
+};
+
 interface LiveKitIntegrationContextType {
   isListening: boolean;
   startListening: () => Promise<void>;
@@ -406,10 +415,22 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       setIsBotSpeaking(true);
       setCurrentSpeakingBotId(botId);
       
-      // Use the voice synthesis service with speak method
-      voiceSynthesisService.speak(text);
+      // Configure voice settings based on bot configuration
+      const voiceOptions = {
+        // Start with default settings
+        voice: 'alloy',
+        speed: 1.0,
+        model: 'gpt-4o-realtime-preview', // Default to latest realtime model
+        quality: 'high-quality' as const,
+        // Override with any settings the bot has defined
+        ...(bot.voiceSettings || {})
+      };
       
-      // Since the speak method doesn't return a Promise, we need to set up event listeners
+      console.log(`Using voice settings for bot ${bot.name}:`, voiceOptions);
+      
+      // Use the voice synthesis service with speak method and bot-specific voice settings
+      voiceSynthesisService.speak(text, voiceOptions);
+      
       return new Promise<void>((resolve) => {
         voiceSynthesisService.onEnd(() => {
           setIsBotSpeaking(false);
@@ -417,7 +438,20 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
           resolve();
         });
         
-        voiceSynthesisService.onError(() => {
+        voiceSynthesisService.onError((error) => {
+          console.error('Voice synthesis error:', error);
+          // Add error message to the chat
+          dispatch({
+            type: 'ADD_MESSAGE',
+            payload: {
+              id: `voice-error-${Date.now()}`,
+              content: `Voice synthesis error: ${error}. Try selecting another voice in settings.`,
+              role: 'system',
+              sender: 'system',
+              timestamp: Date.now(),
+              type: 'text'
+            }
+          });
           setIsBotSpeaking(false);
           setCurrentSpeakingBotId(null);
           resolve();
@@ -425,6 +459,18 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       });
     } catch (error) {
       console.error("Error playing bot response:", error);
+      // Add error message to the chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: `voice-error-${Date.now()}`,
+          content: `Error playing bot response: ${error instanceof Error ? error.message : String(error)}`,
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
       setIsBotSpeaking(false);
       setCurrentSpeakingBotId(null);
     }

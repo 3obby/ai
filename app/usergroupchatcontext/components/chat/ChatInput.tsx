@@ -94,6 +94,9 @@ export function ChatInput({
             disabled={disabled || isProcessing}
             // Auto-send is enabled by default
             autoSend={true}
+            aria-label="Voice Mode"
+            title="Start Voice Mode"
+            className="voice-mode-btn"
           />
           
           <button

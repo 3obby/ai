@@ -77,6 +77,114 @@ export default function VoiceCommandController({
         indicator: <Mic className="h-4 w-4" />,
       },
       {
+        name: 'start_voice_mode',
+        keywords: ['start voice mode', 'voice mode', 'voice chat', 'talk to', 'voice conversation'],
+        description: 'Start voice conversation with selected bot using realtime model',
+        action: async () => {
+          // Extract bot name from transcript if present
+          let targetBotId = state.selectedBotId;
+          const botMentioned = transcript.match(/(?:with|to)\s+(\w+)/i);
+          
+          if (botMentioned && botMentioned[1]) {
+            const botName = botMentioned[1].toLowerCase();
+            const matchedBot = botRegistry.state.availableBots.find(
+              bot => bot.name.toLowerCase().includes(botName)
+            );
+            
+            if (matchedBot) {
+              targetBotId = matchedBot.id;
+            }
+          }
+          
+          // If no bot is selected or found in transcript, use the first active bot
+          if (!targetBotId && state.settings.activeBotIds.length > 0) {
+            targetBotId = state.settings.activeBotIds[0];
+          }
+          
+          if (targetBotId) {
+            try {
+              // Show loading indicator
+              dispatch({ type: 'SET_LOADING', isLoading: true });
+              
+              // Clone the bot for voice mode with realtime model
+              const voiceBot = await botRegistry.cloneBotInstanceForVoice(targetBotId);
+              
+              if (voiceBot) {
+                // Add a system message indicating voice mode is starting
+                dispatch({
+                  type: 'ADD_MESSAGE',
+                  payload: {
+                    id: `voice-mode-start-${Date.now()}`,
+                    content: `Starting voice conversation with ${voiceBot.name}. You can speak now.`,
+                    role: 'system',
+                    sender: 'system',
+                    timestamp: Date.now(),
+                    type: 'text'
+                  }
+                });
+                
+                // Set the voice bot as the selected and active bot
+                dispatch({ type: 'SET_SELECTED_BOT', payload: voiceBot.id });
+                
+                // Add to active bots if not already there
+                if (!state.settings.activeBotIds.includes(voiceBot.id)) {
+                  const newActiveBotIds = [...state.settings.activeBotIds, voiceBot.id];
+                  dispatch({
+                    type: 'SET_SETTINGS',
+                    payload: { activeBotIds: newActiveBotIds }
+                  });
+                }
+                
+                // Enable voice mode in settings if not already enabled
+                if (!state.settings.ui.enableVoice) {
+                  dispatch({
+                    type: 'SET_SETTINGS',
+                    payload: {
+                      ui: {
+                        ...state.settings.ui,
+                        enableVoice: true
+                      }
+                    }
+                  });
+                }
+                
+                // Start recording
+                dispatch({ type: 'TOGGLE_RECORDING' });
+              }
+            } catch (error) {
+              console.error('Error starting voice mode:', error);
+              dispatch({
+                type: 'ADD_MESSAGE',
+                payload: {
+                  id: `voice-mode-error-${Date.now()}`,
+                  content: `Error starting voice mode: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  role: 'system',
+                  sender: 'system',
+                  timestamp: Date.now(),
+                  type: 'text'
+                }
+              });
+            } finally {
+              dispatch({ type: 'SET_LOADING', isLoading: false });
+            }
+          } else {
+            // No bot available
+            dispatch({
+              type: 'ADD_MESSAGE',
+              payload: {
+                id: `voice-mode-error-${Date.now()}`,
+                content: 'No bot available for voice mode. Please add a bot first.',
+                role: 'system',
+                sender: 'system',
+                timestamp: Date.now(),
+                type: 'text'
+              }
+            });
+          }
+        },
+        indicator: <Volume2 className="h-4 w-4" />,
+      },
+      {
         name: 'toggle_dark_mode',
         keywords: ['toggle dark mode', 'toggle light mode', 'switch theme', 'dark mode', 'light mode'],
         description: 'Toggle between dark and light modes',
@@ -196,38 +304,42 @@ export default function VoiceCommandController({
 
     // Initialize speech recognition
     const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    speechRecognition.current = new SpeechRecognitionConstructor();
-    speechRecognition.current.continuous = true;
-    speechRecognition.current.interimResults = true;
-    
-    // Setup speech recognition event handlers
-    if (speechRecognition.current) {
-      speechRecognition.current.onresult = (event: any) => {
-        const lastResultIndex = event.results.length - 1;
-        const transcript = event.results[lastResultIndex][0].transcript.trim().toLowerCase();
-        setTranscript(transcript);
+    if (SpeechRecognitionConstructor) {
+      speechRecognition.current = new SpeechRecognitionConstructor();
+      if (speechRecognition.current) {
+        speechRecognition.current.continuous = true;
+        speechRecognition.current.interimResults = true;
         
-        // Check if the transcript includes the command prefix
-        if (transcript.includes(commandPrefix.toLowerCase())) {
-          // If we find a command, process it
-          const commandEvent = parseCommand(transcript);
-          if (commandEvent && commandEvent.confidence >= confidenceThreshold) {
-            setRecognizedCommand(commandEvent);
-            executeCommand(commandEvent.command);
+        // Setup speech recognition event handlers
+        speechRecognition.current.onresult = (event: any) => {
+          const lastResultIndex = event.results.length - 1;
+          const transcript = event.results[lastResultIndex][0].transcript.trim().toLowerCase();
+          setTranscript(transcript);
+          
+          // Check if the transcript includes the command prefix
+          if (transcript.includes(commandPrefix.toLowerCase())) {
+            // If we find a command, process it
+            const commandEvent = parseCommand(transcript);
+            if (commandEvent && commandEvent.confidence >= confidenceThreshold) {
+              setRecognizedCommand(commandEvent);
+              executeCommand(commandEvent.command);
+            }
           }
-        }
-      };
-      
-      speechRecognition.current.onend = () => {
-        if (isListening) {
-          speechRecognition.current?.start();
-        }
-      };
-      
-      speechRecognition.current.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
-      };
+        };
+        
+        speechRecognition.current.onend = () => {
+          if (isListening && speechRecognition.current) {
+            speechRecognition.current.start();
+          }
+        };
+        
+        speechRecognition.current.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+        };
+      }
+    } else {
+      console.error('Speech recognition constructor not available');
     }
     
     return () => {
@@ -239,8 +351,8 @@ export default function VoiceCommandController({
 
   // Toggle listening state
   useEffect(() => {
-    if (enabled && isListening) {
-      speechRecognition.current?.start();
+    if (enabled && isListening && speechRecognition.current) {
+      speechRecognition.current.start();
     } else if (speechRecognition.current) {
       speechRecognition.current.stop();
     }

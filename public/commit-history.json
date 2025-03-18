@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "28e97df",
+      "fullHash": "28e97df979d748d64491ffd49b2702a50ac3aa7e",
+      "date": "2025-03-18 22:01:27 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
       "hash": "51fd443",
       "fullHash": "51fd4433b852a88cc42a213ec77583336b7902a4",
       "date": "2025-03-18 19:57:45 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update login page with robobirds background and robohand logo",
       "category": "enhancement"
-    },
-    {
-      "hash": "d90d1ef",
-      "fullHash": "d90d1ef8b61ae83ed9964972c4f9b758a6b35b9e",
-      "date": "2025-03-08 13:36:28 +0700",
-      "author": "3obby",
-      "message": "Fix subscription and payment routes for NextAuth compatibility and fix linter errors",
-      "category": "bugfix"
     }
   ]
 }
