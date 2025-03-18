@@ -12,7 +12,7 @@ export interface GroupChatConfig {
   defaultBotParams: BotParameters;
   activeBots: BotId[];
   botOrder: BotId[];
-  maxRecursionDepth: number;
+  maxReprocessingDepth: number;
   globalSystemPrompt?: string;
 }
 
@@ -54,7 +54,7 @@ export interface PromptProcessorConfig {
   enabled: boolean;
   preProcessingEnabled: boolean;
   postProcessingEnabled: boolean;
-  maxRecursionDepth: number;
+  maxReprocessingDepth: number;
   defaultSystemPrompt: string;
 }
 
@@ -97,7 +97,7 @@ export const DEFAULT_SETTINGS: GroupChatSettings = {
     },
     activeBots: [],
     botOrder: [],
-    maxRecursionDepth: 3,
+    maxReprocessingDepth: 3,
     globalSystemPrompt: "You are a helpful assistant in a group chat environment."
   },
   transcription: {
@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS: GroupChatSettings = {
     enabled: true,
     preProcessingEnabled: true,
     postProcessingEnabled: true,
-    maxRecursionDepth: 3,
+    maxReprocessingDepth: 3,
     defaultSystemPrompt: "You are a helpful assistant in a group chat environment."
   },
   ui: {

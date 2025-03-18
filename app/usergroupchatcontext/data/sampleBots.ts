@@ -8,10 +8,13 @@ export const sampleBots: Bot[] = [
     avatar: 'https://ui-avatars.com/api/?name=AI&background=8b5cf6&color=fff',
     model: 'gpt-4o',
     systemPrompt: 'You are a helpful, knowledgeable, and friendly AI assistant. Answer questions accurately, clearly, and conversationally. Provide relevant information and follow the user\'s instructions carefully.',
+    preProcessingPrompt: '',
+    postProcessingPrompt: '',
     temperature: 0.7,
     maxTokens: 2048,
     enabled: true,
-    useTools: false
+    useTools: false,
+    enableReprocessing: false
   },
   {
     id: 'researcher',
@@ -23,7 +26,8 @@ export const sampleBots: Bot[] = [
     temperature: 0.3,
     maxTokens: 2048,
     enabled: true,
-    useTools: true
+    useTools: true,
+    enableReprocessing: false
   },
   {
     id: 'critic',
@@ -35,7 +39,8 @@ export const sampleBots: Bot[] = [
     temperature: 0.5,
     maxTokens: 1024,
     enabled: true,
-    useTools: false
+    useTools: false,
+    enableReprocessing: false
   },
   {
     id: 'creative',
@@ -47,7 +52,8 @@ export const sampleBots: Bot[] = [
     temperature: 0.8,
     maxTokens: 1536,
     enabled: true,
-    useTools: true
+    useTools: true,
+    enableReprocessing: false
   },
   {
     id: 'coder',
@@ -59,7 +65,8 @@ export const sampleBots: Bot[] = [
     temperature: 0.2,
     maxTokens: 3072,
     enabled: false,
-    useTools: true
+    useTools: true,
+    enableReprocessing: false
   },
   {
     id: 'summarizer',
@@ -71,6 +78,7 @@ export const sampleBots: Bot[] = [
     temperature: 0.4,
     maxTokens: 768,
     enabled: false,
-    useTools: false
+    useTools: false,
+    enableReprocessing: false
   }
 ]; 

@@ -4,9 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
 import { SettingsModal } from '../settings/SettingsModal';
+import { BotSettingsModal } from '../settings/BotSettingsModal';
 import { Settings } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
-import { MessageBubble } from './MessageBubble';
+import { MessageItem } from './MessageItem';
 import { ChatInput } from './ChatInput';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { VoicePlaybackControls } from '../voice/VoicePlaybackControls';
@@ -24,6 +25,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
   const bots = botState.availableBots;
   
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll on new messages or when typing
@@ -33,6 +35,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
 
   const toggleSettings = () => {
     setSettingsOpen(!settingsOpen);
+  };
+
+  const handleBotSettingsClick = (botId: string) => {
+    setSelectedBotId(botId);
+  };
+
+  const closeBotSettings = () => {
+    setSelectedBotId(null);
   };
 
   return (
@@ -69,11 +79,13 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         ) : (
           <div className="flex flex-col w-full">
             {state.messages.map((message) => (
-              <MessageBubble
+              <MessageItem
                 key={message.id}
                 message={message}
-                isUser={message.sender === 'user'}
-                showDebug={true}
+                showTimestamp={true}
+                showAvatar={true}
+                showDebugInfo={state.settings?.ui?.showDebugInfo}
+                onBotSettingsClick={handleBotSettingsClick}
               />
             ))}
           </div>
@@ -112,6 +124,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
       />
+
+      {/* Bot Settings Modal */}
+      {selectedBotId && (
+        <BotSettingsModal 
+          botId={selectedBotId}
+          onClose={closeBotSettings}
+        />
+      )}
     </div>
   );
 } 

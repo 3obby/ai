@@ -32,10 +32,10 @@ export function DebugInfo({ metadata, className }: DebugInfoProps) {
                 <span className="font-mono">{processingInfo.processingTime.toFixed(2)}ms</span>
               </div>
             )}
-            {processingInfo.recursionDepth !== undefined && (
+            {processingInfo.reprocessingDepth !== undefined && (
               <div className="flex justify-between">
-                <span>Recursion Depth:</span>
-                <span className="font-mono">{processingInfo.recursionDepth}</span>
+                <span>Reprocessing Depth:</span>
+                <span className="font-mono">{processingInfo.reprocessingDepth}</span>
               </div>
             )}
             {processingInfo.preProcessed !== undefined && (

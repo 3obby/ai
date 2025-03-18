@@ -4,6 +4,8 @@ import { useGroupChatContext } from '../context/GroupChatContext';
 import { useBotRegistry } from '../context/BotRegistryProvider';
 import { v4 as uuidv4 } from 'uuid';
 import { getMockBotResponse } from '../services/mockBotService';
+import { processMessage, ProcessingContext } from '../services/prompt-processor-service';
+import { GroupChatSettings } from '../types';
 
 export function useRealGroupChat() {
   const context = useGroupChatContext();
@@ -60,27 +62,24 @@ export function useRealGroupChat() {
       dispatch({ type: 'SET_TYPING_BOT_IDS', payload: [...state.typingBotIds, botId] });
       
       try {
-        // Get a real response from the bot
-        const botResponseContent = await getMockBotResponse(
-          bot, 
-          content, 
-          state.messages,
-          { includeToolCalls: bot.useTools }
-        );
-        
-        // Create a response message
-        const botResponse = {
-          id: uuidv4(),
-          content: botResponseContent,
-          role: 'assistant' as const,
-          sender: botId,
-          senderName: bot.name,
-          timestamp: Date.now(),
-          type: 'text' as const
+        // Create processing context that matches the expected type
+        const processingContext: ProcessingContext = {
+          settings: state.settings,
+          messages: state.messages,
+          currentDepth: 0
         };
         
-        // Add the bot's message
-        dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
+        // Process the message with pre/post processing applied
+        await processMessage(
+          userMessage,
+          bot,
+          processingContext,
+          (botResponse) => {
+            // Add the bot's message to the chat
+            dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
+          },
+          { includeToolCalls: bot.useTools }
+        );
       } catch (error) {
         console.error(`Error getting response from bot ${botId}:`, error);
         

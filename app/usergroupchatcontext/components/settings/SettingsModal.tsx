@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { GroupSettingsPanel } from './GroupSettingsPanel';
-import { BotConfigPanel } from './BotConfigPanel';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,9 +13,7 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { state, dispatch } = useGroupChat();
-  const [activeTab, setActiveTab] = useState<'group' | 'bot'>('group');
   const [isAnimating, setIsAnimating] = useState(false);
-  const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   
   // Handle animation on open/close
   useEffect(() => {
@@ -29,15 +26,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   
   // Close the modal if isOpen is false
   if (!isOpen && !isAnimating) return null;
-  
-  const handleTabChange = (tab: 'group' | 'bot') => {
-    setActiveTab(tab);
-  };
-  
-  const handleConfigureBot = (botId: string) => {
-    setSelectedBotId(botId);
-    setActiveTab('bot');
-  };
   
   const handleClose = () => {
     setIsAnimating(false);
@@ -72,33 +60,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }}
       >
         <div className="flex items-center border-b sticky top-0 bg-background z-10">
-          <div className="flex overflow-x-auto hide-scrollbar">
-            <button
-              className={cn(
-                "px-4 py-3 text-sm font-medium whitespace-nowrap",
-                activeTab === 'group' 
-                  ? "bg-muted border-b-2 border-primary" 
-                  : "hover:bg-muted/50"
-              )}
-              onClick={() => handleTabChange('group')}
-            >
-              Group Settings
-            </button>
-            
-            {/* Only show Bot Configuration tab when a bot is selected */}
-            {selectedBotId && (
-              <button
-                className={cn(
-                  "px-4 py-3 text-sm font-medium whitespace-nowrap",
-                  activeTab === 'bot' 
-                    ? "bg-muted border-b-2 border-primary" 
-                    : "hover:bg-muted/50"
-                )}
-                onClick={() => handleTabChange('bot')}
-              >
-                Bot Configuration
-              </button>
-            )}
+          <div className="flex-1 px-4 py-3 text-sm font-medium">
+            Group Settings
           </div>
           
           <div className="ml-auto">
@@ -113,17 +76,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
         
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 49px)' }}>
-          {activeTab === 'group' ? (
-            <GroupSettingsPanel 
-              onClose={handleClose} 
-              onConfigureBot={handleConfigureBot} 
-            />
-          ) : (
-            <BotConfigPanel 
-              botId={selectedBotId || ''} 
-              onClose={handleClose} 
-            />
-          )}
+          <GroupSettingsPanel 
+            onClose={handleClose} 
+          />
         </div>
       </div>
     </div>

@@ -1,10 +1,9 @@
 'use client';
 
-import { Bot, Message, ProcessingMetadata } from '../types';
-import { GroupChatSettings } from '../types/settings';
+import { Bot, Message, ProcessingMetadata, GroupChatSettings } from '../types';
 import { getMockBotResponse } from './mockBotService';
 import { getOpenAIChatResponse } from './openaiChatService';
-import { createBotMessage } from '../types/messages';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ProcessingContext {
   settings: GroupChatSettings;
@@ -18,7 +17,7 @@ export interface ProcessedMessageResult {
     processingTime: number;
     preProcessed: boolean;
     postProcessed: boolean;
-    recursionDepth: number;
+    reprocessingDepth: number;
     originalContent: string;
     modifiedContent: string;
   };
@@ -40,7 +39,7 @@ export async function preProcessMessage(
         processingTime: 0,
         preProcessed: false,
         postProcessed: false,
-        recursionDepth: context.currentDepth,
+        reprocessingDepth: context.currentDepth,
         originalContent: message.content,
         modifiedContent: message.content
       }
@@ -51,12 +50,10 @@ export async function preProcessMessage(
   let processedContent = message.content;
   if (bot.preProcessingPrompt) {
     try {
-      // In a real implementation, this would call an LLM API with the preProcessingPrompt
-      // For now, we'll just simulate the processing
-      processedContent = await simulateProcessing(
+      processedContent = await processWithLLM(
         message.content,
         bot.preProcessingPrompt,
-        300 // Simulate 300ms delay
+        bot.model
       );
     } catch (error) {
       console.error('Error in pre-processing:', error);
@@ -73,7 +70,7 @@ export async function preProcessMessage(
       processingTime: endTime - startTime,
       preProcessed: bot.preProcessingPrompt !== undefined,
       postProcessed: false,
-      recursionDepth: context.currentDepth,
+      reprocessingDepth: context.currentDepth,
       originalContent: message.content,
       modifiedContent: processedContent
     }
@@ -89,37 +86,38 @@ export async function postProcessMessage(
 ): Promise<ProcessedMessageResult> {
   const startTime = performance.now();
   
-  // Skip if post-processing is disabled
-  if (!context.settings.processing?.enablePostProcessing) {
+  // Get the post-processing prompt - either from bot configuration or group settings
+  const postProcessingPrompt = bot.postProcessingPrompt || 
+    (context.settings.processing?.enablePostProcessing ? context.settings.processing.postProcessingPrompt : undefined);
+  
+  // Skip if post-processing is disabled or no prompt exists
+  if (!postProcessingPrompt) {
     return {
       content: botResponse,
       metadata: {
         processingTime: 0,
         preProcessed: false,
         postProcessed: false,
-        recursionDepth: context.currentDepth,
+        reprocessingDepth: context.currentDepth,
         originalContent: botResponse,
         modifiedContent: botResponse
       }
     };
   }
 
-  // If the bot has a post-processing prompt, use it
+  // Process the content with the post-processing prompt
   let processedContent = botResponse;
-  if (bot.postProcessingPrompt) {
-    try {
-      // In a real implementation, this would call an LLM API with the postProcessingPrompt
-      // For now, we'll just simulate the processing
-      processedContent = await simulateProcessing(
-        botResponse,
-        bot.postProcessingPrompt,
-        300 // Simulate 300ms delay
-      );
-    } catch (error) {
-      console.error('Error in post-processing:', error);
-      // Fall back to original content
-      processedContent = botResponse;
-    }
+  try {
+    console.log("Applying post-processing with prompt:", postProcessingPrompt);
+    processedContent = await processWithLLM(
+      botResponse,
+      postProcessingPrompt,
+      bot.model
+    );
+  } catch (error) {
+    console.error('Error in post-processing:', error);
+    // Fall back to original content
+    processedContent = botResponse;
   }
 
   const endTime = performance.now();
@@ -129,25 +127,31 @@ export async function postProcessMessage(
     metadata: {
       processingTime: endTime - startTime,
       preProcessed: false,
-      postProcessed: bot.postProcessingPrompt !== undefined,
-      recursionDepth: context.currentDepth,
+      postProcessed: true,
+      reprocessingDepth: context.currentDepth,
       originalContent: botResponse,
       modifiedContent: processedContent
     }
   };
 }
 
-// Check if the message needs recursive processing
-export function needsRecursiveProcessing(
+// Check if the message needs reprocessing
+export function needsReprocessing(
   result: ProcessedMessageResult,
+  bot: Bot,
   context: ProcessingContext
 ): boolean {
-  // Don't recurse if we've hit the maximum depth
-  if (context.currentDepth >= context.settings.maxRecursionDepth) {
+  // First, check if reprocessing is enabled for this bot
+  if (bot.enableReprocessing === false) {
     return false;
   }
   
-  // Simple check: if content was modified significantly, consider recursion
+  // Don't reprocess if we've hit the maximum depth
+  if (context.currentDepth >= context.settings.maxReprocessingDepth) {
+    return false;
+  }
+  
+  // Simple check: if content was modified significantly, consider reprocessing
   const originalLength = result.metadata.originalContent.length;
   const modifiedLength = result.metadata.modifiedContent.length;
   
@@ -157,21 +161,57 @@ export function needsRecursiveProcessing(
   return changeRatio > 0.2;
 }
 
-// Helper function to simulate processing delay
-async function simulateProcessing(
+// Process content with LLM using the provided prompt
+async function processWithLLM(
   content: string,
   prompt: string,
-  delay: number
+  model: string
 ): Promise<string> {
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, delay));
+  // Prepare message format for OpenAI API
+  const messages = [
+    {
+      role: 'system',
+      content: prompt
+    },
+    {
+      role: 'user',
+      content: content
+    }
+  ];
   
-  // In a real implementation, this would call an LLM API
-  // For now, just add a simple prefix to show it was processed
-  return `[Processed with "${prompt.substring(0, 20)}..."] ${content}`;
+  try {
+    // Call the OpenAI API through our endpoint
+    const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model || 'gpt-4o',
+        messages,
+        temperature: 0.3,
+        max_tokens: 1000
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content || content;
+    } else {
+      throw new Error('No response content received from OpenAI');
+    }
+  } catch (error) {
+    console.error('Error processing with LLM:', error);
+    throw error;
+  }
 }
 
-// Main function to process messages with recursion control
+// Main function to process messages with reprocessing control
 export async function processMessage(
   userMessage: Message,
   bot: Bot,
@@ -219,33 +259,32 @@ export async function processMessage(
     context
   );
   
-  // Create the bot message
-  const botMessage = createBotMessage(
-    bot.id,
-    bot.name,
-    postProcessed.content,
-    bot.avatar
-  );
-  
-  // Add metadata
-  const metadata: ProcessingMetadata = {
-    recursionDepth: context.currentDepth,
-    preProcessed: preProcessed.metadata.originalContent !== userMessage.content ? true : false,
-    postProcessed: postProcessed.metadata.modifiedContent !== botResponse ? true : false,
-    processingTime: preProcessed.metadata.processingTime + postProcessed.metadata.processingTime,
-    originalContent: userMessage.content,
-    modifiedContent: postProcessed.content
-  };
-  
-  botMessage.metadata = {
-    processing: metadata
+  // Create the bot message directly with the correct type
+  const botMessage: Message = {
+    id: uuidv4(),
+    content: postProcessed.content,
+    role: 'assistant',
+    sender: bot.id,
+    senderName: bot.name,
+    timestamp: Date.now(),
+    type: 'text',
+    metadata: {
+      processing: {
+        reprocessingDepth: context.currentDepth,
+        preProcessed: preProcessed.metadata.originalContent !== userMessage.content,
+        postProcessed: postProcessed.metadata.modifiedContent !== botResponse,
+        processingTime: preProcessed.metadata.processingTime + postProcessed.metadata.processingTime,
+        originalContent: userMessage.content,
+        modifiedContent: postProcessed.content
+      }
+    }
   };
   
   // Send the bot response
   onBotResponse(botMessage);
   
-  // Check if we need to recursively process
-  if (needsRecursiveProcessing(postProcessed, context)) {
+  // Check if we need to reprocess
+  if (needsReprocessing(postProcessed, bot, context)) {
     // Create a new context with increased depth
     const newContext: ProcessingContext = {
       ...context,
@@ -259,16 +298,12 @@ export async function processMessage(
         userMessage, 
         bot, 
         newContext, 
-        (recursiveMessage) => {
-          // Add recursion info to the message
-          recursiveMessage.metadata = {
-            ...recursiveMessage.metadata,
-            processingInfo: {
-              ...recursiveMessage.metadata?.processingInfo,
-              recursionDepth: newContext.currentDepth
-            }
-          };
-          onBotResponse(recursiveMessage);
+        (reprocessedMessage) => {
+          // Add reprocessing info to the message
+          if (reprocessedMessage.metadata?.processing) {
+            reprocessedMessage.metadata.processing.reprocessingDepth = newContext.currentDepth;
+          }
+          onBotResponse(reprocessedMessage);
         },
         toolOptions
       );

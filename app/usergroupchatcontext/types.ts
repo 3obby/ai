@@ -14,6 +14,7 @@ export interface Bot {
   maxTokens: number;
   enabled: boolean;
   useTools: boolean;
+  enableReprocessing?: boolean;
 }
 
 // Message types
@@ -25,7 +26,7 @@ export interface MessageMetadata {
     preprocessedContent?: string;
     postprocessedContent?: string;
     processingTime?: number;
-    recursionDepth?: number;
+    reprocessingDepth?: number;
   };
   toolResults?: {
     toolName: string;
@@ -59,7 +60,7 @@ export interface ToolResult {
 export interface ProcessingMetadata {
   preProcessed?: boolean;
   postProcessed?: boolean;
-  recursionDepth?: number;
+  reprocessingDepth?: number;
   processingTime?: number;
   originalContent?: string;
   modifiedContent?: string;
@@ -93,7 +94,7 @@ export interface GroupChatSettings {
   name: string;
   activeBotIds: string[];
   responseMode: 'sequential' | 'parallel';
-  maxRecursionDepth: number;
+  maxReprocessingDepth: number;
   systemPrompt: string;
   voiceSettings?: VoiceSettings;
   processing: {

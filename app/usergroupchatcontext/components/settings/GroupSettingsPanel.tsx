@@ -8,23 +8,22 @@ import { cn } from '@/lib/utils';
 
 interface GroupSettingsPanelProps {
   onClose?: () => void;
-  onConfigureBot?: (botId: string) => void;
 }
 
-export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPanelProps) {
+export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
   const { state, updateSettings, resetChat } = useGroupChat();
   const { state: botState } = useBotRegistry();
-  const bots = botState.availableBots || [];
+  const allBots = botState.availableBots;
   
   // Create state for form values - use default values if settings not loaded
   const [formValues, setFormValues] = useState({
     name: 'Group Chat',
-    responseMode: 'sequential',
+    responseMode: 'sequential' as 'sequential' | 'parallel',
     enablePreProcessing: false,
     enablePostProcessing: false,
     showDebugInfo: true,
     enableVoice: true,
-    maxRecursionDepth: 3,
+    maxReprocessingDepth: 3,
     systemPrompt: '',
     activeBots: [] as string[],
   });
@@ -34,33 +33,35 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
   
   // Initialize form values from state when component mounts or state changes
   useEffect(() => {
-    // Initialize with settings from state
-    // In a real app, this would pull from the actual settings
+    // Initialize with settings from the actual state
     setFormValues({
-      name: 'Group Chat',
-      responseMode: 'sequential',
-      enablePreProcessing: false,
-      enablePostProcessing: false,
-      showDebugInfo: true,
-      enableVoice: true,
-      maxRecursionDepth: 3,
-      systemPrompt: '',
-      activeBots: activeBotIds,
+      name: state.settings?.name || 'Group Chat',
+      responseMode: state.settings?.responseMode || 'sequential',
+      enablePreProcessing: state.settings?.processing?.enablePreProcessing || false,
+      enablePostProcessing: state.settings?.processing?.enablePostProcessing || false,
+      showDebugInfo: state.settings?.ui?.showDebugInfo || true,
+      enableVoice: state.settings?.ui?.enableVoice || false,
+      maxReprocessingDepth: state.settings?.maxReprocessingDepth || 3,
+      systemPrompt: state.settings?.systemPrompt || '',
+      activeBots: state.settings?.activeBotIds || [],
     });
-  }, []);
+    
+    // Also update active bot IDs from state
+    setActiveBotIds(state.settings?.activeBotIds || []);
+  }, [state.settings]);
   
   // Update active bots when bot state changes
   useEffect(() => {
     // Default to all bots being active if none specified
-    if (bots.length > 0 && activeBotIds.length === 0) {
-      const allBotIds = bots.map(bot => bot.id);
+    if (allBots.length > 0 && activeBotIds.length === 0) {
+      const allBotIds = allBots.map(bot => bot.id);
       setActiveBotIds(allBotIds);
       setFormValues(prev => ({
         ...prev,
         activeBots: allBotIds,
       }));
     }
-  }, [bots, activeBotIds.length]);
+  }, [allBots, activeBotIds.length]);
   
   // Handle form changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -72,8 +73,8 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
         ...prev,
         [name]: checked
       }));
-    } else if (name === 'maxRecursionDepth') {
-      const numValue = parseInt(value);
+    } else if (type === 'number' || name === 'maxReprocessingDepth') {
+      const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         setFormValues(prev => ({
           ...prev,
@@ -88,27 +89,14 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
     }
   };
   
-  // Handle bot selection changes
-  const handleBotSelectionChange = (botId: string, isActive: boolean) => {
-    const newActiveBotIds = isActive
-      ? [...formValues.activeBots, botId]
-      : formValues.activeBots.filter(id => id !== botId);
-    
-    setFormValues(prev => ({
-      ...prev,
-      activeBots: newActiveBotIds
-    }));
-    setActiveBotIds(newActiveBotIds);
-  };
-  
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Update settings
     updateSettings({
-      responseMode: formValues.responseMode as 'sequential' | 'parallel',
-      maxRecursionDepth: formValues.maxRecursionDepth,
+      responseMode: formValues.responseMode,
+      maxReprocessingDepth: formValues.maxReprocessingDepth,
       systemPrompt: formValues.systemPrompt,
       processing: {
         enablePreProcessing: formValues.enablePreProcessing,
@@ -131,6 +119,19 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
       resetChat();
       if (onClose) onClose();
     }
+  };
+  
+  // Handle bot selection changes
+  const handleBotSelectionChange = (botId: string, isActive: boolean) => {
+    const newActiveBotIds = isActive
+      ? [...formValues.activeBots, botId]
+      : formValues.activeBots.filter(id => id !== botId);
+    
+    setFormValues(prev => ({
+      ...prev,
+      activeBots: newActiveBotIds
+    }));
+    setActiveBotIds(newActiveBotIds);
   };
   
   return (
@@ -173,21 +174,21 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
           </div>
           
           <div className="grid gap-2">
-            <label htmlFor="maxRecursionDepth" className="text-sm font-medium">
-              Max Recursion Depth
+            <label htmlFor="maxReprocessingDepth" className="text-sm font-medium">
+              Max Reprocessing Depth
             </label>
             <input
               type="number"
-              id="maxRecursionDepth"
-              name="maxRecursionDepth"
+              id="maxReprocessingDepth"
+              name="maxReprocessingDepth"
               min="0"
               max="10"
-              value={formValues.maxRecursionDepth}
+              value={formValues.maxReprocessingDepth}
               onChange={handleChange}
               className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              Maximum number of recursive message processing iterations.
+              Controls how many times a bot can reprocess a response. Set to 0 to disable reprocessing completely.
             </p>
           </div>
           
@@ -291,49 +292,52 @@ export function GroupSettingsPanel({ onClose, onConfigureBot }: GroupSettingsPan
           <Bot className="h-5 w-5 mr-2" />
           Active Bots
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {bots.map(bot => {
-            const isActive = formValues.activeBots.includes(bot.id);
-            return (
-              <div key={bot.id} className="border rounded-md p-3 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    {bot.avatar ? (
-                      <img src={bot.avatar} alt={bot.name} className="h-8 w-8 rounded-full" />
-                    ) : (
-                      bot.name.charAt(0)
-                    )}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Select which bots are active in this chat. To configure a specific bot's settings, click on its avatar or name in the chat.
+          </p>
+          
+          <div className="space-y-2">
+            {allBots.map((bot) => {
+              const isActive = activeBotIds.includes(bot.id);
+              return (
+                <div 
+                  key={bot.id} 
+                  className={cn(
+                    "flex items-center p-2 rounded-md",
+                    isActive 
+                      ? "bg-primary/10" 
+                      : "bg-muted"
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm mr-2">
+                    {bot.name.charAt(0)}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium">{bot.name}</h4>
-                    <p className="text-xs text-muted-foreground">{bot.model}</p>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{bot.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{bot.model || 'GPT-4o'}</div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleBotSelectionChange(bot.id, !isActive)}
+                      className={cn(
+                        "p-1.5 rounded-md",
+                        isActive 
+                          ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                      aria-label={isActive ? `Remove ${bot.name} from chat` : `Add ${bot.name} to chat`}
+                    >
+                      {isActive ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => onConfigureBot && onConfigureBot(bot.id)}
-                    className="text-xs text-primary hover:text-primary/80"
-                  >
-                    Configure
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleBotSelectionChange(bot.id, !isActive)}
-                    className={cn(
-                      "p-1.5 rounded-md",
-                      isActive 
-                        ? "bg-primary/10 text-primary hover:bg-primary/20" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                    aria-label={isActive ? `Remove ${bot.name} from chat` : `Add ${bot.name} to chat`}
-                  >
-                    {isActive ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
       
