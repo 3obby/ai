@@ -8,6 +8,7 @@ import multimodalAgentService from '../../services/livekit/multimodal-agent-serv
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
 import VoiceOverlay from '../voice/VoiceOverlay';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
+import React from 'react';
 
 interface VoiceInputButtonProps {
   onTranscriptionComplete: (transcript: string) => void;
@@ -32,6 +33,7 @@ export function VoiceInputButton({
   const [showVoiceOverlay, setShowVoiceOverlay] = useState(false);
   const [currentAudioLevel, setCurrentAudioLevel] = useState(0);
   const [showLowVolumeWarning, setShowLowVolumeWarning] = useState(false);
+  const lastSentMessageRef = React.useRef('');
   
   const { sendMessage } = useRealGroupChat();
   
@@ -64,8 +66,17 @@ export function VoiceInputButton({
         console.log('Final transcription received:', text.trim());
         
         if (autoSend) {
-          // Add to chat and send message
-          sendMessage(text.trim());
+          // If we've already processed this exact message, ignore it
+          if (lastSentMessageRef.current === text.trim()) {
+            console.log('Ignoring duplicate transcription:', text.trim());
+            return;
+          }
+          
+          // Update the last sent message
+          lastSentMessageRef.current = text.trim();
+          
+          // Add to chat and send message - explicitly mark as voice message type
+          sendMessage(text.trim(), 'voice');
         } else {
           // Just add to input field
           onTranscriptionComplete(text.trim());
@@ -75,13 +86,14 @@ export function VoiceInputButton({
         console.log('Interim transcription:', text);
       }
     };
-
+    
+    // Use the multimodalAgentService directly rather than DOM events
     multimodalAgentService.onTranscription(handleLiveKitTranscription);
 
     return () => {
       multimodalAgentService.offTranscription(handleLiveKitTranscription);
     };
-  }, [onTranscriptionComplete, autoSend, sendMessage]);
+  }, [onTranscriptionComplete, autoSend, sendMessage, lastSentMessageRef]);
 
   // When recording is complete and we have a transcript
   useEffect(() => {

@@ -48,8 +48,17 @@ export class VoiceSynthesisService {
       ...options,
     };
 
+    console.log('VoiceSynthesisService.speak called with text:', text.substring(0, 50) + '...', 'options:', mergedOptions);
+
     try {
-      const response = await fetch('/api/synthesize-speech', {
+      // First clean up any previous audio resources
+      this.cleanup();
+      
+      // Add a small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      console.log('Fetching speech synthesis from API...');
+      const response = await fetch('/usergroupchatcontext/api/synthesize-speech', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,34 +77,69 @@ export class VoiceSynthesisService {
         throw new Error(`API request failed with status ${response.status}`);
       }
 
+      console.log('Speech synthesis response received, converting to blob...');
       const audioBlob = await response.blob();
-      
-      this.cleanup();
+      console.log('Audio blob created, size:', audioBlob.size);
       
       this.audioUrl = URL.createObjectURL(audioBlob);
       
       this.audioElement = new Audio(this.audioUrl);
       this.audioElement.volume = mergedOptions.volume || 1.0;
       
+      // Listen for errors during loading
+      const loadPromise = new Promise<void>((resolve, reject) => {
+        if (!this.audioElement) {
+          reject(new Error('Audio element not created'));
+          return;
+        }
+        
+        this.audioElement.oncanplaythrough = () => {
+          console.log('Audio is ready to play through without buffering');
+          resolve();
+        };
+        this.audioElement.onerror = (e) => {
+          console.error('Error loading audio:', e);
+          reject(new Error(`Error loading audio: ${e}`));
+        };
+      });
+      
+      // Wait for audio to be ready to play
+      console.log('Waiting for audio to be ready to play...');
+      await loadPromise;
+      
       if (this.onStartCallback) {
-        this.audioElement.onplay = this.onStartCallback;
+        this.audioElement.onplay = () => {
+          console.log('Audio playback started');
+          if (this.onStartCallback) this.onStartCallback();
+        };
       }
       
       if (this.onEndCallback) {
         this.audioElement.onended = () => {
+          console.log('Audio playback ended');
           this.cleanup();
           if (this.onEndCallback) this.onEndCallback();
         };
       }
       
       this.audioElement.onerror = (event) => {
+        console.error('Audio playback error:', event);
         this.cleanup();
         if (this.onErrorCallback) {
           this.onErrorCallback(`Audio playback error: ${event}`);
         }
       };
       
-      await this.audioElement.play();
+      // Use a try-catch block specifically for the play() operation
+      try {
+        console.log('Attempting to play audio...');
+        await this.audioElement.play();
+        console.log('Audio playback started successfully');
+      } catch (playError) {
+        console.error('Error during audio playback:', playError);
+        // Fall back to browser speech synthesis only on play errors
+        this.fallbackToSpeechSynthesis(text, mergedOptions);
+      }
       
     } catch (error) {
       console.error('Error using OpenAI API for speech synthesis:', error);
@@ -163,15 +207,41 @@ export class VoiceSynthesisService {
 
   private cleanup(): void {
     if (this.audioElement) {
-      this.audioElement.pause();
-      this.audioElement.src = '';
-      this.audioElement.load();
-      this.audioElement = null;
+      try {
+        // Remove all event listeners
+        this.audioElement.onplay = null;
+        this.audioElement.onended = null;
+        this.audioElement.onerror = null;
+        this.audioElement.oncanplaythrough = null;
+        
+        // Stop playback
+        this.audioElement.pause();
+        
+        // Reset src and reload to clear buffer
+        this.audioElement.src = '';
+        this.audioElement.load();
+        this.audioElement = null;
+      } catch (e) {
+        console.warn('Error during audio cleanup:', e);
+      }
     }
     
     if (this.audioUrl) {
-      URL.revokeObjectURL(this.audioUrl);
+      try {
+        URL.revokeObjectURL(this.audioUrl);
+      } catch (e) {
+        console.warn('Error revoking object URL:', e);
+      }
       this.audioUrl = null;
+    }
+    
+    // Also cancel any browser speech synthesis
+    if (this.isSupported()) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        console.warn('Error canceling speech synthesis:', e);
+      }
     }
   }
 

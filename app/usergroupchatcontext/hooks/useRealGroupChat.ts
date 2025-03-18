@@ -18,7 +18,7 @@ export function useRealGroupChat() {
   const { state, dispatch } = context;
   
   // Helper function to send a user message
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, messageType: 'text' | 'voice' = 'text') => {
     if (!content.trim()) return;
     
     // Create a user message
@@ -29,7 +29,7 @@ export function useRealGroupChat() {
       sender: 'user',
       senderName: 'You',
       timestamp: Date.now(),
-      type: 'text' as const
+      type: messageType
     };
     
     // Add the message to the chat
@@ -49,6 +49,9 @@ export function useRealGroupChat() {
       return;
     }
     
+    // Check if this is a voice message - we'll handle it differently
+    const isVoiceMessage = messageType === 'voice';
+    
     // Process responses for each active bot sequentially
     for (const botId of activeBotIds) {
       const bot = botRegistry.getBot(botId);
@@ -62,24 +65,86 @@ export function useRealGroupChat() {
       dispatch({ type: 'SET_TYPING_BOT_IDS', payload: [...state.typingBotIds, botId] });
       
       try {
-        // Create processing context that matches the expected type
-        const processingContext: ProcessingContext = {
-          settings: state.settings,
-          messages: state.messages,
-          currentDepth: 0
-        };
-        
-        // Process the message with pre/post processing applied
-        await processMessage(
-          userMessage,
-          bot,
-          processingContext,
-          (botResponse) => {
+        // For voice messages, we'll bypass the normal processing pipeline to avoid delays
+        if (isVoiceMessage) {
+          // Make a direct API call for voice messages
+          try {
+            // Get history/context from previous messages
+            const messageHistory = state.messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }));
+            
+            // Make direct API call to OpenAI
+            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages: [...messageHistory, { role: 'user', content }],
+                model: bot.model || 'gpt-4o',
+                temperature: bot.temperature || 0.7,
+                max_tokens: bot.maxTokens || 1024,
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`API request failed with status ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Voice API response data:', data);
+            
+            // Extract the content from the OpenAI response structure
+            const responseContent = data.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+            
+            // Create bot response message
+            const botResponse = {
+              id: uuidv4(),
+              content: responseContent,
+              role: 'assistant' as const,
+              sender: botId,
+              senderName: bot.name,
+              timestamp: Date.now(),
+              type: 'text' as const,
+              metadata: {
+                processing: {
+                  originalContent: responseContent,
+                  preProcessed: false,
+                  postProcessed: false,
+                  fromVoiceMode: true
+                }
+              }
+            };
+            
             // Add the bot's message to the chat
             dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
-          },
-          { includeToolCalls: bot.useTools }
-        );
+          } catch (apiError) {
+            console.error(`Error getting direct response from OpenAI for bot ${botId}:`, apiError);
+            throw apiError; // Propagate to the outer catch block
+          }
+        } else {
+          // Normal text message processing with pre/post processing pipeline
+          // Create processing context that matches the expected type
+          const processingContext: ProcessingContext = {
+            settings: state.settings,
+            messages: state.messages,
+            currentDepth: 0
+          };
+          
+          // Process the message with pre/post processing applied
+          await processMessage(
+            userMessage,
+            bot,
+            processingContext,
+            (botResponse) => {
+              // Add the bot's message to the chat
+              dispatch({ type: 'ADD_MESSAGE', payload: botResponse });
+            },
+            { includeToolCalls: bot.useTools }
+          );
+        }
       } catch (error) {
         console.error(`Error getting response from bot ${botId}:`, error);
         

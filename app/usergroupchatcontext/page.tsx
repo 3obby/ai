@@ -178,20 +178,7 @@ function BotsInitializer() {
   
   return (
     <div className="fixed bottom-20 right-4 z-10 flex flex-col gap-2">
-      <button 
-        onClick={testModelsEndpoint}
-        className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Loading...' : 'Test Models API'}
-      </button>
-      <button 
-        onClick={testSpeechSynthesis}
-        className="bg-green-600 text-white p-2 rounded-full shadow-lg"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Loading...' : 'Test Voice Synthesis'}
-      </button>
+      {/* Test buttons removed */}
     </div>
   );
 }

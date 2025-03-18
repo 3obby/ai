@@ -26,7 +26,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({ className = '' }: ChatInterfaceProps) {
   const { state, dispatch } = useRealGroupChat();
   const { state: botState } = useBotRegistry();
-  const { isBotSpeaking, isListening } = useLiveKitIntegration();
+  const { isBotSpeaking, isListening, isInVoiceMode } = useLiveKitIntegration();
   const bots = botState.availableBots;
   
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -112,19 +112,21 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={toggleInterruptions}
-            className={`px-2 py-1 rounded-md text-xs flex items-center gap-1 transition-colors ${
-              allowInterruptions 
-                ? 'bg-green-600 text-white' 
-                : 'bg-red-600 text-white'
-            }`}
-            title={allowInterruptions ? "Interruptions allowed" : "Interruptions disabled"}
-            aria-label={allowInterruptions ? "Interruptions allowed" : "Interruptions disabled"}
-          >
-            {allowInterruptions ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
-            Interrupt
-          </button>
+          {isInVoiceMode && (
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowInterruptions}
+                onChange={toggleInterruptions}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              <span className="ml-2 text-xs text-muted-foreground flex items-center">
+                {allowInterruptions ? <Volume2 className="h-3 w-3 mr-1" /> : <VolumeX className="h-3 w-3 mr-1" />}
+                Interrupt
+              </span>
+            </label>
+          )}
           <button
             onClick={toggleSettings}
             className="p-1.5 text-muted-foreground hover:text-primary rounded-md transition-colors"

@@ -33,6 +33,7 @@ interface LiveKitIntegrationContextType {
   startListening: () => Promise<void>;
   stopListening: () => void;
   isBotSpeaking: boolean;
+  isInVoiceMode: boolean;
   currentSpeakingBotId: BotId | null;
   playBotResponse: (botId: BotId, text: string) => Promise<void>;
   stopBotSpeech: () => void;
@@ -61,36 +62,36 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   
   const [isListening, setIsListening] = useState(false);
   const [isBotSpeaking, setIsBotSpeaking] = useState(false);
+  const [isInVoiceMode, setIsInVoiceMode] = useState(false);
   const [currentSpeakingBotId, setCurrentSpeakingBotId] = useState<BotId | null>(null);
 
   // Handle transcription results from LiveKit
   useEffect(() => {
     if (!room || !isConnected) return;
 
-    const handleTranscription = async (transcription: { text: string, interim: boolean }) => {
-      if (transcription.interim) return; // Only process final transcriptions
+    const handleTranscription = async (text: string, isFinal: boolean) => {
+      if (!isFinal || !text.trim()) return; // Only process final, non-empty transcriptions
+      console.log('LiveKitIntegrationProvider received transcription:', text, 'isFinal:', isFinal);
       
-      // If the transcription is final, check if it contains a tool call
-      if (!transcription.interim && transcription.text.trim()) {
-        const isToolCall = await detectToolsInTranscription(transcription.text);
-        
-        // If it was a tool call, we might want to skip normal message processing
-        if (isToolCall) {
-          return;
-        }
+      // Check if it contains a tool call
+      const isToolCall = await detectToolsInTranscription(text);
+      
+      // If it was a tool call, skip normal message processing
+      if (isToolCall) {
+        return;
       }
       
       // Create a new user message from transcription
       const message: Message = {
         id: uuidv4(),
-        content: transcription.text,
+        content: text,
         role: 'user',
         sender: 'user',
         timestamp: Date.now(),
         type: 'voice',
         metadata: {
           processing: {
-            originalContent: transcription.text,
+            originalContent: text,
           } as ProcessingMetadata,
           toolResults: [] as ToolResult[]
         }
@@ -106,103 +107,113 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       await processUserMessage(message);
     };
     
-    // Set up custom event listener for transcription events
-    // Since the native LiveKit events don't include transcription
-    const customTranscriptionHandler = (event: any) => {
-      if (event && event.detail) {
-        handleTranscription(event.detail);
-      }
-    };
-    
-    document.addEventListener('livekit-transcription', customTranscriptionHandler);
+    // Set up listener directly on the multimodalAgentService
+    multimodalAgentService.onTranscription(handleTranscription);
     
     return () => {
-      document.removeEventListener('livekit-transcription', customTranscriptionHandler);
+      multimodalAgentService.offTranscription(handleTranscription);
     };
   }, [room, isConnected, dispatch]);
   
   // Process user message through bot response system
   const processUserMessage = async (message: Message) => {
-    // Set processing state
-    dispatch({ type: 'SET_PROCESSING', payload: true });
-    
     try {
-      // Get active bots
-      const activeBotIds = state.settings.activeBotIds || [];
-      const activeBots = botRegistryState.availableBots.filter(bot => 
-        activeBotIds.includes(bot.id)
-      );
+      // Set processing state
+      dispatch({ type: 'SET_PROCESSING', payload: true });
       
-      // Process message through each bot based on response mode
-      if (state.settings.responseMode === 'sequential') {
-        // Process bots in sequence
-        for (const bot of activeBots) {
-          // Set the current bot as typing
-          dispatch({ 
-            type: 'SET_TYPING_BOT_IDS', 
-            payload: [bot.id] 
-          });
-          
-          // Generate bot response
-          const botResponse = await generateBotResponse(bot.id, message.content);
-          
-          // Add bot response to chat
-          const botMessage: Message = {
-            id: uuidv4(),
-            content: botResponse.content,
-            role: 'assistant',
-            sender: bot.id,
-            timestamp: Date.now(),
-            type: 'text',
-            metadata: {
-              toolResults: botResponse.toolResults || [],
-              processing: {
-                originalContent: botResponse.content,
-              } as ProcessingMetadata
-            }
-          };
-          
-          dispatch({
-            type: 'ADD_MESSAGE',
-            payload: botMessage
-          });
-          
-          // If voice is enabled for this bot, speak the response
-          const botConfig = botRegistryState.availableBots.find(b => b.id === bot.id);
-          if (botConfig && state.settings.ui.enableVoice) {
-            await playBotResponse(bot.id, botResponse.content);
-          }
-          
-          // Clear typing indicator
-          dispatch({ 
-            type: 'SET_TYPING_BOT_IDS', 
-            payload: [] 
-          });
-        }
-      } else {
-        // Process bots in parallel
+      // Don't add the message again since it's already added by the caller
+      // dispatch({
+      //   type: 'ADD_MESSAGE',
+      //   payload: message
+      // });
+      
+      // Check if we should respond at all
+      if (state.settings.activeBotIds.length === 0) {
+        return;
+      }
+      
+      // Determine which bots should respond
+      const activeBotIds = state.settings.activeBotIds;
+      const activeBots = botRegistryState.availableBots.filter(bot => activeBotIds.includes(bot.id));
+      
+      // Handle bot responses according to the response mode (sequential or parallel)
+      if (activeBots.length > 0) {
+        // Check if this message is from voice mode
+        const isVoiceMessage = message.type === 'voice';
+      
+        // Add typing indicators for all active bots
         dispatch({ 
           type: 'SET_TYPING_BOT_IDS', 
           payload: activeBotIds 
         });
         
-        const botResponses = await Promise.all(activeBots.map(async (bot) => {
-          const response = await generateBotResponse(bot.id, message.content);
-          return {
+        // Get bot responses in parallel or sequentially based on settings
+        const botResponses: Message[] = [];
+        
+        if (state.settings.responseMode === 'parallel') {
+          // Get all bot responses in parallel
+          const promises = activeBots.map(bot => 
+            generateBotResponse(
+              bot.id, 
+              message.content,
+              {
+                isVoiceMode: isVoiceMessage,
+                skipPrePostProcessing: isVoiceMessage, // Skip pre/post processing for voice messages
+                disableToolCalling: isVoiceMessage // Disable tool calling for voice messages
+              }
+            )
+          );
+          
+          const responses = await Promise.all(promises);
+          
+          // Create bot messages
+          botResponses.push(...responses.map((response, index) => ({
             id: uuidv4(),
             content: response.content,
             role: 'assistant' as const,
-            sender: bot.id,
+            sender: activeBots[index].id,
+            senderName: activeBots[index].name,
             timestamp: Date.now(),
             type: 'text' as const,
             metadata: {
-              toolResults: response.toolResults || [],
+              toolResults: response.toolResults,
               processing: {
                 originalContent: response.content,
               } as ProcessingMetadata
             }
-          };
-        }));
+          })));
+        } else {
+          // Sequential mode - get responses one by one
+          for (const bot of activeBots) {
+            const response = await generateBotResponse(
+              bot.id, 
+              message.content,
+              {
+                isVoiceMode: isVoiceMessage,
+                skipPrePostProcessing: isVoiceMessage, // Skip pre/post processing for voice messages
+                disableToolCalling: isVoiceMessage // Disable tool calling for voice messages
+              }
+            );
+            
+            const botMessage: Message = {
+              id: uuidv4(),
+              content: response.content,
+              role: 'assistant' as const,
+              sender: bot.id,
+              senderName: bot.name,
+              timestamp: Date.now(),
+              type: 'text' as const,
+              metadata: {
+                toolResults: response.toolResults,
+                processing: {
+                  originalContent: response.content,
+                } as ProcessingMetadata
+              }
+            };
+            
+            botResponses.push(botMessage);
+          }
+        }
         
         // Add all bot responses to chat
         for (const botResponse of botResponses) {
@@ -235,7 +246,15 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   };
   
   // Generate bot response using the actual bot services
-  const generateBotResponse = async (botId: BotId, userMessage: string): Promise<{content: string, toolResults?: ToolResult[]}> => {
+  const generateBotResponse = async (
+    botId: BotId, 
+    userMessage: string, 
+    options: { 
+      isVoiceMode?: boolean, 
+      skipPrePostProcessing?: boolean, 
+      disableToolCalling?: boolean 
+    } = {}
+  ): Promise<{content: string, toolResults?: ToolResult[]}> => {
     try {
       // Find the bot in registry
       const botFromRegistry = botRegistryState.availableBots.find(b => b.id === botId);
@@ -253,8 +272,9 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
           maxTokens: botFromRegistry.maxTokens || 1024,
           enabledTools: [] as string[]
         },
+        // If options.disableToolCalling is true, force useTools to be false regardless of bot settings
         tools: [] as ToolDefinition[],
-        useTools: botFromRegistry.useTools || false
+        useTools: options.disableToolCalling ? false : (botFromRegistry.useTools || false)
       };
 
       // Set the bot as typing
@@ -280,18 +300,11 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         await new Promise(resolve => setTimeout(resolve, 1000));
         content = `Response from ${bot.name} to: ${userMessage}`;
       } else {
-        // Generate response with appropriate tools if bot has tools enabled
-        if (bot.useTools) {
-          // Get the bot's enabled tools
-          // Since we're dealing with type inconsistencies, just use an empty array for now
-          // In a real implementation, this would filter the tools based on enabled tools
-          const enabledTools: ToolDefinition[] = [];
-          
-          // Get tool definitions for enabled tools
-          const toolDefinitions = enabledTools;
-          
-          // Call API with tool definitions
-          const response = await fetch('/api/chat', {
+        // If this is a voice mode response and we need to bypass pre/post processing,
+        // generate the response directly from OpenAI without using the prompt processor
+        if (options.isVoiceMode && options.skipPrePostProcessing) {
+          // Direct API call to OpenAI for voice mode responses
+          const response = await fetch('/usergroupchatcontext/api/openai/chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -301,82 +314,130 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
               model: bot.model || 'gpt-4o',
               temperature: bot.parameters.temperature || 0.7,
               max_tokens: bot.parameters.maxTokens || 1024,
-              tools: toolDefinitions
+              // No tools in voice mode
+              tools: []
             }),
           }).then(res => res.json());
           
-          // Check if response includes tool calls
-          if (response.tool_calls && response.tool_calls.length > 0 && executeToolCalls) {
-            // Format tool calls for our tool execution service
-            const formattedToolCalls = response.tool_calls.map((call: any) => ({
-              id: call.id,
-              name: call.function.name,
-              arguments: JSON.parse(call.function.arguments)
-            }));
+          // Log the response structure to debug
+          console.log('Voice mode OpenAI response:', response);
+          
+          // Extract content from the OpenAI response structure
+          content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+        }
+        else {
+          // Generate response with appropriate tools if bot has tools enabled
+          if (bot.useTools) {
+            // Get the bot's enabled tools
+            // Since we're dealing with type inconsistencies, just use an empty array for now
+            // In a real implementation, this would filter the tools based on enabled tools
+            const enabledTools: ToolDefinition[] = [];
             
-            // Execute tool calls
-            toolResults = await executeToolCalls(formattedToolCalls);
+            // Get tool definitions for enabled tools
+            const toolDefinitions = enabledTools;
             
-            // Add tool results to the message history for a follow-up completion
-            const toolResponseMessages = toolResults.map(result => {
-              // Handle different ToolResult shapes in the codebase
-              const resultObj = result as any;
-              return {
-                role: 'tool' as const,
-                content: JSON.stringify(resultObj.output || resultObj.result),
-                tool_call_id: resultObj.id || resultObj.toolName
-              };
-            });
-            
-            // Get final response that includes tool outputs
-            const finalResponse = await fetch('/api/chat', {
+            // Call API with tool definitions
+            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                messages: [
-                  ...messageHistory, 
-                  { role: 'user', content: userMessage },
-                  ...toolResponseMessages
-                ],
+                messages: [...messageHistory, { role: 'user', content: userMessage }],
+                model: bot.model || 'gpt-4o',
+                temperature: bot.parameters.temperature || 0.7,
+                max_tokens: bot.parameters.maxTokens || 1024,
+                tools: toolDefinitions
+              }),
+            }).then(res => res.json());
+            
+            // Log response structure to debug
+            console.log('Tool-enabled OpenAI response:', response);
+            
+            // Check if response includes tool calls
+            if (response.choices?.[0]?.message?.tool_calls && 
+                response.choices[0].message.tool_calls.length > 0 && 
+                executeToolCalls) {
+              // Format tool calls for our tool execution service
+              const formattedToolCalls = response.choices[0].message.tool_calls.map((call: any) => ({
+                id: call.id,
+                name: call.function.name,
+                arguments: JSON.parse(call.function.arguments)
+              }));
+              
+              // Execute tool calls
+              toolResults = await executeToolCalls(formattedToolCalls);
+              
+              // Add tool results to the message history for a follow-up completion
+              const toolResponseMessages = toolResults.map(result => {
+                // Handle different ToolResult shapes in the codebase
+                const resultObj = result as any;
+                return {
+                  role: 'tool' as const,
+                  content: JSON.stringify(resultObj.output || resultObj.result),
+                  tool_call_id: resultObj.id || resultObj.toolName
+                };
+              });
+              
+              // Get final response that includes tool outputs
+              const finalResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messages: [
+                    ...messageHistory, 
+                    { role: 'user', content: userMessage },
+                    ...toolResponseMessages
+                  ],
+                  model: bot.model || 'gpt-4o',
+                  temperature: bot.parameters.temperature || 0.7,
+                  max_tokens: bot.parameters.maxTokens || 1024,
+                }),
+              }).then(res => res.json());
+              
+              content = finalResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+            } else {
+              // No tool calls or tool execution not enabled
+              content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+            }
+          } else {
+            // Standard chat completion without tools
+            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages: [...messageHistory, { role: 'user', content: userMessage }],
                 model: bot.model || 'gpt-4o',
                 temperature: bot.parameters.temperature || 0.7,
                 max_tokens: bot.parameters.maxTokens || 1024,
               }),
             }).then(res => res.json());
             
-            content = finalResponse.content;
-          } else {
-            // No tool calls or tool execution not enabled
-            content = response.content;
+            // Log response structure to debug
+            console.log('Standard OpenAI response:', response);
+            
+            content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
           }
-        } else {
-          // Standard chat completion without tools
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              messages: [...messageHistory, { role: 'user', content: userMessage }],
-              model: bot.model || 'gpt-4o',
-              temperature: bot.parameters.temperature || 0.7,
-              max_tokens: bot.parameters.maxTokens || 1024,
-            }),
-          }).then(res => res.json());
-          
-          content = response.content;
         }
       }
-
+      
       return { content, toolResults };
     } catch (error) {
-      console.error(`Error generating response for bot ${botId}:`, error);
+      console.error("Error generating bot response:", error);
       return { 
-        content: `I apologize, but I encountered an error while processing your request. ${error instanceof Error ? error.message : 'Please try again later.'}`,
+        content: `I'm sorry, I encountered an error while processing your request. ${error instanceof Error ? error.message : ''}`,
         toolResults: []
       };
+    } finally {
+      // Remove this bot from typing indicators
+      dispatch({ 
+        type: 'SET_TYPING_BOT_IDS', 
+        payload: state.typingBotIds.filter(id => id !== botId) 
+      });
     }
   };
   
@@ -388,17 +449,16 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       const success = await multimodalAgentService.startListening();
       if (success) {
         setIsListening(true);
+        setIsInVoiceMode(true);
         dispatch({ type: 'TOGGLE_RECORDING' });
       }
     } catch (error) {
-      console.error("Error starting audio capture:", error);
+      console.error("Error starting listening:", error);
     }
   };
   
   // Stop listening for voice input
   const stopListening = () => {
-    if (!isListening) return;
-    
     multimodalAgentService.stopListening();
     setIsListening(false);
     dispatch({ type: 'TOGGLE_RECORDING' });
@@ -406,16 +466,20 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   
   // Play bot response using text-to-speech
   const playBotResponse = async (botId: BotId, text: string) => {
-    if (!isConnected) return;
+    if (!text.trim()) return;
     
     try {
+      // Find the bot
       const bot = botRegistryState.availableBots.find(b => b.id === botId);
-      if (!bot) return;
+      if (!bot) {
+        throw new Error(`Bot with ID ${botId} not found`);
+      }
       
+      // Set the current speaking bot
       setIsBotSpeaking(true);
       setCurrentSpeakingBotId(botId);
       
-      // Configure voice settings based on bot configuration
+      // Configure voice options for the bot
       const voiceOptions = {
         // Start with default settings
         voice: 'alloy',
@@ -428,17 +492,20 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       
       console.log(`Using voice settings for bot ${bot.name}:`, voiceOptions);
       
+      // Create a new instance of VoiceSynthesisService for each response to avoid playback conflicts
+      const responseSynthesisService = new VoiceSynthesisService(voiceOptions);
+      
       // Use the voice synthesis service with speak method and bot-specific voice settings
-      voiceSynthesisService.speak(text, voiceOptions);
+      await responseSynthesisService.speak(text, voiceOptions);
       
       return new Promise<void>((resolve) => {
-        voiceSynthesisService.onEnd(() => {
+        responseSynthesisService.onEnd(() => {
           setIsBotSpeaking(false);
           setCurrentSpeakingBotId(null);
           resolve();
         });
         
-        voiceSynthesisService.onError((error) => {
+        responseSynthesisService.onError((error) => {
           console.error('Voice synthesis error:', error);
           // Add error message to the chat
           dispatch({
@@ -480,7 +547,15 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   const stopBotSpeech = () => {
     if (!isBotSpeaking) return;
     
+    // Stop the global voice synthesis service
     voiceSynthesisService.stop();
+    
+    // If we're using browser's SpeechSynthesis API, make sure it's also canceled
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    // Reset state
     setIsBotSpeaking(false);
     setCurrentSpeakingBotId(null);
   };
@@ -601,11 +676,30 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     };
   }, [state.isRecording, state.typingBotIds, dispatch]);
 
+  // Add this function to completely exit voice mode
+  const exitVoiceMode = () => {
+    multimodalAgentService.stopListening();
+    setIsListening(false);
+    setIsInVoiceMode(false);
+    if (isBotSpeaking) {
+      stopBotSpeech();
+    }
+    dispatch({ type: 'TOGGLE_RECORDING' });
+  };
+
+  // Add an effect to detect when user disconnects from LiveKit completely
+  useEffect(() => {
+    if (!isConnected && isInVoiceMode) {
+      setIsInVoiceMode(false);
+    }
+  }, [isConnected, isInVoiceMode]);
+
   const contextValue: LiveKitIntegrationContextType = {
     isListening,
     startListening,
     stopListening,
     isBotSpeaking,
+    isInVoiceMode,
     currentSpeakingBotId,
     playBotResponse,
     stopBotSpeech,

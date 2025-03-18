@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "a6a892d",
+      "fullHash": "a6a892db6991aa3ea48be6da6bfc36855e574534",
+      "date": "2025-03-18 22:23:41 +0700",
+      "author": "3obby",
+      "message": "nice ya",
+      "category": "other"
+    },
+    {
       "hash": "28e97df",
       "fullHash": "28e97df979d748d64491ffd49b2702a50ac3aa7e",
       "date": "2025-03-18 22:01:27 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update login page with app version and add image assets",
       "category": "feature"
-    },
-    {
-      "hash": "60052e2",
-      "fullHash": "60052e21be4b03da8d05dd43260ba1fa978513e5",
-      "date": "2025-03-08 13:57:26 +0700",
-      "author": "3obby",
-      "message": "Update login page with robobirds background and robohand logo",
-      "category": "enhancement"
     }
   ]
 }
