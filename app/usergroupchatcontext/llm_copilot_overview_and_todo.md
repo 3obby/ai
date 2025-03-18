@@ -33,29 +33,51 @@ We are no longer building samples or demos. Our new default configuration:
 
 ## Core Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      GroupChatContext                       │
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐  │
-│  │  User I/O   │    │ Bot Manager │    │ Settings System │  │
-│  │ Text & Voice│◄──►│             │◄──►│                 │  │
-│  └─────────────┘    └──────┬──────┘    └─────────────────┘  │
-│         ▲                  │                    ▲            │
-│         │                  ▼                    │            │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐  │
-│  │ LiveKit     │    │ Bot Instance│    │ Prompt Processor │  │
-│  │ Integration │◄──►│  Registry   │◄──►│ Pre/Post Hooks   │  │
-│  └─────────────┘    └──────┬──────┘    └─────────────────┘  │
-│         ▲                  │                    ▲            │
-│         │                  ▼                    │            │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐  │
-│  │ Tool Calling│◄──►│ Bot Response│◄──►│Reprocessing Ctrl│  │
-│  │   System    │    │  Pipeline   │    │     System      │  │
-│  └─────────────┘    └─────────────┘    └─────────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Component Hierarchy and Relationships
+
+**Top Level: GroupChatContext**
+- Contains and orchestrates all other components
+
+**Main Components and Their Relationships:**
+1. User I/O (Text & Voice)
+   - Bidirectional connection with Bot Manager
+   - Bidirectional connection with LiveKit Integration
+
+2. Bot Manager
+   - Connected to User I/O
+   - Connected to Settings System (bidirectional)
+   - Controls Bot Instance Registry
+
+3. Settings System
+   - Connected to Bot Manager (bidirectional)
+   - Connected to Prompt Processor (bidirectional)
+
+4. LiveKit Integration
+   - Connected to User I/O
+   - Connected to Bot Instance Registry (bidirectional)
+
+5. Bot Instance Registry
+   - Controlled by Bot Manager
+   - Connected to LiveKit Integration (bidirectional)
+   - Connected to Prompt Processor (bidirectional)
+   - Controls Bot Response Pipeline
+
+6. Prompt Processor (Pre/Post Hooks)
+   - Connected to Bot Instance Registry (bidirectional)
+   - Connected to Settings System (bidirectional)
+   - Connected to Reprocessing Control System (bidirectional)
+
+7. Tool Calling System
+   - Connected to Bot Response Pipeline (bidirectional)
+
+8. Bot Response Pipeline
+   - Controlled by Bot Instance Registry
+   - Connected to Tool Calling System (bidirectional)
+   - Connected to Reprocessing Control System (bidirectional)
+
+9. Reprocessing Control System
+   - Connected to Bot Response Pipeline (bidirectional)
+   - Connected to Prompt Processor (bidirectional)
 
 ## Key Components
 
@@ -76,35 +98,24 @@ We are no longer building samples or demos. Our new default configuration:
 
 ## Signal Chain Logging System
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                 Unified Text Output System                 │
-│                                                            │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐ │
-│  │ User Input  │    │ Pre-Process │    │ Tool Resolution │ │
-│  │ Text & Voice│───►│   Logging   │───►│     Logging     │ │
-│  └─────────────┘    └─────────────┘    └─────────────────┘ │
-│                                                ▼           │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐ │
-│  │   Final     │    │ Post-Process│    │ Tool Execution  │ │
-│  │   Output    │◄───│   Logging   │◄───│     Logging     │ │
-│  └─────────────┘    └─────────────┘    └─────────────────┘ │
-│         │                                                   │
-│         ▼                                                   │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                Message Display Component             │  │
-│  │ ┌────────────────────────────────────────────────┐  │  │
-│  │ │                  Default View                  │  │  │
-│  │ │         (Shows only final bot response)        │  │  │
-│  │ └────────────────────────────────────────────────┘  │  │
-│  │ ┌────────────────────────────────────────────────┐  │  │
-│  │ │                 Expanded View                  │  │  │
-│  │ │     (Shows complete processing signal chain)   │  │  │
-│  │ └────────────────────────────────────────────────┘  │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Data Flow and Processing Stages
+
+**Main Container: Unified Text Output System**
+
+**Processing Flow:**
+1. User Input (Text & Voice) → Pre-Process Logging → Tool Resolution Logging
+2. Tool Resolution Logging → Tool Execution Logging → Post-Process Logging → Final Output
+3. Final Output → Message Display Component
+
+**Message Display Component:**
+- Contains two views:
+  - Default View: Shows only final bot response
+  - Expanded View: Shows complete processing signal chain
+
+### Flow Direction:
+- User Input flows forward through Pre-Process and Tool Resolution
+- Tool Execution results flow back through Post-Process to Final Output
+- Final Output is displayed in the Message Display Component
 
 
 ## Type System
@@ -354,6 +365,7 @@ export type GroupChatAction =
 ├── k.md (21.1KB)
 ├── ka.md (7.8KB)
 ├── layout.tsx (0.4KB)
+├── llm_copilot_overview_and_todo.md (19KB)
 ├── mobile.css (1.7KB)
 ├── page.tsx (5.2KB)
 ├── scripts/
@@ -394,7 +406,7 @@ export type GroupChatAction =
 ├── utils/
   ├── generateReadme.js (5.2KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (10.2KB)
+  ├── llm_copilot_part1.md (6.8KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```
 

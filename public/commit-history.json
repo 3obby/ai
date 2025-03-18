@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "c177870",
+      "fullHash": "c177870db0f2e4aeb5750c0bb8575b804735e233",
+      "date": "2025-03-18 13:51:22 +0700",
+      "author": "3obby",
+      "message": "corrected auto-doc",
+      "category": "documentation"
+    },
+    {
       "hash": "c75efd2",
       "fullHash": "c75efd2d480e7d30753d9bddc8e59153bb9aa223",
       "date": "2025-03-18 13:41:42 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Fix bot chat output - Change to non-streaming mode to prevent raw JSON output",
       "category": "bugfix"
-    },
-    {
-      "hash": "f34a2e5",
-      "fullHash": "f34a2e5afe81522436fed8382ae59841ac2d2ae0",
-      "date": "2025-03-08 13:27:47 +0700",
-      "author": "3obby",
-      "message": "Enhance OAuth profile picture handling to display Google profile pictures",
-      "category": "enhancement"
     }
   ]
 }
