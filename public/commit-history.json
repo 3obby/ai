@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "3f0e7f7",
+      "fullHash": "3f0e7f73cfe6bccd44efe98bb216c9811efe385f",
+      "date": "2025-03-19 21:39:52 +0700",
+      "author": "3obby",
+      "message": "Fix: Replace hardcoded API keys with environment variables",
+      "category": "bugfix"
+    },
+    {
       "hash": "148efa6",
       "fullHash": "148efa606894e2ff25f234043985820c9ec83fa9",
       "date": "2025-03-19 19:44:28 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 12:27:38 +0700",
       "author": "3obby",
       "message": "Fix image issues: Add sizes prop to all Image components with fill, optimize large companion images",
-      "category": "bugfix"
-    },
-    {
-      "hash": "77da679",
-      "fullHash": "77da679b6f251699a82a45171ea5e16de49b0430",
-      "date": "2025-03-08 21:52:13 +0700",
-      "author": "3obby",
-      "message": "Improve UI and UX: Add animated logo, optimize navigation, implement skeleton loading for dashboard, and fix sidebar consistency",
       "category": "bugfix"
     }
   ]

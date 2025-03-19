@@ -18,7 +18,7 @@ CHUNK_SIZE = 500  # tokens (approximate)
 CHUNK_OVERLAP = 100  # tokens of overlap between chunks
 EXTENSIONS_TO_INDEX = ['.ts', '.tsx', '.js', '.jsx', '.md', '.txt', '.css']
 IGNORE_DIRS = ['.git', 'node_modules', '__pycache__']
-PINECONE_API_KEY = "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY', '')
 INDEX_NAME = "agentconsult"
 
 # Initialize OpenAI for embeddings
