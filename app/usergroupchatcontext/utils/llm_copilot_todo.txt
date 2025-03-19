@@ -1,0 +1,39 @@
+# UserGroupChatContext TODO List
+
+## Hook Refactoring
+
+1. **Create Specialized Hooks**
+   - Implement `useAudioTrackPublishing.ts` to handle audio track lifecycle and microphone access
+   - Create `useTokenFetching.ts` for token retrieval with proper error handling and retries
+   - Develop `useConnectionManager.ts` to handle LiveKit connection management and reconnection logic
+   - Build `useSpeechRecognition.ts` to encapsulate transcription functionality
+   - Create `useSpeechSynthesis.ts` to provide easy access to text-to-speech capabilities
+
+## State Management
+
+1. **Implement Better State Management**
+   - Create unified VoiceConnectionState type to centralize state tracking
+   - Consolidate state management that's currently spread across multiple components
+   - Implement state machines for complex flows like connection/reconnection
+
+## Error Handling
+
+1. **Improve Error Handling**
+   - Create a centralized error handling system with typed errors
+   - Implement recovery strategies for common failure scenarios
+   - Provide user-friendly error messages with actionable recovery steps
+
+## Testing
+
+1. **Create Comprehensive Tests**
+   - Write unit tests for all specialized services
+   - Create integration tests for component interactions
+   - Implement end-to-end tests for critical user flows
+
+## Documentation
+
+1. **Enhance Documentation**
+   - Update service API documentation
+   - Create usage examples for hooks
+   - Document component interaction patterns
+   - Create architecture diagrams

@@ -1,0 +1,25 @@
+{
+  "workbench.colorTheme": "Dark Orange Flat",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "prettier.semi": false,
+  "editor.wordWrap": "on",
+  "solidity.telemetry": false,
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "typescript.tsserver.web.projectWideIntellisense.enabled": false,
+  "cursor.general.gitGraphIndexing": "disabled",
+  "mcpServers": {
+    "pinecone-memory": {
+      "command": "npx",
+      "args": ["-y", "@pinecone-database/pinecone-mcp-server"],
+      "env": {
+        "PINECONE_API_KEY": "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ",
+        "PINECONE_INDEX": "agentconsult",
+        "PINECONE_ENVIRONMENT": "us-east-1-aws"
+      }
+    }
+  },
+  "ai.externalMemory": true
+} 

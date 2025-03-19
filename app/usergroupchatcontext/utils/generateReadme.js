@@ -7,6 +7,7 @@ const { execSync } = require('child_process');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const README_PATH = path.join(ROOT_DIR, 'llm_copilot_overview_and_todo.md');
 const PART1_PATH = path.join(__dirname, 'llm_copilot_part1.md');
+const TODO_PATH = path.join(__dirname, 'llm_copilot_todo.txt');
 
 /**
  * Generates the directory structure as a markdown-formatted string
@@ -115,57 +116,21 @@ function getImplementationStatus() {
  * Generates the complete README content
  */
 function generateReadmeContent() {
-  const { completed, inProgress } = getImplementationStatus();
-  
-  // Load the static content from part1
-  let staticContent = '';
+  // 1. Load Part1 content
+  let part1Content = '';
   try {
-    staticContent = fs.readFileSync(PART1_PATH, 'utf8');
+    part1Content = fs.readFileSync(PART1_PATH, 'utf8');
+    console.log('Successfully loaded Part1 content');
   } catch (error) {
     console.error('Error reading part1 file:', error);
-    return 'Error: Could not read llm_copilot_part1.md';
+    part1Content = '# Error: Could not read llm_copilot_part1.md\n\n';
   }
 
-  // Try to find several possible insertion points in order of preference
-  const possibleInsertPoints = [
-    '## Code Refactoring Tasks',
-    '## Signal Chain Logging System',
-    '## Architectural Advantages'
-  ];
-  
-  let typeSystemInsertPoint = -1;
-  
-  for (const point of possibleInsertPoints) {
-    typeSystemInsertPoint = staticContent.indexOf(point);
-    if (typeSystemInsertPoint !== -1) {
-      console.log(`Found insertion point at section: ${point}`);
-      break;
-    }
-  }
-  
-  // If no insertion point was found, insert at the end of the file
-  if (typeSystemInsertPoint === -1) {
-    console.warn('No specific insertion point found, appending to the end of the file');
-    typeSystemInsertPoint = staticContent.length;
-  }
-  
-  // Split the static content
-  const beforeTypeSystem = staticContent.substring(0, typeSystemInsertPoint);
-  const afterTypeSystem = staticContent.substring(typeSystemInsertPoint);
-  
-  // Build the dynamic section
+  // 2. Build the dynamic section with architecture details and directory
   const dynamicContent = `
 ## Type System
 
 ${extractTypeDefinitions()}
-
-## Implementation Status
-
-### Completed
-${completed}
-
-### In Progress
-${inProgress}
 
 ## Directory Structure
 
@@ -176,8 +141,18 @@ ${generateDirectoryStructure().trimEnd()}
 
 `;
 
-  // Combine everything
-  return beforeTypeSystem + dynamicContent + afterTypeSystem;
+  // 3. Load TODO content
+  let todoContent = '';
+  try {
+    todoContent = fs.readFileSync(TODO_PATH, 'utf8');
+    console.log('Successfully loaded TODO content');
+  } catch (error) {
+    console.error('Error reading todo file:', error);
+    todoContent = '## TODO\n\n- Error: Could not read llm_copilot_todo.txt\n';
+  }
+
+  // 4. Combine everything in the requested order
+  return part1Content + dynamicContent + todoContent;
 }
 
 /**

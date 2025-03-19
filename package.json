@@ -23,7 +23,13 @@
     "dev:fast": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev",
     "dev:browser": "npm run optimize-anon && lsof -ti:3000 | xargs kill -9 || true && sleep 2 && npx next dev & npx wait-on http://localhost:3000 && open -na 'Google Chrome' --args --auto-open-devtools-for-tabs --user-data-dir=$(mktemp -d) --no-first-run http://localhost:3000",
     "postinstall:dev": "chmod +x scripts/db-check.js scripts/optimize-dev.js",
-    "update-readme": "node scripts/update-readme.js"
+    "update-readme": "node scripts/update-readme.js",
+    "index-codebase": "ts-node app/usergroupchatcontext/scripts/indexCodebase.ts",
+    "cursor:index": "cursor create-embeddings --path=\"app/usergroupchatcontext\" --destination=\"pinecone\" --index=\"agentconsult\"",
+    "index:direct": "node app/usergroupchatcontext/scripts/index-codebase.js",
+    "test:pinecone": "node app/usergroupchatcontext/scripts/test-pinecone.js",
+    "pinecone:check": "node app/usergroupchatcontext/scripts/check-pinecone.js",
+    "pinecone:create-index": "node app/usergroupchatcontext/scripts/create-pinecone-index.js"
   },
   "dependencies": {
     "@auth/core": "0.34.2",

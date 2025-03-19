@@ -9,6 +9,16 @@
     "singleQuote": true,
     "semi": true
   },
+  "mcpServers": {
+    "pinecone-memory": {
+      "command": "npx",
+      "args": ["-y", "@pinecone-database/pinecone-mcp-server"],
+      "env": {
+        "PINECONE_API_KEY": "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+      }
+    }
+  },
+  "ai.externalMemory": true,
   "snippets": {
     "newComponent": "import React from 'react';\n\ninterface ${1:ComponentName}Props {\n  ${2:prop}: ${3:type};\n}\n\nexport default function ${1:ComponentName}({ ${2:prop} }: ${1:ComponentName}Props) {\n  return (\n    <div className=\"${4:className}\">\n      ${5:content}\n    </div>\n  );\n}\n",
     "newServerComponent": "import { Suspense } from 'react';\n\ninterface ${1:ComponentName}Props {\n  ${2:prop}: ${3:type};\n}\n\nexport default async function ${1:ComponentName}({ ${2:prop} }: ${1:ComponentName}Props) {\n  // Server-side logic here\n  \n  return (\n    <Suspense fallback={<div>Loading...</div>}>\n      <div className=\"${4:className}\">\n        ${5:content}\n      </div>\n    </Suspense>\n  );\n}\n",

@@ -8,13 +8,20 @@ const fs = require('fs');
 const utilityPath = path.resolve(__dirname, '../utils/generateReadme.js');
 const readmePath = path.resolve(__dirname, '../llm_copilot_overview_and_todo.md');
 const part1Path = path.resolve(__dirname, '../utils/llm_copilot_part1.md');
+const todoPath = path.resolve(__dirname, '../utils/llm_copilot_todo.txt');
 
 console.log('Updating README...');
 
-// Verify that the part1 file exists
+// Verify that the required files exist
 if (!fs.existsSync(part1Path)) {
   console.error(`Error: Static content file not found at ${part1Path}`);
   process.exit(1);
+}
+
+if (!fs.existsSync(todoPath)) {
+  console.warn(`Warning: TODO file not found at ${todoPath}`);
+  console.log('Creating empty TODO file');
+  fs.writeFileSync(todoPath, '## TODO\n\n- No TODO items defined yet\n');
 }
 
 try {

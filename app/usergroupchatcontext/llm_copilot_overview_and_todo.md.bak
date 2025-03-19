@@ -401,13 +401,12 @@ export type GroupChatAction =
   ├── useVoiceSettings.ts (5.7KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (17.9KB)
-├── llm_copilot_overview_and_todo.md.bak (17.9KB)
+├── llm_copilot_overview_and_todo.md (21.1KB)
 ├── mobile.css (2.3KB)
 ├── page.tsx (9.5KB)
 ├── scripts/
   ├── generate-test.js (1.9KB)
-  ├── update-readme.js (2KB)
+  ├── update-readme.js (1.7KB)
 ├── services/
   ├── livekit/
     ├── README.md (3.3KB)

@@ -32,6 +32,12 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - The system maintains unified context across text and voice so that switching modes is instant and retains conversational history  
    - All message flows (text and transcribed voice) route through the same bot, ensuring a consistent, high-quality exchange  
 
+4. **Pinecone Vector Database Integration**
+   - Enhanced contextual awareness through semantic codebase indexing
+   - Integrated memory capabilities for improved conversation retention
+   - Cursor IDE integration with MCP server for seamless development experience
+   - Allows bots to reference and recall specific parts of the codebase during conversations
+
 ## Core Architecture
 
 ### Component Hierarchy and Relationships
@@ -80,6 +86,57 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - Connected to Bot Response Pipeline (bidirectional)  
    - Connected to Prompt Processor (bidirectional)  
 
+10. **Pinecone Integration**
+    - Connected to Bot Response Pipeline (bidirectional)
+    - Provides semantic search capabilities across the codebase
+    - Enhances context retrieval for more accurate responses
+    - Enables conversation memory through vector embeddings
+
+## Pinecone Indexing and Retrieval Implementation
+
+Our Pinecone integration provides the AI copilot with comprehensive access to the codebase, enabling semantic understanding and contextual responses based on the project's source code. The implementation follows a pipeline of indexing, embedding, and retrieval:
+
+### Indexing Pipeline
+
+1. **Codebase Scanning**
+   - Recursive directory traversal targeting TypeScript, JavaScript, and Markdown files
+   - Intelligent filtering to exclude binary files, node_modules, and build artifacts
+   - Content chunking of large files to maintain optimal embedding quality
+
+2. **Text Embedding Generation**
+   - OpenAI's text-embedding-ada-002 model (1536 dimensions) for high-quality semantic representations
+   - Chunking strategy that preserves semantic coherence (paragraphs, sentences)
+   - MD5 hash-based ID generation for consistent retrieval and updates
+
+3. **Vector Database Storage**
+   - Serverless Pinecone index (agentconsult) hosted on AWS us-east-1 region
+   - Optimized upsert operations with batching (50 vectors per batch)
+   - Rich metadata storage including file paths, snippets, and modification dates
+
+### Retrieval Process
+
+1. **Semantic Query Generation**
+   - User questions converted to the same embedding space as the indexed content
+   - Context-aware query formulation based on ongoing conversation
+
+2. **Similarity Search**
+   - Cosine similarity matching to find the most relevant code segments
+   - TopK retrieval (configurable, default 5) with metadata inclusion
+   - Configurable filtering to narrow searches to specific parts of the codebase
+
+3. **Context Integration**
+   - Retrieved code segments seamlessly integrated into the bot's context window
+   - Automatic prioritization of most relevant content within token limits
+   - Source attribution with file paths to maintain referential transparency
+
+This implementation successfully extends the AI copilot's ability to read and understand the codebase, enabling it to:
+- Answer specific questions about implementation details
+- Provide code references and explanations from existing project files
+- Maintain contextual awareness of code structure during conversations
+- Generate suggestions and modifications informed by the actual codebase
+
+The architecture allows for continuous indexing of new code changes, ensuring the AI assistant always has access to the most current version of the codebase for accurate, context-aware assistance.
+
 ## Key Components
 
 ### Core Components
@@ -89,6 +146,9 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - Manages the set of available bots and their configurations  
 3. **MessageProcessor**  
    - Central message-handling pipeline for routing and sequencing  
+4. **PineconeService**
+   - Manages vector database connections and operations
+   - Enables semantic search across indexed content
 
 ### Input/Output Components
 1. **ChatInterface**  
@@ -126,38 +186,6 @@ We have shifted our efforts to create a robust production-ready system. By defau
 - Tool results flow back through post-processing to produce the final output  
 - The final output is then presented in the Message Display Component with optional expanded logs  
 
-## Code Refactoring Tasks
-
-1. **Break Down Large Files**  
-   - Split MultimodalAgentService (917 lines) into specialized modules (TranscriptionManager, AudioPublishingService, ToolDetectionService)
-   - Extract RoomSessionManager (474 lines) into smaller modules (SessionConnectionManager, AudioTrackManager, ParticipantManager)
-   - Maintain main service classes as orchestrators that delegate to specialized modules
-
-2. **Apply Single Responsibility Principle**  
-   - Extract UI rendering from VoiceInputButton (444 lines) into separate components
-   - Move LiveKit initialization logic to dedicated hooks
-   - Create separate components for error handling and visualization
-
-3. **Create Specialized Hooks**  
-   - Implement useAudioTrackPublishing.ts to handle audio track lifecycle
-   - Create useTokenFetching.ts for token retrieval with retries
-   - Develop useConnectionManager.ts to handle LiveKit connection management
-
-4. **Implement Better State Management**  
-   - Create unified VoiceConnectionState type to centralize state tracking
-   - Consolidate state management that's currently spread across multiple components
-   - Implement state machines for complex flows like connection/reconnection
-
-5. **Introduce Domain-Specific Services**  
-   - Reorganize services directory with domain-specific subdirectories
-   - Create focused services for connection, audio, and transcription
-   - Implement clear boundaries between service responsibilities
-
-6. **Improve Error Handling**  
-   - Create a centralized error handling system with typed errors
-   - Implement recovery strategies for common failure scenarios
-   - Provide user-friendly error messages with actionable recovery steps
-
 ## Architectural Advantages
 
 - **WebRTC Benefits**  
@@ -177,4 +205,8 @@ We have shifted our efforts to create a robust production-ready system. By defau
 - **Reprocessing System**  
   Provides iterative refinement, automatically or on user demand, within clearly defined limits  
 - **Unified Bot Settings**  
-  Maintains consistent global defaults across all bots, with flexible overrides per individual bot  
+  Maintains consistent global defaults across all bots, with flexible overrides per individual bot
+- **Vector Database Integration**
+  Enhances context retrieval with semantic search across the codebase
+- **Memory Persistence**
+  Maintains conversation history and context through vector embeddings
