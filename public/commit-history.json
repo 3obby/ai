@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "6ea239c",
+      "fullHash": "6ea239c520d0fbb52e3fb2eaa34ecc294ff6d982",
+      "date": "2025-03-19 21:19:46 +0700",
+      "author": "3obby",
+      "message": "Add empty hook log",
+      "category": "feature"
+    },
+    {
       "hash": "ad64aba",
       "fullHash": "ad64abaad8ff09ab13e63885e16e851149668572",
       "date": "2025-03-19 21:18:11 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Implement 1:1 token burning system with global and user-specific tracking",
       "category": "other"
-    },
-    {
-      "hash": "094bfdd",
-      "fullHash": "094bfdd447be26110c76866934a1dcaf2ef028b7",
-      "date": "2025-03-09 13:00:14 +0700",
-      "author": "3obby",
-      "message": "Change XP to 'tokens burned' terminology and add fire emoji icon",
-      "category": "feature"
     }
   ]
 }

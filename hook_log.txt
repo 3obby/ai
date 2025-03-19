@@ -59,3 +59,172 @@ Indexed 1 changed files successfully with 0 failures
 Memory update complete
 Pinecone update completed successfully.
 Proceeding with push...
+Pre-push hook running at Wed Mar 19 21:18:21 +07 2025
+Made script executable
+Running update_memory.py with 'changed' option...
+Enhanced Memory Updater for Pinecone
+----------------------------------------
+Indexing only changed files...
+OpenAI API key (truncated): sk-proj-lH...VYiYA
+No uncommitted changes found, checking committed changes...
+No git changes detected, checking file modification times...
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/todo.txt
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/tempfix.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/README.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/layout.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/page.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/llm_copilot_overview_and_todo.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/mobile.css
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/livekit.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/messages.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/settings.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/voice.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/bots.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/types/index.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/LiveKitProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/ToolCallProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/GroupChatProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/GroupChatContext.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/BotRegistryProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/BotRegistryContext.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/context/LiveKitIntegrationProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/llm_copilot_part1.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/livekit-auth.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/generateReadme.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/pineconeUtils.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/llm_copilot_todo.txt
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/utils/toolResponseFormatter.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/docs/mcp-pinecone-usage.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/docs/pinecone-integration.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/bots/BotCard.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/BotSettingsModal.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/BotConfigPanel.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/GroupSettingsPanel.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/SettingsPanel.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/VoiceSettingsPanel.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/PromptEditor.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/settings/SettingsModal.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/tools/VoiceToolConfirmation.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/tools/ToolIntegrationProvider.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/tools/ToolPanel.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/tools/ToolCallWrapper.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/MessageInput.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/ChatInterface.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/OpenAIVoiceButton.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/ChatContainer.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/MessageItem.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/ChatHeader.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/VoiceInputButton.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/MessageList.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/MessageBubble.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/TypingIndicator.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/ChatInput.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/chat/MessageSpeaker.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoicePlaybackControls.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceIntegration.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/AudioVisualizer.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/WebSpeechTest.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceOverlay.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceAnalytics.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceInputButton.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceBotSelector.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceActivityIndicator.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceResponseManager.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceCommandController.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/voice/VoiceConversationController.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/debug/ProcessingInfo.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/components/debug/DebugInfo.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useLiveKit.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useGroupChat.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useVoiceSettings.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useTurnTaking.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useRealGroupChat.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useVoiceActivity.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useToolIntegration.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/usePromptProcessor.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/hooks/useVoiceToolConfirmation.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/index-codebase.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/generate-test.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/test-direct-pinecone.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/test-pinecone.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/check-pinecone.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/test-new-pinecone.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/index-codebase.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/indexCodebase.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/test-pinecone.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/update-readme.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/scripts/create-pinecone-index.js
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/synthesize-speech/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/latest-openai-models/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/livekit/token/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/livekit/room/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/livekit-token/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/api/openai/chat/route.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/speech-test/page.tsx
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/data/sampleBots.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/data/defaultSettings.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/prompt-processor-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/openaiRealtimeService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/openaiChatService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voiceSynthesisService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/mockBotService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voiceToolCallingService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/toolCallService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/toolProcessorService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/pineconeService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voiceToolRegistry.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voiceTranscriptionService.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/tools/voiceWeatherTool.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/tools/voiceTimerTool.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voice/voice-analytics-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/voice/voice-auth-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/tool-detection-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/voice-activity-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/room-session-manager.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/audio-publishing-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/session-connection-manager.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/livekit-api-client.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/README.md
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/participant-manager.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/speech-synthesis-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/livekit-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/turn-taking-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/audio-track-manager.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/index.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/multimodal-agent-service.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/transcription-manager.ts
+Recently modified file: /Users/dev/code/agentconsult/app/usergroupchatcontext/services/livekit/REFACTORING.md
+Found 127 changed files to process
+Found 127 changed files
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/todo.txt...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/todo.txt...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/todo.txt
+Uploaded final batch of 2 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/tempfix.ts...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/tempfix.ts...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/tempfix.ts
+Uploaded final batch of 1 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/README.md...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/README.md...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/README.md
+Uploaded final batch of 3 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/types.ts...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/types.ts...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/types.ts
+Uploaded final batch of 3 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/layout.tsx...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/layout.tsx...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/layout.tsx
+Uploaded final batch of 1 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/page.tsx...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/page.tsx...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/page.tsx
+Uploaded final batch of 6 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/llm_copilot_overview_and_todo.md...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/llm_copilot_overview_and_todo.md...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/llm_copilot_overview_and_todo.md
+Uploaded final batch of 11 vectors
+Indexing /Users/dev/code/agentconsult/app/usergroupchatcontext/mobile.css...
+Deleting vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/mobile.css...
+Deleted vectors for /Users/dev/code/agentconsult/app/usergroupchatcontext/mobile.css
