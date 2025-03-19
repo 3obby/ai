@@ -1,20 +1,28 @@
 #!/bin/sh
 
-# Manual script to update Pinecone vector database with usergroupchatcontext files
+# Script to manually update Pinecone before pushing
+echo "Manually updating Pinecone..."
 
-echo "Starting manual Pinecone update..."
+# Use absolute paths for reliability
+PROJECT_ROOT="/Users/dev/code/agentconsult"
+SCRIPT_PATH="$PROJECT_ROOT/app/usergroupchatcontext/scripts/update_memory.py"
 
-# Make the update_pinecone.py script executable if it isn't already
-chmod +x "$(dirname "$0")/update_pinecone.py"
+# Make the update_memory.py script executable
+chmod +x "$SCRIPT_PATH"
 
-# Run the update script
-"$(dirname "$0")/update_pinecone.py"
+# Get the OpenAI API key from .env.local
+OPENAI_API_KEY=$(grep OPENAI_API_KEY $PROJECT_ROOT/.env.local | cut -d '=' -f2)
 
-# Check if the script execution was successful
-if [ $? -ne 0 ]; then
-  echo "Error updating Pinecone. Check the output above for details."
-  exit 1
-fi
+echo "Running update_memory.py with 'all' option to force update..."
 
-echo "Pinecone update complete!"
-exit 0 
+# Activate Python environment and run the script
+cd $PROJECT_ROOT
+source .venv/bin/activate
+OPENAI_API_KEY=$OPENAI_API_KEY python3 $SCRIPT_PATH all
+
+# Check if the update was successful
+if [ $? -eq 0 ]; then
+    echo "Pinecone update completed successfully."
+else
+    echo "Warning: Failed to update Pinecone."
+fi 

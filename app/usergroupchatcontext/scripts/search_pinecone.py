@@ -6,6 +6,7 @@ search_pinecone.py - Search Pinecone index directly using the SDK
 import os
 import sys
 import json
+import argparse
 from datetime import datetime
 import openai
 from pinecone import Pinecone
@@ -97,8 +98,25 @@ def filter_by_file_type(file_type):
         "file_type": file_type
     }
 
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Search Pinecone index for similar content')
+    
+    # Required query argument
+    parser.add_argument('query', nargs='?', help='Search query')
+    
+    # Optional arguments
+    parser.add_argument('--file-type', '-f', help='Filter by file type')
+    parser.add_argument('--limit', '-k', type=int, default=5, help='Maximum number of results (default: 5)')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Show more detailed output')
+    
+    return parser.parse_args()
+
 def main():
     """Main function for searching Pinecone"""
+    # Parse command line arguments
+    args = parse_args()
+    
     # Get index stats
     try:
         stats = pinecone_index.describe_index_stats()
@@ -109,29 +127,19 @@ def main():
         print(f"Error getting index stats: {e}")
         return
     
-    # Get search query from command line
-    if len(sys.argv) > 1:
-        query = sys.argv[1]
-    else:
+    # Get search query
+    query = args.query
+    if not query:
         query = input("Enter search query: ")
-    
-    # Get optional file type filter
-    file_type = None
-    if len(sys.argv) > 2:
-        file_type = sys.argv[2]
-    else:
-        filter_input = input("Filter by file type (leave blank for all): ")
-        if filter_input.strip():
-            file_type = filter_input.strip()
     
     # Set up filter if needed
     filter_dict = None
-    if file_type:
-        filter_dict = filter_by_file_type(file_type)
-        print(f"Filtering by file type: {file_type}")
+    if args.file_type:
+        filter_dict = filter_by_file_type(args.file_type)
+        print(f"Filtering by file type: {args.file_type}")
     
     # Search Pinecone
-    results = search_pinecone(query, top_k=5, filter_dict=filter_dict)
+    results = search_pinecone(query, top_k=args.limit, filter_dict=filter_dict)
     
     # Display results
     if results:

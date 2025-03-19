@@ -352,26 +352,80 @@ def index_file(file_path, openai_client, pinecone_index, force_update=False):
     return success
 
 def get_changed_files():
-    """Use git to get recently changed files in the usergroupchatcontext directory"""
+    """Get recently changed files in the usergroupchatcontext directory"""
+    changed_files = []
+    
     try:
-        # Get the list of changed files from git
+        # Try git status to get uncommitted changes
         result = subprocess.run(
-            ['git', 'diff', '--name-only', 'HEAD@{1}', 'HEAD'],
+            ['git', 'status', '--porcelain'],
             capture_output=True,
             text=True,
-            check=True
+            cwd='/Users/dev/code/agentconsult'
         )
         
-        # Filter files to only include those in the target directory
-        changed_files = []
-        for file_path in result.stdout.splitlines():
-            if file_path.startswith('app/usergroupchatcontext') and should_index_file(os.path.join('/Users/dev/code/agentconsult', file_path)):
-                changed_files.append(os.path.join('/Users/dev/code/agentconsult', file_path))
+        for line in result.stdout.splitlines():
+            # Git status format: XY filename
+            if line and len(line) > 3:
+                status = line[:2]
+                file_path = line[3:].strip()
+                
+                # Check if file is modified, added, or renamed
+                if status.strip() and not status.startswith('??'):
+                    if file_path.startswith('app/usergroupchatcontext'):
+                        # Convert to absolute path
+                        abs_path = os.path.join('/Users/dev/code/agentconsult', file_path)
+                        if should_index_file(abs_path) and os.path.exists(abs_path):
+                            changed_files.append(abs_path)
+                            print(f"Found changed file: {abs_path}")
         
-        return changed_files
+        # If no changes found with git status, try a different approach
+        if not changed_files:
+            print("No uncommitted changes found, checking committed changes...")
+            
+            # Try to get recently committed files
+            result = subprocess.run(
+                ['git', 'diff', '--name-only', 'HEAD~1', 'HEAD'],
+                capture_output=True,
+                text=True,
+                cwd='/Users/dev/code/agentconsult'
+            )
+            
+            for file_path in result.stdout.splitlines():
+                if file_path.startswith('app/usergroupchatcontext'):
+                    abs_path = os.path.join('/Users/dev/code/agentconsult', file_path)
+                    if should_index_file(abs_path) and os.path.exists(abs_path):
+                        changed_files.append(abs_path)
+                        print(f"Found committed change: {abs_path}")
+        
+        # If still no changes, check recently modified files
+        if not changed_files:
+            print("No git changes detected, checking file modification times...")
+            
+            current_time = time.time()
+            one_hour_ago = current_time - (60 * 60)  # Look at files modified in the last hour
+            
+            for root, _, files in os.walk(DIRECTORY_TO_INDEX):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    if should_index_file(file_path):
+                        try:
+                            mtime = os.path.getmtime(file_path)
+                            if mtime > one_hour_ago:
+                                changed_files.append(file_path)
+                                print(f"Recently modified file: {file_path}")
+                        except Exception as e:
+                            print(f"Error checking file time: {e}")
+    
     except Exception as e:
-        print(f"Error getting changed files from git: {e}")
-        return []
+        print(f"Error detecting changed files: {e}")
+    
+    if not changed_files:
+        print("No changed files detected in app/usergroupchatcontext")
+    else:
+        print(f"Found {len(changed_files)} changed files to process")
+    
+    return changed_files
 
 def index_directory(directory_path=DIRECTORY_TO_INDEX, force_update=False):
     """Recursively index all files in a directory"""
