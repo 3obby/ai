@@ -253,6 +253,9 @@ export class MultimodalAgentService {
     }
 
     try {
+      // First, ensure we have a fresh AudioContext
+      await this.resumeAudioContext();
+      
       // Ensure LiveKit is connected - attempt to initialize connection if needed
       await this.ensureLiveKitConnection();
 
@@ -292,12 +295,83 @@ export class MultimodalAgentService {
         this.activeRoomName = session.roomName;
       }
       
+      // Check connection state explicitly
+      const room = livekitService.getRoom();
+      if (!room || room.state !== 'connected') {
+        console.warn('LiveKit room not in connected state, current state:', room?.state);
+        
+        // Check if we need to reconnect
+        if (room && room.state === 'disconnected') {
+          console.log('Room is disconnected, attempting to reconnect...');
+          
+          try {
+            // Get a fresh token and reconnect
+            const response = await fetch('/usergroupchatcontext/api/livekit-token');
+            if (!response.ok) {
+              throw new Error(`Failed to get LiveKit token: ${response.status}`);
+            }
+            
+            const tokenData = await response.json();
+            if (!tokenData?.token) {
+              throw new Error('No token received from LiveKit token API');
+            }
+            
+            // Initialize LiveKit session with fresh token
+            const roomName = tokenData.roomName || 'default-room';
+            const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+            
+            if (!livekitUrl) {
+              throw new Error('LiveKit URL not configured in environment variables');
+            }
+            
+            // Close existing session and create a new one
+            await roomSessionManager.closeSession(roomName);
+            await roomSessionManager.createSession(roomName, tokenData.token, livekitUrl);
+            console.log('Successfully reconnected to LiveKit');
+            
+            // Update active room name
+            this.activeRoomName = roomName;
+          } catch (reconnectError) {
+            console.error('Failed to reconnect to LiveKit:', reconnectError);
+            return false;
+          }
+        }
+      }
+      
       // Enable local audio in the room session with enhanced quality
       console.log('Enabling local audio with enhanced quality settings...');
       const audioConstraints = this.config.enhancedAudioProcessing ? 
         (window as any).__enhancedAudioConstraints : undefined;
       
-      const audioTrack = await roomSessionManager.enableLocalAudio();
+      // Try to enable local audio with retries
+      let audioTrackAttempts = 0;
+      const maxAudioTrackAttempts = 3;
+      let audioTrack;
+      
+      while (!audioTrack && audioTrackAttempts < maxAudioTrackAttempts) {
+        try {
+          audioTrack = await roomSessionManager.enableLocalAudio();
+          if (audioTrack) {
+            console.log('Successfully enabled local audio track');
+            break;
+          } else {
+            throw new Error('Failed to get audio track');
+          }
+        } catch (audioError) {
+          audioTrackAttempts++;
+          console.error(`Error enabling audio (attempt ${audioTrackAttempts}/${maxAudioTrackAttempts}):`, audioError);
+          
+          if (audioTrackAttempts >= maxAudioTrackAttempts) {
+            throw new Error('Failed to enable audio after multiple attempts');
+          }
+          
+          // Wait before retry with increasing delay
+          const delay = Math.min(1000 * audioTrackAttempts, 3000);
+          console.log(`Waiting ${delay}ms before retrying audio setup...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      
       if (!audioTrack) {
         console.error('Failed to enable local audio. Check microphone permissions and browser compatibility.');
         return false;
@@ -314,6 +388,10 @@ export class MultimodalAgentService {
       
       this.isListening = true;
       console.log('Started listening for speech input with enhanced quality');
+      
+      // Emit a listening started event
+      this.emitter.emit('listening-started', { timestamp: Date.now() });
+      
       return true;
     } catch (error) {
       console.error('Error starting listening:', error);
@@ -325,7 +403,19 @@ export class MultimodalAgentService {
         browserUserMedia: !!navigator.mediaDevices?.getUserMedia,
         livekitURL: process.env.NEXT_PUBLIC_LIVEKIT_URL
       });
+      
+      // Clean up any partial state
       this.stopListening();
+      
+      // Try to show a more helpful error message
+      if (error instanceof Error) {
+        if (error.message.includes('permission') || error.name === 'NotAllowedError') {
+          this.emitter.emit('error', { type: 'permission-denied', message: 'Microphone permission denied' });
+        } else if (error.message.includes('timeout') || error.message.includes('publish')) {
+          this.emitter.emit('error', { type: 'publish-timeout', message: 'Could not publish audio track' });
+        }
+      }
+      
       return false;
     }
   }

@@ -107,12 +107,23 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       }
       
       // Add a deduplication check to prevent duplicate messages
-      const recentMessages = state.messages.slice(-5);
+      const recentMessages = state.messages.slice(-10); // Check more recent messages (increased from 5)
       const isDuplicate = recentMessages.some(msg => 
         msg.role === 'user' && 
-        msg.type === 'voice' && 
-        msg.content.trim() === text.trim() &&
-        Date.now() - msg.timestamp < 5000 // Within last 5 seconds
+        (msg.type === 'voice' || msg.type === 'text') && // Consider both voice and text messages
+        (
+          // Exact match
+          msg.content.trim() === text.trim() ||
+          // Or very similar (to catch minor transcription differences)
+          (
+            msg.content.length > 5 && 
+            (
+              msg.content.includes(text.trim()) || 
+              text.trim().includes(msg.content)
+            )
+          )
+        ) &&
+        Date.now() - msg.timestamp < 10000 // Within last 10 seconds (increased from 5)
       );
       
       if (isDuplicate) {

@@ -126,12 +126,27 @@ function generateReadmeContent() {
     return 'Error: Could not read llm_copilot_part1.md';
   }
 
-  // Find the insertion point for dynamic content - before "Next Implementation Steps"
-  const typeSystemInsertPoint = staticContent.indexOf('## Next Implementation Steps');
+  // Try to find several possible insertion points in order of preference
+  const possibleInsertPoints = [
+    '## Code Refactoring Tasks',
+    '## Signal Chain Logging System',
+    '## Architectural Advantages'
+  ];
   
+  let typeSystemInsertPoint = -1;
+  
+  for (const point of possibleInsertPoints) {
+    typeSystemInsertPoint = staticContent.indexOf(point);
+    if (typeSystemInsertPoint !== -1) {
+      console.log(`Found insertion point at section: ${point}`);
+      break;
+    }
+  }
+  
+  // If no insertion point was found, insert at the end of the file
   if (typeSystemInsertPoint === -1) {
-    console.error('Could not find insertion point in part1 file');
-    return 'Error: Could not find insertion point in llm_copilot_part1.md';
+    console.warn('No specific insertion point found, appending to the end of the file');
+    typeSystemInsertPoint = staticContent.length;
   }
   
   // Split the static content

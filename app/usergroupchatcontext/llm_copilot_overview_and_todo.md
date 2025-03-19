@@ -2,7 +2,7 @@
 
 ## Overview
 
-GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system ensures a seamless transition from text chat to voice chat at any time. When a user presses the “voice mode” button, the latest and most capable realtime OpenAI voice model is automatically selected, preserving full context from the ongoing text-based conversation. While in voice mode, each exchange between the user and the bot is transcribed in real time and injected into the unified text output, maintaining a consistent history for both text and voice interactions.
+GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system ensures a seamless transition from text chat to voice chat at any time. When a user presses the "voice mode" button, the latest and most capable realtime OpenAI voice model is automatically selected, preserving full context from the ongoing text-based conversation. While in voice mode, each exchange between the user and the bot is transcribed in real time and injected into the unified text output, maintaining a consistent history for both text and voice interactions.
 
 By default, only the final outputs from each bot are displayed. However, users can expand any bot message to reveal the complete signal chain, which includes:
 - Original user input (text or transcribed voice)  
@@ -28,7 +28,7 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - Model versions are dynamically queried at build time to ensure currency  
 
 3. **Single-Bot Experience**  
-   - A single default bot leverages the latest OpenAI models for both text and voice interactions  
+   - A single default bot leverages the latest OpenAI models for voice interactions  
    - The system maintains unified context across text and voice so that switching modes is instant and retains conversational history  
    - All message flows (text and transcribed voice) route through the same bot, ensuring a consistent, high-quality exchange  
 
@@ -92,9 +92,9 @@ We have shifted our efforts to create a robust production-ready system. By defau
 
 ### Input/Output Components
 1. **ChatInterface**  
-   - Minimal, mobile-first UI supporting text input and a “voice mode” toggle  
+   - Minimal, mobile-first UI supporting text input and a "voice mode" toggle  
 2. **LiveKitService**  
-   - Wraps LiveKit’s WebRTC functionalities for high-quality voice streaming and automatic transcription  
+   - Wraps LiveKit's WebRTC functionalities for high-quality voice streaming and automatic transcription  
 3. **BotResponseRenderer**  
    - Displays bot responses with a collapsible view for advanced debugging and signal chain exploration  
 
@@ -133,6 +133,13 @@ We have shifted our efforts to create a robust production-ready system. By defau
 // Bot types
 export type BotId = string;
 
+export interface VoiceSettings {
+  voice?: string;
+  speed?: number;
+  quality?: 'standard' | 'high-quality';
+  model?: string;
+}
+
 export interface Bot {
   id: string;
   name: string;
@@ -147,6 +154,7 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
+  voiceSettings?: VoiceSettings;
 }
 
 // Message types
@@ -289,10 +297,10 @@ export type GroupChatAction =
 ## Implementation Status
 
 ### Completed
-- [x] No previous completion data found
+
 
 ### In Progress
-- [ ] No previous in-progress data found
+
 
 ## Directory Structure
 
@@ -309,12 +317,12 @@ export type GroupChatAction =
     ├── token/
       ├── route.ts (5.4KB)
   ├── livekit-token/
-    ├── route.ts (2.1KB)
+    ├── route.ts (3.8KB)
   ├── openai/
     ├── chat/
       ├── route.ts (2.2KB)
   ├── synthesize-speech/
-    ├── route.ts (2.4KB)
+    ├── route.ts (1.9KB)
 ├── components/
   ├── bots/
     ├── BotCard.tsx (3.5KB)
@@ -322,7 +330,7 @@ export type GroupChatAction =
     ├── ChatContainer.tsx (0.4KB)
     ├── ChatHeader.tsx (1KB)
     ├── ChatInput.tsx (3.7KB)
-    ├── ChatInterface.tsx (4.5KB)
+    ├── ChatInterface.tsx (7.9KB)
     ├── MessageBubble.tsx (3.5KB)
     ├── MessageInput.tsx (2.7KB)
     ├── MessageItem.tsx (22.4KB)
@@ -330,7 +338,7 @@ export type GroupChatAction =
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
     ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (11KB)
+    ├── VoiceInputButton.tsx (19.3KB)
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
     ├── ProcessingInfo.tsx (3.5KB)
@@ -351,7 +359,8 @@ export type GroupChatAction =
     ├── AudioVisualizer.tsx (1.7KB)
     ├── VoiceActivityIndicator.tsx (0.7KB)
     ├── VoiceAnalytics.tsx (7.2KB)
-    ├── VoiceCommandController.tsx (14.4KB)
+    ├── VoiceBotSelector.tsx (4.7KB)
+    ├── VoiceCommandController.tsx (18.8KB)
     ├── VoiceConversationController.tsx (12.8KB)
     ├── VoiceInputButton.tsx (3.1KB)
     ├── VoiceIntegration.tsx (3.1KB)
@@ -361,11 +370,11 @@ export type GroupChatAction =
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
-  ├── BotRegistryProvider.tsx (3.4KB) # State/service provider
+  ├── BotRegistryProvider.tsx (5.7KB) # State/service provider
   ├── GroupChatContext.tsx (3.4KB) # Context definition
   ├── GroupChatProvider.tsx (6.5KB) # State/service provider
-  ├── LiveKitIntegrationProvider.tsx (19.4KB) # State/service provider
-  ├── LiveKitProvider.tsx (6.2KB) # State/service provider
+  ├── LiveKitIntegrationProvider.tsx (33.1KB) # State/service provider
+  ├── LiveKitProvider.tsx (6.4KB) # State/service provider
   ├── ToolCallProvider.tsx (5.4KB) # State/service provider
 ├── data/
   ├── defaultSettings.ts (1KB)
@@ -374,34 +383,31 @@ export type GroupChatAction =
   ├── useGroupChat.ts (3.2KB)
   ├── useLiveKit.ts (4KB)
   ├── usePromptProcessor.ts (3.3KB)
-  ├── useRealGroupChat.ts (4KB)
+  ├── useRealGroupChat.ts (5.9KB)
   ├── useToolIntegration.ts (6.9KB)
   ├── useTurnTaking.ts (4.2KB)
   ├── useVoiceActivity.ts (2.5KB)
-  ├── useVoiceSettings.ts (4.4KB)
+  ├── useVoiceSettings.ts (5.7KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
-├── k.bak (15.9KB)
-├── k.md (21.1KB)
-├── ka.md (7.8KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (17.1KB)
+├── llm_copilot_overview_and_todo.md (0.1KB)
 ├── mobile.css (2.3KB)
-├── page.tsx (5.3KB)
+├── page.tsx (9.5KB)
 ├── scripts/
   ├── generate-test.js (1.9KB)
   ├── update-readme.js (1.7KB)
 ├── services/
   ├── livekit/
     ├── livekit-api-client.ts (3.8KB)
-    ├── livekit-service.ts (6KB)
-    ├── multimodal-agent-service.ts (29.6KB)
-    ├── room-session-manager.ts (15KB)
+    ├── livekit-service.ts (8.6KB)
+    ├── multimodal-agent-service.ts (33.1KB)
+    ├── room-session-manager.ts (20.3KB)
     ├── turn-taking-service.ts (20.3KB)
     ├── voice-activity-service.ts (16.4KB)
   ├── mockBotService.ts (8.1KB) # Service implementation
   ├── openaiChatService.ts (2.7KB) # Service implementation
-  ├── openaiRealtimeService.ts (13.1KB) # Service implementation
-  ├── prompt-processor-service.ts (8.5KB)
+  ├── openaiRealtimeService.ts (12.8KB) # Service implementation
+  ├── prompt-processor-service.ts (11.9KB)
   ├── toolCallService.ts (5.8KB) # Service implementation
   ├── toolProcessorService.ts (4.7KB) # Service implementation
   ├── tools/
@@ -410,12 +416,14 @@ export type GroupChatAction =
   ├── voice/
     ├── voice-analytics-service.ts (13KB)
     ├── voice-auth-service.ts (12.1KB)
-  ├── voiceSynthesisService.ts (6.2KB) # Service implementation
+  ├── voiceSynthesisService.ts (11.2KB) # Service implementation
   ├── voiceToolCallingService.ts (11.7KB) # Service implementation
   ├── voiceToolRegistry.ts (2.9KB)
   ├── voiceTranscriptionService.ts (7.3KB) # Service implementation
 ├── speech-test/
   ├── page.tsx (0.9KB)
+├── tempfix.ts (0.1KB)
+├── todo.txt (2.1KB)
 ├── types/
   ├── bots.ts (1.5KB)
   ├── index.ts (0.1KB)
@@ -423,40 +431,45 @@ export type GroupChatAction =
   ├── messages.ts (2.7KB)
   ├── settings.ts (3.1KB)
   ├── voice.ts (2.9KB)
-├── types.ts (4KB) # Type definitions
+├── types.ts (4.2KB) # Type definitions
 ├── utils/
-  ├── generateReadme.js (5.2KB)
+  ├── generateReadme.js (5.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (8.2KB)
+  ├── llm_copilot_part1.md (8.4KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```
 
-## Next Implementation Steps
+## Code Refactoring Tasks
 
-1. **Model Version Management**  
-   - Implement a service to discover and cache the latest model versions  
-   - Fallback gracefully if a preferred model version is unavailable  
-   - Integrate a feature detection system for each model’s capabilities  
+1. **Break Down Large Files**  
+   - Split MultimodalAgentService (917 lines) into specialized modules (TranscriptionManager, AudioPublishingService, ToolDetectionService)
+   - Extract RoomSessionManager (474 lines) into smaller modules (SessionConnectionManager, AudioTrackManager, ParticipantManager)
+   - Maintain main service classes as orchestrators that delegate to specialized modules
 
-2. **Single Bot Experience**  
-   - Use a single latest-model bot for all incoming user interactions (text or voice)  
-   - Remove or refine any multi-bot UI elements that are no longer relevant  
-   - Guarantee that text-based and voice-based messages unify under one straightforward conversation flow  
+2. **Apply Single Responsibility Principle**  
+   - Extract UI rendering from VoiceInputButton (444 lines) into separate components
+   - Move LiveKit initialization logic to dedicated hooks
+   - Create separate components for error handling and visualization
 
-3. **Enhanced Signal Chain Visualization**  
-   - Provide more detailed views of how each message is processed at each step  
-   - Highlight reprocessing or refinement logic when user or system intervention occurs  
-   - Consider a timeline layout for more complex debugging sessions  
+3. **Create Specialized Hooks**  
+   - Implement useAudioTrackPublishing.ts to handle audio track lifecycle
+   - Create useTokenFetching.ts for token retrieval with retries
+   - Develop useConnectionManager.ts to handle LiveKit connection management
 
-4. **Tool System Integration**  
-   - Complete tool configuration options in the UI  
-   - Enable tool calling via natural voice commands  
-   - Select the most appropriate tools based on context, usage patterns, or user preference  
+4. **Implement Better State Management**  
+   - Create unified VoiceConnectionState type to centralize state tracking
+   - Consolidate state management that's currently spread across multiple components
+   - Implement state machines for complex flows like connection/reconnection
 
-5. **LiveKit Integration Enhancement**  
-   - Ensure minimal latency for real-time voice streaming and OpenAI transcription  
-   - Automate voice session startup and shutdown for an easy “voice mode” toggle  
-   - Maintain context across text and voice seamlessly to enable one continuous conversation  
+5. **Introduce Domain-Specific Services**  
+   - Reorganize services directory with domain-specific subdirectories
+   - Create focused services for connection, audio, and transcription
+   - Implement clear boundaries between service responsibilities
+
+6. **Improve Error Handling**  
+   - Create a centralized error handling system with typed errors
+   - Implement recovery strategies for common failure scenarios
+   - Provide user-friendly error messages with actionable recovery steps
 
 ## Architectural Advantages
 

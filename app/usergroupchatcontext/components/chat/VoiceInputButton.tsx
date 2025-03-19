@@ -75,23 +75,16 @@ export function VoiceInputButton({
     
     const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
       if (isFinal && text.trim()) {
-        console.log('Final transcription received:', text.trim());
+        console.log('Final transcription received in VoiceInputButton:', text.trim());
         
-        if (autoSend) {
-          // If we've already processed this exact message, ignore it
-          if (lastSentMessageRef.current === text.trim()) {
-            console.log('Ignoring duplicate transcription:', text.trim());
-            return;
-          }
-          
-          // Update the last sent message
-          lastSentMessageRef.current = text.trim();
-          
-          // LiveKitIntegrationProvider will also handle this message, but we need to
-          // make sure it's explicitly sent as a 'voice' message type for proper routing
-          sendMessage(text.trim(), 'voice');
-        } else {
-          // Just add to input field
+        // Store the last transcription for deduplication purposes
+        lastSentMessageRef.current = text.trim();
+        
+        // Don't send the message here - LiveKitIntegrationProvider will handle it
+        // This prevents duplicate messages
+        
+        if (!autoSend) {
+          // Only if not auto-sending, add to input field
           onTranscriptionComplete(text.trim());
         }
       } else if (!isFinal && text.trim() && text !== 'Listening...' && text !== 'Processing...') {
@@ -106,7 +99,7 @@ export function VoiceInputButton({
     return () => {
       multimodalAgentService.offTranscription(handleLiveKitTranscription);
     };
-  }, [onTranscriptionComplete, autoSend, sendMessage, lastSentMessageRef, isVoiceEnabled, isLiveKitListening]);
+  }, [onTranscriptionComplete, autoSend, lastSentMessageRef, isVoiceEnabled, isLiveKitListening]);
 
   // When recording is complete and we have a transcript
   useEffect(() => {
@@ -160,57 +153,140 @@ export function VoiceInputButton({
   }, [isLiveKitListening]);
 
   const handleToggleRecording = async () => {
-    // Reset any previous errors
-    setAudioContextError(null);
-    
+    // If already in an error state, clear it when user tries again
+    if (audioContextError) {
+      setAudioContextError('');
+    }
+
+    // If we're using LiveKit integration, toggle LiveKit voice mode
     if (isVoiceEnabled) {
-      // Use LiveKit for voice mode
       if (isLiveKitListening) {
+        console.log('Stopping voice mode...');
         stopLiveKitVoiceMode();
-      } else {
-        setIsInitializing(true);
+        
+        // Force a complete disconnect before returning
         try {
-          // Check if LiveKit is already connected, if not initialize it
-          if (!liveKit.isConnected) {
-            try {
-              // Get LiveKit URL from environment variable
-              const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-              if (!livekitUrl) {
-                throw new Error('LiveKit URL not configured');
-              }
+          // Get the active session's room name if available
+          const activeSession = roomSessionManager.getActiveSession();
+          const roomName = activeSession?.roomName || 'default-room';
+          
+          // Completely close the session to force a clean reconnect next time
+          await roomSessionManager.closeSession(roomName);
+          
+          // Let the browser catch up
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (stopError) {
+          console.error('Error during complete voice mode cleanup:', stopError);
+          // Continue anyway as we're stopping
+        }
+      } else {
+        // Start LiveKit voice mode with additional cleanup first
+        setIsInitializing(true);
+        
+        try {
+          // First ensure we have completely disconnected any previous LiveKit sessions 
+          if (roomSessionManager) {
+            console.log('Clean disconnect before starting voice mode...');
+            roomSessionManager.setVoiceModeActive(false);
+            
+            // Get the active session's room name if available
+            const activeSession = roomSessionManager.getActiveSession();
+            const roomName = activeSession?.roomName || 'default-room';
+            
+            // Completely close the session before creating a new one
+            if (activeSession) {
+              console.log(`Closing previous session for room ${roomName}`);
+              await roomSessionManager.closeSession(roomName);
               
-              console.log('Initializing LiveKit connection after user interaction...');
-              
-              // Fetch token
-              const response = await fetch('/usergroupchatcontext/api/livekit/token?type=user&roomName=default-room&id=default-user');
-              if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`Failed to get LiveKit token: ${response.status} ${errorData.details || ''}`);
-              }
-              
-              const data = await response.json();
-              if (!data.token) {
-                throw new Error('Invalid LiveKit token response');
-              }
-              
-              // Initialize the multimodal agent
-              multimodalAgentService.initialize({
-                model: 'gpt-4o',
-                voice: 'nova',
-                voiceSpeed: 1.0
-              });
-              
-              // Connect to LiveKit
-              await liveKit.connect('default-room', data.token, livekitUrl);
-              console.log('LiveKit initialized after user interaction');
-            } catch (initError) {
-              console.error('Error initializing LiveKit connection:', initError);
-              throw new Error('Failed to establish voice connection: ' + (initError instanceof Error ? initError.message : String(initError)));
+              // Wait a moment to ensure full cleanup
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
           }
           
-          // First, try to resume the AudioContext (this requires user interaction)
-          // Add retry logic for AudioContext resume
+          // Connect to LiveKit service with a fresh token
+          console.log('Fetching LiveKit token...');
+
+          // Add retry logic for token fetch
+          const maxTokenRetries = 3;
+          let tokenRetries = 0;
+          let tokenData;
+
+          while (tokenRetries < maxTokenRetries) {
+            try {
+              const response = await fetch('/usergroupchatcontext/api/livekit-token');
+              if (!response.ok) {
+                console.error(`LiveKit token API returned status: ${response.status}`);
+                throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
+              }
+
+              // Log raw response for debugging
+              const responseText = await response.text();
+              console.log(`LiveKit token response (attempt ${tokenRetries + 1}):`, 
+                responseText.length > 100 ? `${responseText.substring(0, 100)}...` : responseText);
+
+              // Parse the JSON response
+              try {
+                tokenData = JSON.parse(responseText);
+                
+                // If we got an error response from our API
+                if (tokenData.error) {
+                  console.error('API returned error:', tokenData.error, tokenData.details || '');
+                  throw new Error(`LiveKit API error: ${tokenData.error}`);
+                }
+                
+                console.log('Token data keys:', Object.keys(tokenData));
+                
+                // Validate token
+                if (!tokenData || typeof tokenData !== 'object') {
+                  console.error('Invalid token data format:', tokenData);
+                  throw new Error('Invalid token data format received');
+                }
+
+                if (!tokenData.token || typeof tokenData.token !== 'string') {
+                  console.error('No valid token in response:', tokenData);
+                  throw new Error('No token received from LiveKit token API');
+                }
+                
+                // If we got here, we have a valid token
+                break;
+              } catch (parseError) {
+                console.error(`Failed to parse token response as JSON (attempt ${tokenRetries + 1}):`, parseError);
+                
+                // If we've already retried several times, give up
+                if (tokenRetries >= maxTokenRetries - 1) {
+                  throw new Error('Invalid token response format after multiple attempts');
+                }
+                
+                // Otherwise, retry
+                tokenRetries++;
+                await new Promise(resolve => setTimeout(resolve, 1000 * tokenRetries));
+              }
+            } catch (fetchError) {
+              console.error(`Error fetching token (attempt ${tokenRetries + 1}):`, fetchError);
+              
+              // If we've already retried several times, give up
+              if (tokenRetries >= maxTokenRetries - 1) {
+                throw fetchError;
+              }
+              
+              // Otherwise, retry
+              tokenRetries++;
+              await new Promise(resolve => setTimeout(resolve, 1000 * tokenRetries));
+            }
+          }
+
+          // Initialize LiveKit session with fresh token
+          const roomName = tokenData.roomName || 'default-room';
+          const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+          
+          if (!livekitUrl) {
+            throw new Error('LiveKit URL not configured in environment variables');
+          }
+          
+          // Create a new LiveKit session
+          await roomSessionManager.createSession(roomName, tokenData.token, livekitUrl);
+          
+          // Resume the AudioContext (this requires user interaction)
           let audioContextResumed = false;
           let retryCount = 0;
           const maxRetries = 3;
@@ -239,7 +315,7 @@ export function VoiceInputButton({
             throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
           }
           
-          // Initialize LiveKit with retry attempts
+          // Start voice listening with retry logic
           let success = false;
           retryCount = 0;
           
@@ -335,7 +411,7 @@ export function VoiceInputButton({
       return <Loader2 className="h-5 w-5 animate-spin" />;
     } 
     
-    if (isActive) {
+    if (isVoiceEnabled) {
       // Show volume level indicators when active
       if (currentAudioLevel > 0.3) {
         return <Volume2 className="h-5 w-5" />; // High volume

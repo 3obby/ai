@@ -2,7 +2,7 @@
 
 ## Overview
 
-GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system ensures a seamless transition from text chat to voice chat at any time. When a user presses the “voice mode” button, the latest and most capable realtime OpenAI voice model is automatically selected, preserving full context from the ongoing text-based conversation. While in voice mode, each exchange between the user and the bot is transcribed in real time and injected into the unified text output, maintaining a consistent history for both text and voice interactions.
+GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system ensures a seamless transition from text chat to voice chat at any time. When a user presses the "voice mode" button, the latest and most capable realtime OpenAI voice model is automatically selected, preserving full context from the ongoing text-based conversation. While in voice mode, each exchange between the user and the bot is transcribed in real time and injected into the unified text output, maintaining a consistent history for both text and voice interactions.
 
 By default, only the final outputs from each bot are displayed. However, users can expand any bot message to reveal the complete signal chain, which includes:
 - Original user input (text or transcribed voice)  
@@ -28,7 +28,7 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - Model versions are dynamically queried at build time to ensure currency  
 
 3. **Single-Bot Experience**  
-   - A single default bot leverages the latest OpenAI models for both text and voice interactions  
+   - A single default bot leverages the latest OpenAI models for voice interactions  
    - The system maintains unified context across text and voice so that switching modes is instant and retains conversational history  
    - All message flows (text and transcribed voice) route through the same bot, ensuring a consistent, high-quality exchange  
 
@@ -92,9 +92,9 @@ We have shifted our efforts to create a robust production-ready system. By defau
 
 ### Input/Output Components
 1. **ChatInterface**  
-   - Minimal, mobile-first UI supporting text input and a “voice mode” toggle  
+   - Minimal, mobile-first UI supporting text input and a "voice mode" toggle  
 2. **LiveKitService**  
-   - Wraps LiveKit’s WebRTC functionalities for high-quality voice streaming and automatic transcription  
+   - Wraps LiveKit's WebRTC functionalities for high-quality voice streaming and automatic transcription  
 3. **BotResponseRenderer**  
    - Displays bot responses with a collapsible view for advanced debugging and signal chain exploration  
 
@@ -126,32 +126,37 @@ We have shifted our efforts to create a robust production-ready system. By defau
 - Tool results flow back through post-processing to produce the final output  
 - The final output is then presented in the Message Display Component with optional expanded logs  
 
-## Next Implementation Steps
+## Code Refactoring Tasks
 
-1. **Model Version Management**  
-   - Implement a service to discover and cache the latest model versions  
-   - Fallback gracefully if a preferred model version is unavailable  
-   - Integrate a feature detection system for each model’s capabilities  
+1. **Break Down Large Files**  
+   - Split MultimodalAgentService (917 lines) into specialized modules (TranscriptionManager, AudioPublishingService, ToolDetectionService)
+   - Extract RoomSessionManager (474 lines) into smaller modules (SessionConnectionManager, AudioTrackManager, ParticipantManager)
+   - Maintain main service classes as orchestrators that delegate to specialized modules
 
-2. **Single Bot Experience**  
-   - Use a single latest-model bot for all incoming user interactions (text or voice)  
-   - Remove or refine any multi-bot UI elements that are no longer relevant  
-   - Guarantee that text-based and voice-based messages unify under one straightforward conversation flow  
+2. **Apply Single Responsibility Principle**  
+   - Extract UI rendering from VoiceInputButton (444 lines) into separate components
+   - Move LiveKit initialization logic to dedicated hooks
+   - Create separate components for error handling and visualization
 
-3. **Enhanced Signal Chain Visualization**  
-   - Provide more detailed views of how each message is processed at each step  
-   - Highlight reprocessing or refinement logic when user or system intervention occurs  
-   - Consider a timeline layout for more complex debugging sessions  
+3. **Create Specialized Hooks**  
+   - Implement useAudioTrackPublishing.ts to handle audio track lifecycle
+   - Create useTokenFetching.ts for token retrieval with retries
+   - Develop useConnectionManager.ts to handle LiveKit connection management
 
-4. **Tool System Integration**  
-   - Complete tool configuration options in the UI  
-   - Enable tool calling via natural voice commands  
-   - Select the most appropriate tools based on context, usage patterns, or user preference  
+4. **Implement Better State Management**  
+   - Create unified VoiceConnectionState type to centralize state tracking
+   - Consolidate state management that's currently spread across multiple components
+   - Implement state machines for complex flows like connection/reconnection
 
-5. **LiveKit Integration Enhancement**  
-   - Ensure minimal latency for real-time voice streaming and OpenAI transcription  
-   - Automate voice session startup and shutdown for an easy “voice mode” toggle  
-   - Maintain context across text and voice seamlessly to enable one continuous conversation  
+5. **Introduce Domain-Specific Services**  
+   - Reorganize services directory with domain-specific subdirectories
+   - Create focused services for connection, audio, and transcription
+   - Implement clear boundaries between service responsibilities
+
+6. **Improve Error Handling**  
+   - Create a centralized error handling system with typed errors
+   - Implement recovery strategies for common failure scenarios
+   - Provide user-friendly error messages with actionable recovery steps
 
 ## Architectural Advantages
 
