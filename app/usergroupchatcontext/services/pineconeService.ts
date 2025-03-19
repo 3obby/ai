@@ -1,38 +1,35 @@
-import { PineconeClient } from '@pinecone-database/pinecone';
+import { Pinecone } from '@pinecone-database/pinecone';
 
 /**
  * Pinecone service for vector database operations
  * Used for semantic search and memory features
  */
 class PineconeService {
-  private pinecone: PineconeClient;
+  private pinecone: Pinecone;
   private indexName: string = 'agentconsult';
   private isInitialized: boolean = false;
   
   constructor() {
-    this.pinecone = new PineconeClient();
-  }
-  
-  /**
-   * Initialize the Pinecone client
-   */
-  async initialize() {
-    if (!this.isInitialized) {
-      await this.pinecone.init({
-        apiKey: process.env.PINECONE_API_KEY || 'pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ',
-        environment: 'us-east-1-aws'
+    // Initialize with API key from environment variable
+    if (!process.env.PINECONE_API_KEY) {
+      console.error('PINECONE_API_KEY is not set in environment variables');
+      this.pinecone = null as any; // Allow initialization to continue but it will fail later
+    } else {
+      this.pinecone = new Pinecone({
+        apiKey: process.env.PINECONE_API_KEY
       });
       this.isInitialized = true;
     }
-    return this;
   }
   
   /**
    * Get the Pinecone index instance
    */
-  async getIndex() {
-    await this.initialize();
-    return this.pinecone.Index(this.indexName);
+  getIndex() {
+    if (!this.isInitialized) {
+      throw new Error('Pinecone client not initialized. PINECONE_API_KEY is required.');
+    }
+    return this.pinecone.index(this.indexName);
   }
   
   /**
@@ -43,28 +40,20 @@ class PineconeService {
     values: number[];
     metadata?: Record<string, any>;
   }>) {
-    const index = await this.getIndex();
-    return await index.upsert({
-      upsertRequest: {
-        vectors,
-        namespace: ''
-      }
-    });
+    const index = this.getIndex();
+    return await index.upsert(vectors);
   }
   
   /**
    * Query vectors from the Pinecone index
    */
-  async queryVectors(queryVector: number[], topK: number = 5, filter?: object) {
-    const index = await this.getIndex();
+  async queryVectors(queryVector: number[], topK: number = 5, filter?: Record<string, any>) {
+    const index = this.getIndex();
     return await index.query({
-      queryRequest: {
-        vector: queryVector,
-        topK,
-        includeMetadata: true,
-        namespace: '',
-        ...(filter && { filter })
-      }
+      vector: queryVector,
+      topK,
+      includeMetadata: true,
+      ...(filter && { filter })
     });
   }
 }

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "4069bc3",
+      "fullHash": "4069bc3cd038ed276427208cf5909f44d08fae41",
+      "date": "2025-03-19 21:46:05 +0700",
+      "author": "3obby",
+      "message": "Fix: Update pineconeService.ts to use environment variables only and remove hardcoded API key",
+      "category": "bugfix"
+    },
+    {
       "hash": "3f0e7f7",
       "fullHash": "3f0e7f73cfe6bccd44efe98bb216c9811efe385f",
       "date": "2025-03-19 21:39:52 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Enhance bot image handling with auto-formatting and fallback mechanism",
       "category": "enhancement"
-    },
-    {
-      "hash": "441b76b",
-      "fullHash": "441b76ba0961157ca88f1b2ff2a9e9d4ac583858",
-      "date": "2025-03-09 12:27:38 +0700",
-      "author": "3obby",
-      "message": "Fix image issues: Add sizes prop to all Image components with fill, optimize large companion images",
-      "category": "bugfix"
     }
   ]
 }
