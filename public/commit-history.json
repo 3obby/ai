@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "020aba5",
+      "fullHash": "020aba55a74b514d12c3c157216b960b7f6d30e2",
+      "date": "2025-03-19 19:42:07 +0700",
+      "author": "3obby",
+      "message": "test ship",
+      "category": "other"
+    },
+    {
       "hash": "ddaebde",
       "fullHash": "ddaebde54125d0b8d50b407df8ede95b3fe1fee2",
       "date": "2025-03-19 18:13:49 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "ENHANCE: Add email retry with animated timer for login flow",
       "category": "feature"
-    },
-    {
-      "hash": "3e020c7",
-      "fullHash": "3e020c75b8e7652ff17217c46b1c9945944c5b3a",
-      "date": "2025-03-08 20:10:15 +0700",
-      "author": "3obby",
-      "message": "ENHANCE: Improve login UX with in-place email confirmation",
-      "category": "enhancement"
     }
   ]
 }
