@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-update_pinecone.py - Script to index usergroupchatcontext files in Pinecone
+direct_update_pinecone.py - Updates Pinecone index with usergroupchatcontext files using the SDK directly
 """
 
 import os
 import sys
 import json
 import time
-import subprocess
-from datetime import datetime
 import hashlib
+from datetime import datetime
+import openai
+from pinecone import Pinecone
 
 # Constants
 DIRECTORY_TO_INDEX = '/Users/dev/code/agentconsult/app/usergroupchatcontext'
@@ -17,7 +18,32 @@ CHUNK_SIZE = 500  # tokens (approximate)
 CHUNK_OVERLAP = 100  # tokens of overlap between chunks
 EXTENSIONS_TO_INDEX = ['.ts', '.tsx', '.js', '.jsx', '.md', '.txt', '.css']
 IGNORE_DIRS = ['.git', 'node_modules', '__pycache__']
-INDEX_NAME = "agentconsult"  # Make sure this matches your Pinecone index name
+PINECONE_API_KEY = "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+INDEX_NAME = "agentconsult"
+
+# Initialize OpenAI for embeddings
+openai_api_key = os.environ.get('OPENAI_API_KEY', '')
+if openai_api_key.startswith('"') and openai_api_key.endswith('"'):
+    openai_api_key = openai_api_key[1:-1]
+    
+print(f"OpenAI API key (truncated): {openai_api_key[:10]}...{openai_api_key[-5:]}")
+openai_client = openai.OpenAI(api_key=openai_api_key)
+
+# Initialize Pinecone client
+pinecone_client = Pinecone(api_key=PINECONE_API_KEY)
+pinecone_index = pinecone_client.Index(INDEX_NAME)
+
+def get_embedding(text):
+    """Get embeddings from OpenAI"""
+    try:
+        response = openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"Error generating embedding: {e}")
+        return None
 
 def get_file_hash(file_path):
     """Calculate SHA-256 hash of a file to detect changes"""
@@ -156,23 +182,26 @@ def read_file_content(file_path):
 def index_file(file_path):
     """Index a single file in Pinecone"""
     if not should_index_file(file_path):
-        return
+        return False
     
     print(f"Indexing {file_path}...")
     
     # Read file content
     content = read_file_content(file_path)
     if not content:
-        return
+        return False
     
     # Create base metadata
     metadata = create_metadata(file_path)
     
-    # Generate a unique document ID based on file path
+    # Generate a unique document ID base
     base_doc_id = f"usergroupchatcontext-{metadata['file_type']}-{metadata['file_name']}"
     
     # Chunk content and index each chunk
     chunks = chunk_text(content)
+    success = True
+    
+    vectors_to_upsert = []
     
     for i, chunk in enumerate(chunks):
         # Create a unique document ID for each chunk
@@ -182,31 +211,45 @@ def index_file(file_path):
         chunk_metadata = metadata.copy()
         chunk_metadata.update({
             "chunk_index": i+1,
-            "total_chunks": len(chunks)
+            "total_chunks": len(chunks),
+            "text": chunk  # Store the actual text in metadata for retrieval
         })
         
-        # Run the Pinecone process_document tool using CLI
-        cli_command = [
-            "npx", "-y", "@smithery/cli@latest", "call", "mcp-pinecone",
-            "process_document", "--client", "cursor",
-            "--arg", f"document_id={doc_id}",
-            "--arg", f"text={chunk}", "--arg", f"metadata={json.dumps(chunk_metadata)}"
-        ]
+        # Get embedding for the chunk
+        embedding = get_embedding(chunk)
+        if not embedding:
+            print(f"Failed to get embedding for {doc_id}")
+            success = False
+            continue
         
-        try:
-            result = subprocess.run(
-                cli_command,
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            # Wait a bit to avoid overwhelming the API
-            time.sleep(0.2)
-        except subprocess.CalledProcessError as e:
-            print(f"Error indexing {doc_id}: {e.stderr}")
-            return False
+        # Add to vectors to upsert
+        vectors_to_upsert.append({
+            "id": doc_id,
+            "values": embedding,
+            "metadata": chunk_metadata
+        })
+        
+        # Upsert in batches of 100 to avoid rate limits
+        if len(vectors_to_upsert) >= 100:
+            try:
+                pinecone_index.upsert(vectors=vectors_to_upsert)
+                print(f"Uploaded batch of {len(vectors_to_upsert)} vectors")
+                vectors_to_upsert = []
+                time.sleep(0.2)  # Brief pause to avoid rate limits
+            except Exception as e:
+                print(f"Error upserting vectors: {e}")
+                success = False
     
-    return True
+    # Upsert any remaining vectors
+    if vectors_to_upsert:
+        try:
+            pinecone_index.upsert(vectors=vectors_to_upsert)
+            print(f"Uploaded final batch of {len(vectors_to_upsert)} vectors")
+        except Exception as e:
+            print(f"Error upserting final batch: {e}")
+            success = False
+    
+    return success
 
 def index_directory(directory_path=DIRECTORY_TO_INDEX):
     """Recursively index all files in a directory"""
@@ -223,10 +266,31 @@ def index_directory(directory_path=DIRECTORY_TO_INDEX):
                 success_count += 1
             else:
                 failure_count += 1
+                
+            # Print stats every 10 files
+            if (success_count + failure_count) % 10 == 0:
+                print(f"Progress: {success_count + failure_count} files processed ({success_count} successful, {failure_count} failed)")
     
     print(f"Indexed {success_count} files successfully with {failure_count} failures")
 
 if __name__ == "__main__":
     print(f"Starting to index {DIRECTORY_TO_INDEX} in Pinecone...")
+    
+    # Check Pinecone index
+    try:
+        stats = pinecone_index.describe_index_stats()
+        print(f"Index stats before indexing: {json.dumps(stats.to_dict(), indent=2)}")
+    except Exception as e:
+        print(f"Error getting index stats: {e}")
+    
+    # Index directory
     index_directory()
+    
+    # Check Pinecone index again
+    try:
+        stats = pinecone_index.describe_index_stats()
+        print(f"Index stats after indexing: {json.dumps(stats.to_dict(), indent=2)}")
+    except Exception as e:
+        print(f"Error getting index stats: {e}")
+    
     print("Indexing complete.") 

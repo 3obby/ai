@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "cc4f37f",
+      "fullHash": "cc4f37fb0bd5f7112f74e29aba3d72900f9b1418",
+      "date": "2025-03-19 17:54:35 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
       "hash": "4331589",
       "fullHash": "4331589c04880a54d6870eaa0c9bb4e36527f6df",
       "date": "2025-03-19 17:19:51 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Test commit to verify hook fixes",
       "category": "bugfix"
-    },
-    {
-      "hash": "72d30f5",
-      "fullHash": "72d30f5190bc5382499ee6081c29a92568edf219",
-      "date": "2025-03-08 19:57:51 +0700",
-      "author": "3obby",
-      "message": "Remove old logo file",
-      "category": "other"
     }
   ]
 }
