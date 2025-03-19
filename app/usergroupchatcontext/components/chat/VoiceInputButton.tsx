@@ -10,8 +10,10 @@ import VoiceOverlay from '../voice/VoiceOverlay';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import React from 'react';
 import { VoiceSynthesisService } from '../../services/voiceSynthesisService';
-import roomSessionManager from '../../services/livekit/room-session-manager';
 import { useLiveKit } from '../../context/LiveKitProvider';
+import sessionConnectionManager from '../../services/livekit/session-connection-manager';
+import audioTrackManager from '../../services/livekit/audio-track-manager';
+import participantManager from '../../services/livekit/participant-manager';
 
 // Create a single instance of the service for use in this component
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -166,12 +168,19 @@ export function VoiceInputButton({
         
         // Force a complete disconnect before returning
         try {
-          // Get the active session's room name if available
-          const activeSession = roomSessionManager.getActiveSession();
-          const roomName = activeSession?.roomName || 'default-room';
+          // Get the active connection's room name if available
+          const activeRoomName = sessionConnectionManager.getActiveRoomName();
           
-          // Completely close the session to force a clean reconnect next time
-          await roomSessionManager.closeSession(roomName);
+          if (activeRoomName) {
+            // First clean up audio tracks
+            await audioTrackManager.cleanupAudioTracks();
+            
+            // Clean up participant tracking
+            participantManager.cleanupRoom(activeRoomName);
+            
+            // Close the connection
+            await sessionConnectionManager.closeConnection(activeRoomName);
+          }
           
           // Let the browser catch up
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -184,23 +193,27 @@ export function VoiceInputButton({
         setIsInitializing(true);
         
         try {
-          // First ensure we have completely disconnected any previous LiveKit sessions 
-          if (roomSessionManager) {
-            console.log('Clean disconnect before starting voice mode...');
-            roomSessionManager.setVoiceModeActive(false);
+          // First ensure we have completely disconnected any previous LiveKit sessions
+          console.log('Clean disconnect before starting voice mode...');
+          sessionConnectionManager.setVoiceModeActive(false);
+          
+          // Get the active room name if available
+          const activeRoomName = sessionConnectionManager.getActiveRoomName();
+          
+          if (activeRoomName) {
+            console.log(`Closing previous connection for room ${activeRoomName}`);
             
-            // Get the active session's room name if available
-            const activeSession = roomSessionManager.getActiveSession();
-            const roomName = activeSession?.roomName || 'default-room';
+            // First clean up audio tracks
+            await audioTrackManager.cleanupAudioTracks();
             
-            // Completely close the session before creating a new one
-            if (activeSession) {
-              console.log(`Closing previous session for room ${roomName}`);
-              await roomSessionManager.closeSession(roomName);
-              
-              // Wait a moment to ensure full cleanup
-              await new Promise(resolve => setTimeout(resolve, 500));
-            }
+            // Clean up participant tracking
+            participantManager.cleanupRoom(activeRoomName);
+            
+            // Close the connection
+            await sessionConnectionManager.closeConnection(activeRoomName);
+            
+            // Wait a moment to ensure full cleanup
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
           
           // Connect to LiveKit service with a fresh token
@@ -275,7 +288,7 @@ export function VoiceInputButton({
             }
           }
 
-          // Initialize LiveKit session with fresh token
+          // Initialize LiveKit connection with fresh token
           const roomName = tokenData.roomName || 'default-room';
           const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
           
@@ -283,8 +296,8 @@ export function VoiceInputButton({
             throw new Error('LiveKit URL not configured in environment variables');
           }
           
-          // Create a new LiveKit session
-          await roomSessionManager.createSession(roomName, tokenData.token, livekitUrl);
+          // Create a new LiveKit connection
+          await sessionConnectionManager.createConnection(roomName, tokenData.token, livekitUrl);
           
           // Resume the AudioContext (this requires user interaction)
           let audioContextResumed = false;
@@ -315,6 +328,12 @@ export function VoiceInputButton({
             throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
           }
           
+          // Enable local audio publication
+          await audioTrackManager.enableLocalAudio();
+          
+          // Activate session for voice mode
+          sessionConnectionManager.setVoiceModeActive(true);
+          
           // Start voice listening with retry logic
           let success = false;
           retryCount = 0;
@@ -325,9 +344,6 @@ export function VoiceInputButton({
               success = await startVoiceListening();
               
               if (success) {
-                // Before starting to listen, ensure roomSessionManager knows we're in voice mode
-                roomSessionManager.setVoiceModeActive(true);
-                
                 // Wait a moment to ensure everything is initialized properly
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
@@ -345,7 +361,7 @@ export function VoiceInputButton({
                   console.error('Error starting multimodal agent listening:', listenerError);
                   
                   // Try to recover automatically
-                  roomSessionManager.setVoiceModeActive(true);
+                  sessionConnectionManager.setVoiceModeActive(true);
                   
                   // Use a more basic approach as fallback
                   const webSpeechAvailable = multimodalAgentService.isWebSpeechAvailable();
@@ -437,8 +453,8 @@ export function VoiceInputButton({
     multimodalAgentService.stopListening();
     stopVoiceListening();
     
-    // Set voice mode inactive in room session manager to prevent reconnections
-    roomSessionManager.setVoiceModeActive(false);
+    // Set voice mode inactive in session connection manager to prevent reconnections
+    sessionConnectionManager.setVoiceModeActive(false);
     
     // Stop any active audio
     voiceSynthesisService.stop();

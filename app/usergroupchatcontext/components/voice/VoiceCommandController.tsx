@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
 import voiceActivityService from '../../services/livekit/voice-activity-service';
+import toolDetectionService from '../../services/livekit/tool-detection-service';
+import { ToolDetectionResult } from '../../services/livekit';
 import { Mic, Volume2, Settings, ZoomIn, ZoomOut, Sun, Moon, XCircle } from 'lucide-react';
 
 // Add WebKit prefixed interface
@@ -294,169 +296,180 @@ export default function VoiceCommandController({
     ];
   }, [state, dispatch, botRegistry, transcript]);
 
-  // Initialize speech recognition
-  useEffect(() => {
-    // Check if browser supports speech recognition
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
-      console.error('Speech recognition not supported in this browser');
-      return;
+  // Calculate string similarity for fuzzy command matching
+  const calculateSimilarity = useCallback((str1: string, str2: string): number => {
+    if (!str1 || !str2) return 0;
+    
+    // Simple Levenshtein distance implementation
+    const track = Array(str2.length + 1).fill(null).map(() => 
+      Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i += 1) {
+      track[0][i] = i;
     }
+    
+    for (let j = 0; j <= str2.length; j += 1) {
+      track[j][0] = j;
+    }
+    
+    for (let j = 1; j <= str2.length; j += 1) {
+      for (let i = 1; i <= str1.length; i += 1) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1, // deletion
+          track[j - 1][i] + 1, // insertion
+          track[j - 1][i - 1] + indicator, // substitution
+        );
+      }
+    }
+    
+    // Convert distance to similarity score (0-1)
+    const maxLen = Math.max(str1.length, str2.length);
+    const distance = track[str2.length][str1.length];
+    return maxLen > 0 ? (maxLen - distance) / maxLen : 1;
+  }, []);
 
-    // Initialize speech recognition
-    const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognitionConstructor) {
-      speechRecognition.current = new SpeechRecognitionConstructor();
-      if (speechRecognition.current) {
-        speechRecognition.current.continuous = true;
-        speechRecognition.current.interimResults = true;
+  // Parse voice command from transcript
+  const parseCommand = useCallback((transcript: string): VoiceCommandEvent | null => {
+    if (!transcript) return null;
+    
+    const normalizedTranscript = transcript.toLowerCase().trim();
+    
+    // Extract command part after prefix
+    const prefixIndex = normalizedTranscript.indexOf(commandPrefix.toLowerCase());
+    if (prefixIndex === -1) return null;
+    
+    // Get the part after the prefix
+    const commandText = normalizedTranscript.substring(prefixIndex + commandPrefix.length).trim();
+    if (!commandText) return null;
+    
+    // Find best matching command
+    let bestMatch = '';
+    let bestConfidence = 0;
+    
+    commands().forEach(command => {
+      command.keywords.forEach(keyword => {
+        const similarity = calculateSimilarity(commandText, keyword.toLowerCase());
+        if (similarity > bestConfidence && similarity > confidenceThreshold) {
+          bestConfidence = similarity;
+          bestMatch = command.name;
+        }
+      });
+    });
+    
+    if (bestMatch) {
+      return {
+        command: bestMatch,
+        confidence: bestConfidence,
+        transcript: normalizedTranscript
+      };
+    }
+    
+    return null;
+  }, [commands, commandPrefix, confidenceThreshold, calculateSimilarity]);
+
+  // Execute recognized command
+  const executeCommand = useCallback((commandName: string) => {
+    const command = commands().find(cmd => cmd.name === commandName);
+    if (command) {
+      setActiveCommand(commandName);
+      
+      // Execute the command
+      command.action();
+      
+      // Clear the active command after a delay
+      setTimeout(() => {
+        setActiveCommand(null);
+      }, 2000);
+    }
+  }, [commands]);
+
+  // Check if speech recognition is available
+  useEffect(() => {
+    if (typeof window !== 'undefined' && enabled) {
+      // First check if we have tool detection service
+      try {
+        // Check if toolDetectionService is available with expected methods using safe type checks
+        if (toolDetectionService && 
+            typeof toolDetectionService === 'object' &&
+            'detectToolsFromTranscript' in toolDetectionService) {
+          console.log('Tool detection service available for voice commands');
+          return;
+        }
+      } catch (error) {
+        console.warn('Error checking tool detection service:', error);
+      }
+
+      // Fallback to WebkitSpeechRecognition
+      const SpeechRecognition = (window as any).SpeechRecognition 
+        || (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        speechRecognition.current = recognition;
         
-        // Setup speech recognition event handlers
-        speechRecognition.current.onresult = (event: any) => {
-          const lastResultIndex = event.results.length - 1;
-          const transcript = event.results[lastResultIndex][0].transcript.trim().toLowerCase();
-          setTranscript(transcript);
+        if (speechRecognition.current) {
+          speechRecognition.current.continuous = true;
+          speechRecognition.current.interimResults = true;
           
-          // Check if the transcript includes the command prefix
-          if (transcript.includes(commandPrefix.toLowerCase())) {
-            // If we find a command, process it
-            const commandEvent = parseCommand(transcript);
-            if (commandEvent && commandEvent.confidence >= confidenceThreshold) {
-              setRecognizedCommand(commandEvent);
-              executeCommand(commandEvent.command);
+          speechRecognition.current.onresult = (event: any) => {
+            const lastResultIdx = event.results.length - 1;
+            const transcriptText = event.results[lastResultIdx][0].transcript;
+            const confidence = event.results[lastResultIdx][0].confidence;
+            
+            // Only process completed phrases with decent confidence
+            if (confidence > 0.5) {
+              setTranscript(transcriptText);
+              
+              // Check if this is a system command
+              if (transcriptText.toLowerCase().includes(commandPrefix.toLowerCase())) {
+                const command = parseCommand(transcriptText);
+                if (command) {
+                  setRecognizedCommand(command);
+                  executeCommand(command.command);
+                }
+              }
             }
-          }
-        };
-        
-        speechRecognition.current.onend = () => {
-          if (isListening && speechRecognition.current) {
-            speechRecognition.current.start();
-          }
-        };
-        
-        speechRecognition.current.onerror = (event: any) => {
-          console.error('Speech recognition error', event.error);
-          setIsListening(false);
-        };
+          };
+          
+          speechRecognition.current.onend = () => {
+            setIsListening(false);
+          };
+          
+          speechRecognition.current.onerror = (event: any) => {
+            console.error('Voice command recognition error:', event.error);
+            setIsListening(false);
+          };
+        }
       }
-    } else {
-      console.error('Speech recognition constructor not available');
     }
-    
-    return () => {
-      if (speechRecognition.current) {
-        speechRecognition.current.stop();
-      }
-    };
-  }, [commandPrefix, confidenceThreshold, isListening]);
+  }, [enabled, commandPrefix, parseCommand, executeCommand]);
 
-  // Toggle listening state
+  // Monitor voice activity
   useEffect(() => {
-    if (enabled && isListening && speechRecognition.current) {
-      speechRecognition.current.start();
-    } else if (speechRecognition.current) {
-      speechRecognition.current.stop();
-    }
-  }, [enabled, isListening]);
-  
-  // Start listening when voice activity is detected
-  useEffect(() => {
+    if (!enabled) return;
+    
     const handleVoiceActivity = (state: { isSpeaking: boolean, level: number }) => {
-      if (enabled && state.isSpeaking && !isListening) {
-        setIsListening(true);
+      // If we detect activity and voice is active, check if there's a command in what was spoken
+      if (state.isSpeaking) {
+        // Try to identify voice commands directly from transcript
+        // Instead of relying on toolDetectionService which has type issues
+        if (transcript && transcript.toLowerCase().includes(commandPrefix.toLowerCase())) {
+          const command = parseCommand(transcript);
+          if (command && command.confidence > confidenceThreshold) {
+            setRecognizedCommand(command);
+            executeCommand(command.command);
+          }
+        }
       }
     };
     
-    // Register for voice activity
     voiceActivityService.onVoiceActivity(handleVoiceActivity);
     
     return () => {
       voiceActivityService.offVoiceActivity(handleVoiceActivity);
     };
-  }, [enabled, isListening]);
-  
-  /**
-   * Parse a transcript to identify commands
-   */
-  const parseCommand = (transcript: string): VoiceCommandEvent | null => {
-    // Extract the command part after the prefix
-    const prefixIndex = transcript.indexOf(commandPrefix.toLowerCase());
-    if (prefixIndex === -1) return null;
-    
-    const commandText = transcript.slice(prefixIndex + commandPrefix.length).trim();
-    if (!commandText) return null;
-    
-    // Check for matching commands
-    let bestMatch: { command: VoiceCommand, confidence: number } | null = null;
-    
-    for (const command of commands()) {
-      for (const keyword of command.keywords) {
-        // Calculate similarity score
-        const similarity = calculateSimilarity(commandText, keyword);
-        
-        if (similarity > 0.6 && (!bestMatch || similarity > bestMatch.confidence)) {
-          bestMatch = {
-            command,
-            confidence: similarity
-          };
-        }
-      }
-    }
-    
-    if (bestMatch) {
-      return {
-        command: bestMatch.command.name,
-        confidence: bestMatch.confidence,
-        transcript: commandText
-      };
-    }
-    
-    return null;
-  };
-  
-  /**
-   * Calculate similarity between two strings (simple implementation)
-   */
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const s1 = str1.toLowerCase();
-    const s2 = str2.toLowerCase();
-    
-    // Check if the command string contains the entire keyword
-    if (s1.includes(s2)) {
-      return 0.9;  // High confidence if exact keyword is found
-    }
-    
-    // Check if the command string contains partial keyword
-    const words1 = s1.split(' ');
-    const words2 = s2.split(' ');
-    
-    // Count matching words
-    let matchCount = 0;
-    for (const word2 of words2) {
-      if (words1.some(w => w === word2 || w.includes(word2) || word2.includes(w))) {
-        matchCount++;
-      }
-    }
-    
-    // Calculate similarity based on ratio of matching words
-    return matchCount / words2.length;
-  };
-  
-  /**
-   * Execute a voice command
-   */
-  const executeCommand = (commandName: string) => {
-    const command = commands().find(c => c.name === commandName);
-    if (command) {
-      setActiveCommand(commandName);
-      command.action();
-      
-      // Reset after a short delay
-      setTimeout(() => {
-        setActiveCommand(null);
-        setRecognizedCommand(null);
-      }, 2000);
-    }
-  };
+  }, [enabled, executeCommand, confidenceThreshold, transcript, parseCommand, commandPrefix]);
   
   // If not enabled, don't render anything
   if (!enabled) {

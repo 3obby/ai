@@ -5,6 +5,10 @@ import { EventEmitter } from 'events';
 import voiceToolCallingService from '../voiceToolCallingService';
 import { ToolDefinition } from '../../types/bots';
 import livekitService from './livekit-service';
+import audioPublishingService from './audio-publishing-service';
+import transcriptionManager from './transcription-manager';
+import speechSynthesisService from './speech-synthesis-service';
+import toolDetectionService from './tool-detection-service';
 
 // Interface for the configuration of the multimodal agent
 export interface MultimodalAgentConfig {
@@ -36,6 +40,11 @@ export type AudioOutputHandler = (audioChunk: ArrayBuffer) => void;
 
 /**
  * Service to manage multimodal interactions between LiveKit and OpenAI
+ * Acts as an orchestrator for specialized services:
+ * - TranscriptionManager: Handles speech recognition and transcription
+ * - AudioPublishingService: Manages audio track publishing
+ * - SpeechSynthesisService: Handles text-to-speech functionality
+ * - ToolDetectionService: Handles tool detection from voice input
  */
 export class MultimodalAgentService {
   private config: MultimodalAgentConfig = {
@@ -60,24 +69,9 @@ export class MultimodalAgentService {
 
   private isListening: boolean = false;
   private isProcessing: boolean = false;
-  private transcriptionHandlers: TranscriptionHandler[] = [];
-  private audioOutputHandlers: AudioOutputHandler[] = [];
-  private localAudioTrack: AudioTrack | null = null;
-  private activeRoomName: string | null = null;
-  private isSynthesizing: boolean = false;
-  private synthQueue: Array<{ text: string; options: { voice?: string; speed?: number; quality?: 'standard' | 'high-quality'; } }> = [];
   private emitter: EventEmitter = new EventEmitter();
-  private currentAudioLevel: number = 0;
-  private isProcessingToolCall: boolean = false;
-  private availableTools: ToolDefinition[] = [];
-  private interimTranscriptionTimer: NodeJS.Timeout | null = null;
-  private isSpeakingState: boolean = false;
   private latestOpenAIModel: string = 'gpt-4o';
   private latestRealtimeModel: string = 'gpt-4o-realtime-preview-2024-12-17';
-  private speechRecognition: any = null;
-  private recognitionActive: boolean = false;
-  private recognitionTranscript: string = '';
-  private speechRecognitionErrorCount: number = 0;
   private _connected: boolean = false;
 
   /**
@@ -87,164 +81,104 @@ export class MultimodalAgentService {
     // Try to get the latest OpenAI model version
     this.fetchLatestModelVersions();
     
-    // Initialize Web Speech API if available
-    this.initializeSpeechRecognition();
-    
     // Use latest realtime models by default if not specified
     const defaultConfig = {
       ...this.config,
-      model: this.latestRealtimeModel || 'gpt-4o-realtime-preview-2024-12-17',
+      model: config.model || this.latestRealtimeModel || 'gpt-4o-realtime-preview-2024-12-17',
       voice: config.voice || 'ash',
       preferredVoices: config.preferredVoices || ['ash', 'coral'],
-      voiceQuality: 'high-quality' as 'high-quality',
-      enhancedAudioProcessing: true,
-      audioSampleRate: 48000
+      voiceQuality: config.voiceQuality || 'high-quality' as 'high-quality',
+      enhancedAudioProcessing: config.enhancedAudioProcessing !== undefined ? config.enhancedAudioProcessing : true,
+      audioSampleRate: config.audioSampleRate || 48000
     };
     
     this.config = { ...defaultConfig, ...config };
     
-    // Initialize voice activity service with our VAD options
-    voiceActivityService.initialize(this.config.vadOptions);
+    // Initialize the specialized services
+    this.initializeSpecializedServices();
     
-    // Set up listeners for tool calling events
-    voiceToolCallingService.on('voiceTool:executed', this.handleToolExecution);
-    voiceToolCallingService.on('voiceTool:error', this.handleToolError);
-    
-    // Configure echo cancellation and audio processing
-    this.setupAudioProcessing();
+    // Register event handlers
+    this.registerEventHandlers();
     
     console.log('Multimodal agent initialized with config:', this.config);
   }
 
   /**
-   * Configure advanced audio processing options
+   * Initialize all the specialized services with appropriate configuration
    */
-  private setupAudioProcessing(): void {
-    if (typeof window !== 'undefined' && this.config.enhancedAudioProcessing) {
-      // Set up audio processing constraints
-      const audioConstraints: MediaTrackConstraints = {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        sampleRate: this.config.audioSampleRate,
-        channelCount: 1
-      };
-      
-      // Store these constraints for later use when starting the audio
-      (window as any).__enhancedAudioConstraints = audioConstraints;
-      
-      console.log('Enhanced audio processing configured:', audioConstraints);
+  private initializeSpecializedServices(): void {
+    // Initialize audio publishing service
+    audioPublishingService.initialize({
+      enhancedAudioProcessing: this.config.enhancedAudioProcessing,
+      audioSampleRate: this.config.audioSampleRate
+    });
+    
+    // Initialize transcription manager
+    transcriptionManager.initialize({
+      lang: 'en-US',
+      continuous: true,
+      interimResults: true
+    });
+    
+    // Initialize speech synthesis service
+    speechSynthesisService.initialize({
+      voice: this.config.voice,
+      speed: this.config.voiceSpeed,
+      quality: this.config.voiceQuality,
+      preferredVoices: this.config.preferredVoices
+    });
+    
+    // Initialize tool detection service (tools will be set later)
+    toolDetectionService.initialize();
+    
+    // Initialize voice activity service with VAD options
+    if (this.config.vadOptions) {
+      voiceActivityService.initialize(this.config.vadOptions);
     }
   }
 
   /**
-   * Initialize Web Speech API for speech recognition
+   * Register event handlers for the specialized services
    */
-  private initializeSpeechRecognition(): void {
-    // Reset error count
-    this.speechRecognitionErrorCount = 0;
+  private registerEventHandlers(): void {
+    // Register transcription handlers
+    transcriptionManager.on('transcription', (data) => {
+      this.handleTranscription(data.text, data.isFinal);
+    });
     
-    // Check if browser supports speech recognition
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        this.speechRecognition = new SpeechRecognition();
-        this.speechRecognition.continuous = true;
-        this.speechRecognition.interimResults = true;
-        this.speechRecognition.lang = 'en-US';
-        
-        // Set up event handlers
-        this.speechRecognition.onresult = (event: any) => {
-          const lastResult = event.results[event.results.length - 1];
-          const transcript = lastResult[0].transcript;
-          const isFinal = lastResult.isFinal;
-          
-          this.recognitionTranscript = transcript;
-          
-          // Notify handlers with the transcription
-          this.notifyTranscriptionHandlers(transcript, isFinal);
-        };
-        
-        this.speechRecognition.onerror = (event: any) => {
-          this.speechRecognitionErrorCount++;
-          console.error('Speech recognition error:', event.error, `(Count: ${this.speechRecognitionErrorCount})`);
-          
-          if (this.recognitionActive) {
-            // Only try to restart if we haven't had too many errors
-            if (this.speechRecognitionErrorCount < 5) {
-              // Try to restart recognition
-              this.stopSpeechRecognition();
-              setTimeout(() => {
-                if (this.recognitionActive) {
-                  this.startSpeechRecognition();
-                }
-              }, 1000);
-            } else {
-              // Too many errors, stop trying to restart
-              console.warn('Too many speech recognition errors, stopping auto-restart');
-              this.recognitionActive = false;
-              this.emitter.emit('speech-recognition-failed', {
-                errorCount: this.speechRecognitionErrorCount,
-                lastError: event.error
-              });
-            }
-          }
-        };
-        
-        this.speechRecognition.onend = () => {
-          if (this.recognitionActive) {
-            // Restart recognition if it ends unexpectedly
-            // But only if we haven't had too many errors
-            if (this.speechRecognitionErrorCount < 5) {
-              console.log('Speech recognition ended unexpectedly, restarting...');
-              this.speechRecognition.start();
-            }
-          }
-        };
-        
-        console.log('Speech recognition initialized successfully');
-      } else {
-        console.warn('Speech recognition not supported in this browser');
-      }
-    }
-  }
-  
-  /**
-   * Start speech recognition
-   */
-  private startSpeechRecognition(): void {
-    if (!this.speechRecognition) {
-      console.warn('Speech recognition not initialized');
-      return;
-    }
+    // Register audio output handlers from speech synthesis
+    speechSynthesisService.onAudioOutput((audioChunk) => {
+      this.emitter.emit('audio:output', audioChunk);
+    });
     
-    try {
-      this.speechRecognition.start();
-      this.recognitionActive = true;
-      console.log('Speech recognition started');
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
-    }
-  }
-  
-  /**
-   * Stop speech recognition
-   */
-  private stopSpeechRecognition(): void {
-    if (!this.speechRecognition || !this.recognitionActive) return;
+    // Register speaking state changes
+    speechSynthesisService.onSpeakingStateChange((isSpeaking) => {
+      this.emitter.emit('speaking-state-change', isSpeaking);
+    });
     
-    try {
-      this.speechRecognition.stop();
-      this.recognitionActive = false;
-      console.log('Speech recognition stopped');
-    } catch (error) {
-      console.error('Error stopping speech recognition:', error);
-    }
+    // Register tool detection events
+    toolDetectionService.on('tool:detected', (data) => {
+      this.emitter.emit('transcription:toolCall', data);
+    });
+    
+    toolDetectionService.on('tool:potentialDetection', (data) => {
+      this.emitter.emit('transcription:potentialToolCall', data);
+    });
+    
+    toolDetectionService.on('tool:executed', (data) => {
+      this.emitter.emit('tool:executed', data);
+    });
+    
+    toolDetectionService.on('tool:error', (data) => {
+      this.emitter.emit('tool:error', data);
+    });
+    
+    // Register voice activity events
+    voiceActivityService.onVoiceActivity(this.handleVoiceActivity);
   }
 
   /**
-   * Start listening for speech input with enhanced audio quality
+   * Start listening for speech input
    */
   public async startListening(): Promise<boolean> {
     if (this.isListening) {
@@ -253,141 +187,20 @@ export class MultimodalAgentService {
     }
 
     try {
-      // First, ensure we have a fresh AudioContext
-      await this.resumeAudioContext();
+      // Resume audio context
+      await audioPublishingService.resumeAudioContext();
       
-      // Ensure LiveKit is connected - attempt to initialize connection if needed
-      await this.ensureLiveKitConnection();
-
-      // Get active session
-      const session = roomSessionManager.getActiveSession();
-      if (!session) {
-        console.error('No active LiveKit session. Please make sure LiveKit is properly initialized and connected.');
-        console.log('Debug info:', {
-          roomSessionManagerExists: !!roomSessionManager,
-          livekitServiceExists: !!livekitService,
-          livekitRoomExists: !!livekitService.getRoom(),
-          livekitRoomState: livekitService.getRoom()?.state,
-          livekitURL: process.env.NEXT_PUBLIC_LIVEKIT_URL
-        });
-        
-        // Try to automatically initialize LiveKit
-        try {
-          console.log('Attempting to automatically initialize LiveKit connection...');
-          const liveKitInitialized = await this.initializeLiveKitConnection();
-          if (liveKitInitialized) {
-            console.log('Successfully initialized LiveKit connection automatically');
-            // Try getting session again
-            const newSession = roomSessionManager.getActiveSession();
-            if (!newSession) {
-              console.error('Still no active LiveKit session after initialization');
-              return false;
-            }
-            this.activeRoomName = newSession.roomName;
-          } else {
-            return false;
-          }
-        } catch (initError) {
-          console.error('Failed to automatically initialize LiveKit:', initError);
-          return false;
-        }
-      } else {
-        this.activeRoomName = session.roomName;
-      }
-      
-      // Check connection state explicitly
-      const room = livekitService.getRoom();
-      if (!room || room.state !== 'connected') {
-        console.warn('LiveKit room not in connected state, current state:', room?.state);
-        
-        // Check if we need to reconnect
-        if (room && room.state === 'disconnected') {
-          console.log('Room is disconnected, attempting to reconnect...');
-          
-          try {
-            // Get a fresh token and reconnect
-            const response = await fetch('/usergroupchatcontext/api/livekit-token');
-            if (!response.ok) {
-              throw new Error(`Failed to get LiveKit token: ${response.status}`);
-            }
-            
-            const tokenData = await response.json();
-            if (!tokenData?.token) {
-              throw new Error('No token received from LiveKit token API');
-            }
-            
-            // Initialize LiveKit session with fresh token
-            const roomName = tokenData.roomName || 'default-room';
-            const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-            
-            if (!livekitUrl) {
-              throw new Error('LiveKit URL not configured in environment variables');
-            }
-            
-            // Close existing session and create a new one
-            await roomSessionManager.closeSession(roomName);
-            await roomSessionManager.createSession(roomName, tokenData.token, livekitUrl);
-            console.log('Successfully reconnected to LiveKit');
-            
-            // Update active room name
-            this.activeRoomName = roomName;
-          } catch (reconnectError) {
-            console.error('Failed to reconnect to LiveKit:', reconnectError);
-            return false;
-          }
-        }
-      }
-      
-      // Enable local audio in the room session with enhanced quality
-      console.log('Enabling local audio with enhanced quality settings...');
-      const audioConstraints = this.config.enhancedAudioProcessing ? 
-        (window as any).__enhancedAudioConstraints : undefined;
-      
-      // Try to enable local audio with retries
-      let audioTrackAttempts = 0;
-      const maxAudioTrackAttempts = 3;
-      let audioTrack;
-      
-      while (!audioTrack && audioTrackAttempts < maxAudioTrackAttempts) {
-        try {
-          audioTrack = await roomSessionManager.enableLocalAudio();
-          if (audioTrack) {
-            console.log('Successfully enabled local audio track');
-            break;
-          } else {
-            throw new Error('Failed to get audio track');
-          }
-        } catch (audioError) {
-          audioTrackAttempts++;
-          console.error(`Error enabling audio (attempt ${audioTrackAttempts}/${maxAudioTrackAttempts}):`, audioError);
-          
-          if (audioTrackAttempts >= maxAudioTrackAttempts) {
-            throw new Error('Failed to enable audio after multiple attempts');
-          }
-          
-          // Wait before retry with increasing delay
-          const delay = Math.min(1000 * audioTrackAttempts, 3000);
-          console.log(`Waiting ${delay}ms before retrying audio setup...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-      
+      // Start audio publishing
+      const audioTrack = await audioPublishingService.startPublishing();
       if (!audioTrack) {
-        console.error('Failed to enable local audio. Check microphone permissions and browser compatibility.');
-        return false;
+        throw new Error('Failed to start audio publishing');
       }
-
-      this.localAudioTrack = audioTrack;
       
       // Start voice activity detection
-      console.log('Starting voice activity detection...');
       await voiceActivityService.startDetection(audioTrack);
       
-      // Register for voice activity events
-      voiceActivityService.onVoiceActivity(this.handleVoiceActivity);
-      
       this.isListening = true;
-      console.log('Started listening for speech input with enhanced quality');
+      console.log('Started listening for speech input');
       
       // Emit a listening started event
       this.emitter.emit('listening-started', { timestamp: Date.now() });
@@ -395,14 +208,6 @@ export class MultimodalAgentService {
       return true;
     } catch (error) {
       console.error('Error starting listening:', error);
-      console.log('Error details:', {
-        errorName: error instanceof Error ? error.name : 'Unknown error type',
-        errorMessage: error instanceof Error ? error.message : String(error),
-        errorStack: error instanceof Error ? error.stack : undefined,
-        livekitState: livekitService.getRoom()?.state,
-        browserUserMedia: !!navigator.mediaDevices?.getUserMedia,
-        livekitURL: process.env.NEXT_PUBLIC_LIVEKIT_URL
-      });
       
       // Clean up any partial state
       this.stopListening();
@@ -426,171 +231,26 @@ export class MultimodalAgentService {
   public stopListening(): void {
     if (!this.isListening) return;
     
-    // Stop speech recognition
-    this.stopSpeechRecognition();
+    // Stop audio track publishing
+    audioPublishingService.stopPublishing();
     
     // Stop voice activity detection
     voiceActivityService.stopDetection();
-    voiceActivityService.offVoiceActivity(this.handleVoiceActivity);
     
-    // Disable local audio in the room session
-    if (this.activeRoomName) {
-      roomSessionManager.disableLocalAudio();
-    }
+    // Stop speech recognition
+    transcriptionManager.stopRecognition();
     
-    this.localAudioTrack = null;
     this.isListening = false;
     console.log('Stopped listening for speech input');
-  }
-
-  /**
-   * Register a handler for transcription results
-   */
-  public onTranscription(handler: TranscriptionHandler): void {
-    this.transcriptionHandlers.push(handler);
-  }
-
-  /**
-   * Remove a transcription handler
-   */
-  public offTranscription(handler: TranscriptionHandler): void {
-    const index = this.transcriptionHandlers.indexOf(handler);
-    if (index !== -1) {
-      this.transcriptionHandlers.splice(index, 1);
-    }
-  }
-
-  /**
-   * Register a handler for audio output
-   */
-  public onAudioOutput(handler: AudioOutputHandler): void {
-    this.audioOutputHandlers.push(handler);
-  }
-
-  /**
-   * Remove an audio output handler
-   */
-  public offAudioOutput(handler: AudioOutputHandler): void {
-    const index = this.audioOutputHandlers.indexOf(handler);
-    if (index !== -1) {
-      this.audioOutputHandlers.splice(index, 1);
-    }
-  }
-
-  /**
-   * Synthesize speech with enhanced quality
-   */
-  public async synthesizeSpeech(text: string, options: {
-    voice?: string;
-    speed?: number;
-    quality?: 'standard' | 'high-quality';
-  } = {}): Promise<void> {
-    // Add to synthesis queue
-    this.synthQueue.push({
-      text,
-      options: {
-        voice: options.voice || this.getNextVoice(),
-        speed: options.speed || this.config.voiceSpeed,
-        quality: options.quality || this.config.voiceQuality
-      }
-    });
     
-    // Start processing if not already in progress
-    if (!this.isSynthesizing) {
-      await this.processNextSynthesisItem();
-    }
+    // Emit a listening stopped event
+    this.emitter.emit('listening-stopped', { timestamp: Date.now() });
   }
-
-  /**
-   * Get the next voice in the rotation for more natural conversations
-   */
-  private getNextVoice(): string {
-    // If we have preferred voices, alternate between them
-    if (this.config.preferredVoices && this.config.preferredVoices.length > 0) {
-      const nextVoiceIndex = Math.floor(Math.random() * this.config.preferredVoices.length);
-      return this.config.preferredVoices[nextVoiceIndex];
-    }
-    
-    // Otherwise, use the default voice
-    return this.config.voice;
-  }
-
-  // Update the process synthesis method to handle the new high-quality option
-  private processNextSynthesisItem = async (): Promise<void> => {
-    if (this.synthQueue.length === 0) {
-      this.isSynthesizing = false;
-      return;
-    }
-    
-    const next = this.synthQueue.shift();
-    if (!next) {
-      this.isSynthesizing = false;
-      return;
-    }
-    
-    this.isSynthesizing = true;
-    this.emitter.emit('synthesis:start', { text: next.text });
-    
-    try {
-      // Set speaking state before audio starts
-      this.setSpeaking(true);
-      
-      // Configure synthesis options based on quality setting
-      const synthesisOptions: any = {
-        voice: next.options.voice || this.config.voice,
-        speed: next.options.speed || this.config.voiceSpeed,
-        model: next.options.quality === 'high-quality' ? 'tts-1-hd' : 'tts-1'
-      };
-      
-      // If preventing echo, temporarily suspend voice activity detection
-      // This will be controlled by the interrupt toggle in the UI
-      if (this.config.preventEchoDetection) {
-        // We don't need to manually disable voice activity here anymore
-        // The interrupt toggle will handle this through the speaking-state-change event
-        console.log('Bot starting to speak - echo prevention handled by interrupt toggle');
-      }
-      
-      // Request speech synthesis with high quality settings
-      const response = await fetch('/api/synthesize-speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: next.text,
-          options: synthesisOptions
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Speech synthesis failed: ${response.status} ${response.statusText}`);
-      }
-      
-      // Get audio data and play it
-      const audioData = await response.arrayBuffer();
-      this.notifyAudioOutputHandlers(audioData);
-      
-      this.emitter.emit('synthesis:complete', { text: next.text });
-    } catch (error) {
-      console.error('Error synthesizing speech:', error);
-      this.emitter.emit('synthesis:error', { 
-        text: next.text, 
-        error 
-      });
-    } finally {
-      // Reset speaking state
-      this.setSpeaking(false);
-      
-      // Process next item in queue
-      await this.processNextSynthesisItem();
-    }
-  };
 
   /**
    * Handle voice activity detection events
    */
   private handleVoiceActivity = (state: VoiceActivityState): void => {
-    // Store the current audio level for visualization
-    this.currentAudioLevel = state.level || 0;
-    
     // Log speaking state changes
     if (state.isSpeaking && !this.isProcessing) {
       console.log('Speech detected, starting processing');
@@ -612,19 +272,10 @@ export class MultimodalAgentService {
    * Start processing speech
    */
   private startSpeechProcessing(): void {
-    // For UI purposes, indicate that speech processing has started
     console.log('Starting speech processing with real transcription...');
     
-    // Set speaking state
-    this.setSpeaking(true);
-    
     // Start speech recognition
-    this.startSpeechRecognition();
-    
-    // Clear any existing timer
-    if (this.interimTranscriptionTimer) {
-      clearInterval(this.interimTranscriptionTimer);
-    }
+    transcriptionManager.startRecognition();
     
     // Send initial listening message
     this.notifyTranscriptionHandlers('Listening...', false);
@@ -634,116 +285,187 @@ export class MultimodalAgentService {
    * Finalize speech processing
    */
   private finalizeSpeechProcessing(): void {
-    // Clear any interim transcription timer
-    if (this.interimTranscriptionTimer) {
-      clearInterval(this.interimTranscriptionTimer);
-      this.interimTranscriptionTimer = null;
-    }
-    
     console.log('Finalizing speech processing...');
     
     // Stop speech recognition
-    this.stopSpeechRecognition();
+    transcriptionManager.stopRecognition();
     
-    // If we have a transcript from speech recognition, use it
-    if (this.recognitionTranscript) {
+    // Get the current transcription
+    const currentTranscription = transcriptionManager.getCurrentTranscription();
+    
+    // If we have a transcript, use it
+    if (currentTranscription) {
       // Send the final transcription
-      this.notifyTranscriptionHandlers(this.recognitionTranscript, true);
+      this.notifyTranscriptionHandlers(currentTranscription, true);
       
       // Reset the transcript
-      this.recognitionTranscript = '';
+      transcriptionManager.resetTranscription();
     } else {
       // Fallback if no transcript was captured
       this.notifyTranscriptionHandlers("Sorry, I couldn't understand that. Please try again.", true);
     }
     
-    // Log that we've processed speech
     console.log('Speech processed - voice input detected');
-    
-    // Stop the "speaking" state
-    this.setSpeaking(false);
   }
 
   /**
-   * Notify all transcription handlers
+   * Handle transcription results
    */
-  private notifyTranscriptionHandlers(text: string, isFinal: boolean): void {
-    // Call all registered transcription handlers
-    for (const handler of this.transcriptionHandlers) {
-      handler(text, isFinal);
-    }
-
-    // Process for potential tool calls if this is a final transcription
+  private handleTranscription(text: string, isFinal: boolean): void {
+    // Notify transcription handlers
+    this.notifyTranscriptionHandlers(text, isFinal);
+    
+    // Process for tool detection if final
     if (isFinal) {
       this.processTranscriptionForTools(text, isFinal);
     }
   }
 
   /**
-   * Notify all audio output handlers
+   * Notify all transcription handlers
    */
-  private notifyAudioOutputHandlers(audioChunk: ArrayBuffer): void {
-    this.audioOutputHandlers.forEach(handler => {
-      try {
-        handler(audioChunk);
-      } catch (error) {
-        console.error('Error in audio output handler:', error);
-      }
-    });
+  private notifyTranscriptionHandlers(text: string, isFinal: boolean): void {
+    // Emit transcription event
+    this.emitter.emit('transcription', { text, isFinal });
+    
+    // Call handlers directly instead of accessing private property
+    // This is safer than accessing private property directly
+  }
+
+  /**
+   * Process transcribed text for potential tool calls
+   */
+  private async processTranscriptionForTools(text: string, isFinal: boolean): Promise<void> {
+    try {
+      // Use the tool detection service to process the transcription
+      await toolDetectionService.processTranscription(text, isFinal);
+    } catch (error) {
+      console.error('Error processing transcription for tools:', error);
+    }
+  }
+
+  /**
+   * Register a handler for transcription results
+   */
+  public onTranscription(handler: TranscriptionHandler): void {
+    transcriptionManager.onTranscription(handler);
+  }
+
+  /**
+   * Remove a transcription handler
+   */
+  public offTranscription(handler: TranscriptionHandler): void {
+    transcriptionManager.offTranscription(handler);
+  }
+
+  /**
+   * Register a handler for audio output
+   */
+  public onAudioOutput(handler: AudioOutputHandler): void {
+    speechSynthesisService.onAudioOutput(handler);
+  }
+
+  /**
+   * Remove an audio output handler
+   */
+  public offAudioOutput(handler: AudioOutputHandler): void {
+    speechSynthesisService.offAudioOutput(handler);
+  }
+
+  /**
+   * Synthesize speech with enhanced quality
+   */
+  public async synthesizeSpeech(text: string, options: {
+    voice?: string;
+    speed?: number;
+    quality?: 'standard' | 'high-quality';
+  } = {}): Promise<void> {
+    return speechSynthesisService.synthesizeSpeech(text, options);
   }
 
   /**
    * Subscribe to speech synthesis events
-   * @param event Event type
-   * @param listener Event listener
    */
   public onSynthesisEvent(event: 'synthesis:start' | 'synthesis:complete' | 'synthesis:error', listener: (...args: any[]) => void): void {
-    this.emitter.on(event, listener);
+    speechSynthesisService.onSynthesisEvent(event, listener);
   }
 
   /**
    * Unsubscribe from speech synthesis events
-   * @param event Event type
-   * @param listener Event listener
    */
   public offSynthesisEvent(event: 'synthesis:start' | 'synthesis:complete' | 'synthesis:error', listener: (...args: any[]) => void): void {
-    this.emitter.off(event, listener);
+    speechSynthesisService.offSynthesisEvent(event, listener);
   }
 
   /**
    * Get the current audio level (0-1)
    */
   public getCurrentAudioLevel(): number {
-    return this.currentAudioLevel;
+    // Use getState() method from voiceActivityService to get the current level
+    return voiceActivityService.getState().level || 0;
   }
 
   /**
    * Check if the bot is currently speaking
    */
   public isSpeaking(): boolean {
-    return this.isSpeakingState;
+    return speechSynthesisService.isSpeaking();
   }
 
   /**
    * Set the speaking state
    */
   public setSpeaking(isSpeaking: boolean): void {
-    this.isSpeakingState = isSpeaking;
-    this.emitter.emit('speaking-state-change', isSpeaking);
+    speechSynthesisService.setSpeaking(isSpeaking);
   }
 
   /**
    * Listen for speaking state changes
    */
   public onSpeakingStateChange(callback: (isSpeaking: boolean) => void): void {
-    this.emitter.on('speaking-state-change', callback);
+    speechSynthesisService.onSpeakingStateChange(callback);
   }
 
   /**
    * Stop listening for speaking state changes
    */
   public offSpeakingStateChange(callback: (isSpeaking: boolean) => void): void {
-    this.emitter.off('speaking-state-change', callback);
+    speechSynthesisService.offSpeakingStateChange(callback);
+  }
+
+  /**
+   * Add listener for tool-related events
+   */
+  public onToolEvent(
+    event: 'tool:executed' | 'tool:error' | 'transcription:toolCall' | 'transcription:potentialToolCall',
+    listener: (data: any) => void
+  ): void {
+    this.emitter.on(event, listener);
+  }
+
+  /**
+   * Remove listener for tool-related events
+   */
+  public offToolEvent(
+    event: 'tool:executed' | 'tool:error' | 'transcription:toolCall' | 'transcription:potentialToolCall',
+    listener: (data: any) => void
+  ): void {
+    this.emitter.off(event, listener);
+  }
+
+  /**
+   * Remove event listener
+   */
+  public off(event: string, listener: (...args: any[]) => void): void {
+    this.emitter.off(event, listener);
+  }
+
+  /**
+   * Resume AudioContext after user interaction
+   * This should be called in response to a user gesture (click, tap, etc.)
+   */
+  public async resumeAudioContext(): Promise<boolean> {
+    return await audioPublishingService.resumeAudioContext();
   }
 
   /**
@@ -787,92 +509,9 @@ export class MultimodalAgentService {
    * Set available tools for voice tool detection
    */
   public setAvailableTools(tools: ToolDefinition[]): void {
-    this.availableTools = tools;
+    toolDetectionService.setAvailableTools(tools);
     console.log('Updated available tools for voice detection:', 
       tools.map(t => t.name).join(', '));
-  }
-
-  // Handle successful tool execution
-  private handleToolExecution = (result: any) => {
-    this.isProcessingToolCall = false;
-    this.emitter.emit('tool:executed', result);
-  }
-
-  // Handle tool execution error
-  private handleToolError = (error: any) => {
-    this.isProcessingToolCall = false;
-    this.emitter.emit('tool:error', error);
-  }
-
-  // Process transcribed text for potential tool calls
-  private async processTranscriptionForTools(text: string, isFinal: boolean): Promise<void> {
-    // Only process final transcriptions for tool calls
-    if (!isFinal || this.availableTools.length === 0) return;
-    
-    try {
-      // Process the voice input to check for tool calls
-      const toolProcessingResult = await voiceToolCallingService.processVoiceInput(
-        text,
-        this.availableTools
-      );
-      
-      // If this was identified as a tool call with high confidence
-      if (toolProcessingResult.isToolCall && toolProcessingResult.toolResults) {
-        this.isProcessingToolCall = true;
-        
-        // Emit event with tool results
-        this.emitter.emit('transcription:toolCall', {
-          text,
-          toolResults: toolProcessingResult.toolResults,
-          detectedTools: toolProcessingResult.detectedTools
-        });
-        
-        // If no high confidence tool calls but we detected possible tools
-      } else if (toolProcessingResult.isToolCall && toolProcessingResult.detectedTools.length > 0) {
-        // Emit event with detected tools for confirmation
-        this.emitter.emit('transcription:potentialToolCall', {
-          text,
-          detectedTools: toolProcessingResult.detectedTools
-        });
-      }
-    } catch (error) {
-      console.error('Error processing transcription for tools:', error);
-    }
-  }
-
-  /**
-   * Add listener for tool-related events
-   */
-  public onToolEvent(
-    event: 'tool:executed' | 'tool:error' | 'transcription:toolCall' | 'transcription:potentialToolCall',
-    listener: (data: any) => void
-  ): void {
-    this.emitter.on(event, listener);
-  }
-
-  /**
-   * Remove listener for tool-related events
-   */
-  public offToolEvent(
-    event: 'tool:executed' | 'tool:error' | 'transcription:toolCall' | 'transcription:potentialToolCall',
-    listener: (data: any) => void
-  ): void {
-    this.emitter.off(event, listener);
-  }
-
-  /**
-   * Remove event listener
-   */
-  public off(event: string, listener: (...args: any[]) => void): void {
-    this.emitter.off(event, listener);
-  }
-
-  /**
-   * Resume AudioContext after user interaction
-   * This should be called in response to a user gesture (click, tap, etc.)
-   */
-  public async resumeAudioContext(): Promise<boolean> {
-    return await voiceActivityService.resumeAudioContext();
   }
 
   /**
@@ -889,7 +528,25 @@ export class MultimodalAgentService {
     this.config = { ...this.config, ...config };
     console.log('Updated multimodal agent config:', this.config);
     
-    // If voice activity options were updated, propagate to the voice activity service
+    // Update specialized services with new configuration
+    
+    // Update speech synthesis options
+    speechSynthesisService.updateOptions({
+      voice: config.voice,
+      speed: config.voiceSpeed,
+      quality: config.voiceQuality,
+      preferredVoices: config.preferredVoices
+    });
+    
+    // Update audio publishing options if audio processing settings changed
+    if (config.enhancedAudioProcessing !== undefined || config.audioSampleRate !== undefined) {
+      audioPublishingService.updateOptions({
+        enhancedAudioProcessing: config.enhancedAudioProcessing,
+        audioSampleRate: config.audioSampleRate
+      });
+    }
+    
+    // Update voice activity options
     if (config.vadOptions) {
       voiceActivityService.updateOptions(config.vadOptions);
     }
@@ -902,10 +559,11 @@ export class MultimodalAgentService {
    * Get Web Speech API status
    */
   public getWebSpeechStatus(): { available: boolean, active: boolean, errorCount?: number } {
+    const status = transcriptionManager.getStatus();
     return {
-      available: !!this.speechRecognition,
-      active: this.recognitionActive,
-      errorCount: this.speechRecognitionErrorCount
+      available: status.available,
+      active: status.active,
+      errorCount: status.errorCount
     };
   }
 
@@ -913,92 +571,7 @@ export class MultimodalAgentService {
    * Check if the Web Speech API is available
    */
   public isWebSpeechAvailable(): boolean {
-    if (typeof window === 'undefined') return false;
-    return !!(
-      (window as any).SpeechRecognition || 
-      (window as any).webkitSpeechRecognition
-    );
-  }
-
-  /**
-   * Ensure LiveKit is connected before starting voice mode
-   */
-  private async ensureLiveKitConnection(): Promise<boolean> {
-    // Check if LiveKit is already connected
-    if (livekitService.getRoom()?.state === 'connected') {
-      console.log('LiveKit connection already established');
-      return true;
-    }
-    
-    // If not connected, initialize the connection
-    return await this.initializeLiveKitConnection();
-  }
-
-  /**
-   * Initialize LiveKit connection
-   */
-  private async initializeLiveKitConnection(): Promise<boolean> {
-    try {
-      console.log('Initializing LiveKit connection...');
-      
-      // Get LiveKit URL from environment
-      const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-      if (!livekitUrl) {
-        console.error('LiveKit URL not configured in environment variables');
-        return false;
-      }
-      
-      // Get a LiveKit token from our API with error handling and retry logic
-      let token = '';
-      let roomName = 'default-room';
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      while (retryCount < maxRetries) {
-        try {
-          console.log(`Fetching LiveKit token (attempt ${retryCount + 1}/${maxRetries})...`);
-          const response = await fetch('/usergroupchatcontext/api/livekit-token');
-          
-          if (!response.ok) {
-            throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          if (!data.token) {
-            throw new Error('No token received from LiveKit token API');
-          }
-          
-          token = data.token;
-          roomName = data.roomName || 'default-room';
-          break; // Successfully got token, exit retry loop
-        } catch (tokenError) {
-          console.error(`Token fetch error (attempt ${retryCount + 1}):`, tokenError);
-          retryCount++;
-          
-          if (retryCount >= maxRetries) {
-            console.error('Failed to get LiveKit token after multiple attempts');
-            return false;
-          }
-          
-          // Wait before retrying (increasing delay)
-          await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
-        }
-      }
-      
-      // Connect to LiveKit using roomSessionManager with proper error handling
-      try {
-        console.log('Creating LiveKit session with token, length:', token.length);
-        await roomSessionManager.createSession(roomName, token, livekitUrl);
-        console.log('LiveKit connection established successfully');
-        return true;
-      } catch (sessionError) {
-        console.error('Failed to create LiveKit session:', sessionError);
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to initialize LiveKit connection:', error);
-      return false;
-    }
+    return transcriptionManager.isAvailable();
   }
 }
 

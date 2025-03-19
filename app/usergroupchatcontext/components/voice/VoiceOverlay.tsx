@@ -8,6 +8,7 @@ import AudioVisualizer from './AudioVisualizer';
 import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
 import { Bot } from '../../types';
 import { VoiceSettings, MultimodalAgentConfig } from '../../types/voice';
+import voiceActivityService from '../../services/livekit/voice-activity-service';
 
 interface VoiceOverlayProps {
   onClose: () => void;
@@ -63,10 +64,10 @@ export default function VoiceOverlay({
 
   // Listen for audio level changes
   useEffect(() => {
-    // Subscribe to audio level updates from the multimodal agent service
+    // Subscribe to audio level updates from the voice activity service
     const audioLevelInterval = setInterval(() => {
-      const level = multimodalAgentService.getCurrentAudioLevel();
-      setUserAudioLevel(level);
+      const state = voiceActivityService.getState();
+      setUserAudioLevel(state.level);
     }, 50);
 
     // Simulate bot audio levels for now - would be replaced with actual bot audio level

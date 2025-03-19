@@ -491,3 +491,81 @@ export type GroupChatAction =
   Provides iterative refinement, automatically or on user demand, within clearly defined limits  
 - **Unified Bot Settings**  
   Maintains consistent global defaults across all bots, with flexible overrides per individual bot  
+
+## Refactoring Progress
+
+### LiveKit Services Refactoring (In Progress)
+
+The LiveKit services architecture has been significantly improved by following the Single Responsibility Principle. We've successfully completed three major refactoring tasks:
+
+#### Completed: MultimodalAgentService Refactoring
+
+1. Created four specialized services, each with a single responsibility:
+   - **TranscriptionManager**: Handles speech recognition and transcription
+   - **AudioPublishingService**: Manages audio track publishing with LiveKit
+   - **SpeechSynthesisService**: Handles text-to-speech functionality
+   - **ToolDetectionService**: Processes voice input for tool detection
+
+2. Refactored MultimodalAgentService to act as an orchestrator:
+   - Delegates specific tasks to the specialized services
+   - Provides a unified API for client components
+   - Manages initialization of all services
+   - Coordinates event proxying between services
+
+The architecture now follows a modular approach with clear separation of concerns:
+
+```
+MultimodalAgentService (Orchestrator)
+├── AudioPublishingService
+├── TranscriptionManager
+├── SpeechSynthesisService
+└── ToolDetectionService
+```
+
+#### Completed: RoomSessionManager Refactoring
+
+1. Created three specialized services, each with a single responsibility:
+   - **SessionConnectionManager**: Handles LiveKit room connection and reconnection
+   - **AudioTrackManager**: Manages audio track publishing and lifecycle
+   - **ParticipantManager**: Tracks participants and their audio tracks
+
+2. Refactored RoomSessionManager to act as an orchestrator:
+   - Delegates specific tasks to the specialized services
+   - Provides a unified API for client components
+   - Coordinates between the specialized services
+
+The architecture now follows a modular approach with clear separation of concerns:
+
+```
+RoomSessionManager (Orchestrator)
+├── SessionConnectionManager
+├── AudioTrackManager
+└── ParticipantManager
+```
+
+#### Completed: Component Refactoring
+
+1. Updated voice-related components to use the new specialized services:
+   - **VoiceInputButton**: Now uses SessionConnectionManager, AudioTrackManager, and ParticipantManager
+   - **VoiceOverlay**: Uses VoiceActivityService for audio levels
+   - **VoiceCommandController**: Uses a more direct approach for voice commands
+
+The components are now more modular and maintainable, with better separation of concerns:
+- Each component interacts with the specific services it needs
+- Direct dependencies on the monolithic services have been removed
+- Clearer responsibility boundaries between UI components and services
+
+#### Next Focus: Hook Refactoring
+
+Our next focus is creating specialized hooks for better reusability:
+- **useAudioTrackPublishing**: Will simplify audio track management
+- **useTokenFetching**: Will handle LiveKit token fetching and retries
+- **useConnectionManager**: Will provide connection state management
+- **useSpeechRecognition**: Will encapsulate speech recognition logic
+- **useSpeechSynthesis**: Will provide easy access to speech synthesis
+
+This refactoring approach has several benefits:
+- **Improved maintainability**: Smaller, focused modules are easier to understand and maintain
+- **Better testability**: Specialized services can be tested in isolation
+- **Enhanced reusability**: Services can be used independently in different contexts
+- **Clearer API boundaries**: Each service exposes a well-defined, focused API
