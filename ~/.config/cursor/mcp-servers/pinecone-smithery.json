@@ -1,0 +1,13 @@
+{
+  "command": "npx",
+  "args": [
+    "-y",
+    "@smithery/cli@latest",
+    "run",
+    "mcp-pinecone",
+    "--config",
+    "{\"apiKey\":\"pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ\",\"indexName\":\"agentconsult\"}"
+  ],
+  "name": "Pinecone Vector DB (Smithery)",
+  "description": "Access to the agentconsult Pinecone index via Smithery"
+} 

@@ -1,7 +1,6 @@
 {
   "command": "/opt/homebrew/bin/uvx",
   "args": [
-    "run",
     "mcp-pinecone",
     "--index-name",
     "agentconsult",
@@ -9,5 +8,5 @@
     "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
   ],
   "name": "Pinecone Vector DB (Direct)",
-  "description": "Direct access to agentconsult Pinecone index using the run command"
+  "description": "Direct access to agentconsult Pinecone index"
 } 
