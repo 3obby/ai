@@ -1,5 +1,7 @@
 # UserGroupChatContext TODO List
 
+warning! this may be outdated
+
 ## Hook Refactoring
 
 1. **Create Specialized Hooks**

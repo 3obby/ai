@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "148efa6",
+      "fullHash": "148efa606894e2ff25f234043985820c9ec83fa9",
+      "date": "2025-03-19 19:44:28 +0700",
+      "author": "3obby",
+      "message": "test push",
+      "category": "other"
+    },
+    {
       "hash": "020aba5",
       "fullHash": "020aba55a74b514d12c3c157216b960b7f6d30e2",
       "date": "2025-03-19 19:42:07 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Improve UI and UX: Add animated logo, optimize navigation, implement skeleton loading for dashboard, and fix sidebar consistency",
       "category": "bugfix"
-    },
-    {
-      "hash": "1d2d2b0",
-      "fullHash": "1d2d2b069020ef100028bd11aa66bed1f2fd0289",
-      "date": "2025-03-08 20:14:33 +0700",
-      "author": "3obby",
-      "message": "ENHANCE: Add email retry with animated timer for login flow",
-      "category": "feature"
     }
   ]
 }
