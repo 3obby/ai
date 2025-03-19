@@ -1,0 +1,19 @@
+{
+  "name": "GroupChatBotBuilder",
+  "short_name": "GCBB",
+  "icons": [
+    {
+      "src": "/feather.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/feather.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#1f2937",
+  "background_color": "#111827",
+  "display": "standalone"
+} 

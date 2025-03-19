@@ -1,0 +1,804 @@
+{
+  "commits": [
+    {
+      "hash": "ad64aba",
+      "fullHash": "ad64abaad8ff09ab13e63885e16e851149668572",
+      "date": "2025-03-19 21:18:11 +0700",
+      "author": "3obby",
+      "message": "Fresh start with API keys removed",
+      "category": "other"
+    },
+    {
+      "hash": "ce2ea26",
+      "fullHash": "ce2ea26dde9697ab308838d7e26bf152e2fdb55a",
+      "date": "2025-03-19 21:09:54 +0700",
+      "author": "3obby",
+      "message": "Remove hardcoded API keys for security",
+      "category": "other"
+    },
+    {
+      "hash": "5b2fbf0",
+      "fullHash": "5b2fbf04ac950a8025e030f1c84d247bc18372a4",
+      "date": "2025-03-19 20:51:17 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
+      "hash": "a33006a",
+      "fullHash": "a33006a6140890e3cd1d764a0f7fcee7248b1a89",
+      "date": "2025-03-19 20:22:54 +0700",
+      "author": "3obby",
+      "message": "pinecone usage",
+      "category": "other"
+    },
+    {
+      "hash": "148efa6",
+      "fullHash": "148efa606894e2ff25f234043985820c9ec83fa9",
+      "date": "2025-03-19 19:44:28 +0700",
+      "author": "3obby",
+      "message": "test push",
+      "category": "other"
+    },
+    {
+      "hash": "020aba5",
+      "fullHash": "020aba55a74b514d12c3c157216b960b7f6d30e2",
+      "date": "2025-03-19 19:42:07 +0700",
+      "author": "3obby",
+      "message": "test ship",
+      "category": "other"
+    },
+    {
+      "hash": "ddaebde",
+      "fullHash": "ddaebde54125d0b8d50b407df8ede95b3fe1fee2",
+      "date": "2025-03-19 18:13:49 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
+      "hash": "1554a7b",
+      "fullHash": "1554a7b31f4f4ce0e4466b4b6eb491eba507a801",
+      "date": "2025-03-19 17:57:13 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
+      "hash": "cc4f37f",
+      "fullHash": "cc4f37fb0bd5f7112f74e29aba3d72900f9b1418",
+      "date": "2025-03-19 17:54:35 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
+      "hash": "4331589",
+      "fullHash": "4331589c04880a54d6870eaa0c9bb4e36527f6df",
+      "date": "2025-03-19 17:19:51 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
+      "hash": "a90a76a",
+      "fullHash": "a90a76a62c92f06750cca2d74519553747337300",
+      "date": "2025-03-19 16:33:41 +0700",
+      "author": "3obby",
+      "message": "trashpush maybe pinecone works",
+      "category": "other"
+    },
+    {
+      "hash": "4c4f260",
+      "fullHash": "4c4f26026af222f1739450a18bbe9fd5e346f458",
+      "date": "2025-03-19 13:50:32 +0700",
+      "author": "3obby",
+      "message": "pineconeshit",
+      "category": "other"
+    },
+    {
+      "hash": "a2a8670",
+      "fullHash": "a2a8670664b8c1fb1811dbe02ce973d5766da129",
+      "date": "2025-03-19 12:29:49 +0700",
+      "author": "3obby",
+      "message": "trashpush f cursor devs",
+      "category": "other"
+    },
+    {
+      "hash": "eccca00",
+      "fullHash": "eccca000ec688989faad8489742410caf6ee32ff",
+      "date": "2025-03-19 11:58:08 +0700",
+      "author": "3obby",
+      "message": "trashpush f cursor devs",
+      "category": "other"
+    },
+    {
+      "hash": "be8bfea",
+      "fullHash": "be8bfeae851c97cbcd0a2fb22a6cc42fe87bffb9",
+      "date": "2025-03-18 23:50:50 +0700",
+      "author": "3obby",
+      "message": "working slowly with duplicates.",
+      "category": "other"
+    },
+    {
+      "hash": "de3fe59",
+      "fullHash": "de3fe5944def3be8784be394e7f709d079a4f9de",
+      "date": "2025-03-18 23:37:57 +0700",
+      "author": "3obby",
+      "message": "cursor updates are trash",
+      "category": "enhancement"
+    },
+    {
+      "hash": "a6a892d",
+      "fullHash": "a6a892db6991aa3ea48be6da6bfc36855e574534",
+      "date": "2025-03-18 22:23:41 +0700",
+      "author": "3obby",
+      "message": "nice ya",
+      "category": "other"
+    },
+    {
+      "hash": "28e97df",
+      "fullHash": "28e97df979d748d64491ffd49b2702a50ac3aa7e",
+      "date": "2025-03-18 22:01:27 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
+      "hash": "51fd443",
+      "fullHash": "51fd4433b852a88cc42a213ec77583336b7902a4",
+      "date": "2025-03-18 19:57:45 +0700",
+      "author": "3obby",
+      "message": "trashpush 119934",
+      "category": "other"
+    },
+    {
+      "hash": "c177870",
+      "fullHash": "c177870db0f2e4aeb5750c0bb8575b804735e233",
+      "date": "2025-03-18 13:51:22 +0700",
+      "author": "3obby",
+      "message": "corrected auto-doc",
+      "category": "documentation"
+    },
+    {
+      "hash": "c75efd2",
+      "fullHash": "c75efd2d480e7d30753d9bddc8e59153bb9aa223",
+      "date": "2025-03-18 13:41:42 +0700",
+      "author": "3obby",
+      "message": "ya trashpush",
+      "category": "other"
+    },
+    {
+      "hash": "ff82ae1",
+      "fullHash": "ff82ae17d9b90070e26bcfeb1b7b32300260a8ce",
+      "date": "2025-03-18 13:08:21 +0700",
+      "author": "3obby",
+      "message": "miracle",
+      "category": "other"
+    },
+    {
+      "hash": "0fac5de",
+      "fullHash": "0fac5de5a50f1782cf37b691c52c0983ba7a4825",
+      "date": "2025-03-18 10:54:29 +0700",
+      "author": "3obby",
+      "message": "trashpush iv",
+      "category": "other"
+    },
+    {
+      "hash": "ec42337",
+      "fullHash": "ec423375782394058fddd0c827cf58a87fed2dfc",
+      "date": "2025-03-17 23:58:20 +0700",
+      "author": "3obby",
+      "message": "trashpush 35",
+      "category": "other"
+    },
+    {
+      "hash": "8fdaa97",
+      "fullHash": "8fdaa97b4ac52e48c7e8ad56e0abd9205471a22a",
+      "date": "2025-03-17 18:46:29 +0700",
+      "author": "3obby",
+      "message": "again trash push",
+      "category": "other"
+    },
+    {
+      "hash": "35cf597",
+      "fullHash": "35cf59700721548170181472055054a69fc5929c",
+      "date": "2025-03-17 15:57:11 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
+      "hash": "15695d3",
+      "fullHash": "15695d36104f3e8e8ac83fa1fb16d93f8da5bc88",
+      "date": "2025-03-16 23:04:46 +0700",
+      "author": "3obby",
+      "message": "deleted the most important directory as we vibe code",
+      "category": "other"
+    },
+    {
+      "hash": "157aef6",
+      "fullHash": "157aef620fa4e1c119b752e615ad71dba3198db3",
+      "date": "2025-03-16 21:38:41 +0700",
+      "author": "3obby",
+      "message": "trashpush",
+      "category": "other"
+    },
+    {
+      "hash": "c1ac7c3",
+      "fullHash": "c1ac7c381bb0b72ad7201136d14061ea6d462245",
+      "date": "2025-03-16 14:07:16 +0700",
+      "author": "3obby",
+      "message": "brave search",
+      "category": "other"
+    },
+    {
+      "hash": "ae6e3be",
+      "fullHash": "ae6e3be78e91bd3b07d7be92c98c3aca9fd41ccd",
+      "date": "2025-03-15 14:07:31 +0700",
+      "author": "3obby",
+      "message": "settings updates",
+      "category": "enhancement"
+    },
+    {
+      "hash": "d242422",
+      "fullHash": "d2424229fbc23dda345fac9d8732fda00000fdb8",
+      "date": "2025-03-15 13:04:18 +0700",
+      "author": "3obby",
+      "message": "bot/user transcripts working on realtime",
+      "category": "other"
+    },
+    {
+      "hash": "8d665cf",
+      "fullHash": "8d665cfe9ba30c6cfc5c6770132ab7cc7046cd44",
+      "date": "2025-03-15 01:45:06 +0700",
+      "author": "3obby",
+      "message": "added demo route (173 files changed)",
+      "category": "feature"
+    },
+    {
+      "hash": "389e239",
+      "fullHash": "389e239a15f373df7b95f17b78cfc5a2d3b71982",
+      "date": "2025-03-13 13:39:59 +0700",
+      "author": "3obby",
+      "message": "Fix PostgreSQL JSONB type error in group chat creation",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f6752a2",
+      "fullHash": "f6752a29e93c17699f9bd21cae4affca73baf917",
+      "date": "2025-03-13 03:29:07 +0700",
+      "author": "3obby",
+      "message": "Fix group chat for anonymous users and improve mobile responsiveness of companion cards",
+      "category": "bugfix"
+    },
+    {
+      "hash": "ebb23f5",
+      "fullHash": "ebb23f5775410b9b6a26fa4b24cee3ee2ade97c9",
+      "date": "2025-03-13 03:22:24 +0700",
+      "author": "3obby",
+      "message": "Remove plus button from companion cards, add group chat button, improve mobile responsiveness",
+      "category": "feature"
+    },
+    {
+      "hash": "2446043",
+      "fullHash": "24460437941aa59fed2004493f36a3b546382682",
+      "date": "2025-03-13 03:01:45 +0700",
+      "author": "3obby",
+      "message": "Fix Next.js 15 async route parameter issues in group chat API and update documentation",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f7c6cc2",
+      "fullHash": "f7c6cc23455041951dedbd3ac127ef5869af2181",
+      "date": "2025-03-12 18:33:00 +0700",
+      "author": "3obby",
+      "message": "Fix: Optimize dashboard performance for anonymous users by reducing Redis payload size and improving caching",
+      "category": "bugfix"
+    },
+    {
+      "hash": "c39e10b",
+      "fullHash": "c39e10b8a4810467ab2073bfc96d46af83458e50",
+      "date": "2025-03-12 16:38:28 +0700",
+      "author": "3obby",
+      "message": "Enhance dashboard API resilience for missing materialized view columns",
+      "category": "enhancement"
+    },
+    {
+      "hash": "91d58e0",
+      "fullHash": "91d58e0f523e0812d3d6485d5f4d6774e56d8ec2",
+      "date": "2025-03-12 16:33:39 +0700",
+      "author": "3obby",
+      "message": "Fix materialized view to include description column and other fields",
+      "category": "bugfix"
+    },
+    {
+      "hash": "745bd9d",
+      "fullHash": "745bd9d21e755794dc17453da83f390f0654026d",
+      "date": "2025-03-12 16:26:39 +0700",
+      "author": "3obby",
+      "message": "Update react-spinners to 0.15.0 for React 19 compatibility",
+      "category": "enhancement"
+    },
+    {
+      "hash": "4187825",
+      "fullHash": "4187825468f7e711ebbb74c06a2e9057490611ba",
+      "date": "2025-03-12 16:24:11 +0700",
+      "author": "3obby",
+      "message": "Fix Redis cache size limit error and optimize dashboard queries",
+      "category": "bugfix"
+    },
+    {
+      "hash": "13b4e53",
+      "fullHash": "13b4e53f369c7d8cfe8cedf6a3ac87e4a970c836",
+      "date": "2025-03-12 16:19:44 +0700",
+      "author": "3obby",
+      "message": "Fix React 19 compatibility issues with Radix UI and other dependencies",
+      "category": "bugfix"
+    },
+    {
+      "hash": "3fe73d7",
+      "fullHash": "3fe73d7023dcc90d5dd0f22509cae3427df99b31",
+      "date": "2025-03-12 16:14:28 +0700",
+      "author": "3obby",
+      "message": "Next.js 15 migration + Redis caching + Performance optimizations",
+      "category": "other"
+    },
+    {
+      "hash": "70b93f1",
+      "fullHash": "70b93f139de5c9ad4ec69f097da727341e254b50",
+      "date": "2025-03-12 16:10:38 +0700",
+      "author": "3obby",
+      "message": "Add Redis caching and performance optimizations with materialized views",
+      "category": "feature"
+    },
+    {
+      "hash": "f26a3ca",
+      "fullHash": "f26a3ca68de508e82fac09ba27efb218a2f1c359",
+      "date": "2025-03-12 11:02:26 +0700",
+      "author": "3obby",
+      "message": "Fix: Remove Google Cloud Storage dependencies and fix auth core version",
+      "category": "bugfix"
+    },
+    {
+      "hash": "0f0a0eb",
+      "fullHash": "0f0a0eb4978c4eb5c7a5169f1926eeec27fde785",
+      "date": "2025-03-12 01:46:53 +0700",
+      "author": "3obby",
+      "message": "Middleware Fix",
+      "category": "bugfix"
+    },
+    {
+      "hash": "9967920",
+      "fullHash": "99679208bf54f3a621cf6ad7883d66fd2d78805e",
+      "date": "2025-03-12 00:22:17 +0700",
+      "author": "3obby",
+      "message": "Update chat components, file management system, and API routes",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2fa6019",
+      "fullHash": "2fa601906906af32b8c782951270642e6908f678",
+      "date": "2025-03-11 18:39:30 +0700",
+      "author": "3obby",
+      "message": "manual files breaking",
+      "category": "other"
+    },
+    {
+      "hash": "22371dd",
+      "fullHash": "22371dd21f212cffd75f72fa1ab5ea177978fbe6",
+      "date": "2025-03-11 18:33:26 +0700",
+      "author": "3obby",
+      "message": "Refactor: Modularize files component structure with custom hooks and smaller components",
+      "category": "refactor"
+    },
+    {
+      "hash": "46f3f49",
+      "fullHash": "46f3f49789632687ba6e6a13d31a6a2aab164171",
+      "date": "2025-03-11 15:08:38 +0700",
+      "author": "3obby",
+      "message": "feat: Replace metered billing with 250k token bundle product in Stripe",
+      "category": "other"
+    },
+    {
+      "hash": "97e8b49",
+      "fullHash": "97e8b4944f0d2baf1f61b3bf32a1d042ff572d52",
+      "date": "2025-03-11 13:19:44 +0700",
+      "author": "3obby",
+      "message": "Add contact email to login page",
+      "category": "feature"
+    },
+    {
+      "hash": "5411db5",
+      "fullHash": "5411db5c4c446775594791913fd274dfb45f8094",
+      "date": "2025-03-11 01:07:39 +0700",
+      "author": "3obby",
+      "message": "Improve mobile responsiveness for dashboard and companion cards",
+      "category": "enhancement"
+    },
+    {
+      "hash": "2414acc",
+      "fullHash": "2414accbac810537ec346d3012bb9d0dc60a7bb7",
+      "date": "2025-03-11 01:04:01 +0700",
+      "author": "3obby",
+      "message": "Fix ScrollingTraits component to properly use companion data",
+      "category": "bugfix"
+    },
+    {
+      "hash": "67f1dc2",
+      "fullHash": "67f1dc2db728b36ce0a158e374ddf9a3b43696f8",
+      "date": "2025-03-11 01:01:23 +0700",
+      "author": "3obby",
+      "message": "Complete navbar redesign: fixed mobile overflow, better space utilization, and simplified layout",
+      "category": "bugfix"
+    },
+    {
+      "hash": "03de308",
+      "fullHash": "03de3086f0e52445345689701a8b814edadd630f",
+      "date": "2025-03-11 00:57:57 +0700",
+      "author": "3obby",
+      "message": "Fix navbar mobile responsiveness issues: optimize top-right section alignment, adjust spacing, remove visual gaps",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f81798e",
+      "fullHash": "f81798e553c1ad5cff11c2cb07956960907f73b7",
+      "date": "2025-03-11 00:45:35 +0700",
+      "author": "3obby",
+      "message": "Major platform update: Token optimization, companion management, and schema improvements",
+      "category": "enhancement"
+    },
+    {
+      "hash": "730159a",
+      "fullHash": "730159a7a25edf5099d9750a7614696e13114695",
+      "date": "2025-03-11 00:44:03 +0700",
+      "author": "3obby",
+      "message": "Add token optimization and companion management: 1) Implement economy mode to reduce token usage by 60-80% 2) Add condensed system prompts for better efficiency 3) Create scripts to import and manage companions from JSON 4) Fix token burning and usage tracking",
+      "category": "bugfix"
+    },
+    {
+      "hash": "7b6212d",
+      "fullHash": "7b6212dc6cac4a36945fb0acae91f69f28896d21",
+      "date": "2025-03-10 18:38:32 +0700",
+      "author": "3obby",
+      "message": "Add comprehensive technical overview document for AI IDE assistance",
+      "category": "feature"
+    },
+    {
+      "hash": "9428f00",
+      "fullHash": "9428f005cdf0e44e01a7100449a8b3a483c4d1d7",
+      "date": "2025-03-10 18:18:01 +0700",
+      "author": "3obby",
+      "message": "Mobile optimization: Hide GCBB text and optimize logo layout on small screens",
+      "category": "other"
+    },
+    {
+      "hash": "5f7dc21",
+      "fullHash": "5f7dc21110a7732503e6cbb98856274a10930486",
+      "date": "2025-03-10 02:19:53 +0700",
+      "author": "3obby",
+      "message": "Integrate buy tokens button into the GCBB logo component",
+      "category": "other"
+    },
+    {
+      "hash": "9f1c88e",
+      "fullHash": "9f1c88e0e4d269f0178feea54bedfd1b66fb13b7",
+      "date": "2025-03-10 02:10:54 +0700",
+      "author": "3obby",
+      "message": "Add navigation links to README and dashboard on updates page",
+      "category": "feature"
+    },
+    {
+      "hash": "3356fc5",
+      "fullHash": "3356fc52635c02a309c418591f2ba45e7491b302",
+      "date": "2025-03-10 02:06:19 +0700",
+      "author": "3obby",
+      "message": "Update terminology: replace 'fork' with 'copy' and update README",
+      "category": "enhancement"
+    },
+    {
+      "hash": "1e88a6c",
+      "fullHash": "1e88a6caf7db0f7515190034ec809f90bf21f729",
+      "date": "2025-03-10 01:59:24 +0700",
+      "author": "3obby",
+      "message": "Implement companion publishing and forking system",
+      "category": "other"
+    },
+    {
+      "hash": "348a45c",
+      "fullHash": "348a45c2ce4f772e0e43c82dcc89511d5f25fa21",
+      "date": "2025-03-10 01:47:52 +0700",
+      "author": "3obby",
+      "message": "Fix companion configuration routing and add error handling",
+      "category": "bugfix"
+    },
+    {
+      "hash": "6906c4f",
+      "fullHash": "6906c4fbede61a1a22ba5cd686aaf7a4c9db77dc",
+      "date": "2025-03-10 01:42:02 +0700",
+      "author": "3obby",
+      "message": "Fix hydration errors and add missing radio-group component",
+      "category": "bugfix"
+    },
+    {
+      "hash": "f2ce619",
+      "fullHash": "f2ce619d0f0790349bf36d5a7acf556f354c9e7e",
+      "date": "2025-03-10 01:38:52 +0700",
+      "author": "3obby",
+      "message": "Add configuration notice to new companion page",
+      "category": "feature"
+    },
+    {
+      "hash": "6014600",
+      "fullHash": "601460074c6a74757d3d24daace9f0a98d276cd6",
+      "date": "2025-03-10 01:32:54 +0700",
+      "author": "3obby",
+      "message": "Add configuration button to companion cards",
+      "category": "feature"
+    },
+    {
+      "hash": "6e94c5f",
+      "fullHash": "6e94c5ff36e4524d11eec466fcb2088df5059c18",
+      "date": "2025-03-10 01:07:37 +0700",
+      "author": "3obby",
+      "message": "UI improvements: Make GCBB text white in navbar and enhance token cost visibility on vote page",
+      "category": "enhancement"
+    },
+    {
+      "hash": "32d2839",
+      "fullHash": "32d2839a2f0541f09da1971442816178e98faf14",
+      "date": "2025-03-10 00:56:23 +0700",
+      "author": "3obby",
+      "message": "Improve mobile design for dashboard: larger text, icons, and better spacing",
+      "category": "enhancement"
+    },
+    {
+      "hash": "9ae6766",
+      "fullHash": "9ae6766b5100f5619dac2e579a5ffeb65c440bde",
+      "date": "2025-03-10 00:51:05 +0700",
+      "author": "3obby",
+      "message": "Update IntegratedLogo styling and email template layout",
+      "category": "enhancement"
+    },
+    {
+      "hash": "356ad3d",
+      "fullHash": "356ad3d6bf39dc2e9afdf04806eb4b43b8d84924",
+      "date": "2025-03-10 00:44:13 +0700",
+      "author": "3obby",
+      "message": "Refine logo styling: orange GCBB text, dimmer background, add white border to feather",
+      "category": "feature"
+    },
+    {
+      "hash": "5508cb7",
+      "fullHash": "5508cb7916df42c7bf1bafa00c70d36b51a2f834",
+      "date": "2025-03-10 00:41:45 +0700",
+      "author": "3obby",
+      "message": "Enhance logo with sparkle effect and brand styling",
+      "category": "enhancement"
+    },
+    {
+      "hash": "db80d9f",
+      "fullHash": "db80d9ff4cb96f75877cda3b90b014ccb3f7e349",
+      "date": "2025-03-10 00:35:01 +0700",
+      "author": "3obby",
+      "message": "Swap navbar elements: Move logo to right side and user controls to left side",
+      "category": "other"
+    },
+    {
+      "hash": "cfb5d7a",
+      "fullHash": "cfb5d7a78e4cabcf51b796892a380bfa95fccf16",
+      "date": "2025-03-10 00:31:49 +0700",
+      "author": "3obby",
+      "message": "Improve top bar: Integrate token balance with GCBB logo in branded orange header",
+      "category": "enhancement"
+    },
+    {
+      "hash": "356c8f4",
+      "fullHash": "356c8f494f7047c7328297a7128adb6102aab0ff",
+      "date": "2025-03-10 00:23:27 +0700",
+      "author": "3obby",
+      "message": "Fix mobile layout issues: Constrain width of categories and companion cards to prevent horizontal overflow",
+      "category": "bugfix"
+    },
+    {
+      "hash": "cc02a75",
+      "fullHash": "cc02a75daf2cb53280edd197dfd7024c0b69cc3c",
+      "date": "2025-03-10 00:16:14 +0700",
+      "author": "3obby",
+      "message": "Improve mobile UI for dashboard: Fix navbar height, make companion cards responsive, enhance search and categories for mobile",
+      "category": "bugfix"
+    },
+    {
+      "hash": "97d98ef",
+      "fullHash": "97d98ef5dcc3bb6ce14f1bc8b2df07f4cabbc392",
+      "date": "2025-03-09 23:54:41 +0700",
+      "author": "3obby",
+      "message": "Add proper favicon support for browser tabs with dynamic icon components",
+      "category": "feature"
+    },
+    {
+      "hash": "c28776d",
+      "fullHash": "c28776dd0644d4e57f5e56cdb2d3bf74ed568451",
+      "date": "2025-03-09 23:41:39 +0700",
+      "author": "3obby",
+      "message": "Replace Postmark with Resend for faster email delivery; Add clean email templates with GCBB branding; Add script to credit all users with 1M tokens",
+      "category": "feature"
+    },
+    {
+      "hash": "00c34c7",
+      "fullHash": "00c34c75b3f8f7ed5abfa63180305265a58c7059",
+      "date": "2025-03-09 22:15:52 +0700",
+      "author": "3obby",
+      "message": "Fix group chat creation to properly import complete chat history",
+      "category": "bugfix"
+    },
+    {
+      "hash": "6552bf5",
+      "fullHash": "6552bf53191288b337669b882883854aaf80c24e",
+      "date": "2025-03-09 21:40:07 +0700",
+      "author": "3obby",
+      "message": "Improve UX: Import chat history when creating group chats and style chat config button",
+      "category": "enhancement"
+    },
+    {
+      "hash": "e3daa93",
+      "fullHash": "e3daa93ef9c8ffc32cb7bbaaea703ad939230388",
+      "date": "2025-03-09 21:15:23 +0700",
+      "author": "3obby",
+      "message": "Fix duplicate Configure Chat button issue",
+      "category": "bugfix"
+    },
+    {
+      "hash": "51ddd21",
+      "fullHash": "51ddd21d2ee08e4f06a461ad9c4dc9671405b0db",
+      "date": "2025-03-09 21:09:39 +0700",
+      "author": "3obby",
+      "message": "Fix duplicate UI elements and linter errors in chat functionality",
+      "category": "bugfix"
+    },
+    {
+      "hash": "21bd86c",
+      "fullHash": "21bd86ca9dbd26954cf715c5744dbcdc3a38d02a",
+      "date": "2025-03-09 21:04:12 +0700",
+      "author": "3obby",
+      "message": "Restore original chat API route to fix compilation errors",
+      "category": "bugfix"
+    },
+    {
+      "hash": "496cd49",
+      "fullHash": "496cd49748534656fb14a860e258b4664f8491f8",
+      "date": "2025-03-09 20:57:46 +0700",
+      "author": "3obby",
+      "message": "Fix chat configuration UI and JSON parsing in chat client",
+      "category": "bugfix"
+    },
+    {
+      "hash": "904cd6e",
+      "fullHash": "904cd6e211a749dbdecefe402100877fe4129b9f",
+      "date": "2025-03-09 20:43:06 +0700",
+      "author": "3obby",
+      "message": "Add Structured Group Chat Configuration system with AI-assisted setup and templates",
+      "category": "feature"
+    },
+    {
+      "hash": "a22b7ed",
+      "fullHash": "a22b7ed11687ad54b61311c56b9dcbf95ca44689",
+      "date": "2025-03-09 19:18:37 +0700",
+      "author": "3obby",
+      "message": "Update README with file management details and structured group chat configuration roadmap",
+      "category": "enhancement"
+    },
+    {
+      "hash": "7a75a4f",
+      "fullHash": "7a75a4f0ae7893256a1993291bb333286ecb7cbe",
+      "date": "2025-03-09 18:52:11 +0700",
+      "author": "3obby",
+      "message": "Move Files page to (root)/(routes), add left sidebar/navbar, implement 5GB storage limit",
+      "category": "feature"
+    },
+    {
+      "hash": "e40fb45",
+      "fullHash": "e40fb45329554d0e16396445ac2ff4be3dce37ef",
+      "date": "2025-03-09 17:16:16 +0700",
+      "author": "3obby",
+      "message": "Improve file management system for development environment",
+      "category": "enhancement"
+    },
+    {
+      "hash": "f5b6dc8",
+      "fullHash": "f5b6dc86010d665480358631f9483f1f4f8bb92d",
+      "date": "2025-03-09 17:07:23 +0700",
+      "author": "3obby",
+      "message": "Add file management system with Google Cloud Storage integration",
+      "category": "feature"
+    },
+    {
+      "hash": "b146653",
+      "fullHash": "b14665345cdb7d82f9730ba45cef460a133bb76a",
+      "date": "2025-03-09 15:34:45 +0700",
+      "author": "3obby",
+      "message": "Update domain references to groupchatbotbuilder.com and fix README page component",
+      "category": "bugfix"
+    },
+    {
+      "hash": "d9c7ff4",
+      "fullHash": "d9c7ff4764c36a4cdca150f6c345bde59c15c975",
+      "date": "2025-03-09 15:28:20 +0700",
+      "author": "3obby",
+      "message": "Add /readme route, sitemap.xml and robots.txt for improved SEO",
+      "category": "feature"
+    },
+    {
+      "hash": "90be3ce",
+      "fullHash": "90be3ce7ee939079e701207b153ab7e7967f9711",
+      "date": "2025-03-09 15:09:26 +0700",
+      "author": "3obby",
+      "message": "Improve token system: add 20% subscriber discount, consolidate subscription and token purchasing, revise UI with tabs",
+      "category": "feature"
+    },
+    {
+      "hash": "3f25c64",
+      "fullHash": "3f25c64104290a6bd8e02ecb163b4b7d9c903053",
+      "date": "2025-03-09 14:56:01 +0700",
+      "author": "3obby",
+      "message": "Implement token shop with proactive token purchasing system",
+      "category": "other"
+    },
+    {
+      "hash": "026cedd",
+      "fullHash": "026ceddf8970f056a7f3aa892b5a56558e0a57d7",
+      "date": "2025-03-09 14:36:29 +0700",
+      "author": "3obby",
+      "message": "Make bot cards more compact with smaller images to reduce pixelation",
+      "category": "other"
+    },
+    {
+      "hash": "a2f69f9",
+      "fullHash": "a2f69f9356e343dd927c9141d273302e7fb34978",
+      "date": "2025-03-09 14:17:29 +0700",
+      "author": "3obby",
+      "message": "Add technical descriptions and user token burn indicators to bot cards",
+      "category": "feature"
+    },
+    {
+      "hash": "ac2f560",
+      "fullHash": "ac2f56044e7e7166562cf87cce038d3a2098a8f9",
+      "date": "2025-03-09 13:57:24 +0700",
+      "author": "3obby",
+      "message": "UI improvements: switch to robot avatars, show tokens on smaller screens, add loading states for bot cards",
+      "category": "feature"
+    },
+    {
+      "hash": "23bc073",
+      "fullHash": "23bc0739f967b7655fb933d8a8c86337241e0743",
+      "date": "2025-03-09 13:47:19 +0700",
+      "author": "3obby",
+      "message": "Implement requested improvements: reset tokens, diversify avatars, add pagination, add vanilla GPT presets",
+      "category": "feature"
+    },
+    {
+      "hash": "c92c4d7",
+      "fullHash": "c92c4d79f3e74bff484b3c3f9a9c038ef4f4cdda",
+      "date": "2025-03-09 13:33:19 +0700",
+      "author": "3obby",
+      "message": "Import companions and restore database",
+      "category": "other"
+    },
+    {
+      "hash": "6350e59",
+      "fullHash": "6350e59ef50eb3399fdc127bf16e719a37f54605",
+      "date": "2025-03-09 13:19:58 +0700",
+      "author": "3obby",
+      "message": "Implement 1:1 token burning system with global and user-specific tracking",
+      "category": "other"
+    },
+    {
+      "hash": "094bfdd",
+      "fullHash": "094bfdd447be26110c76866934a1dcaf2ef028b7",
+      "date": "2025-03-09 13:00:14 +0700",
+      "author": "3obby",
+      "message": "Change XP to 'tokens burned' terminology and add fire emoji icon",
+      "category": "feature"
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+# GCBB AI Companion Platform - Technical Overview
+
+## Core Architecture
+- Next.js with App Router and TypeScript
+- PostgreSQL database with Prisma ORM (v6.4.1)
+- OpenAI integration (GPT models via API)
+- Authentication via NextAuth (v4.24.11)
+- Token-based economy with subscription tiers
+- File storage via Vercel Blob
+- Tailwind CSS with dark mode theming
+- Server Components optimization
+- Vercel deployment with Neon PostgreSQL database
+- Redis caching for API responses
+- Materialized views for dashboard performance
+- Server-side streaming for real-time AI responses
+
+## Key Components
+
+### Primary Data Models
+- User: Authentication, preferences, token balance, storage tracking
+- Companion: AI persona with configurable traits including personality/knowledge/interaction configs
+- Chat: Conversation threads between users and companions
+- Message: Individual exchanges with metadata and token counts
+- CategoryRelation: For organizing companions
+- UserSubscription: Subscription status and management (weekly $4.99)
+- File/FileGroup: File storage and organization system 
+- GroupChat/GroupChatMember: Multi-participant conversation system
+
+### Token Economy System
+- Token balance tracking per user
+- Anonymous users receive 1,000 free tokens for trial usage
+- Magic link login users (/login) receive 10,000 free tokens upon authentication
+- Subscription-based allocation: Users subscribing at $4.99/week receive 200,000 tokens weekly
+- Additional token purchases: Active subscribers can buy 250,000 tokens for $4.99 each
+- Usage analytics and transaction tracking
+- Companion publishing costs: 100,000 tokens
+
+### API Architecture
+- `/api/chat/[chatId]`: Message exchange endpoint
+- `/api/companions`: List and filter companions
+- `/api/companion/[companionId]`: CRUD operations for companions
+- `/api/user-progress`: Token usage statistics
+- `/api/stripe`: Payment processing
+- `/api/files`: File management endpoints
+- `/api/group-chat`: Group chat configuration
+
+## App Router Structure
+- Main dashboard: `/dashboard` (app/(root)/(routes)/dashboard/page.tsx)
+- Chat interfaces: `/c/[companionId]` (app/(chat)/(routes)/c/[companionId]/page.tsx)
+- Auth routes: `/sign-in`, `/sign-up` (app/(auth)/*)
+- Token shop: `/token-shop` (app/token-shop/*)
+- Account management: `/account` (app/account/*)
+- Subscribe page: `/subscribe` (app/subscribe/*)
+
+## Group Chat Framework
+
+### Core Group Chat Capabilities
+- Multiple participants (human and AI companions)
+- Custom instruction injection
+- Message routing and visibility controls
+- Context management
+- Tool access configuration per participant
+
+### Message Processing Pipeline
+- Pre-processing hooks for message transformation
+- Custom validation rules
+- Post-processing for special formatting
+- Message type handling (action, dialogue, meta-command)
+
+### Role-Based Access System
+- Participant type definitions
+- Permission sets for different roles
+- Dynamic role assignment
+- State-dependent capability adjustments
+
+### File Integration
+- 5GB storage limit per user account
+- Support for documents, images, and other file types
+- File organization with groups/collections
+- Secure file access via signed URLs
+
+### Tool Integration Framework
+- Plugin architecture for custom tools
+- Scoped API access by participant
+- Context-aware tool visibility
+- Web search integration
+- Code execution capabilities
+
+### State Management
+- Shared state objects for participants
+- Private state scoping
+- Conditional state transitions
+- Session persistence options
+
+## Specialized Experience Extensions
+- Structured group chat configurations
+- Game engine capabilities
+- Collaborative workspace tools
+- Role-playing frameworks
+
+## Performance Optimizations
+
+### Database Optimizations
+- Strategic indexes on foreign keys and frequently queried columns
+- Partial indexes for common query patterns (public companions, system companions)
+- Composite indexes for multi-column conditions
+- Materialized views for dashboard data with refresh functions
+  - mv_dashboard_companions: Caches companion data to speed up dashboard loading
+  - Scheduled refresh via /api/cron/refresh-views endpoint
+  - Fix scripts for schema updates: scripts/fix-mv-dashboard-companions.sql
+- Query monitoring and slow query analysis
+- Connection pooling for high-traffic scenarios
+- Compound indexes for chat message retrieval optimizations
+- Query timeouts to prevent slow queries from blocking responses
+- Smarter column detection for materialized views
+- Fallback query paths when optimal tables aren't available
+
+### Caching Architecture
+- Redis caching for public API responses
+- Custom BigInt serialization for Redis compatibility
+- Tiered cache strategy:
+  - Anonymous users: 5-minute cache
+  - Authenticated users: 30-second cache
+  - Critical content: No cache
+- Cache invalidation on relevant data changes
+- Enhanced anonymous user caching with longer TTL
+- Chunk-based caching for large responses
+- Error handling for cache retrieval failures
+- Graceful fallbacks when cache is unavailable
+- Dynamic cache TTL based on user type and data volume
+- Query parameter versioning to bypass caching when needed
+
+### Response Speed Optimizations
+- Server-side streaming for immediate partial responses
+- Background processing for token tracking and analytics
+- Simplified decision process for anonymous users
+- Fast-path implementation for group chat first responses
+- Response generation parallelization for multi-bot conversations
+- Promise race patterns with timeouts to prevent hanging requests
+- Data limiting for anonymous users to reduce response size
+- Description truncation for performance
+- Partial failure handling with Promise.allSettled
+- Response status code normalization (return 200 with error data vs 500)
+
+### Frontend Performance
+- Optimized image loading with priority images
+- Progressive image loading with blur placeholders
+- Response compression with gzip/brotli
+- Static asset caching with optimal Cache-Control headers
+- Conditional component rendering based on user type
+- Explicit CSS loading in layout components for Next.js 15
+- Dynamic versioning of CSS resources to prevent caching issues
+- Metadata optimization for all pages including error pages
+- Exponential backoff for retrying failed requests
+- Enhanced error handling in data fetching hooks
+
+### Multi-Region Deployment
+- Configuration for multiple Vercel regions (Singapore, France)
+- Edge caching for static assets
+- Region-specific databases for reduced latency
+- CDN optimization for image delivery
+
+### Anonymous User Experience
+- Public dashboard access without authentication
+- Viewing public companions without login
+- Anonymous chat sessions via server actions and cookie-based user tracking
+- Seamless upgrade path to authenticated session
+- Progressive feature revelation based on authentication status
+- Optimized response time with simplified models and caching
+- Server action pattern for cookie management in Next.js 15
+- Automatic token allocation for anonymous users (1,000 tokens)
+
+## Development Approach
+- Server Components for efficient rendering
+- Progressive enhancement for feature detection
+- React Context for state management
+- Custom hooks for specialized behaviors
+- Prisma migrations with shadow database for safe schema changes
+- Scheduled database maintenance for materialized view refresh
+- Comprehensive error handling with graceful degradation
+- Server actions for stateful operations in a serverless environment 

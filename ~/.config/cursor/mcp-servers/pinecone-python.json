@@ -1,0 +1,10 @@
+{
+  "command": "/opt/homebrew/bin/python3",
+  "args": [
+    "-m", "mcp_pinecone",
+    "--index-name", "agentconsult",
+    "--api-key", "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+  ],
+  "name": "Pinecone Vector DB (Python)",
+  "description": "Direct Python access to the agentconsult Pinecone index"
+} 

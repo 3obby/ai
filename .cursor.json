@@ -1,0 +1,32 @@
+{
+  "projectName": "Life OS",
+  "defaultBranch": "main",
+  "preferredLanguage": "typescript",
+  "preferredFramework": "nextjs",
+  "codeStyle": {
+    "indentation": 2,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "semi": true
+  },
+  "mcpServers": {
+    "pinecone-memory": {
+      "command": "npx",
+      "args": ["-y", "@pinecone-database/pinecone-mcp-server"],
+      "env": {
+        "PINECONE_API_KEY": "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+      }
+    }
+  },
+  "ai.externalMemory": true,
+  "snippets": {
+    "newComponent": "import React from 'react';\n\ninterface ${1:ComponentName}Props {\n  ${2:prop}: ${3:type};\n}\n\nexport default function ${1:ComponentName}({ ${2:prop} }: ${1:ComponentName}Props) {\n  return (\n    <div className=\"${4:className}\">\n      ${5:content}\n    </div>\n  );\n}\n",
+    "newServerComponent": "import { Suspense } from 'react';\n\ninterface ${1:ComponentName}Props {\n  ${2:prop}: ${3:type};\n}\n\nexport default async function ${1:ComponentName}({ ${2:prop} }: ${1:ComponentName}Props) {\n  // Server-side logic here\n  \n  return (\n    <Suspense fallback={<div>Loading...</div>}>\n      <div className=\"${4:className}\">\n        ${5:content}\n      </div>\n    </Suspense>\n  );\n}\n",
+    "newApiRoute": "import { NextRequest, NextResponse } from 'next/server';\n\nexport async function ${1|GET,POST,PUT,DELETE|}(request: NextRequest) {\n  try {\n    // Your API logic here\n    \n    return NextResponse.json({ ${2:success: true} });\n  } catch (error) {\n    console.error(error);\n    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });\n  }\n}\n"
+  },
+  "prompts": {
+    "createCompanion": "Create a new AI companion component with the following characteristics:\n- Name: ${name}\n- Description: ${description}\n- Capabilities: ${capabilities}\n- Default system message: ${systemMessage}",
+    "createProjectStructure": "Create a new project with the following structure:\n- Project name: ${name}\n- Description: ${description}\n- Default companions: ${companions}",
+    "createDataImport": "Create a data import handler for ${source} data with the following fields: ${fields}"
+  }
+} 

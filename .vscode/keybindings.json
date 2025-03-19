@@ -1,0 +1,18 @@
+[
+  {
+    "key": "cmd+shift+r",  // Mac-friendly keyboard shortcut
+    "command": "runCommands",
+    "args": {
+      "commands": [
+        {
+          "command": "workbench.action.terminal.sendSequence",
+          "args": { "text": "node app/usergroupchatcontext/utils/generateReadme.js\n" }
+        },
+        {
+          "command": "cursor.newChat"
+        }
+      ]
+    },
+    "when": "editorTextFocus"
+  }
+] 

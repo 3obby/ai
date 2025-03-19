@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate README",
+      "type": "shell",
+      "command": "node app/usergroupchatcontext/utils/generateReadme.js",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "revealProblems": "onProblem",
+        "close": true
+      }
+    },
+    {
+      "label": "Generate README and New Chat",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Generate README"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      },
+      "runOptions": {
+        "runOn": "default"
+      }
+    }
+  ]
+} 
