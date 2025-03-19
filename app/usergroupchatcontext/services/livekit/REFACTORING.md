@@ -6,7 +6,7 @@
 - [x] Created `AudioPublishingService` for audio track publishing and management
 - [x] Created `SpeechSynthesisService` for text-to-speech functionality
 - [x] Created `ToolDetectionService` for voice tool detection
-- [x] Set up index.ts for easier imports of all services
+- [x] Set up index.ts for easier imports of services
 - [x] Added documentation explaining the new architecture
 - [x] Refactored `MultimodalAgentService` to use the specialized services
 - [x] Removed duplicate code that now exists in specialized services

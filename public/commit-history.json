@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "1554a7b",
+      "fullHash": "1554a7b31f4f4ce0e4466b4b6eb491eba507a801",
+      "date": "2025-03-19 17:57:13 +0700",
+      "author": "3obby",
+      "message": "testpush",
+      "category": "other"
+    },
+    {
       "hash": "cc4f37f",
       "fullHash": "cc4f37fb0bd5f7112f74e29aba3d72900f9b1418",
       "date": "2025-03-19 17:54:35 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Remove test file",
       "category": "other"
-    },
-    {
-      "hash": "6320edc",
-      "fullHash": "6320edc34dac78df0b9f5c247985ed5ef8ea04a0",
-      "date": "2025-03-08 20:02:55 +0700",
-      "author": "3obby",
-      "message": "Test commit to verify hook fixes",
-      "category": "bugfix"
     }
   ]
 }
