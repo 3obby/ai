@@ -1,12 +1,6 @@
 {
   "mcpServers": {
-    "pinecone-memory": {
-      "command": "npx",
-      "args": ["-y", "@pinecone-database/pinecone-mcp-server"],
-      "env": {
-        "PINECONE_API_KEY": "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
-      }
-    }
+   
   },
   "ai.externalMemory": true
 } 

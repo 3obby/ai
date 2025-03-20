@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "8d626f9",
+      "fullHash": "8d626f965439444a29e7bf3e9c21a8e76bc9de45",
+      "date": "2025-03-20 12:31:36 +0700",
+      "author": "3obby",
+      "message": "remove pinecone shit",
+      "category": "other"
+    },
+    {
       "hash": "9a33a03",
       "fullHash": "9a33a038821f994c6bf573fd0b08630adcfc4699",
       "date": "2025-03-20 12:28:14 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Change XP to 'tokens burned' terminology and add fire emoji icon",
       "category": "feature"
-    },
-    {
-      "hash": "9e513f8",
-      "fullHash": "9e513f8a6e172aa64ec1412d452ca5e1856fae1c",
-      "date": "2025-03-09 12:49:15 +0700",
-      "author": "3obby",
-      "message": "Change XP terminology to 'tokens burned' across the codebase",
-      "category": "other"
     }
   ]
 }
