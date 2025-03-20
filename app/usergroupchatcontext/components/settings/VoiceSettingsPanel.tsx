@@ -7,6 +7,7 @@ import { useBotRegistry } from '../../context/BotRegistryProvider';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
 import { useVoiceState } from '../../hooks/useVoiceState';
 import { VadMode, VoiceOption } from '../../types/voice';
+import { Mic, Speaker, Volume2, Shield, Wand2 } from 'lucide-react';
 
 // Voice sample options
 const VOICE_OPTIONS = [
@@ -111,6 +112,44 @@ const VoiceSettingsPanel: React.FC = () => {
   // Toggle advanced settings
   const toggleAdvancedSettings = () => {
     setShowAdvancedSettings(!showAdvancedSettings);
+  };
+  
+  // Handle echo prevention settings
+  const handleEchoPreventionChange = (value: boolean) => {
+    updateVoiceSettings({ preventEchoDetection: value });
+  };
+  
+  // Handle enhanced audio processing toggle
+  const handleEnhancedAudioProcessingChange = (value: boolean) => {
+    updateVoiceSettings({ enhancedAudioProcessing: value });
+  };
+  
+  // Handle mic muting during playback
+  const handleMicMuteDuringPlaybackChange = (value: boolean) => {
+    updateVoiceSettings({ muteMicDuringPlayback: value });
+  };
+  
+  // Handle turn detection threshold change
+  const handleTurnDetectionThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    updateVoiceSettings({ 
+      turnDetection: {
+        ...voiceSettings.turnDetection,
+        threshold: value
+      }
+    });
+  };
+  
+  // Handle silence duration change
+  const handleSilenceDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    updateVoiceSettings({ 
+      silenceDurationMs: value,
+      turnDetection: {
+        ...voiceSettings.turnDetection,
+        silenceDurationMs: value
+      }
+    });
   };
   
   return (
@@ -320,6 +359,177 @@ const VoiceSettingsPanel: React.FC = () => {
               <span>Faster</span>
             </div>
           </div>
+          
+          {/* Advanced Settings Toggle */}
+          <div className="flex items-center justify-between pt-4 mt-8 border-t border-neutral-200 dark:border-neutral-700">
+            <div>
+              <label className="text-sm font-medium">Advanced Voice Settings</label>
+              <p className="text-xs text-neutral-500">
+                Configure advanced voice parameters
+              </p>
+            </div>
+            <button
+              onClick={toggleAdvancedSettings}
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                showAdvancedSettings 
+                  ? "bg-primary" 
+                  : "bg-neutral-300 dark:bg-neutral-700"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  showAdvancedSettings ? "translate-x-6" : "translate-x-1"
+                )}
+              />
+            </button>
+          </div>
+          
+          {/* Advanced Settings */}
+          {showAdvancedSettings && (
+            <div className="space-y-4 mt-4 p-4 bg-muted/20 rounded-md">
+              <h4 className="font-medium text-sm flex items-center">
+                <Shield className="h-4 w-4 mr-2" />
+                Echo Prevention Settings
+              </h4>
+              
+              {/* Echo Prevention */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Prevent Echo Detection</label>
+                  <p className="text-xs text-neutral-500">
+                    Helps prevent the bot from hearing itself through your speaker
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleEchoPreventionChange(!voiceSettings.preventEchoDetection)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                    voiceSettings.preventEchoDetection 
+                      ? "bg-primary" 
+                      : "bg-neutral-300 dark:bg-neutral-700"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      voiceSettings.preventEchoDetection ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+              
+              {/* Enhanced Audio Processing */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Enhanced Audio Processing</label>
+                  <p className="text-xs text-neutral-500">
+                    Applies echo cancellation and noise suppression
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleEnhancedAudioProcessingChange(!voiceSettings.enhancedAudioProcessing)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                    voiceSettings.enhancedAudioProcessing 
+                      ? "bg-primary" 
+                      : "bg-neutral-300 dark:bg-neutral-700"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      voiceSettings.enhancedAudioProcessing ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+              
+              {/* Mute Mic During Playback */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Mute Mic During Bot Speech</label>
+                  <p className="text-xs text-neutral-500">
+                    Automatically mutes your microphone when the bot is speaking
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleMicMuteDuringPlaybackChange(!voiceSettings.muteMicDuringPlayback)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                    voiceSettings.muteMicDuringPlayback 
+                      ? "bg-primary" 
+                      : "bg-neutral-300 dark:bg-neutral-700"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      voiceSettings.muteMicDuringPlayback ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+              
+              <h4 className="font-medium text-sm mt-4 flex items-center">
+                <Wand2 className="h-4 w-4 mr-2" />
+                Turn Detection Tuning
+              </h4>
+              
+              {/* VAD Threshold Slider for Echo */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Turn Detection Threshold</label>
+                  <span className="text-xs text-neutral-500">
+                    {voiceSettings.turnDetection?.threshold?.toFixed(1) || '0.6'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Speaker className="h-3 w-3" />
+                  <input
+                    type="range"
+                    min={0.3}
+                    max={0.9}
+                    step={0.1}
+                    value={voiceSettings.turnDetection?.threshold || 0.6}
+                    onChange={handleTurnDetectionThresholdChange}
+                    className="flex-1 h-2 rounded-lg appearance-none cursor-pointer bg-neutral-200 dark:bg-neutral-700"
+                  />
+                  <Mic className="h-3 w-3" />
+                </div>
+                <p className="text-xs text-neutral-500">
+                  Higher values (toward Mic) make it harder for the bot to hear itself
+                </p>
+              </div>
+              
+              {/* Silence Duration Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Silence Duration (ms)</label>
+                  <span className="text-xs text-neutral-500">
+                    {voiceSettings.silenceDurationMs || '1000'}ms
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={500}
+                  max={2000}
+                  step={100}
+                  value={voiceSettings.silenceDurationMs || 1000}
+                  onChange={handleSilenceDurationChange}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-neutral-200 dark:bg-neutral-700"
+                />
+                <div className="flex justify-between text-xs text-neutral-500">
+                  <span>Less Wait</span>
+                  <span>More Wait</span>
+                </div>
+                <p className="text-xs text-neutral-500">
+                  Longer silence duration helps prevent the bot from responding to itself
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Voice Transition Settings */}
           <div className="mt-8 pt-4 border-t border-neutral-200 dark:border-neutral-700">

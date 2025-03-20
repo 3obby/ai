@@ -47,7 +47,7 @@ export class VoiceModeManager extends EventEmitter {
     keepPostprocessingHooks: false,
     preserveVoiceHistory: true,
     automaticVoiceSelection: true,
-    defaultVoice: 'alloy'
+    defaultVoice: 'coral'
   };
   private error: Error | null = null;
   private transitionStartTime: number = 0;
@@ -180,7 +180,9 @@ export class VoiceModeManager extends EventEmitter {
         // Override voice settings
         voiceSettings: {
           ...originalBot.voiceSettings,
-          voice: originalBot.voiceSettings?.voice || this.config.defaultVoice || 'alloy',
+          voice: originalBot.voiceSettings?.voice || this.config.defaultVoice || 'coral',
+          speed: 1.0, // Standardize speed for consistency
+          quality: 'standard' // Use standard quality for consistency
         }
       };
 

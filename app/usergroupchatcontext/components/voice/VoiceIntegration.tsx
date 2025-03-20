@@ -74,7 +74,8 @@ export default function VoiceIntegration() {
     
     if (bot) {
       // Play the bot response using text-to-speech
-      playBotResponse(botId, lastMessage.content);
+      // Pass message ID to prevent duplicate playback
+      playBotResponse(botId, lastMessage.content, lastMessage.id);
     }
   }, [isVoiceEnabled, state.messages, isBotSpeaking, botRegistryState.availableBots, playBotResponse]);
   

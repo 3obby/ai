@@ -1,8 +1,9 @@
 /* 
- * Blackbar Styles
+ * Blackbar & Redbar Styles
  * 
- * CSS for the bottom navigation bar (blackbar) that serves as the primary 
- * control center for user interactions in both text and voice modes.
+ * CSS for the bottom navigation bars:
+ * - blackbar: primary control for text mode
+ * - redbar: primary control for voice mode
  */
 
 /* Base blackbar styles */
@@ -21,7 +22,57 @@
   transition: all 0.3s ease-in-out;
 }
 
-/* Voice mode blackbar variation */
+/* Voice mode redbar variation */
+.redbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(220, 38, 38, 0.3);
+  background-color: rgba(254, 226, 226, 0.9);
+  padding: 1rem;
+  /* Mobile safe area bottom padding */
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  width: 100%;
+  z-index: 10;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Dark mode redbar */
+:root.dark .redbar {
+  background-color: rgba(127, 29, 29, 0.3);
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Recording button in redbar */
+.redbar .recording-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Recording button states */
+.redbar .recording-button.idle {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: rgb(185, 28, 28);
+}
+
+.redbar .recording-button.speaking {
+  background-color: rgb(239, 68, 68);
+  color: white;
+}
+
+.redbar .recording-button.bot-speaking {
+  background-color: white;
+  color: rgb(239, 68, 68);
+  animation: pulse-white 2s infinite;
+}
+
+/* Voice mode blackbar variation - legacy, keeping for compatibility */
 .blackbar.voice-mode {
   background-color: rgba(var(--primary-rgb), 0.05);
   border-top-color: var(--primary);
@@ -188,4 +239,17 @@
 /* Voice mode button ripple effect */
 .animate-ripple {
   animation: ripple 0.6s linear forwards;
+}
+
+/* Pulse animation for white button when bot is speaking */
+@keyframes pulse-white {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
 } 

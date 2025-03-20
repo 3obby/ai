@@ -36,7 +36,7 @@ interface LiveKitIntegrationContextType {
   isBotSpeaking: boolean;
   isInVoiceMode: boolean;
   currentSpeakingBotId: BotId | null;
-  playBotResponse: (botId: BotId, text: string) => Promise<void>;
+  playBotResponse: (botId: BotId, text: string, messageId?: string) => Promise<void>;
   stopBotSpeech: () => void;
   resumeAudioContext: () => Promise<boolean>;
 }
@@ -66,6 +66,9 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   const [isInVoiceMode, setIsInVoiceMode] = useState(false);
   const [currentSpeakingBotId, setCurrentSpeakingBotId] = useState<BotId | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+
+  // Add a reference to track recently played message IDs
+  const recentlyPlayedMessageIds = React.useRef<Set<string>>(new Set());
 
   // Sync connection state from LiveKit hook
   useEffect(() => {
@@ -293,7 +296,7 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
           
           // If voice is enabled, speak the response
           if (bot && state.settings.ui.enableVoice) {
-            await playBotResponse(bot.id, botResponse.content);
+            await playBotResponse(bot.id, botResponse.content, botResponse.id);
           }
         }
         
@@ -668,13 +671,30 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   };
   
   // Play bot response using text-to-speech
-  const playBotResponse = async (botId: BotId, text: string) => {
+  const playBotResponse = async (botId: BotId, text: string, messageId?: string) => {
     if (!text || !botId) {
       console.error('[DEBUG] Cannot play bot response - missing text or botId:', { botId, textLength: text?.length });
       return;
     }
 
-    console.log('[DEBUG] Starting to play bot response:', { botId, textLength: text.length });
+    // Prevent duplicate playback by tracking message IDs
+    if (messageId) {
+      // If this message was already played recently, skip it
+      if (recentlyPlayedMessageIds.current.has(messageId)) {
+        console.log('[DEBUG] Skipping duplicate playback for message:', messageId);
+        return;
+      }
+      
+      // Add this message ID to the recently played set
+      recentlyPlayedMessageIds.current.add(messageId);
+      
+      // Remove it after 5 seconds to allow future playback if needed
+      setTimeout(() => {
+        recentlyPlayedMessageIds.current.delete(messageId);
+      }, 5000);
+    }
+
+    console.log('[DEBUG] Starting to play bot response:', { botId, textLength: text.length, messageId });
     
     try {
       // Set UI state for speech

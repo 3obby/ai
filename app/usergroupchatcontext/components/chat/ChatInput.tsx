@@ -7,7 +7,8 @@ import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
-import VoiceModeBlackbar from './VoiceModeBlackbar';
+import VoiceModeRedbar from './VoiceModeRedbar';
+import voiceModeManager from '../../services/voice/VoiceModeManager';
 
 interface ChatInputProps {
   className?: string;
@@ -75,14 +76,8 @@ export function ChatInput({
 
   // Handle closing voice mode from VoiceModeBlackbar
   const handleCloseVoiceMode = () => {
-    // This will be called when the close button in VoiceModeBlackbar is clicked
-    // Use VoiceInputButton's logic to stop voice mode
-    const voiceInputButton = document.querySelector('.voice-mode-btn');
-    if (voiceInputButton && voiceInputButton instanceof HTMLElement) {
-      voiceInputButton.click();
-    } else {
-      console.error('Could not find voice input button to close voice mode');
-    }
+    // Use VoiceModeManager to handle voice-to-text transition
+    voiceModeManager.deactivateVoiceMode();
     console.log('Voice mode closed from blackbar');
   };
 
@@ -91,7 +86,7 @@ export function ChatInput({
     <>
       {isInVoiceMode ? (
         // Voice Mode Blackbar - Shows voice analytics and controls
-        <VoiceModeBlackbar onClose={handleCloseVoiceMode} />
+        <VoiceModeRedbar onClose={handleCloseVoiceMode} />
       ) : (
         // Text Mode Blackbar - Shows text input and controls
         <form 

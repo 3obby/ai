@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "8ac8630",
+      "fullHash": "8ac86307df4adad127b2c9f9be40a5c207bbdefb",
+      "date": "2025-03-20 22:37:14 +0700",
+      "author": "3obby",
+      "message": "choir after msg 2 and thats ok",
+      "category": "other"
+    },
+    {
       "hash": "e97de4b",
       "fullHash": "e97de4b3e71ad2577533b6bc6cc12d7db0b497fb",
       "date": "2025-03-20 21:42:33 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 15:28:20 +0700",
       "author": "3obby",
       "message": "Add /readme route, sitemap.xml and robots.txt for improved SEO",
-      "category": "feature"
-    },
-    {
-      "hash": "90be3ce",
-      "fullHash": "90be3ce7ee939079e701207b153ab7e7967f9711",
-      "date": "2025-03-09 15:09:26 +0700",
-      "author": "3obby",
-      "message": "Improve token system: add 20% subscriber discount, consolidate subscription and token purchasing, revise UI with tabs",
       "category": "feature"
     }
   ]

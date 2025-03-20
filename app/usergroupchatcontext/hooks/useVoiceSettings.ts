@@ -17,7 +17,7 @@ export function useVoiceSettings() {
     vadThreshold: 0.5,
     prefixPaddingMs: 500,
     silenceDurationMs: 1000,
-    defaultVoice: 'alloy',
+    defaultVoice: 'coral',
     defaultVoiceModel: 'gpt-4o-realtime-preview',
     speed: 1.0,
     showTransitionFeedback: true,
@@ -26,7 +26,15 @@ export function useVoiceSettings() {
     preserveVoiceHistory: true,
     automaticVoiceSelection: true,
     modality: 'both',
-    quality: 'standard'
+    quality: 'standard',
+    // Echo prevention settings
+    preventEchoDetection: true,
+    enhancedAudioProcessing: true,
+    muteMicDuringPlayback: true,
+    turnDetection: {
+      threshold: 0.6,
+      silenceDurationMs: 1500
+    }
   };
   
   // Combine defaults with any settings from state
@@ -58,7 +66,15 @@ export function useVoiceSettings() {
       defaultVoice: voiceSettings.defaultVoice,
       defaultVoiceModel: voiceSettings.defaultVoiceModel,
       speed: voiceSettings.speed,
-      quality: voiceSettings.quality
+      quality: voiceSettings.quality,
+      
+      // Echo prevention settings
+      preventEchoDetection: voiceSettings.preventEchoDetection,
+      enhancedAudioProcessing: voiceSettings.enhancedAudioProcessing,
+      muteMicDuringPlayback: voiceSettings.muteMicDuringPlayback,
+      
+      // Turn detection
+      turnDetection: voiceSettings.turnDetection
     });
   }, [
     // Voice processing settings
@@ -77,7 +93,16 @@ export function useVoiceSettings() {
     voiceSettings.defaultVoice,
     voiceSettings.defaultVoiceModel,
     voiceSettings.speed,
-    voiceSettings.quality
+    voiceSettings.quality,
+    
+    // Echo prevention
+    voiceSettings.preventEchoDetection,
+    voiceSettings.enhancedAudioProcessing,
+    voiceSettings.muteMicDuringPlayback,
+    
+    // Turn detection
+    voiceSettings.turnDetection?.threshold,
+    voiceSettings.turnDetection?.silenceDurationMs
   ]);
 
   /**

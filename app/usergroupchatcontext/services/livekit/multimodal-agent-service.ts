@@ -30,6 +30,7 @@ export interface MultimodalAgentConfig {
   preventEchoDetection?: boolean;
   enhancedAudioProcessing?: boolean;
   audioSampleRate?: number;
+  muteMicDuringPlayback?: boolean;
 }
 
 // Type for transcription handlers
@@ -64,7 +65,8 @@ export class MultimodalAgentService {
     },
     preventEchoDetection: true,
     enhancedAudioProcessing: true,
-    audioSampleRate: 48000
+    audioSampleRate: 48000,
+    muteMicDuringPlayback: true
   };
 
   private isListening: boolean = false;
@@ -73,6 +75,8 @@ export class MultimodalAgentService {
   private latestOpenAIModel: string = 'gpt-4o';
   private latestRealtimeModel: string = 'gpt-4o-realtime-preview-2024-12-17';
   private _connected: boolean = false;
+  private _isSpeaking: boolean = false;
+  private _isMicMuted: boolean = false;
 
   /**
    * Initialize the multimodal agent with the given configuration
@@ -495,14 +499,61 @@ export class MultimodalAgentService {
    * Check if the bot is currently speaking
    */
   public isSpeaking(): boolean {
-    return speechSynthesisService.isSpeaking();
+    return this._isSpeaking;
   }
 
   /**
-   * Set the speaking state
+   * Set the speaking state and trigger mic muting if enabled
    */
   public setSpeaking(isSpeaking: boolean): void {
-    speechSynthesisService.setSpeaking(isSpeaking);
+    const previousState = this._isSpeaking;
+    this._isSpeaking = isSpeaking;
+    
+    // Emit event whenever speaking state changes
+    if (previousState !== isSpeaking) {
+      this.emitter.emit('speaking-state-change', { isSpeaking });
+      
+      // Handle mic muting during playback if enabled in config
+      if (this.config.preventEchoDetection && this.config.muteMicDuringPlayback) {
+        this.handleMicMutingDuringPlayback(isSpeaking);
+      }
+    }
+  }
+
+  /**
+   * Handle microphone muting during bot speech playback
+   */
+  private handleMicMutingDuringPlayback(isBotSpeaking: boolean): void {
+    if (isBotSpeaking && !this._isMicMuted) {
+      // Bot started speaking - temporarily disable microphone
+      console.log('Bot is speaking - temporarily muting microphone input');
+      this._isMicMuted = true;
+      
+      // Stop voice activity detection but keep track that we're in "listening" mode
+      if (this.isListening) {
+        voiceActivityService.stopDetection();
+      }
+    } 
+    else if (!isBotSpeaking && this._isMicMuted) {
+      // Bot stopped speaking - re-enable microphone
+      console.log('Bot stopped speaking - re-enabling microphone input');
+      this._isMicMuted = false;
+      
+      // Resume voice activity detection if we were in "listening" mode
+      if (this.isListening) {
+        // Brief delay to ensure echo has fully dissipated
+        setTimeout(async () => {
+          const audioTrack = audioPublishingService.getAudioTrack();
+          if (audioTrack) {
+            try {
+              await voiceActivityService.startDetection(audioTrack);
+            } catch (error) {
+              console.error('Failed to restart voice activity detection:', error);
+            }
+          }
+        }, 300);
+      }
+    }
   }
 
   /**
@@ -608,37 +659,52 @@ export class MultimodalAgentService {
   }
 
   /**
-   * Update the configuration
+   * Update the configuration for the multimodal agent
    */
   public updateConfig(config: Partial<MultimodalAgentConfig>): void {
+    const previousConfig = { ...this.config };
     this.config = { ...this.config, ...config };
+    
+    // Apply VAD/echo cancellation settings if they've changed
+    if (
+      config.vadOptions || 
+      config.turnDetectionOptions ||
+      config.preventEchoDetection !== previousConfig.preventEchoDetection ||
+      config.enhancedAudioProcessing !== previousConfig.enhancedAudioProcessing
+    ) {
+      // Update VAD options
+      if (config.vadOptions) {
+        voiceActivityService.updateOptions({
+          mode: config.vadOptions.mode || previousConfig.vadOptions?.mode || 'auto',
+          threshold: config.vadOptions.threshold || previousConfig.vadOptions?.threshold || 0.3,
+          silenceDurationMs: config.vadOptions.silenceDuration || previousConfig.vadOptions?.silenceDuration || 1000
+        });
+      }
+      
+      // Apply enhanced audio processing if enabled
+      if (config.enhancedAudioProcessing || 
+         (config.enhancedAudioProcessing === undefined && previousConfig.enhancedAudioProcessing)) {
+        this.applyEnhancedAudioProcessing();
+      }
+    }
+    
     console.log('Updated multimodal agent config:', this.config);
-    
-    // Update specialized services with new configuration
-    
-    // Update speech synthesis options
-    speechSynthesisService.updateOptions({
-      voice: config.voice,
-      speed: config.voiceSpeed,
-      quality: config.voiceQuality,
-      preferredVoices: config.preferredVoices
-    });
-    
-    // Update audio publishing options if audio processing settings changed
-    if (config.enhancedAudioProcessing !== undefined || config.audioSampleRate !== undefined) {
-      audioPublishingService.updateOptions({
-        enhancedAudioProcessing: config.enhancedAudioProcessing,
-        audioSampleRate: config.audioSampleRate
+  }
+
+  /**
+   * Apply enhanced audio processing settings for echo cancellation
+   */
+  private async applyEnhancedAudioProcessing(): Promise<void> {
+    try {
+      await voiceActivityService.configureAudioProcessing({
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
       });
+      console.log('Applied enhanced audio processing settings');
+    } catch (error) {
+      console.error('Failed to apply enhanced audio processing:', error);
     }
-    
-    // Update voice activity options
-    if (config.vadOptions) {
-      voiceActivityService.updateOptions(config.vadOptions);
-    }
-    
-    // Emit config change event
-    this.emitter.emit('config-changed', this.config);
   }
 
   /**

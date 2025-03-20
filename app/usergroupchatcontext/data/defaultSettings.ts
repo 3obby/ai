@@ -18,6 +18,13 @@ export const defaultGroupChatSettings: GroupChatSettings = {
     keepPostprocessingHooks: false,
     preserveVoiceHistory: true,
     automaticVoiceSelection: false,
+    preventEchoDetection: true,
+    enhancedAudioProcessing: true,
+    muteMicDuringPlayback: true,
+    turnDetection: {
+      threshold: 0.6,
+      silenceDurationMs: 1500
+    }
   },
   processing: {
     enablePreProcessing: true,

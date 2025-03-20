@@ -8,7 +8,7 @@ export type VadMode = 'auto' | 'sensitive' | 'manual';
 /**
  * Voice options available from OpenAI
  */
-export type VoiceOption = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+export type VoiceOption = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | 'coral';
 
 /**
  * Audio quality settings for voice interactions
@@ -71,6 +71,11 @@ export interface VoiceSettings {
   
   // General settings
   modality?: Modality;
+  
+  // Echo prevention
+  preventEchoDetection?: boolean;
+  enhancedAudioProcessing?: boolean;
+  muteMicDuringPlayback?: boolean;
 }
 
 /**
@@ -93,6 +98,7 @@ export interface VoiceProcessingMetadata {
   interimTranscripts?: string[];
   wakeWordDetected?: boolean;
   audioLevel?: number;
+  isInterim?: boolean;
 }
 
 /**

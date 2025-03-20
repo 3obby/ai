@@ -6,7 +6,9 @@ GroupChatContext provides a minimalist, mobile-first group chat interface where 
 
 ## Key Terminology
 
-- **Blackbar**: The bottom navigation bar that contains the text input field, voice mode button, and send button. Acts as the primary control center for all user interactions in both voice and text modes.
+- **Blackbar**: The bottom navigation bar that contains the text input field, voice mode button, and send button. Acts as the primary control center for all user interactions in text mode.
+
+- **Redbar**: When voice mode is activated, the blackbar transforms into the "redbar" with a red recording indicator. Features a prominent Cancel button that allows users to discard the current transcription or interrupt the bot when it's speaking. The recording indicator pulses white when the bot is speaking to signal that the user can interrupt.
 
 - **Voice Mode**: The interactive state activated by the "voice mode" button in the blackbar. In this mode, users converse with bots through speech rather than typing, with voice input captured and processed in real-time.
 
@@ -641,6 +643,37 @@ We've implemented several improvements to the API routes to make them more robus
    - Enhanced error display with detailed API error information in client logs
    - Updated ProcessingMetadata type to include error field for tracking issues
 
+## Voice Mode Interaction Improvements
+
+We've enhanced the voice mode interface to improve user control and feedback during voice interactions:
+
+1. **Redbar Interface**
+   - Renamed "blackbar" to "redbar" in voice mode for a distinctive visual indication
+   - Applied red theme with contrasting colors to clearly differentiate from text mode
+   - Improved visual hierarchy with dedicated recording control section
+
+2. **Recording Control Button**
+   - Added a prominent recording button with state-specific styles:
+     - Red when user is speaking (active recording)
+     - White pulsing animation when bot is speaking (interruption mode)
+     - Light red in idle state (waiting for speech)
+   - Labeled as "Cancel" to clearly indicate its function to discard current transcription
+
+3. **Transcription Management**
+   - If user presses Cancel during their speech, the current transcription is discarded
+   - System automatically restarts transcription after cancellation
+   - Bot speech can be immediately interrupted by pressing the button
+   - User's mic does not produce transcriptions while bot is speaking
+   - Transcription automatically resumes when bot finishes speaking
+
+4. **Visual Feedback System**
+   - Mic activity visualizer shows real-time audio levels
+   - Recording button provides clear state indication for the current interaction mode
+   - Status text shows "Speaking" or "Silent" to reinforce current state
+   - Smooth transitions between different interaction states with color changes
+
+These improvements create a more intuitive voice interaction experience, particularly for mobile users who need clear visual feedback and simple controls for managing voice conversations.
+
 ## Voice Mode Processing Hook Issue
 
 We identified an issue with voice mode where preprocessing, postprocessing, and retry processing hooks are being incorrectly applied to voice ghosts. The problem occurs because:
@@ -676,3 +709,76 @@ The issue was in the `prompt-processor-service.ts` file where model selection lo
 The fix removed the conditional logic that was prioritizing voiceSettings.model for voice messages and now consistently uses the bot's primary model field for all completions.
 
 This ensures that voice ghosts use appropriate models for both understanding (chat completions) and speaking (TTS), preventing API errors and the "multitude of voices" issue that occurred when multiple fallback responses were triggered due to failed API calls.
+
+## Voice Mode Duplicate Playback Fix
+
+We resolved an issue where users were hearing multiple overlapping voice responses during voice mode (the "multitude of voices" problem). The issue was caused by several components independently detecting new bot messages and calling the speech synthesis service for the same message, resulting in duplicate audio playback.
+
+The problem occurred because:
+
+1. Multiple components were monitoring new bot messages and calling `playBotResponse`:
+   - `VoiceIntegration.tsx` was calling it whenever a new bot message appeared
+   - `LiveKitIntegrationProvider.tsx` was also calling it after adding responses to the chat
+   - Other components might have been triggering playback for the same message
+
+2. There was no mechanism to prevent duplicate playback of the same message content.
+
+The solution implemented:
+
+1. Added message ID tracking in the `playBotResponse` function:
+   - Created a Set to track recently played message IDs
+   - Check if a message was already played before starting playback
+   - Automatically clean up the tracking after a reasonable timeout
+
+2. Updated components to pass the message ID parameter when calling `playBotResponse`
+
+This fix ensures that each bot response is only spoken once, preventing the annoying overlapping voices effect while maintaining the responsiveness of the voice interaction system.
+
+## Voice Mode Consistency Improvements
+
+We've implemented several improvements to the voice mode experience to enhance stability and user experience:
+
+1. **Standardized Voice Settings**
+   - Changed default voice from 'alloy' to 'coral' for all voice interactions
+   - Standardized voice speed to 1.0 for consistent pacing
+   - Set quality to 'standard' for predictable performance
+   - Updated VoiceOption type to include 'coral' as an option
+
+2. **Improved Transcription Preview**
+   - Replaced the in-blackbar transcription preview with a "ghost" message approach
+   - Interim transcriptions now appear as regular chat messages with a temporary state
+   - Final transcriptions replace the ghost message seamlessly
+   - Improved visual continuity by keeping all interactions in the main chat area
+
+3. **Fixed Voice Mode Close Button**
+   - Fixed error when clicking the close button in VoiceModeBlackbar
+   - Now directly calls voiceModeManager.deactivateVoiceMode() instead of trying to find and click the voice input button
+   - Ensures proper cleanup and voice-to-text transition
+
+These changes create a more predictable and reliable voice experience with consistent emotional tone and loudness, while maintaining all the advantages of our unified text chat architecture.
+
+## Echo Prevention in Voice Mode
+
+We've implemented several features to address the common issue of acoustic feedback (echo) in voice mode, where the bot's voice is picked up by the user's microphone, creating a feedback loop:
+
+1. **Echo Prevention Settings**
+   - Added a comprehensive set of echo prevention options in the Advanced Voice Settings panel
+   - Implemented three main strategies: enhanced audio processing, VAD tuning, and microphone muting
+   - Made all settings user-configurable with sensible defaults
+
+2. **Enhanced Audio Processing**
+   - Added WebRTC constraints for echo cancellation, noise suppression, and auto gain control
+   - Implemented in the VoiceActivityService with configureAudioProcessing method
+   - Applied automatically when enhanced audio processing is enabled
+
+3. **State-Based Microphone Management**
+   - Added automatic microphone muting during bot speech playback
+   - Integrated with MultimodalAgentService speaking state changes
+   - Automatically restores microphone after bot finishes speaking with a delay to prevent echo
+
+4. **Turn Detection Tuning**
+   - Increased default VAD threshold from 0.3 to 0.6 to reduce sensitivity to bot's voice
+   - Extended silence duration from 1000ms to 1500ms to prevent premature interruptions
+   - Added user-friendly sliders for fine-tuning these parameters based on environment
+
+These improvements significantly reduce the likelihood of echo feedback, creating a more natural conversational experience when using voice mode with speakers instead of headphones.
