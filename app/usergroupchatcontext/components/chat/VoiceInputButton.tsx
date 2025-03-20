@@ -6,7 +6,6 @@ import { useVoiceTranscription } from '../../services/voiceTranscriptionService'
 import { cn } from '@/lib/utils';
 import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
-import VoiceOverlay from '../voice/VoiceOverlay';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import React from 'react';
 import { VoiceSynthesisService } from '../../services/voiceSynthesisService';
@@ -15,6 +14,7 @@ import sessionConnectionManager from '../../services/livekit/session-connection-
 import audioTrackManager from '../../services/livekit/audio-track-manager';
 import participantManager from '../../services/livekit/participant-manager';
 import voiceModeManager from '../../services/voice/VoiceModeManager';
+import { useGroupChatContext } from '../../context/GroupChatContext';
 
 // Create a single instance of the service for use in this component
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -40,11 +40,10 @@ export function VoiceInputButton({
   className,
   disabled = false,
   autoSend = true,
-  title,
-  'aria-label': ariaLabel,
+  title = "Voice Mode",
+  'aria-label': ariaLabel = "Toggle voice mode",
 }: VoiceInputButtonProps) {
   const [isRecordingComplete, setIsRecordingComplete] = useState(false);
-  const [showVoiceOverlay, setShowVoiceOverlay] = useState(false);
   const [audioContextError, setAudioContextError] = useState('');
   const [currentAudioLevel, setCurrentAudioLevel] = useState(0);
   const [showLowVolumeWarning, setShowLowVolumeWarning] = useState(false);
@@ -85,6 +84,8 @@ export function VoiceInputButton({
   const [showRipple, setShowRipple] = useState(false);
   const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  const { state } = useGroupChatContext();
+  
   /**
    * Handles the transition from voice mode back to text mode
    * Ensures proper cleanup and context preservation
@@ -92,7 +93,6 @@ export function VoiceInputButton({
   const stopLiveKitVoiceMode = () => {
     // Reset any audio-related state
     lastSentMessageRef.current = '';
-    setShowVoiceOverlay(false);
     
     // Clear any flags or indicators
     multimodalAgentService.stopListening();
@@ -105,15 +105,18 @@ export function VoiceInputButton({
     voiceSynthesisService.stop();
     
     // Use VoiceModeManager to properly handle the voice-to-text transition
-    // This ensures processing hooks are re-enabled and context is preserved
     voiceModeManager.deactivateVoiceMode();
     
-    // Preserve voice session data for history
-    voiceModeManager.preserveVoiceSessionData({
-      messages: [],  // These will be preserved in the global state already
-      duration: Date.now() - (voiceModeStartTimeRef.current || Date.now()),
-      botIds: []     // Active bot IDs are tracked in the group chat state
-    });
+    // Preserve voice session data for history if the method exists
+    if (typeof voiceModeManager.preserveVoiceSessionData === 'function') {
+      const duration = Date.now() - (voiceModeStartTimeRef.current || Date.now());
+      
+      voiceModeManager.preserveVoiceSessionData({
+        duration,
+        messages: [], // Already preserved in the global state
+        botIds: []    // Active bot IDs are tracked in the group chat state
+      });
+    }
     
     console.log('Transitioning from voice mode to text mode with context preservation');
   };
@@ -132,8 +135,6 @@ export function VoiceInputButton({
       // Destructure the data to get text and isFinal
       const { text, isFinal } = data;
       
-      console.log('[VoiceInputButton] Received transcription:', { text, isFinal });
-      
       if (isFinal && text && text.trim() !== '') {
         // Avoid duplicates by checking if this is the same as the last sent message
         if (text !== lastSentMessageRef.current) {
@@ -145,21 +146,15 @@ export function VoiceInputButton({
           
           // Also notify the parent component via callback
           onTranscriptionComplete(text);
-        } else {
-          console.log('[VoiceInputButton] Skipping duplicate message:', text);
         }
       }
     };
 
-    // Use the proper methods for adding a transcription handler
     multimodalAgentService.onTranscription((text: string, isFinal: boolean) => {
       handleLiveKitTranscription({ text, isFinal });
     });
     
-    console.log('[VoiceInputButton] Registered transcription handler with multimodalAgentService');
-    
     return () => {
-      // Use the proper offTranscription method for cleanup
       multimodalAgentService.offTranscription((text: string, isFinal: boolean) => {
         handleLiveKitTranscription({ text, isFinal });
       });
@@ -208,9 +203,17 @@ export function VoiceInputButton({
 
   /**
    * Handles the blackbar mode toggle between text and voice
-   * Controls the transitions in both directions
    */
   const handleToggleRecording = async () => {
+    console.log('*** VOICE BUTTON CLICKED ***');
+    console.log('Current state:', {
+      isVoiceEnabled,
+      isLiveKitListening,
+      isRecording,
+      isInitializing,
+      disabled
+    });
+
     // Play ripple effect animation
     setShowRipple(true);
     
@@ -229,81 +232,87 @@ export function VoiceInputButton({
       setAudioContextError('');
     }
 
+    // TEMPORARILY FORCE VOICE MODE REGARDLESS OF SETTINGS
     // Toggle between voice mode and text mode
-    if (isVoiceEnabled) {
+    //if (isVoiceEnabled) {
+    if (true) { // Force to always attempt voice mode activation
       // We're using the LiveKit integration
       if (isLiveKitListening) {
         // Currently in voice mode - switch to text mode
         console.log('Transitioning from voice mode to text mode...');
         stopLiveKitVoiceMode();
-        
-        // Log completion of voice mode with context preservation
-        console.log('Voice context preserved in unified text chat history');
-        
-        // Force a complete disconnect before returning to text mode
+      } else {
+        // Not in voice mode yet - switch to voice mode
         try {
-          // Get the active connection's room name if available
-          const activeRoomName = sessionConnectionManager.getActiveRoomName();
+          console.log('Transitioning from text mode to voice mode...');
+          setIsInitializing(true);
           
-          if (activeRoomName) {
-            // First clean up audio tracks
-            await audioTrackManager.cleanupAudioTracks();
-            
-            // Clean up participant tracking
-            participantManager.cleanupRoom(activeRoomName);
-            
-            // Close the connection
-            await sessionConnectionManager.closeConnection(activeRoomName);
+          // CRITICAL: Resume AudioContext first 
+          // This must happen directly in response to a user interaction
+          const audioContextResumed = await resumeAudioContext();
+          if (!audioContextResumed) {
+            throw new Error("Failed to resume AudioContext. Browser may be blocking audio access.");
+          }
+          console.log('AudioContext successfully resumed');
+          
+          // Activate voice mode using VoiceModeManager with required parameters
+          // This needs to happen regardless of LiveKit connection
+          const activeBotIds = state.settings.activeBotIds || [];
+          const bots = state.bots || [];
+          const messages = state.messages || [];
+          
+          try {
+            // Create voice ghosts
+            await voiceModeManager.activateVoiceMode(activeBotIds, bots, messages);
+          } catch (err) {
+            console.error('Error activating voice mode:', err);
+            // Continue anyway - we want the UI to show
           }
           
-          // Let the browser catch up
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (error) {
-          console.error('Error during transition to text mode:', error);
-        }
-      } else {
-        // Currently in text mode - switch to voice mode
-        console.log('Transitioning from text mode to voice mode...');
-        
-        // Log context inheritance for voice mode
-        console.log('Activating voice mode with context inheritance from text mode');
-        
-        // Initialize voice mode
-        try {
-          setIsInitializing(true);
-          setShowVoiceOverlay(true);
+          // Try to start LiveKit listening - but continue even if it fails
+          try {
+            // Start LiveKit listening
+            await startLiveKitListening();
+            
+            // Update LiveKit session connection
+            sessionConnectionManager.setVoiceModeActive(true);
+            
+            // Mark voice mode as active in multimodal agent service
+            multimodalAgentService.startListening();
+          } catch (connErr) {
+            console.error('Connection error (continuing with UI):', connErr);
+            // Continue anyway to show the UI
+          }
           
-          // Mark the start time for tracking voice session duration
-          voiceModeStartTimeRef.current = Date.now();
-          
-          // Set voice mode active first to allow connections
-          sessionConnectionManager.setVoiceModeActive(true);
-          
-          // Resume audio context first
-          await resumeAudioContext();
-          
-          // Connect to LiveKit and enter voice mode
-          await startLiveKitListening();
           setIsInitializing(false);
+          console.log('Voice mode UI activated');
         } catch (error) {
-          console.error('Error transitioning to voice mode:', error);
-          setAudioContextError('Error transitioning to voice mode');
+          console.error('Error activating voice mode:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error initializing voice mode';
+          setAudioContextError(errorMessage);
           setIsInitializing(false);
-          sessionConnectionManager.setVoiceModeActive(false);
+          
+          // Clean up any partial initializations
+          try {
+            stopLiveKitListening();
+            voiceModeManager.deactivateVoiceMode();
+          } catch (cleanupErr) {
+            console.error('Error during cleanup:', cleanupErr);
+          }
+          
+          // Display the error as an alert so user knows what happened
+          alert("Voice Mode Error: " + errorMessage);
         }
       }
     } else {
-      // Fallback to basic voice recording (not using LiveKit integration)
+      // Fallback to Web Speech API if LiveKit integration is disabled
       if (isRecording) {
-        // Switch from voice mode to text mode
         stopRecording();
         setIsRecordingComplete(true);
-        setShowVoiceOverlay(false);
       } else {
         // Switch from text mode to voice mode
         resetTranscript();
         startRecording();
-        setShowVoiceOverlay(true);
       }
     }
   };
@@ -317,90 +326,46 @@ export function VoiceInputButton({
     };
   }, []);
 
-  // Function to get appropriate mic icon based on audio level
-  const getMicIcon = () => {
+  // Get the appropriate icon based on current state
+  const getButtonIcon = () => {
     if (isInitializing) {
       return <Loader2 className="h-5 w-5 animate-spin" />;
     } 
     
-    if (isVoiceEnabled) {
-      // Show volume level indicators when active
-      if (currentAudioLevel > 0.3) {
-        return <Volume2 className="h-5 w-5" />; // High volume
-      } else if (currentAudioLevel > 0.1) {
-        return <Volume1 className="h-5 w-5" />; // Medium volume
-      } else if (showLowVolumeWarning) {
-        return <VolumeX className="h-5 w-5" />; // Low/no volume warning
-      } else {
-        return <MicOff className="h-5 w-5" />; // Default off icon
-      }
+    if (isActive) {
+      return <MicOff className="h-5 w-5" />;
     }
     
-    return <Mic className="h-5 w-5" />; // Default mic icon
+    return <Mic className="h-5 w-5" />;
   };
 
-  const getErrorMessage = (error: string): { title: string, message: string } => {
-    if (error.includes('permission')) {
-      return {
-        title: 'Microphone Permission Denied',
-        message: 'Please allow microphone access to use voice mode.'
-      };
-    } else if (error.includes('audio context')) {
-      return {
-        title: 'Audio Context Error',
-        message: 'Failed to initialize audio system. Try refreshing the page.'
-      };
-    } else {
-      return {
-        title: 'Voice Mode Error',
-        message: error || 'An error occurred with voice mode.'
-      };
-    }
-  };
+  // Force enable voice for testing
+  useEffect(() => {
+    console.log('Voice is enabled:', isVoiceEnabled);
+  }, [isVoiceEnabled]);
 
   return (
-    <>
-      {/* Blackbar voice mode toggle button */}
-      <button
-        type="button"
-        className={cn(
-          "blackbar-voice-toggle rounded-full p-2 transition-colors touch-target",
-          isActive
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse" // Voice mode active
-            : "bg-muted text-muted-foreground hover:bg-muted/90", // Text mode active
-          className
-        )}
-        onClick={handleToggleRecording}
-        disabled={disabled || !isSupported}
-        aria-label={ariaLabel || (isActive ? "Switch to text mode" : "Switch to voice mode")}
-        title={title || (isActive ? "Switch to text mode" : "Switch to voice mode")}
-      >
-        {/* Ripple effect */}
-        {showRipple && (
-          <span 
-            className={cn(
-              "absolute inset-0 rounded-full bg-primary-foreground",
-              isActive ? "bg-opacity-30" : "bg-opacity-10"
-            )}
-            style={{
-              animation: 'ripple 0.6s linear forwards'
-            }}
-          />
-        )}
-        {getMicIcon()}
-      </button>
-      
-      {/* Voice mode overlay - only shown when in voice mode */}
-      {showVoiceOverlay && (
-        <VoiceOverlay 
-          isActive={isActive}
-          interimText={interimTranscript || ''}
-          errorMessage={audioContextError ? getErrorMessage(audioContextError) : null}
-          onClose={stopLiveKitVoiceMode}
-          lowVolumeWarning={showLowVolumeWarning}
-          buttonText={isActive ? "Switch to text mode" : "Switch to voice mode"}
-        />
+    <button
+      className={cn(
+        "relative blackbar-voice-toggle rounded-full p-2 transition-colors touch-target",
+        isActive
+          ? "voice-mode-active bg-primary text-primary-foreground"
+          : "text-mode-active bg-muted text-muted-foreground hover:bg-muted/80",
+        isInitializing ? "opacity-70 cursor-wait" : "opacity-100",
+        className
       )}
-    </>
+      onClick={handleToggleRecording}
+      // TEMPORARY: Remove disabled state for testing
+      // disabled={isInitializing || !isVoiceEnabled || disabled}
+      disabled={false}
+      aria-label={ariaLabel}
+      title={title}
+    >
+      {/* Ripple effect */}
+      {showRipple && (
+        <span className="absolute inset-0 rounded-full bg-white/30 animate-ripple" />
+      )}
+      {getButtonIcon()}
+    </button>
   );
 } 

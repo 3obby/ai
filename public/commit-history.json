@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "297aa77",
+      "fullHash": "297aa775342a2a7d8fc5fd703345e9f5bb8de39e",
+      "date": "2025-03-20 19:53:52 +0700",
+      "author": "3obby",
+      "message": "kinda trash",
+      "category": "other"
+    },
+    {
       "hash": "3d34a3c",
       "fullHash": "3d34a3c50581a80918784197a9488716c21eed2f",
       "date": "2025-03-20 19:03:31 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Make bot cards more compact with smaller images to reduce pixelation",
       "category": "other"
-    },
-    {
-      "hash": "a2f69f9",
-      "fullHash": "a2f69f9356e343dd927c9141d273302e7fb34978",
-      "date": "2025-03-09 14:17:29 +0700",
-      "author": "3obby",
-      "message": "Add technical descriptions and user token burn indicators to bot cards",
-      "category": "feature"
     }
   ]
 }

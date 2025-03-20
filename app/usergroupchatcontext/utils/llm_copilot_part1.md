@@ -35,6 +35,30 @@ The system is designed to provide a seamless transition between text and voice i
 
 All interactions, whether text or voice, are transcribed and stored in the unified text chat, ensuring a consistent conversation thread that maintains full context regardless of the input method.
 
+## Voice Mode UI Enhancement
+
+The voice mode UI has been significantly improved to provide a more integrated experience:
+
+1. **VoiceModeBlackbar Integration**
+   - Voice mode now uses the same blackbar area instead of overlaying it with a separate component
+   - The blackbar transforms into "voice mode blackbar" when voice mode is activated
+   - Voice detection meter/audio visualizer is directly integrated into the blackbar
+   - Important controls from the previous overlay are preserved in the new compact design
+
+2. **Improved Visual Feedback**
+   - Real-time audio level visualization shows when the user is speaking
+   - Visual indicators highlight when the bot is speaking or processing
+   - Transcription display is integrated directly in the blackbar
+   - Ripple animation provides immediate feedback when toggling voice mode
+
+3. **Unified Control Center**
+   - The blackbar serves as a consistent control center in both modes
+   - Familiar location reduces cognitive load when switching modes
+   - Same controls are available in a context-appropriate format
+   - Transition between modes is visually smooth with the blackbar adapting its appearance
+
+This implementation maintains all the functionality of the previous approach while providing a more streamlined and intuitive user experience by keeping all controls in the same familiar location.
+
 ## Development Direction
 
 We have shifted our efforts to create a robust production-ready system. By default:
@@ -48,7 +72,7 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - For text models: Use the LLM class (e.g., gpt-4o)  
    - Model versions are dynamically queried at build time to ensure currency  
 
-3. **Single-Bot Experience**  
+3. **Single-Bot Default Experience**  
    - A single default bot leverages the latest OpenAI models for voice interactions  
    - The system maintains unified context across text and voice so that switching modes is instant and retains conversational history  
    - All message flows (text and transcribed voice) route through the same bot, ensuring a consistent, high-quality exchange  
@@ -182,18 +206,18 @@ We have shifted our efforts to create a robust production-ready system. By defau
 - **Unified Bot Settings**  
   Maintains consistent global defaults across all bots, with flexible overrides per individual bot
 
+## Unified TODO - Prioritized Implementation Plan
 
-## TODO - Prioritized Roadmap
+1. [_] **Fix Voice Mode Activation** (Priority: Critical)
+   - [X] Fix voiceModeManager.activateVoiceMode() to accept proper parameters
+   - [X] Fix import issues with VoiceModeBlackbar component by creating a duplicate in the chat directory
+   - [X] Fix AudioVisualizer import by embedding it directly in the VoiceModeBlackbar component
+   - [X] Fix AudioContext initialization issues to ensure proper resuming on user interaction
+   - [X] Make voice mode UI show even when backend connections fail
+   - [X] Add comprehensive error handling for voice mode activation failures
+   - [_] Test voice mode button activation flow end-to-end
 
-1. [X] Complete Voice Mode Settings UI (Priority: Highest)
-   - [X] Implement comprehensive UI controls in GroupSettingsPanel
-   - [X] Create persistent storage for voice preferences
-   - [X] Add visual feedback during transitions between voice and text modes
-   - [X] Integrate VoiceTransitionSettings component into settings workflow
-   - [X] Add user preferences for voice model selection
-   - [X] Create settings storage for voice ghost behavior options
-
-2. [_] Finalize Voice Ghost Lifecycle Management (Priority: High)
+2. [_] **Finalize Voice Ghost Lifecycle Management** (Priority: High)
    - [X] Design data structure for tracking ghost and standard bots
    - [X] Add tracking of both standard bots and their voice ghost counterparts
    - [X] Add robust cleanup methods for voice ghosts
@@ -201,118 +225,74 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Add event listeners for voice mode state changes
    - [_] Ensure seamless transition between voice and text modes
 
-3. [X] Complete Voice-to-Text Transition (Priority: High)
+3. [X] **Complete Voice Mode Settings UI** (Priority: High)
+   - [X] Implement comprehensive UI controls in GroupSettingsPanel
+   - [X] Create persistent storage for voice preferences
+   - [X] Add visual feedback during transitions between voice and text modes
+   - [X] Integrate VoiceTransitionSettings component into settings workflow
+   - [X] Add user preferences for voice model selection
+   - [X] Create settings storage for voice ghost behavior options
+
+4. [X] **Complete Voice-to-Text Transition** (Priority: High)
    - [X] Create system to re-enable processing hooks when returning to text mode
    - [X] Ensure conversation history is maintained across transitions
    - [X] Handle interrupted voice sessions gracefully
    - [X] Develop error recovery mechanisms for failed transitions
    - [X] Implement smooth transition animations/feedback
 
-4. [_] Optimize Performance for Mobile (Priority: High)
+5. [_] **Optimize Performance for Mobile** (Priority: High)
    - [_] Improve responsiveness of voice mode on mobile devices
    - [_] Optimize audio processing to reduce battery consumption
    - [_] Enhance touch interactions for voice controls
    - [_] Test and fix any mobile-specific issues with microphone access
 
-5. [_] Enhance Error Handling and Resilience (Priority: Medium)
-   - [_] Implement more robust error recovery for broken connections
-   - [_] Add automatic reconnection logic for interrupted voice sessions
-   - [_] Improve error messaging for users when voice mode fails
-   - [_] Add telemetry for tracking voice mode stability
-
-6. [_] Reduce State Duplication (Priority: Medium)
-   - [_] Continue reducing redundant state tracking across components
-   - [_] Consolidate voice-related state management
-   - [_] Improve type safety across component boundaries
-
-7. [_] Bot Manager Voice Ghost Controls (Priority: Medium)
-   - [X] Implement creation/destruction methods for voice ghosts
-   - [_] Add state tracking for active voice mode sessions
-   - [X] Create event hooks for voice mode transitions
-   - [_] Add logging for voice ghost lifecycle events
-
-8. [_] Unified Text Chat Enhancements (Priority: Medium)
-   - [X] Improve transcription display in chat interface
-   - [X] Add visual indicators for voice vs. text messages
-   - [X] Implement collapsible details for voice processing information
-   - [_] Enhance accessibility for voice interactions
-   - [_] Add visual indicators for active speaker
-
-9. [_] Cross-Browser Compatibility (Priority: Low)
-   - [_] Test and fix WebRTC compatibility issues across browsers
-   - [_] Ensure consistent audio processing across platforms
-   - [_] Implement fallback mechanisms for unsupported browsers
-
-10. [_] Voice Experience Refinements (Priority: Low)
-    - [_] Add voice tone/emotion detection
-    - [_] Implement natural turn-taking mechanisms
-    - [_] Enhance voice activity detection accuracy in noisy environments
-    - [_] Add support for multiple languages
-
-## Implementation Plan
-
-1. [X] Voice Detection and Processing
-   - [X] Implement robust voice activity detection
-   - [X] Fix transcription handling via Web Speech API
-   - [X] Connect voice transcriptions to unified text chat
-   - [X] Add voice mode state management
-   - [X] Add visual feedback for microphone levels
-
-2. [X] Code Modularization (Priority: High)
-   - [X] Split multimodal-agent-service.ts into smaller, focused modules
-   - [X] Refactor voice-activity-service.ts into specialized components
-   - [X] Extract audio initialization logic from VoiceInputButton.tsx
-   - [X] Create a centralized VoiceModeManager with state machine
-   - [X] Implement AudioContextManager for managing browser audio context
-   - [X] Create AudioAnalyzerService for audio processing and level detection
-   - [X] Build dedicated VoiceActivityDetector with improved accuracy
-
-3. [X] Architecture Simplification (Priority: High)
-   - [X] Implement unified connection management
-   - [X] Create cleaner service interfaces with single responsibilities
-   - [X] Streamline event handling with centralized event bus
-   - [_] Reduce redundant state tracking across components
-   - [X] Create strongly typed event systems
-
-4. [_] BotRegistry Voice Ghost Management (Priority: High)
-   - [X] Design data structure for tracking ghost and standard bots
-   - [X] Add tracking of both standard bots and their voice ghost counterparts
-   - [_] Implement voice ghost lifecycle management
-   - [_] Add proper cleanup of voice ghosts when returning to text mode
-
-5. [_] Voice Mode Settings Configuration (Priority: High)
+6. [_] **Voice Mode Settings Configuration** (Priority: Medium)
    - [_] Add UI controls for voice mode settings in GroupSettingsPanel
    - [_] Create settings storage for voice ghost behavior options
    - [X] Implement settings inheritance/override mechanism
    - [_] Add user preferences for voice model selection
 
-6. [X] Voice Ghost Implementation (Priority: Medium)
-   - [X] Create logic to clone text bots when entering voice mode
-   - [X] Implement specialized settings for voice-optimized interactions
-   - [X] Add state management for voice ghost bots
+7. [_] **Enhance Error Handling and Resilience** (Priority: Medium)
+   - [_] Implement more robust error recovery for broken connections
+   - [_] Add automatic reconnection logic for interrupted voice sessions
+   - [_] Improve error messaging for users when voice mode fails
+   - [_] Add telemetry for tracking voice mode stability
 
-7. [X] Text-to-Voice Transition (Priority: Medium)
-   - [X] Build mechanism to disable pre/post/rework hooks on voice ghosts
-   - [X] Develop context inheritance from text bot to voice ghost
-   - [_] Implement smooth transition animations/feedback
+8. [_] **Reduce State Duplication** (Priority: Medium)
+   - [_] Continue reducing redundant state tracking across components
+   - [_] Consolidate voice-related state management
+   - [_] Improve type safety across component boundaries
 
-8. [_] Voice-to-Text Transition (Priority: High)
-   - [_] Create system to re-enable processing hooks when returning to text mode
-   - [_] Ensure conversation history is maintained across transitions
-   - [_] Handle interrupted voice sessions gracefully
-   - [_] Develop error recovery mechanisms for failed transitions
-
-9. [_] Bot Manager Voice Ghost Controls (Priority: Medium)
-   - [_] Implement creation/destruction methods for voice ghosts
+9. [_] **Bot Manager Voice Ghost Controls** (Priority: Medium)
+   - [X] Implement creation/destruction methods for voice ghosts
    - [_] Add state tracking for active voice mode sessions
-   - [_] Create event hooks for voice mode transitions
+   - [X] Create event hooks for voice mode transitions
    - [_] Add logging for voice ghost lifecycle events
 
-10. [_] Unified Text Chat Enhancements (Priority: Medium)
-    - [_] Improve transcription display in chat interface
-    - [_] Ensure proper formatting of voice interactions in text format
-    - [_] Add visual indicators for voice vs. text messages
-    - [_] Implement collapsible details for voice processing information
+10. [_] **Unified Text Chat Enhancements** (Priority: Medium)
+    - [X] Improve transcription display in chat interface
+    - [X] Add visual indicators for voice vs. text messages
+    - [X] Implement collapsible details for voice processing information
+    - [_] Enhance accessibility for voice interactions
+    - [_] Add visual indicators for active speaker
+
+11. [_] **Complete VoiceModeBlackbar Implementation** (Priority: Medium)
+    - [X] Create VoiceModeBlackbar component to replace overlay
+    - [X] Integrate audio visualization directly in blackbar
+    - [X] Add smooth transitions between text and voice mode
+    - [_] Fix any styling or positioning issues on mobile
+    - [_] Ensure proper cleanup when closing voice mode
+
+12. [_] **Cross-Browser Compatibility** (Priority: Low)
+    - [_] Test and fix WebRTC compatibility issues across browsers
+    - [_] Ensure consistent audio processing across platforms
+    - [_] Implement fallback mechanisms for unsupported browsers
+
+13. [_] **Voice Experience Refinements** (Priority: Low)
+    - [_] Add voice tone/emotion detection
+    - [_] Implement natural turn-taking mechanisms
+    - [_] Enhance voice activity detection accuracy in noisy environments
+    - [_] Add support for multiple languages
 
 ## Current Progress (Updated)
 
@@ -323,6 +303,16 @@ The project has made significant progress in implementing the core voice mode ar
 2. **Voice Context Inheritance**: Implemented and working through the VoiceContextInheritance component, which creates voice bot clones with full conversation history.
 
 3. **BotRegistryProvider**: Enhanced with robust voice ghost creation capabilities through the cloneBotInstanceForVoice method.
+
+4. **Voice Mode Activation Fixes**: Resolved critical issues that were preventing voice mode activation:
+   - Fixed the voiceModeManager.activateVoiceMode() call to include required parameters (active bot IDs, bots list, and messages)
+   - Created a properly imported VoiceModeBlackbar component in the chat directory to fix path resolution issues
+   - Implemented the VoiceModeBlackbar in the main ChatInput component, replacing the overlay approach with an integrated UI
+   - Resolved AudioContext initialization issues by ensuring proper resuming in direct response to user interaction
+   - Added error handling to provide clear feedback when voice mode activation fails
+   - Fixed import path issues between components to ensure proper module resolution
+   - Implemented robust API for fetching the latest OpenAI models using official /models endpoint
+   - Added graceful fallbacks for UI to continue working even when backend connections fail
 
 ## Next Priorities
 

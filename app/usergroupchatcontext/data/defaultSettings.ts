@@ -15,7 +15,7 @@ export const defaultGroupChatSettings: GroupChatSettings = {
   ui: {
     theme: 'dark',
     messageBubbleStyle: 'modern',
-    enableVoice: false,
+    enableVoice: true,
     enableTyping: true,
     showTimestamps: true,
     showAvatars: true,

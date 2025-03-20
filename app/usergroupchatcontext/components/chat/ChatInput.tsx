@@ -6,6 +6,8 @@ import { VoiceInputButton } from './VoiceInputButton';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { cn } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
+import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
+import VoiceModeBlackbar from './VoiceModeBlackbar';
 
 interface ChatInputProps {
   className?: string;
@@ -28,6 +30,7 @@ export function ChatInput({
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, isProcessing } = useRealGroupChat();
+  const { isInVoiceMode } = useLiveKitIntegration();
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -70,66 +73,86 @@ export function ChatInput({
     }
   };
 
+  // Handle closing voice mode from VoiceModeBlackbar
+  const handleCloseVoiceMode = () => {
+    // This will be called when the close button in VoiceModeBlackbar is clicked
+    // Use VoiceInputButton's logic to stop voice mode
+    const voiceInputButton = document.querySelector('.voice-mode-btn');
+    if (voiceInputButton && voiceInputButton instanceof HTMLElement) {
+      voiceInputButton.click();
+    } else {
+      console.error('Could not find voice input button to close voice mode');
+    }
+    console.log('Voice mode closed from blackbar');
+  };
+
+  // Return the appropriate blackbar based on mode
   return (
     <>
-      <form 
-        onSubmit={handleSubmit} 
-        className={cn(
-          "blackbar flex items-end gap-2 border-t bg-background p-4 mobile-safe-bottom",
-          className
-        )}
-      >
-        {/* Text input - Primary input method in text mode */}
-        <div className="relative flex-1">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled || isProcessing}
-            className={cn(
-              "w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              "input-accessible min-h-[40px] max-h-[200px] pr-10",
-              disabled && "opacity-50 cursor-not-allowed"
-            )}
-            rows={1}
-          />
-        </div>
-        
-        <div className="blackbar-controls flex items-center gap-2">
-          {/* Voice mode toggle button - Switches between text and voice modes */}
-          <VoiceInputButton 
-            onTranscriptionComplete={handleVoiceTranscription}
-            disabled={disabled || isProcessing}
-            // Auto-send is enabled by default
-            autoSend={true}
-            aria-label="Voice Mode"
-            title="Start Voice Mode"
-            className="voice-mode-btn"
-          />
+      {isInVoiceMode ? (
+        // Voice Mode Blackbar - Shows voice analytics and controls
+        <VoiceModeBlackbar onClose={handleCloseVoiceMode} />
+      ) : (
+        // Text Mode Blackbar - Shows text input and controls
+        <form 
+          onSubmit={handleSubmit} 
+          className={cn(
+            "blackbar flex items-end gap-2 border-t bg-background p-4 mobile-safe-bottom",
+            className
+          )}
+        >
+          {/* Text input - Primary input method in text mode */}
+          <div className="relative flex-1">
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled || isProcessing}
+              className={cn(
+                "w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
+                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "input-accessible min-h-[40px] max-h-[200px] pr-10",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+              rows={1}
+            />
+          </div>
           
-          {/* Send button - Primary action in text mode */}
-          <button
-            type="submit"
-            disabled={!message.trim() || disabled || isProcessing}
-            className={cn(
-              "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
-              message.trim() && !disabled && !isProcessing
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground",
-            )}
-            aria-label="Send message"
-          >
-            {isProcessing ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </button>
-        </div>
-      </form>
+          <div className="blackbar-controls flex items-center gap-2">
+            {/* Voice mode toggle button - Switches between text and voice modes */}
+            <VoiceInputButton 
+              onTranscriptionComplete={handleVoiceTranscription}
+              disabled={disabled || isProcessing}
+              // Auto-send is enabled by default
+              autoSend={true}
+              aria-label="Voice Mode"
+              title="Start Voice Mode"
+              className="voice-mode-btn"
+            />
+            
+            {/* Send button - Primary action in text mode */}
+            <button
+              type="submit"
+              disabled={!message.trim() || disabled || isProcessing}
+              className={cn(
+                "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
+                message.trim() && !disabled && !isProcessing
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground",
+              )}
+              aria-label="Send message"
+            >
+              {isProcessing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+        </form>
+      )}
     </>
   );
 } 

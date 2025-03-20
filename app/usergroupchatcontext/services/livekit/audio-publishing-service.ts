@@ -179,26 +179,48 @@ export class AudioPublishingService {
     if (typeof window === 'undefined') return false;
     
     try {
+      console.log('Attempting to resume AudioContext...');
+      
       // Create AudioContext if it doesn't exist
       if (!this.audioContext) {
+        console.log('AudioContext does not exist, creating a new one...');
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         if (AudioContext) {
           this.audioContext = new AudioContext();
+          console.log('New AudioContext created with state:', this.audioContext.state);
         } else {
           console.warn('AudioContext not supported in this browser');
           return false;
         }
+      } else {
+        console.log('Existing AudioContext found with state:', this.audioContext.state);
       }
       
-      // Resume the AudioContext if it's in suspended state
+      // If we have a suspended context, try to resume it
       if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
-        console.log('AudioContext resumed successfully');
+        console.log('AudioContext is suspended, attempting to resume...');
+        try {
+          await this.audioContext.resume();
+          console.log('AudioContext resume() called, new state:', this.audioContext.state);
+        } catch (resumeError) {
+          console.error('Error resuming existing AudioContext:', resumeError);
+          
+          // If resume fails, try creating a new context
+          console.log('Attempting to create a new AudioContext after resume failure...');
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          if (AudioContext) {
+            this.audioContext = new AudioContext();
+            console.log('New replacement AudioContext created with state:', this.audioContext.state);
+          }
+        }
       }
       
-      return this.audioContext.state === 'running';
+      // Check final state
+      const finalState = this.audioContext.state;
+      console.log('Final AudioContext state:', finalState);
+      return finalState === 'running';
     } catch (error) {
-      console.error('Error resuming AudioContext:', error);
+      console.error('Error managing AudioContext:', error);
       return false;
     }
   }

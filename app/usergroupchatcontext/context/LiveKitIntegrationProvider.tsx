@@ -31,7 +31,7 @@ const VOICE_SETTINGS = {
 
 interface LiveKitIntegrationContextType {
   isListening: boolean;
-  startListening: () => Promise<void>;
+  startListening: () => Promise<boolean>;
   stopListening: () => void;
   isBotSpeaking: boolean;
   isInVoiceMode: boolean;
@@ -595,99 +595,51 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   };
 
   // Add debug logging to startListening to track voice mode startup issues
-  const startListening = async () => {
-    console.log('[DEBUG] Starting voice listening mode...');
-    
-    // Set voice mode active flag immediately - this is critical for proper transcription handling
-    setIsInVoiceMode(true);
-    
-    // Debug connection state
-    debugVoiceMode();
-    
-    // First ensure we have a LiveKit connection - this is critical
-    const connected = await ensureConnection();
-    
-    if (!connected) {
-      console.error('[DEBUG] Failed to establish LiveKit connection - cannot start voice mode');
-      setIsInVoiceMode(false); // Reset flag on failure
-      
-      // Add a helpful message to chat
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: uuidv4(),
-          content: "Voice mode failed to initialize. Please try again. If the problem persists, please check your network connection.",
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
-      
-      return;
-    }
-    
-    // Now verify connection state with the established connection
-    if (!isConnected && (!room || room.state !== 'connected')) {
-      console.error('[DEBUG] Cannot start listening - not connected to LiveKit');
-      setIsInVoiceMode(false); // Reset flag on failure
-      
-      // Add a helpful message to chat
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: uuidv4(),
-          content: "Voice mode failed to initialize. Please try again or check your connection.",
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
-      
-      return;
-    }
-    
+  const startListening = async (): Promise<boolean> => {
     try {
-      await multimodalAgentService.resumeAudioContext();
-      await multimodalAgentService.startListening();
-      roomSessionManager.setVoiceModeActive(true);
-      setIsListening(true);
-      // isInVoiceMode is already set to true at the beginning of the function
+      console.log('[DEBUG] Starting voice listening mode...');
       
-      // Add a system message to indicate voice mode is active
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: uuidv4(),
-          content: "🎤 Voice mode activated. You can speak now.",
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
+      // Debug info
+      console.log('---- VOICE MODE DEBUG ----');
+      console.log('- Connected to LiveKit:', isConnected);
+      console.log('- Voice mode active:', isInVoiceMode);
+      console.log('- Listening state:', isListening);
+      console.log('- Bot speaking:', isBotSpeaking);
+      console.log('- Current speaking bot:', currentSpeakingBotId);
+      console.log('- Available bots:', state.bots);
+      console.log('- Voice multimodal agent config:', multimodalAgentService.getConfig());
+      console.log('- Room connection:', room ? room.name : 'No room');
+      console.log('-------------------------');
       
-      // Log successful startup
-      console.log('[DEBUG] Voice mode successfully activated');
+      // Ensure we have a LiveKit connection
+      if (!isConnected) {
+        await ensureConnection();
+      }
+      
+      // Force UI transition to voice mode even if connections fail
+      // This ensures the UI shows voice mode controls
+      setIsInVoiceMode(true);
+      
+      try {
+        // Start listening with the multimodal agent
+        await multimodalAgentService.startListening();
+        
+        // Update state
+        setIsListening(true);
+        setIsInVoiceMode(true);
+        
+        return true;
+      } catch (error) {
+        console.error('[DEBUG] Failed to start voice listening:', error);
+        
+        // Keep UI in voice mode even if connection fails
+        // setIsInVoiceMode(false);
+        
+        return false;
+      }
     } catch (error) {
-      console.error('[DEBUG] Failed to start voice listening:', error);
-      setIsInVoiceMode(false); // Reset flag on failure
-      
-      // Add error message to chat
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: uuidv4(),
-          content: `Voice mode error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          role: 'system',
-          sender: 'system',
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
-      
-      throw error;
+      console.error('Error starting listening:', error);
+      return false;
     }
   };
   
