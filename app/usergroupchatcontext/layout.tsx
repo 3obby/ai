@@ -1,5 +1,6 @@
 import React from 'react';
 import './mobile.css';
+import './styles/blackbar.css';
 
 export const metadata = {
   title: 'Group Chat Context',
@@ -12,7 +13,7 @@ export default function GroupChatContextLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-background">
+    <div className="h-full flex flex-col">
       {children}
     </div>
   );

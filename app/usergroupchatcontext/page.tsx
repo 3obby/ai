@@ -15,9 +15,6 @@ import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
 import VoiceCommandController from './components/voice/VoiceCommandController';
 import { VoiceTransitionFeedback } from './components/voice/VoiceTransitionFeedback';
-import { MobileFriendlyVoiceControl } from './components/voice/MobileFriendlyVoiceControl';
-import { AccessibleVoiceControls } from './components/voice/AccessibleVoiceControls';
-import VoiceInputButton from './components/voice/VoiceInputButton';
 import './mobile.css';
 
 // Component to initialize bots after mounting
@@ -188,7 +185,7 @@ function BotsInitializer() {
   }, [botRegistry.state.availableBots, dispatch, state.messages.length]);
   
   return (
-    <div className="fixed bottom-20 right-4 z-10 flex flex-col gap-2">
+    <div className="hidden">
       {/* Test buttons removed */}
     </div>
   );
@@ -196,7 +193,6 @@ function BotsInitializer() {
 
 export default function GroupChatContextPage() {
   const [infoOpen, setInfoOpen] = useState(false);
-  const [showAccessibilityControls, setShowAccessibilityControls] = useState(false);
   
   // Select just the default bot
   const activeBot = useMemo(() => {
@@ -226,30 +222,11 @@ export default function GroupChatContextPage() {
                   <BotsInitializer />
                   <div className="flex h-full">
                     <ChatInterface className="flex-1 h-full" />
+                    {/* Essential voice components - keep these */}
                     <VoiceIntegration />
                     <VoiceResponseManager />
                     <VoiceTransitionFeedback />
-                    {/* Fixed position for voice controls */}
-                    <div className="fixed bottom-20 right-4 z-10">
-                      {showAccessibilityControls ? (
-                        <AccessibleVoiceControls />
-                      ) : isMobile ? (
-                        <MobileFriendlyVoiceControl />
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <VoiceInputButton size="lg" showVisualizer />
-                          <button 
-                            onClick={() => setShowAccessibilityControls(true)}
-                            className="mt-2 text-xs text-primary hover:underline"
-                            aria-label="Show accessibility controls"
-                          >
-                            Accessibility Options
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Commenting out to prevent unwanted transcriptions */}
-                    {/* <VoiceCommandController commandPrefix="system" /> */}
+                    {/* Remove the floating controls - we're using the blackbar now */}
                   </div>
                 </ToolIntegrationProvider>
               </LiveKitIntegrationProvider>

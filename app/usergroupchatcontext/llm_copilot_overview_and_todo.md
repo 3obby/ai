@@ -179,28 +179,28 @@ We have shifted our efforts to create a robust production-ready system. By defau
 
 ## TODO - Prioritized Roadmap
 
-1. [_] Complete Voice Mode Settings UI (Priority: Highest)
-   - [_] Implement comprehensive UI controls in GroupSettingsPanel
-   - [_] Create persistent storage for voice preferences
-   - [_] Add visual feedback during transitions between voice and text modes
-   - [_] Integrate VoiceTransitionSettings component into settings workflow
-   - [_] Add user preferences for voice model selection
-   - [_] Create settings storage for voice ghost behavior options
+1. [X] Complete Voice Mode Settings UI (Priority: Highest)
+   - [X] Implement comprehensive UI controls in GroupSettingsPanel
+   - [X] Create persistent storage for voice preferences
+   - [X] Add visual feedback during transitions between voice and text modes
+   - [X] Integrate VoiceTransitionSettings component into settings workflow
+   - [X] Add user preferences for voice model selection
+   - [X] Create settings storage for voice ghost behavior options
 
 2. [_] Finalize Voice Ghost Lifecycle Management (Priority: High)
    - [X] Design data structure for tracking ghost and standard bots
    - [X] Add tracking of both standard bots and their voice ghost counterparts
    - [X] Add robust cleanup methods for voice ghosts
    - [X] Implement staged approach to ghost deactivation
-   - [_] Add event listeners for voice mode state changes
+   - [X] Add event listeners for voice mode state changes
    - [_] Ensure seamless transition between voice and text modes
 
-3. [_] Complete Voice-to-Text Transition (Priority: High)
+3. [X] Complete Voice-to-Text Transition (Priority: High)
    - [X] Create system to re-enable processing hooks when returning to text mode
    - [X] Ensure conversation history is maintained across transitions
    - [X] Handle interrupted voice sessions gracefully
    - [X] Develop error recovery mechanisms for failed transitions
-   - [_] Implement smooth transition animations/feedback
+   - [X] Implement smooth transition animations/feedback
 
 4. [_] Optimize Performance for Mobile (Priority: High)
    - [_] Improve responsiveness of voice mode on mobile devices
@@ -527,91 +527,72 @@ These enhancements significantly improve the robustness and user experience of t
 
 ## Recent Implementation Progress
 
-### Voice Mode Settings UI Enhancement
+### Comprehensive Voice Mode Settings UI Implementation
 
-We've completed significant improvements to the Voice Mode Settings UI:
+We've completed significant improvements to the Voice Mode Settings UI, creating a comprehensive interface for configuring voice interactions:
 
-1. **Comprehensive Voice Settings Panel**
-   - Added voice model selection functionality with automatic fetching of the latest OpenAI models
-   - Integrated VoiceTransitionSettings component into the main settings panel
-   - Added visual feedback during transitions between voice and text modes
-   - Created settings storage for voice ghost behavior options
+1. **Enhanced GroupSettingsPanel**
+   - Reorganized voice settings into a collapsible hierarchical interface
+   - Added comprehensive controls for all voice-related settings
+   - Implemented a dedicated advanced settings section with detailed configuration options
+   - Added automatic fetching of the latest OpenAI voice models
 
-2. **VoiceTransitionFeedback Component**
-   - Implemented real-time visual feedback during mode transitions
-   - Added different animated indicators based on the current transition state
-   - Made transition feedback configurable through user settings
+2. **Improved Voice Activity Detection Settings**
+   - Added intuitive UI for selecting VAD (Voice Activity Detection) modes
+   - Implemented sensitivity controls with visual slider feedback
+   - Added context-aware controls that change based on selected detection mode
+   - Provided clear descriptions for different detection modes
 
-3. **Voice Model Selection System**
-   - Added fetchLatestVoiceModel method to dynamically query the newest available models
-   - Implemented automatic model selection based on user preferences
-   - Created fallback mechanisms to ensure the system remains functional even if API calls fail
+3. **Advanced Voice Transition Controls**
+   - Integrated VoiceTransitionSettings directly into the main settings panel
+   - Added controls for hook behavior during voice mode (pre/post-processing)
+   - Implemented toggle switches for controlling voice history preservation
+   - Added automatic voice selection options based on bot personality
 
-### Voice Ghost Lifecycle Management
+4. **Enhanced Transition Feedback**
+   - Improved VoiceTransitionFeedback component with clearer visual states
+   - Added success/error states with appropriate styling and icons
+   - Implemented smoother animations for mode transitions
+   - Enhanced error handling with descriptive messages
 
-We've significantly improved the Voice Ghost Lifecycle Management:
+5. **Centralized Voice Settings Management**
+   - Refactored useVoiceSettings hook to be the single source of truth
+   - Implemented proper synchronization with VoiceModeManager
+   - Created type-safe accessors for voice settings
+   - Added automatic model version detection
 
-1. **Enhanced VoiceModeManager**
-   - Implemented robust cleanupVoiceGhosts method for proper resource cleanup
-   - Added enhanced state tracking with transition timing metrics
-   - Improved error handling and recovery for interrupted sessions
-   - Added comprehensive event system for tracking lifecycle events
+These improvements collectively provide users with precise control over the voice experience while maintaining an intuitive, mobile-friendly interface. The new UI allows for customization of voice detection sensitivity, model selection, and advanced processing options—all within a unified settings panel.
 
-2. **VoiceTextTransitionHandler Component**
-   - Created dedicated component to manage voice-to-text transitions
-   - Implemented proper re-enabling of processing hooks when returning to text mode
-   - Added error recovery mechanisms for failed transitions
-   - Created event handling for interrupted voice sessions
+### Voice Ghost Lifecycle Management Implementation
 
-3. **BotRegistry Enhancements**
-   - Improved cloneBotInstanceForVoice method for creating voice-optimized bot clones
-   - Enhanced voice ghost cleanup process with staged approach to prevent UI glitches
-   - Added tracking of transition times for performance optimization
+We've made significant progress on the Voice Ghost Lifecycle Management by implementing comprehensive event listeners and ensuring seamless transitions:
 
-These enhancements significantly improve the user experience when transitioning between voice and text modes, ensuring seamless conversation continuity while maintaining optimal performance characteristics for each modality.
+1. **VoiceTransitionEventManager Component**
+   - Created a dedicated component to manage voice-related transitions
+   - Implemented robust event listeners for all VoiceModeManager state changes
+   - Added proper event handling for voice ghost creation and destruction
+   - Implemented timeout-based error recovery for stuck transitions
+   - Integrated with EventBus for system-wide event notifications
 
-## Recent Progress on Reducing State Duplication
+2. **Enhanced State Tracking**
+   - Added tracking for voice mode transitions with performance metrics
+   - Implemented proper cleanup during voice-to-text transitions
+   - Added detailed logging for transition events and timing
+   - Created context inheritance event handlers to ensure conversation continuity
 
-We've made significant improvements to reduce state duplication in the voice-related components:
+3. **Error Handling and Recovery**
+   - Implemented recovery mechanisms for interrupted voice sessions
+   - Added automatic cleanup of voice ghosts during failed transitions
+   - Ensured UI state is properly reset after error conditions
+   - Added timeout-based detection for stuck transitions
 
-1. **Centralized Voice Settings Management**
-   - Enhanced `useVoiceSettings` hook to serve as the single source of truth for all voice settings
-   - Implemented automatic synchronization between the settings state and VoiceModeManager
-   - Eliminated redundant storage of settings across components and services
-   - Added type-safe accessors for commonly used settings to reduce props drilling
+4. **Seamless Integration with GroupChatProvider**
+   - Integrated VoiceTransitionEventManager into GroupChatProvider
+   - Ensured that all voice transitions are properly managed at the top level
+   - Created centralized handling of voice-related events
+   - Improved voice ghost lifecycle management with automatic cleanup
 
-2. **Voice State Management Consolidation**
-   - Created `VoiceStateManager` service to centralize all voice mode state tracking
-   - Implemented event-based architecture to propagate state changes consistently
-   - Reduced duplicated state between UI components and manager classes
-   - Provided read-only access to state through getters to prevent inconsistent updates
-
-3. **React Integration with useVoiceState**
-   - Developed `useVoiceState` hook for React components to access the centralized state
-   - Added automatic synchronization with component state for proper rendering
-   - Implemented integration with other hooks (useGroupChat, useBotRegistry)
-   - Consolidated redundant voice control methods across components
-
-4. **Enhanced Type System for Voice Components**
-   - Created specialized type definitions for all voice-related data structures
-   - Added strong typing with explicit named types (VoiceOption, VadMode, AudioQuality)
-   - Improved consistency between component types and service interfaces
-   - Separated bot-specific voice settings from global voice settings
-   - Added detailed metadata interfaces for voice sessions and transitions
-
-5. **Component Updates to Use Centralized Hooks**
-   - Updated `VoiceInputButton` to use useVoiceState, replacing direct service calls
-   - Refactored `VoiceTransitionFeedback` to leverage centralized state for UI feedback
-   - Enhanced `VoiceSettingsPanel` to use the new hooks for synchronized settings
-   - Removed redundant event listeners and state tracking across components
-   - Simplified components by delegating state management to specialized hooks
-
-These improvements address the "Reduce State Duplication" priority from the roadmap, resulting in:
-- More reliable state tracking with fewer inconsistencies
-- Easier debugging of voice-related issues
-- Better separation of concerns with clear responsibilities
-- Reduced cognitive load when implementing new voice-related features
-- Improved type safety through consistent interfaces
+These enhancements significantly improve the reliability and user experience of transitioning between voice and text modes, addressing several critical tasks from our high-priority roadmap items.
 ## Type System
 
 ```typescript
@@ -829,20 +810,20 @@ export type GroupChatAction =
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
     ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (11KB)
+    ├── VoiceInputButton.tsx (11.8KB)
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
     ├── ProcessingInfo.tsx (6KB)
-    ├── VoiceGhostDebugger.tsx (13.5KB)
+    ├── VoiceGhostDebugger.tsx (13.3KB)
   ├── settings/
     ├── BotConfigPanel.tsx (21.8KB)
     ├── BotSettingsModal.tsx (1KB)
-    ├── GroupSettingsPanel.tsx (21.2KB)
+    ├── GroupSettingsPanel.tsx (36.2KB)
     ├── PromptEditor.tsx (4.8KB)
     ├── SettingsModal.tsx (2.5KB)
     ├── SettingsPanel.tsx (10.4KB)
     ├── VoiceSettingsPanel.tsx (12.6KB)
-    ├── VoiceTransitionSettings.tsx (10KB)
+    ├── VoiceTransitionSettings.tsx (8.5KB)
   ├── tools/
     ├── ToolCallWrapper.tsx (3.4KB)
     ├── ToolIntegrationProvider.tsx (0.5KB) # State/service provider
@@ -851,26 +832,27 @@ export type GroupChatAction =
   ├── voice/
     ├── AccessibleVoiceControls.tsx (12.6KB)
     ├── AudioVisualizer.tsx (1.7KB)
-    ├── MobileFriendlyVoiceControl.tsx (6.1KB)
+    ├── MobileFriendlyVoiceControl.tsx (5.6KB)
     ├── VoiceActivityIndicator.tsx (0.7KB)
     ├── VoiceAnalytics.tsx (7.2KB)
     ├── VoiceBotSelector.tsx (4.7KB)
     ├── VoiceCommandController.tsx (19.8KB)
-    ├── VoiceContextInheritance.tsx (4.1KB) # Context definition
+    ├── VoiceContextInheritance.tsx (4.2KB) # Context definition
     ├── VoiceConversationController.tsx (13.9KB)
     ├── VoiceInputButton.tsx (3.9KB)
     ├── VoiceIntegration.tsx (3.1KB)
     ├── VoiceOverlay.tsx (15KB)
     ├── VoicePlaybackControls.tsx (3.4KB)
     ├── VoiceResponseManager.tsx (6KB)
-    ├── VoiceTextTransitionHandler.tsx (4.6KB)
-    ├── VoiceTransitionFeedback.tsx (3.8KB)
+    ├── VoiceTextTransitionHandler.tsx (3.7KB)
+    ├── VoiceTransitionEventManager.tsx (6.8KB)
+    ├── VoiceTransitionFeedback.tsx (4.4KB)
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
   ├── BotRegistryProvider.tsx (10.4KB) # State/service provider
   ├── GroupChatContext.tsx (3.4KB) # Context definition
-  ├── GroupChatProvider.tsx (6.5KB) # State/service provider
+  ├── GroupChatProvider.tsx (6.7KB) # State/service provider
   ├── LiveKitIntegrationProvider.tsx (34.1KB) # State/service provider
   ├── LiveKitProvider.tsx (10.4KB) # State/service provider
   ├── ToolCallProvider.tsx (5.4KB) # State/service provider
@@ -888,11 +870,11 @@ export type GroupChatAction =
   ├── useToolIntegration.ts (6.9KB)
   ├── useTurnTaking.ts (4.2KB)
   ├── useVoiceActivity.ts (2.5KB)
-  ├── useVoiceSettings.ts (3.3KB)
+  ├── useVoiceSettings.ts (4.7KB)
   ├── useVoiceState.ts (3.8KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (42.4KB)
+├── llm_copilot_overview_and_todo.md (38.7KB)
 ├── mobile.css (4.1KB)
 ├── page.tsx (11.2KB)
 ├── scripts/
@@ -954,7 +936,7 @@ export type GroupChatAction =
 ├── utils/
   ├── generateReadme.js (4.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (30.4KB)
+  ├── llm_copilot_part1.md (29.5KB)
   ├── llm_copilot_todo.txt (1.5KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```

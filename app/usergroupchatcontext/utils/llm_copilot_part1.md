@@ -6,8 +6,14 @@ GroupChatContext provides a minimalist, mobile-first group chat interface where 
 
 ## Key Terminology
 
+- **Blackbar**: The bottom navigation bar that contains the text input field, voice mode button, and send button. Acts as the primary control center for all user interactions in both voice and text modes.
+
+- **Voice Mode**: The interactive state activated by the "voice mode" button in the blackbar. In this mode, users converse with bots through speech rather than typing, with voice input captured and processed in real-time.
+
+- **Text Mode**: The default interaction mode where users communicate with bots by typing messages in the blackbar's text input field and sending them with the send button.
+
 - **Voice Ghost**: A temporary clone of a text-based bot created when transitioning to voice mode. Voice ghosts maintain conversation context but have specialized voice-optimized settings.
-- **Voice Mode**: The interactive state activated by the "voice mode" button at the bottom of the chat interface. In this mode, users converse with bots through speech rather than typing.
+
 - **Unified Text Chat**: The central conversation thread that captures all interactions, whether they originated as text input or transcribed voice.
 
 ## Text-Voice Transition System
@@ -15,14 +21,14 @@ GroupChatContext provides a minimalist, mobile-first group chat interface where 
 The system is designed to provide a seamless transition between text and voice interactions:
 
 1. **Text-to-Voice Transition**
-   - When a user activates voice mode, a "voice ghost" is created for each active bot
+   - When a user activates voice mode through the blackbar, a "voice ghost" is created for each active bot
    - Voice ghosts inherit the full conversation context from their text-based counterparts
    - Pre-processing, post-processing, and rework hooks are disabled for voice ghosts
    - The latest OpenAI realtime voice model is automatically selected and initialized with context
    - User speech is captured through WebRTC and streamed to the voice model
 
 2. **Voice-to-Text Transition**
-   - When a user deactivates voice mode, the system returns to the text-based model
+   - When a user deactivates voice mode in the blackbar, the system returns to the text-based model
    - All voice interactions (both user and bot responses) remain in the unified text chat
    - Text-based model regains access to the complete conversation history, including voice exchanges
    - Pre-processing, post-processing, and rework hooks are re-enabled for the text model
@@ -179,28 +185,28 @@ We have shifted our efforts to create a robust production-ready system. By defau
 
 ## TODO - Prioritized Roadmap
 
-1. [_] Complete Voice Mode Settings UI (Priority: Highest)
-   - [_] Implement comprehensive UI controls in GroupSettingsPanel
-   - [_] Create persistent storage for voice preferences
-   - [_] Add visual feedback during transitions between voice and text modes
-   - [_] Integrate VoiceTransitionSettings component into settings workflow
-   - [_] Add user preferences for voice model selection
-   - [_] Create settings storage for voice ghost behavior options
+1. [X] Complete Voice Mode Settings UI (Priority: Highest)
+   - [X] Implement comprehensive UI controls in GroupSettingsPanel
+   - [X] Create persistent storage for voice preferences
+   - [X] Add visual feedback during transitions between voice and text modes
+   - [X] Integrate VoiceTransitionSettings component into settings workflow
+   - [X] Add user preferences for voice model selection
+   - [X] Create settings storage for voice ghost behavior options
 
 2. [_] Finalize Voice Ghost Lifecycle Management (Priority: High)
    - [X] Design data structure for tracking ghost and standard bots
    - [X] Add tracking of both standard bots and their voice ghost counterparts
    - [X] Add robust cleanup methods for voice ghosts
    - [X] Implement staged approach to ghost deactivation
-   - [_] Add event listeners for voice mode state changes
+   - [X] Add event listeners for voice mode state changes
    - [_] Ensure seamless transition between voice and text modes
 
-3. [_] Complete Voice-to-Text Transition (Priority: High)
+3. [X] Complete Voice-to-Text Transition (Priority: High)
    - [X] Create system to re-enable processing hooks when returning to text mode
    - [X] Ensure conversation history is maintained across transitions
    - [X] Handle interrupted voice sessions gracefully
    - [X] Develop error recovery mechanisms for failed transitions
-   - [_] Implement smooth transition animations/feedback
+   - [X] Implement smooth transition animations/feedback
 
 4. [_] Optimize Performance for Mobile (Priority: High)
    - [_] Improve responsiveness of voice mode on mobile devices
@@ -527,91 +533,32 @@ These enhancements significantly improve the robustness and user experience of t
 
 ## Recent Implementation Progress
 
-### Voice Mode Settings UI Enhancement
+### Blackbar Implementation and UI Reorganization
 
-We've completed significant improvements to the Voice Mode Settings UI:
+We've implemented a new UI structure that better encapsulates our voice and text mode interactions:
 
-1. **Comprehensive Voice Settings Panel**
-   - Added voice model selection functionality with automatic fetching of the latest OpenAI models
-   - Integrated VoiceTransitionSettings component into the main settings panel
-   - Added visual feedback during transitions between voice and text modes
-   - Created settings storage for voice ghost behavior options
+1. **Blackbar Component Structure**
+   - Created a dedicated bottom navigation bar (\"blackbar\") that serves as the primary control center for user interactions
+   - Implemented mode-specific styling with visual indicators for text and voice modes
+   - Added CSS transitions for smooth visual feedback during mode changes
+   - Created a dedicated blackbar.css file for centralized styling
 
-2. **VoiceTransitionFeedback Component**
-   - Implemented real-time visual feedback during mode transitions
-   - Added different animated indicators based on the current transition state
-   - Made transition feedback configurable through user settings
+2. **Text Mode and Voice Mode**
+   - Formalized distinct operational modes in both terminology and implementation
+   - Text Mode: Default interaction mode with text input controls
+   - Voice Mode: Enhanced with visual indicators, audio level feedback, and transition animations
+   - Implemented clear mode switching with appropriate accessibility announcements
 
-3. **Voice Model Selection System**
-   - Added fetchLatestVoiceModel method to dynamically query the newest available models
-   - Implemented automatic model selection based on user preferences
-   - Created fallback mechanisms to ensure the system remains functional even if API calls fail
+3. **Control Consolidation**
+   - Removed redundant floating voice controls that were previously positioned with `fixed bottom-20 right-4 z-10`
+   - Consolidated all mode-switching controls into the blackbar for a cleaner, more intuitive interface
+   - Enhanced the VoiceInputButton with ripple effects and audio level visualization
+   - Moved accessibility features to the top-positioned AccessibilityControls component
 
-### Voice Ghost Lifecycle Management
+4. **Enhanced Accessibility**
+   - Added keyboard shortcuts with Alt+key combinations for all major functions
+   - Implemented screen reader announcements for mode changes and actions
+   - Added help panel and keyboard shortcuts information
+   - Enhanced text-to-speech toggle with proper ARIA attributes and visual indicators
 
-We've significantly improved the Voice Ghost Lifecycle Management:
-
-1. **Enhanced VoiceModeManager**
-   - Implemented robust cleanupVoiceGhosts method for proper resource cleanup
-   - Added enhanced state tracking with transition timing metrics
-   - Improved error handling and recovery for interrupted sessions
-   - Added comprehensive event system for tracking lifecycle events
-
-2. **VoiceTextTransitionHandler Component**
-   - Created dedicated component to manage voice-to-text transitions
-   - Implemented proper re-enabling of processing hooks when returning to text mode
-   - Added error recovery mechanisms for failed transitions
-   - Created event handling for interrupted voice sessions
-
-3. **BotRegistry Enhancements**
-   - Improved cloneBotInstanceForVoice method for creating voice-optimized bot clones
-   - Enhanced voice ghost cleanup process with staged approach to prevent UI glitches
-   - Added tracking of transition times for performance optimization
-
-These enhancements significantly improve the user experience when transitioning between voice and text modes, ensuring seamless conversation continuity while maintaining optimal performance characteristics for each modality.
-
-## Recent Progress on Reducing State Duplication
-
-We've made significant improvements to reduce state duplication in the voice-related components:
-
-1. **Centralized Voice Settings Management**
-   - Enhanced `useVoiceSettings` hook to serve as the single source of truth for all voice settings
-   - Implemented automatic synchronization between the settings state and VoiceModeManager
-   - Eliminated redundant storage of settings across components and services
-   - Added type-safe accessors for commonly used settings to reduce props drilling
-
-2. **Voice State Management Consolidation**
-   - Created `VoiceStateManager` service to centralize all voice mode state tracking
-   - Implemented event-based architecture to propagate state changes consistently
-   - Reduced duplicated state between UI components and manager classes
-   - Provided read-only access to state through getters to prevent inconsistent updates
-
-3. **React Integration with useVoiceState**
-   - Developed `useVoiceState` hook for React components to access the centralized state
-   - Added automatic synchronization with component state for proper rendering
-   - Implemented integration with other hooks (useGroupChat, useBotRegistry)
-   - Consolidated redundant voice control methods across components
-
-4. **Enhanced Type System for Voice Components**
-   - Created specialized type definitions for all voice-related data structures
-   - Added strong typing with explicit named types (VoiceOption, VadMode, AudioQuality)
-   - Improved consistency between component types and service interfaces
-   - Separated bot-specific voice settings from global voice settings
-   - Added detailed metadata interfaces for voice sessions and transitions
-
-5. **Component Updates to Use Centralized Hooks**
-   - Updated `VoiceInputButton` to use useVoiceState, replacing direct service calls
-   - Refactored `VoiceTransitionFeedback` to leverage centralized state for UI feedback
-   - Enhanced `VoiceSettingsPanel` to use the new hooks for synchronized settings
-   - Updated `VoiceContextInheritance` to use useVoiceState for consistent recording state
-   - Converted `VoiceTextTransitionHandler` to rely on useVoiceState for transitions
-   - Improved `MobileFriendlyVoiceControl` with centralized state management
-   - Updated `VoiceTransitionSettings` to use direct settings access through hooks
-   - Retrofitted debugging tools like `VoiceGhostDebugger` to use the centralized state
-
-These improvements address the "Reduce State Duplication" priority from the roadmap, resulting in:
-- More reliable state tracking with fewer inconsistencies
-- Easier debugging of voice-related issues
-- Better separation of concerns with clear responsibilities
-- Reduced cognitive load when implementing new voice-related features
-- Improved type safety through consistent interfaces
+This consolidation creates a cleaner interface with clear entry points for both voice and text interactions, all while maintaining accessibility and enhancing the user experience with appropriate visual feedback during mode transitions.

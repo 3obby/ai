@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "3d34a3c",
+      "fullHash": "3d34a3c50581a80918784197a9488716c21eed2f",
+      "date": "2025-03-20 19:03:31 +0700",
+      "author": "3obby",
+      "message": "good spot",
+      "category": "other"
+    },
+    {
       "hash": "a784fdb",
       "fullHash": "a784fdb2bef314c5ae41bd134ca148666e823f85",
       "date": "2025-03-20 16:53:23 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 14:17:29 +0700",
       "author": "3obby",
       "message": "Add technical descriptions and user token burn indicators to bot cards",
-      "category": "feature"
-    },
-    {
-      "hash": "ac2f560",
-      "fullHash": "ac2f56044e7e7166562cf87cce038d3a2098a8f9",
-      "date": "2025-03-09 13:57:24 +0700",
-      "author": "3obby",
-      "message": "UI improvements: switch to robot avatars, show tokens on smaller screens, add loading states for bot cards",
       "category": "feature"
     }
   ]

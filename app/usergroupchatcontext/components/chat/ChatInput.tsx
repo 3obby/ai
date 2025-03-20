@@ -13,6 +13,13 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
+/**
+ * ChatInput - The "blackbar" component
+ * 
+ * Serves as the primary control center for all user interactions in both voice and text modes.
+ * - In text mode: Contains text input, send button, and voice mode toggle
+ * - In voice mode: Changes to support voice interactions
+ */
 export function ChatInput({
   className,
   placeholder = "Type a message...",
@@ -30,6 +37,7 @@ export function ChatInput({
     }
   }, [message]);
 
+  // Handle text submission in text mode
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -51,6 +59,7 @@ export function ChatInput({
     }
   };
 
+  // Handle voice transcription from voice mode
   const handleVoiceTranscription = (transcript: string) => {
     // We'll only add to the input field if it's not auto-sending
     setMessage(prev => prev + (prev ? ' ' : '') + transcript);
@@ -66,10 +75,11 @@ export function ChatInput({
       <form 
         onSubmit={handleSubmit} 
         className={cn(
-          "flex items-end gap-2 border-t bg-background p-4 mobile-safe-bottom",
+          "blackbar flex items-end gap-2 border-t bg-background p-4 mobile-safe-bottom",
           className
         )}
       >
+        {/* Text input - Primary input method in text mode */}
         <div className="relative flex-1">
           <textarea
             ref={textareaRef}
@@ -88,7 +98,8 @@ export function ChatInput({
           />
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="blackbar-controls flex items-center gap-2">
+          {/* Voice mode toggle button - Switches between text and voice modes */}
           <VoiceInputButton 
             onTranscriptionComplete={handleVoiceTranscription}
             disabled={disabled || isProcessing}
@@ -99,11 +110,12 @@ export function ChatInput({
             className="voice-mode-btn"
           />
           
+          {/* Send button - Primary action in text mode */}
           <button
             type="submit"
             disabled={!message.trim() || disabled || isProcessing}
             className={cn(
-              "rounded-full p-2 transition-colors touch-target",
+              "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
               message.trim() && !disabled && !isProcessing
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground",

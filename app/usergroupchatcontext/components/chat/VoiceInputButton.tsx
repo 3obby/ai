@@ -28,6 +28,13 @@ interface VoiceInputButtonProps {
   'aria-label'?: string;
 }
 
+/**
+ * VoiceInputButton
+ * 
+ * A key control in the blackbar that toggles between text mode and voice mode.
+ * - In text mode: Displays a microphone icon that can be clicked to activate voice mode
+ * - In voice mode: Shows audio level indicators and can be clicked to return to text mode
+ */
 export function VoiceInputButton({
   onTranscriptionComplete,
   className,
@@ -57,9 +64,8 @@ export function VoiceInputButton({
   } = useVoiceTranscription();
 
   const { 
-    isVoiceEnabled, 
-    startListening: startVoiceListening, 
-    stopListening: stopVoiceListening
+    isVoiceEnabled,
+    voiceSettings
   } = useVoiceSettings();
   
   const { 
@@ -72,10 +78,17 @@ export function VoiceInputButton({
   
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // Boolean flag for whether any voice mode is active (either type)
+  // Boolean flag for whether we're in voice mode or text mode
   const isActive = isVoiceEnabled ? isLiveKitListening : isRecording;
 
-  // Function to stop LiveKit voice mode
+  // Add a state for the ripple effect
+  const [showRipple, setShowRipple] = useState(false);
+  const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  /**
+   * Handles the transition from voice mode back to text mode
+   * Ensures proper cleanup and context preservation
+   */
   const stopLiveKitVoiceMode = () => {
     // Reset any audio-related state
     lastSentMessageRef.current = '';
@@ -102,7 +115,7 @@ export function VoiceInputButton({
       botIds: []     // Active bot IDs are tracked in the group chat state
     });
     
-    console.log('Voice mode deactivated with proper transition to text mode');
+    console.log('Transitioning from voice mode to text mode with context preservation');
   };
 
   useEffect(() => {
@@ -115,22 +128,43 @@ export function VoiceInputButton({
 
   // Handle LiveKit transcriptions
   useEffect(() => {
-    const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
+    const handleLiveKitTranscription = (data: {text: string, isFinal: boolean}) => {
+      // Destructure the data to get text and isFinal
+      const { text, isFinal } = data;
+      
+      console.log('[VoiceInputButton] Received transcription:', { text, isFinal });
+      
       if (isFinal && text && text.trim() !== '') {
         // Avoid duplicates by checking if this is the same as the last sent message
         if (text !== lastSentMessageRef.current) {
+          console.log('[VoiceInputButton] Sending transcription to chat:', text);
           lastSentMessageRef.current = text;
+          
+          // Send directly to the chat system
+          sendMessage(text, 'voice');
+          
+          // Also notify the parent component via callback
           onTranscriptionComplete(text);
+        } else {
+          console.log('[VoiceInputButton] Skipping duplicate message:', text);
         }
       }
     };
 
-    multimodalAgentService.onTranscription(handleLiveKitTranscription);
+    // Use the proper methods for adding a transcription handler
+    multimodalAgentService.onTranscription((text: string, isFinal: boolean) => {
+      handleLiveKitTranscription({ text, isFinal });
+    });
+    
+    console.log('[VoiceInputButton] Registered transcription handler with multimodalAgentService');
     
     return () => {
-      multimodalAgentService.offTranscription(handleLiveKitTranscription);
+      // Use the proper offTranscription method for cleanup
+      multimodalAgentService.offTranscription((text: string, isFinal: boolean) => {
+        handleLiveKitTranscription({ text, isFinal });
+      });
     };
-  }, [onTranscriptionComplete]);
+  }, [onTranscriptionComplete, sendMessage]);
 
   // Set voice mode start time when activating voice mode
   useEffect(() => {
@@ -172,22 +206,41 @@ export function VoiceInputButton({
     return () => clearInterval(intervalId);
   }, [isLiveKitListening]);
 
+  /**
+   * Handles the blackbar mode toggle between text and voice
+   * Controls the transitions in both directions
+   */
   const handleToggleRecording = async () => {
+    // Play ripple effect animation
+    setShowRipple(true);
+    
+    // Clear any existing timeout
+    if (rippleTimeoutRef.current) {
+      clearTimeout(rippleTimeoutRef.current);
+    }
+    
+    // Remove the ripple after animation completes
+    rippleTimeoutRef.current = setTimeout(() => {
+      setShowRipple(false);
+    }, 600); // Animation takes 600ms
+
     // If already in an error state, clear it when user tries again
     if (audioContextError) {
       setAudioContextError('');
     }
 
-    // If we're using LiveKit integration, toggle LiveKit voice mode
+    // Toggle between voice mode and text mode
     if (isVoiceEnabled) {
+      // We're using the LiveKit integration
       if (isLiveKitListening) {
-        console.log('Stopping voice mode...');
+        // Currently in voice mode - switch to text mode
+        console.log('Transitioning from voice mode to text mode...');
         stopLiveKitVoiceMode();
         
         // Log completion of voice mode with context preservation
-        console.log('Deactivating voice mode, voice context preserved in history');
+        console.log('Voice context preserved in unified text chat history');
         
-        // Force a complete disconnect before returning
+        // Force a complete disconnect before returning to text mode
         try {
           // Get the active connection's room name if available
           const activeRoomName = sessionConnectionManager.getActiveRoomName();
@@ -206,15 +259,16 @@ export function VoiceInputButton({
           // Let the browser catch up
           await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-          console.error('Error during voice mode cleanup:', error);
+          console.error('Error during transition to text mode:', error);
         }
       } else {
-        console.log('Starting voice mode...');
+        // Currently in text mode - switch to voice mode
+        console.log('Transitioning from text mode to voice mode...');
         
         // Log context inheritance for voice mode
-        console.log('Activating voice mode with context inheritance');
+        console.log('Activating voice mode with context inheritance from text mode');
         
-        // Start voice mode
+        // Initialize voice mode
         try {
           setIsInitializing(true);
           setShowVoiceOverlay(true);
@@ -228,29 +282,40 @@ export function VoiceInputButton({
           // Resume audio context first
           await resumeAudioContext();
           
-          // Connect to LiveKit
+          // Connect to LiveKit and enter voice mode
           await startLiveKitListening();
           setIsInitializing(false);
         } catch (error) {
-          console.error('Error starting voice mode:', error);
-          setAudioContextError('Error starting voice mode');
+          console.error('Error transitioning to voice mode:', error);
+          setAudioContextError('Error transitioning to voice mode');
           setIsInitializing(false);
           sessionConnectionManager.setVoiceModeActive(false);
         }
       }
     } else {
-      // Fallback to basic voice recording
+      // Fallback to basic voice recording (not using LiveKit integration)
       if (isRecording) {
+        // Switch from voice mode to text mode
         stopRecording();
         setIsRecordingComplete(true);
         setShowVoiceOverlay(false);
       } else {
+        // Switch from text mode to voice mode
         resetTranscript();
         startRecording();
         setShowVoiceOverlay(true);
       }
     }
   };
+
+  // Cleanup effect for ripple timeout
+  useEffect(() => {
+    return () => {
+      if (rippleTimeoutRef.current) {
+        clearTimeout(rippleTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Function to get appropriate mic icon based on audio level
   const getMicIcon = () => {
@@ -295,24 +360,37 @@ export function VoiceInputButton({
 
   return (
     <>
+      {/* Blackbar voice mode toggle button */}
       <button
         type="button"
         className={cn(
-          "rounded-full p-2 transition-colors touch-target",
+          "blackbar-voice-toggle rounded-full p-2 transition-colors touch-target",
           isActive
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse"
-            : "bg-muted text-muted-foreground hover:bg-muted/90",
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse" // Voice mode active
+            : "bg-muted text-muted-foreground hover:bg-muted/90", // Text mode active
           className
         )}
         onClick={handleToggleRecording}
         disabled={disabled || !isSupported}
-        aria-label={ariaLabel || (isActive ? "Stop voice mode" : "Start voice mode")}
-        title={title || (isActive ? "End Voice Mode" : "Voice Mode")}
+        aria-label={ariaLabel || (isActive ? "Switch to text mode" : "Switch to voice mode")}
+        title={title || (isActive ? "Switch to text mode" : "Switch to voice mode")}
       >
+        {/* Ripple effect */}
+        {showRipple && (
+          <span 
+            className={cn(
+              "absolute inset-0 rounded-full bg-primary-foreground",
+              isActive ? "bg-opacity-30" : "bg-opacity-10"
+            )}
+            style={{
+              animation: 'ripple 0.6s linear forwards'
+            }}
+          />
+        )}
         {getMicIcon()}
       </button>
       
-      {/* Only show overlay when voice is active */}
+      {/* Voice mode overlay - only shown when in voice mode */}
       {showVoiceOverlay && (
         <VoiceOverlay 
           isActive={isActive}
@@ -320,7 +398,7 @@ export function VoiceInputButton({
           errorMessage={audioContextError ? getErrorMessage(audioContextError) : null}
           onClose={stopLiveKitVoiceMode}
           lowVolumeWarning={showLowVolumeWarning}
-          buttonText={isActive ? "End Voice Mode" : "Voice Mode"}
+          buttonText={isActive ? "Switch to text mode" : "Switch to voice mode"}
         />
       )}
     </>

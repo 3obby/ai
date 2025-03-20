@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGroupChat } from './useGroupChat';
-import { VoiceSettings } from '../types';
+import { VoiceSettings, VadMode, VoiceOption, AudioQuality } from '../types/voice';
 import voiceModeManager from '../services/voice/VoiceModeManager';
 
 /**
@@ -12,7 +12,7 @@ export function useVoiceSettings() {
   const { state, updateSettings } = useGroupChat();
   
   // Get our voice settings from the global state or use defaults
-  const voiceSettings = state.settings?.voiceSettings || {
+  const defaultSettings: VoiceSettings = {
     vadMode: 'auto',
     vadThreshold: 0.5,
     prefixPaddingMs: 500,
@@ -25,7 +25,14 @@ export function useVoiceSettings() {
     keepPostprocessingHooks: false,
     preserveVoiceHistory: true,
     automaticVoiceSelection: true,
-    modality: 'both'
+    modality: 'both',
+    quality: 'standard'
+  };
+  
+  // Combine defaults with any settings from state
+  const voiceSettings: VoiceSettings = {
+    ...defaultSettings,
+    ...(state.settings?.voiceSettings || {})
   };
   
   // Determine if voice is enabled from UI settings
@@ -35,18 +42,42 @@ export function useVoiceSettings() {
   useEffect(() => {
     // Only update the VoiceModeManager with settings that it needs
     voiceModeManager.updateConfig({
+      // Voice processing settings
       keepPreprocessingHooks: voiceSettings.keepPreprocessingHooks,
       keepPostprocessingHooks: voiceSettings.keepPostprocessingHooks,
       preserveVoiceHistory: voiceSettings.preserveVoiceHistory,
       automaticVoiceSelection: voiceSettings.automaticVoiceSelection,
-      defaultVoice: (voiceSettings.defaultVoice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | undefined)
+      
+      // Voice activity detection
+      vadMode: voiceSettings.vadMode,
+      vadThreshold: voiceSettings.vadThreshold,
+      prefixPaddingMs: voiceSettings.prefixPaddingMs,
+      silenceDurationMs: voiceSettings.silenceDurationMs,
+      
+      // Voice options
+      defaultVoice: voiceSettings.defaultVoice,
+      defaultVoiceModel: voiceSettings.defaultVoiceModel,
+      speed: voiceSettings.speed,
+      quality: voiceSettings.quality
     });
   }, [
+    // Voice processing settings
     voiceSettings.keepPreprocessingHooks,
     voiceSettings.keepPostprocessingHooks,
     voiceSettings.preserveVoiceHistory,
     voiceSettings.automaticVoiceSelection,
-    voiceSettings.defaultVoice
+    
+    // Voice activity detection
+    voiceSettings.vadMode,
+    voiceSettings.vadThreshold,
+    voiceSettings.prefixPaddingMs,
+    voiceSettings.silenceDurationMs,
+    
+    // Voice options
+    voiceSettings.defaultVoice,
+    voiceSettings.defaultVoiceModel,
+    voiceSettings.speed,
+    voiceSettings.quality
   ]);
 
   /**
@@ -83,7 +114,7 @@ export function useVoiceSettings() {
   const vadSettings = {
     mode: voiceSettings.vadMode,
     threshold: voiceSettings.vadThreshold || 0.5,
-    updateMode: (mode: 'auto' | 'sensitive' | 'manual') => {
+    updateMode: (mode: VadMode) => {
       updateVoiceSettings({ vadMode: mode });
     },
     updateThreshold: (threshold: number) => {
@@ -91,11 +122,28 @@ export function useVoiceSettings() {
     }
   };
   
+  /**
+   * Fetch the latest voice model from OpenAI
+   * Will be removed when we implement the API endpoint
+   */
+  const fetchLatestVoiceModel = useCallback(async () => {
+    try {
+      // This would normally fetch from an API
+      // For now we just simulate a delay and return a hardcoded value
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return 'gpt-4o-realtime-preview-2023-08-01';
+    } catch (error) {
+      console.error('Error fetching latest voice model:', error);
+      return voiceSettings.defaultVoiceModel;
+    }
+  }, [voiceSettings.defaultVoiceModel]);
+  
   return {
     voiceSettings,
     updateVoiceSettings,
     isVoiceEnabled,
     toggleVoiceEnabled,
-    vadSettings
+    vadSettings,
+    fetchLatestVoiceModel
   };
 } 

@@ -1,0 +1,168 @@
+/* 
+ * Blackbar Styles
+ * 
+ * CSS for the bottom navigation bar (blackbar) that serves as the primary 
+ * control center for user interactions in both text and voice modes.
+ */
+
+/* Base blackbar styles */
+.blackbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--background);
+  padding: 1rem;
+  /* Mobile safe area bottom padding */
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  width: 100%;
+  z-index: 10;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Blackbar container */
+.blackbar-container {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  background-color: var(--background);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Blackbar container in voice mode */
+.blackbar-container.in-voice-mode {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-top-color: var(--primary);
+  animation: subtle-glow 2s infinite alternate;
+}
+
+/* Blackbar controls container */
+.blackbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Voice mode toggle button in the blackbar */
+.blackbar-voice-toggle {
+  border-radius: 9999px;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  /* Make touch target larger for mobile */
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Voice mode toggle button hover effect */
+.blackbar-voice-toggle:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* Voice mode active state */
+.blackbar-voice-toggle.voice-mode-active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  animation: pulse 2s infinite;
+}
+
+/* Text mode active state */
+.blackbar-voice-toggle.text-mode-active {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Send button in the blackbar */
+.blackbar-send-btn {
+  border-radius: 9999px;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  /* Make touch target larger for mobile */
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Send button hover effect */
+.blackbar-send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* Blackbar in voice mode - modify appearance */
+.blackbar.voice-mode {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-top-color: var(--primary);
+  box-shadow: 0 -2px 8px rgba(var(--primary-rgb), 0.05);
+}
+
+/* Voice mode indicator */
+.voice-mode-indicator {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  border-top: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  text-align: center;
+  animation: pulse 2s infinite;
+  transition: all 0.3s ease;
+}
+
+/* Mode transition animation */
+.blackbar-container.in-voice-mode,
+.blackbar.voice-mode {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Pulse animation for voice mode active state */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Subtle glow animation for voice mode container */
+@keyframes subtle-glow {
+  from {
+    box-shadow: 0 -2px 8px rgba(var(--primary-rgb), 0.05);
+  }
+  to {
+    box-shadow: 0 -2px 10px rgba(var(--primary-rgb), 0.15);
+  }
+}
+
+/* Ripple effect animation for voice button click */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Accessibility controls at the top */
+.accessibility-controls-top {
+  z-index: 20;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .blackbar {
+    padding: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+} 

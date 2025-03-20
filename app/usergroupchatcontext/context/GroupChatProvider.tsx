@@ -4,6 +4,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo } from
 import { Bot, BotId } from '../types/bots';
 import { Message, createSystemMessage } from '../types/messages';
 import { GroupChatSettings, DEFAULT_SETTINGS } from '../types/settings';
+import VoiceTransitionEventManager from '../components/voice/VoiceTransitionEventManager';
 
 // Define the state shape
 interface GroupChatState {
@@ -235,7 +236,9 @@ export function GroupChatProvider({
 
   return (
     <GroupChatContext.Provider value={contextValue}>
-      {children}
+      <VoiceTransitionEventManager>
+        {children}
+      </VoiceTransitionEventManager>
     </GroupChatContext.Provider>
   );
 }

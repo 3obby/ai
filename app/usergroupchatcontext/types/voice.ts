@@ -66,6 +66,9 @@ export interface VoiceSettings {
   preserveVoiceHistory?: boolean;
   automaticVoiceSelection?: boolean;
   
+  // Accessibility options
+  textToSpeechEnabled?: boolean;
+  
   // General settings
   modality?: Modality;
 }
