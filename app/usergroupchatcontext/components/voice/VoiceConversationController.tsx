@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import { useGroupChatContext } from '../../context/GroupChatContext';
-import { useBotRegistry } from '../../context/BotRegistryContext';
+import { useBotRegistry } from '../../context/BotRegistryProvider';
 import VoiceInputButton from './VoiceInputButton';
 import AudioVisualizer from './AudioVisualizer';
 import { VoiceActivityIndicator } from './VoiceActivityIndicator';
@@ -330,6 +330,39 @@ export default function VoiceConversationController({ className = '' }: VoiceCon
       }
     };
   }, [isVoiceEnabled, dispatch, playBotResponse]);
+  
+  const handleActivateVoiceMode = async () => {
+    setInitializing(true);
+    
+    try {
+      // Get current active bots and messages
+      const activeBotIds = state.settings.activeBotIds;
+      const currentMessages = state.messages;
+      
+      // Find or create voice bots for each active bot
+      for (const botId of activeBotIds) {
+        // Use the improved cloneBotInstanceForVoice method with messages for context inheritance
+        const voiceBot = await botRegistry.cloneBotInstanceForVoice(botId, {
+          messages: currentMessages,
+        });
+        
+        if (voiceBot) {
+          console.log(`Voice bot activated with conversation context: ${voiceBot.id}`);
+          // Add the bot to active voice bots
+          setActiveVoiceBots(prev => [...prev, voiceBot.id]);
+        }
+      }
+      
+      // Successfully initialized
+      setVoiceModeActive(true);
+    } catch (error) {
+      console.error('Failed to activate voice mode:', error);
+      // Show error to user
+      setErrorMessage('Failed to activate voice mode. Please try again.');
+    } finally {
+      setInitializing(false);
+    }
+  };
   
   if (!isVoiceEnabled) return null;
   

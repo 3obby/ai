@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Loader2, Volume2, Volume1, VolumeX } from 'lucide-react';
 import { useVoiceTranscription } from '../../services/voiceTranscriptionService';
 import { cn } from '@/lib/utils';
@@ -10,10 +10,11 @@ import VoiceOverlay from '../voice/VoiceOverlay';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import React from 'react';
 import { VoiceSynthesisService } from '../../services/voiceSynthesisService';
-import { useLiveKit } from '../../context/LiveKitProvider';
+import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import sessionConnectionManager from '../../services/livekit/session-connection-manager';
 import audioTrackManager from '../../services/livekit/audio-track-manager';
 import participantManager from '../../services/livekit/participant-manager';
+import voiceModeManager from '../../services/voice/VoiceModeManager';
 
 // Create a single instance of the service for use in this component
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -36,121 +37,134 @@ export function VoiceInputButton({
   'aria-label': ariaLabel,
 }: VoiceInputButtonProps) {
   const [isRecordingComplete, setIsRecordingComplete] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [audioContextError, setAudioContextError] = useState<string | null>(null);
   const [showVoiceOverlay, setShowVoiceOverlay] = useState(false);
+  const [audioContextError, setAudioContextError] = useState('');
   const [currentAudioLevel, setCurrentAudioLevel] = useState(0);
   const [showLowVolumeWarning, setShowLowVolumeWarning] = useState(false);
   const lastSentMessageRef = React.useRef('');
+  const voiceModeStartTimeRef = React.useRef<number | null>(null);
   
   const { sendMessage } = useRealGroupChat();
-  
   const {
-    isVoiceEnabled,
-    isListening: isLiveKitListening,
-    startListening: startVoiceListening,
-    stopListening: stopVoiceListening
-  } = useVoiceSettings();
-  
-  const liveKit = useLiveKit(); // Get LiveKit context
-  
-  const {
-    isRecording,
     transcript,
     interimTranscript,
-    isListening,
+    isRecording,
+    isListening: isMicrophoneListening,
     startRecording,
     stopRecording,
     resetTranscript,
     isSupported,
-    error
-  } = useVoiceTranscription({
-    continuous: true,
-    interimResults: true,
-  });
+  } = useVoiceTranscription();
 
-  // Handle transcription from LiveKit
-  useEffect(() => {
-    // Skip setting up LiveKit transcription handler if not in voice mode
-    // This prevents duplicate processing of transcriptions
-    if (!isVoiceEnabled || !isLiveKitListening) return;
+  const { 
+    isVoiceEnabled, 
+    startListening: startVoiceListening, 
+    stopListening: stopVoiceListening
+  } = useVoiceSettings();
+  
+  const { 
+    isListening: isLiveKitListening, 
+    startListening: startLiveKitListening,
+    stopListening: stopLiveKitListening,
+    resumeAudioContext,
+    isInVoiceMode
+  } = useLiveKitIntegration();
+  
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  // Boolean flag for whether any voice mode is active (either type)
+  const isActive = isVoiceEnabled ? isLiveKitListening : isRecording;
+
+  // Function to stop LiveKit voice mode
+  const stopLiveKitVoiceMode = () => {
+    // Reset any audio-related state
+    lastSentMessageRef.current = '';
+    setShowVoiceOverlay(false);
     
-    const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
-      console.log('[DEBUG] Voice transcription received:', { text, isFinal, isVoiceEnabled, isLiveKitListening });
-      
-      if (isFinal && text.trim()) {
-        console.log('[DEBUG] Final transcription received in VoiceInputButton:', text.trim());
-        
-        // Store the last transcription for deduplication purposes
-        lastSentMessageRef.current = text.trim();
-        
-        // Don't send the message here - LiveKitIntegrationProvider will handle it
-        // This prevents duplicate messages
-        
-        if (!autoSend) {
-          // Only if not auto-sending, add to input field
-          onTranscriptionComplete(text.trim());
-        }
-      } else if (!isFinal && text.trim() && text !== 'Listening...' && text !== 'Processing...') {
-        // For interim results, we could update a state to show this is being transcribed
-        console.log('[DEBUG] Interim transcription:', text);
-      }
-    };
+    // Clear any flags or indicators
+    multimodalAgentService.stopListening();
+    stopLiveKitListening();
     
-    // Use the multimodalAgentService directly rather than DOM events
-    console.log('[DEBUG] Setting up LiveKit transcription handler');
-    multimodalAgentService.onTranscription(handleLiveKitTranscription);
+    // Set voice mode inactive in session connection manager to prevent reconnections
+    sessionConnectionManager.setVoiceModeActive(false);
+    
+    // Stop any active audio
+    voiceSynthesisService.stop();
+    
+    // Use VoiceModeManager to properly handle the voice-to-text transition
+    // This ensures processing hooks are re-enabled and context is preserved
+    voiceModeManager.deactivateVoiceMode();
+    
+    // Preserve voice session data for history
+    voiceModeManager.preserveVoiceSessionData({
+      messages: [],  // These will be preserved in the global state already
+      duration: Date.now() - (voiceModeStartTimeRef.current || Date.now()),
+      botIds: []     // Active bot IDs are tracked in the group chat state
+    });
+    
+    console.log('Voice mode deactivated with proper transition to text mode');
+  };
 
-    return () => {
-      console.log('[DEBUG] Cleaning up LiveKit transcription handler');
-      multimodalAgentService.offTranscription(handleLiveKitTranscription);
-    };
-  }, [onTranscriptionComplete, autoSend, isVoiceEnabled, isLiveKitListening]);
-
-  // When recording is complete and we have a transcript
   useEffect(() => {
-    if (isRecordingComplete && transcript.trim()) {
-      onTranscriptionComplete(transcript.trim());
+    if (transcript && isRecordingComplete && autoSend) {
+      onTranscriptionComplete(transcript);
       resetTranscript();
       setIsRecordingComplete(false);
     }
-  }, [isRecordingComplete, transcript, onTranscriptionComplete, resetTranscript]);
+  }, [transcript, isRecordingComplete, onTranscriptionComplete, resetTranscript, autoSend]);
 
-  // Clear audio context error after 5 seconds
+  // Handle LiveKit transcriptions
   useEffect(() => {
-    if (audioContextError) {
-      const timer = setTimeout(() => {
-        setAudioContextError(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [audioContextError]);
+    const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
+      if (isFinal && text && text.trim() !== '') {
+        // Avoid duplicates by checking if this is the same as the last sent message
+        if (text !== lastSentMessageRef.current) {
+          lastSentMessageRef.current = text;
+          onTranscriptionComplete(text);
+        }
+      }
+    };
 
-  // Monitor audio levels for low volume warning
-  useEffect(() => {
-    if (!isLiveKitListening) return;
+    multimodalAgentService.onTranscription(handleLiveKitTranscription);
     
-    // Check audio levels to show low volume warning
-    let silentTime = 0;
-    const startTime = Date.now();
+    return () => {
+      multimodalAgentService.offTranscription(handleLiveKitTranscription);
+    };
+  }, [onTranscriptionComplete]);
+
+  // Set voice mode start time when activating voice mode
+  useEffect(() => {
+    if (isLiveKitListening) {
+      voiceModeStartTimeRef.current = Date.now();
+    } else {
+      voiceModeStartTimeRef.current = null;
+    }
+  }, [isLiveKitListening]);
+
+  // Monitor audio levels to detect if microphone is working
+  useEffect(() => {
+    if (!isLiveKitListening) {
+      setCurrentAudioLevel(0);
+      setShowLowVolumeWarning(false);
+      return;
+    }
+
+    let lowVolumeCounter = 0;
+    const maxLowVolumeCounts = 30; // 3 seconds of low volume before warning
     
     const checkAudioLevel = () => {
       const level = multimodalAgentService.getCurrentAudioLevel();
       setCurrentAudioLevel(level);
       
-      // If we've been listening for 3+ seconds and levels are consistently low
-      const listeningDuration = Date.now() - startTime;
-      
-      if (listeningDuration > 3000) {
-        if (level < 0.1) {
-          silentTime += 100;
-          if (silentTime > 2000) { // Show warning after 2 seconds of silence
-            setShowLowVolumeWarning(true);
-          }
-        } else {
-          silentTime = 0;
-          setShowLowVolumeWarning(false);
+      // Only show warning after sustained low volume
+      if (level < 0.05) {
+        lowVolumeCounter++;
+        if (lowVolumeCounter >= maxLowVolumeCounts) {
+          setShowLowVolumeWarning(true);
         }
+      } else {
+        lowVolumeCounter = 0;
+        setShowLowVolumeWarning(false);
       }
     };
     
@@ -170,6 +184,9 @@ export function VoiceInputButton({
         console.log('Stopping voice mode...');
         stopLiveKitVoiceMode();
         
+        // Log completion of voice mode with context preservation
+        console.log('Deactivating voice mode, voice context preserved in history');
+        
         // Force a complete disconnect before returning
         try {
           // Get the active connection's room name if available
@@ -188,114 +205,37 @@ export function VoiceInputButton({
           
           // Let the browser catch up
           await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (stopError) {
-          console.error('Error during complete voice mode cleanup:', stopError);
-          // Continue anyway as we're stopping
+        } catch (error) {
+          console.error('Error during voice mode cleanup:', error);
         }
       } else {
-        // Start LiveKit voice mode with additional cleanup first
-        setIsInitializing(true);
+        console.log('Starting voice mode...');
         
+        // Log context inheritance for voice mode
+        console.log('Activating voice mode with context inheritance');
+        
+        // Start voice mode
         try {
-          // First ensure we have completely disconnected any previous LiveKit sessions
-          console.log('Clean disconnect before starting voice mode...');
-          sessionConnectionManager.setVoiceModeActive(false);
+          setIsInitializing(true);
+          setShowVoiceOverlay(true);
           
-          // Get the active room name if available
-          const activeRoomName = sessionConnectionManager.getActiveRoomName();
+          // Mark the start time for tracking voice session duration
+          voiceModeStartTimeRef.current = Date.now();
           
-          if (activeRoomName) {
-            console.log(`Closing previous connection for room ${activeRoomName}`);
-            
-            // First clean up audio tracks
-            await audioTrackManager.cleanupAudioTracks();
-            
-            // Clean up participant tracking
-            participantManager.cleanupRoom(activeRoomName);
-            
-            // Close the connection
-            await sessionConnectionManager.closeConnection(activeRoomName);
-            
-            // Wait a moment to ensure full cleanup
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
+          // Set voice mode active first to allow connections
+          sessionConnectionManager.setVoiceModeActive(true);
           
-          // Connect to LiveKit service with a fresh token
-          console.log('[DEBUG] Fetching LiveKit token...');
-
-          // Using the direct API endpoint for token
-          try {
-            const response = await fetch('/usergroupchatcontext/api/livekit-token');
-            if (!response.ok) {
-              throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
-            }
-            
-            // Parse the JSON response
-            const tokenData = await response.json();
-            if (!tokenData || !tokenData.token) {
-              throw new Error('Invalid token response from server');
-            }
-
-            // Initialize LiveKit connection with fresh token
-            const roomName = tokenData.roomName || 'default-room';
-            const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-            
-            if (!livekitUrl) {
-              throw new Error('LiveKit URL not configured in environment variables');
-            }
-            
-            // Create a new LiveKit connection
-            await sessionConnectionManager.createConnection(roomName, tokenData.token, livekitUrl);
-            
-            // Resume the AudioContext (this requires user interaction)
-            let audioContextResumed = await multimodalAgentService.resumeAudioContext();
-            if (!audioContextResumed) {
-              console.log('Audio context resume failed on first attempt, retrying...');
-              // Try one more time with a small delay
-              await new Promise(resolve => setTimeout(resolve, 300));
-              audioContextResumed = await multimodalAgentService.resumeAudioContext();
-              
-              if (!audioContextResumed) {
-                throw new Error('Could not initialize audio. Please try clicking the button again.');
-              }
-            }
-            
-            // Enable local audio publication
-            await audioTrackManager.enableLocalAudio();
-            
-            // Activate session for voice mode
-            sessionConnectionManager.setVoiceModeActive(true);
-            
-            // Start voice listening
-            try {
-              const success = await startVoiceListening();
-              
-              if (success) {
-                // Start the multimodal agent listening
-                await multimodalAgentService.startListening();
-                
-                // Show the voice overlay
-                setShowVoiceOverlay(true);
-              } else {
-                console.warn('[DEBUG] startVoiceListening returned false without throwing an error');
-                throw new Error('Failed to start voice mode. Please try again.');
-              }
-            } catch (listenError) {
-              console.error('[DEBUG] Voice listening failed:', listenError);
-              throw new Error(`Voice mode error: ${listenError instanceof Error ? listenError.message : 'Failed to start voice mode'}`);
-            }
-          } catch (tokenError) {
-            console.error('Error getting token or starting voice mode:', tokenError);
-            throw tokenError;
-          }
-        } catch (error) {
-          console.error('Failed to start listening:', error);
-          setAudioContextError(error instanceof Error ? error.message : 'Failed to initialize audio');
+          // Resume audio context first
+          await resumeAudioContext();
           
-          // Add error message to chat
-          sendMessage(`Voice mode error: ${error instanceof Error ? error.message : 'Failed to initialize audio'}`, "text");
-        } finally {
+          // Connect to LiveKit
+          await startLiveKitListening();
           setIsInitializing(false);
+        } catch (error) {
+          console.error('Error starting voice mode:', error);
+          setAudioContextError('Error starting voice mode');
+          setIsInitializing(false);
+          sessionConnectionManager.setVoiceModeActive(false);
         }
       }
     } else {
@@ -334,54 +274,24 @@ export function VoiceInputButton({
     return <Mic className="h-5 w-5" />; // Default mic icon
   };
 
-  // Function to stop LiveKit voice mode
-  const stopLiveKitVoiceMode = () => {
-    // Reset any audio-related state
-    lastSentMessageRef.current = '';
-    setShowVoiceOverlay(false);
-    
-    // Clear any flags or indicators
-    multimodalAgentService.stopListening();
-    stopVoiceListening();
-    
-    // Set voice mode inactive in session connection manager to prevent reconnections
-    sessionConnectionManager.setVoiceModeActive(false);
-    
-    // Stop any active audio
-    voiceSynthesisService.stop();
-  };
-
-  // Get a more user-friendly error message
   const getErrorMessage = (error: string): { title: string, message: string } => {
-    if (error.includes('permission') || error.includes('denied')) {
+    if (error.includes('permission')) {
       return {
-        title: 'Microphone access denied',
-        message: 'Please allow microphone access in your browser settings.'
+        title: 'Microphone Permission Denied',
+        message: 'Please allow microphone access to use voice mode.'
       };
-    } else if (error.includes('initialize') || error.includes('AudioContext')) {
+    } else if (error.includes('audio context')) {
       return {
-        title: 'Audio initialization failed',
-        message: 'Try clicking again or refreshing the page.'
-      };
-    } else if (error.includes('no-speech')) {
-      return {
-        title: 'No speech detected',
-        message: 'Please try speaking more clearly or check your microphone.'
+        title: 'Audio Context Error',
+        message: 'Failed to initialize audio system. Try refreshing the page.'
       };
     } else {
       return {
-        title: 'Voice input error',
-        message: 'Please try again or use text input instead.'
+        title: 'Voice Mode Error',
+        message: error || 'An error occurred with voice mode.'
       };
     }
   };
-
-  if (!isSupported && !isVoiceEnabled) {
-    return null;
-  }
-
-  const isActive = isVoiceEnabled ? isLiveKitListening : isRecording;
-  const errorDetails = audioContextError ? getErrorMessage(audioContextError) : null;
 
   return (
     <>

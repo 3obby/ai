@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Message, ProcessingMetadata, ToolResult } from '../../types';
-import { ChevronDown, ChevronUp, Info, Wrench, Settings } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, Wrench, Settings, Mic } from 'lucide-react';
 import { ProcessingInfo } from '../debug/ProcessingInfo';
 import { DebugInfo } from '../debug/DebugInfo';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
@@ -45,6 +45,7 @@ export function MessageItem({
   const { dispatch: botRegistryDispatch, getBot } = useBotRegistry();
   const isUser = message.sender === 'user';
   const timestamp = new Date(message.timestamp);
+  const isVoiceMessage = message.type === 'voice';
   
   // Only show timeAgo if timestamp is valid and not too far in the past
   // This prevents the "55 years ago" issue with Unix epoch or very old dates
@@ -257,11 +258,15 @@ export function MessageItem({
           <div className="whitespace-pre-wrap text-sm">{displayedMessage}</div>
         </div>
         
-        {showTimestamp && timeAgo && (
-          <div className="text-[10px] text-muted-foreground mt-0.5 px-1">
-            {timeAgo}
-          </div>
-        )}
+        <div className="flex items-center text-[10px] text-muted-foreground mt-0.5 px-1">
+          {isVoiceMessage && (
+            <div className="flex items-center mr-2" title="Voice message">
+              <Mic className="h-2.5 w-2.5 mr-0.5" />
+              <span>Voice</span>
+            </div>
+          )}
+          {showTimestamp && timeAgo && timeAgo}
+        </div>
         
         {showSignalChain && !isUser && (
           <div className={`mt-1 w-full transition-all duration-200 ease-in-out ${showDetails ? 'max-h-[1000px]' : 'max-h-0 overflow-hidden'}`}>

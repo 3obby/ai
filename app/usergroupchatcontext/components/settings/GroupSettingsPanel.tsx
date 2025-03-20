@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
-import { Plus, Save, Check, Sliders, Bot, RefreshCw } from 'lucide-react';
+import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { VoiceTransitionSettings } from './VoiceTransitionSettings';
 
 interface GroupSettingsPanelProps {
   onClose?: () => void;
@@ -285,6 +286,17 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
           </div>
         </div>
       </div>
+      
+      {/* Voice Transition Settings */}
+      {formValues.enableVoice && (
+        <div>
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <Mic className="h-5 w-5 mr-2" />
+            Voice Mode Transition
+          </h3>
+          <VoiceTransitionSettings />
+        </div>
+      )}
       
       {/* Bot Selection */}
       <div>

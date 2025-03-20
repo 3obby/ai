@@ -14,6 +14,8 @@ import { VoicePlaybackControls } from '../voice/VoicePlaybackControls';
 import { VoiceActivityIndicator } from '../voice/VoiceActivityIndicator';
 import VoiceIntegration from '../voice/VoiceIntegration';
 import VoiceBotSelector from '../voice/VoiceBotSelector';
+import VoiceContextInheritance from '../voice/VoiceContextInheritance';
+import VoiceTextTransitionHandler from '../voice/VoiceTextTransitionHandler';
 import { cn } from '@/lib/utils';
 import { Bot } from '../../types';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
@@ -103,11 +105,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     }
   };
 
+  const handleVoiceContextInherited = (voiceBotIds: string[]) => {
+    console.log('Voice context inherited for bots:', voiceBotIds);
+    // You can use these voice bot IDs for specific voice operations if needed
+  };
+
   return (
-    <div className={cn("flex flex-col h-full overflow-hidden", className)}>
-      {/* Voice integration for handling transcriptions and synthesis */}
-      {state.settings?.ui?.enableVoice && <VoiceIntegration />}
-      
+    <div className={cn("flex flex-col h-full bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden", className)}>
+      {/* Chat Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/10">
         <div className="flex items-center">
           <h2 className="font-medium text-sm">AI Assistant</h2>
@@ -145,6 +150,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         </div>
       </div>
       
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {state.messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-3">
@@ -174,6 +180,20 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         
         <div ref={bottomRef} />
       </div>
+      
+      {/* Voice context inheritance handler */}
+      <VoiceContextInheritance onContextInherited={handleVoiceContextInherited} />
+      
+      {/* Voice-to-text transition handler */}
+      <VoiceTextTransitionHandler 
+        onTransitionComplete={() => {
+          console.log('Voice-to-text transition completed');
+          // Any additional UI updates needed after transition
+        }} 
+      />
+      
+      {/* Voice integration */}
+      <VoiceIntegration />
       
       <div className="border-t p-3">
         <div className="flex items-center">

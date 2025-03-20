@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "73f3226",
+      "fullHash": "73f3226170c3480b46c63fd06e37108353e09aac",
+      "date": "2025-03-20 15:36:56 +0700",
+      "author": "3obby",
+      "message": "strong checkpoint",
+      "category": "other"
+    },
+    {
       "hash": "ec1a73e",
       "fullHash": "ec1a73ea8a7eb7c42670aff4a9ffd5bc1f4e5bb1",
       "date": "2025-03-20 14:20:43 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Implement requested improvements: reset tokens, diversify avatars, add pagination, add vanilla GPT presets",
       "category": "feature"
-    },
-    {
-      "hash": "c92c4d7",
-      "fullHash": "c92c4d79f3e74bff484b3c3f9a9c038ef4f4cdda",
-      "date": "2025-03-09 13:33:19 +0700",
-      "author": "3obby",
-      "message": "Import companions and restore database",
-      "category": "other"
     }
   ]
 }

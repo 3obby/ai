@@ -1,7 +1,7 @@
 // Bot types
 export type BotId = string;
 
-export interface VoiceSettings {
+export interface BotVoiceSettings {
   voice?: string;
   speed?: number;
   quality?: 'standard' | 'high-quality';
@@ -22,7 +22,7 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
-  voiceSettings?: VoiceSettings;
+  voiceSettings?: BotVoiceSettings;
 }
 
 // Message types
@@ -65,6 +65,13 @@ export interface ToolResult {
   executionTime?: number;
 }
 
+export interface VoiceProcessingMetadata {
+  transcriptionConfidence?: number;
+  speechDuration?: number;
+  speechModel?: string;
+  interimTranscripts?: string[];
+}
+
 export interface ProcessingMetadata {
   preProcessed?: boolean;
   postProcessed?: boolean;
@@ -75,6 +82,7 @@ export interface ProcessingMetadata {
   preprocessedContent?: string;
   postprocessedContent?: string;
   usedMockService?: boolean;
+  voiceProcessing?: VoiceProcessingMetadata;
 }
 
 // Voice-related settings

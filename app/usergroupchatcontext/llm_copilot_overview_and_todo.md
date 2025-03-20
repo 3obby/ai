@@ -134,7 +134,7 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - Configures which hooks are disabled during voice mode
 3. **PromptEditor**  
    - Advanced configuration interface for refining prompts and hooking into reprocessing logic  
-
+  
 ## Signal Chain Logging System
 
 ### Data Flow and Processing Stages
@@ -177,48 +177,360 @@ We have shifted our efforts to create a robust production-ready system. By defau
   Maintains consistent global defaults across all bots, with flexible overrides per individual bot
 
 
-## TODO
+## TODO - Prioritized Roadmap
 
-### Completed
-- ✅ Voice Detection and Processing
-  - Implemented robust voice activity detection
-  - Fixed transcription handling via Web Speech API
-  - Connected voice transcriptions to unified text chat
-  - Added voice mode state management
-  - Added visual feedback for microphone levels
+1. [_] Complete Voice Mode Settings UI (Priority: Highest)
+   - [_] Implement comprehensive UI controls in GroupSettingsPanel
+   - [_] Create persistent storage for voice preferences
+   - [_] Add visual feedback during transitions between voice and text modes
+   - [_] Integrate VoiceTransitionSettings component into settings workflow
+   - [_] Add user preferences for voice model selection
+   - [_] Create settings storage for voice ghost behavior options
 
-### In Progress
-- Voice Ghost Implementation
-  - Create logic to clone text bots when entering voice mode
-  - Implement specialized settings for voice-optimized interactions
+2. [_] Finalize Voice Ghost Lifecycle Management (Priority: High)
+   - [X] Design data structure for tracking ghost and standard bots
+   - [X] Add tracking of both standard bots and their voice ghost counterparts
+   - [X] Add robust cleanup methods for voice ghosts
+   - [X] Implement staged approach to ghost deactivation
+   - [_] Add event listeners for voice mode state changes
+   - [_] Ensure seamless transition between voice and text modes
 
-- Text-to-Voice Transition
-  - Refactor mechanism to automatically disable pre/post/rework hooks on voice ghosts
-  - Improve context inheritance from text bot to voice ghost
+3. [_] Complete Voice-to-Text Transition (Priority: High)
+   - [X] Create system to re-enable processing hooks when returning to text mode
+   - [X] Ensure conversation history is maintained across transitions
+   - [X] Handle interrupted voice sessions gracefully
+   - [X] Develop error recovery mechanisms for failed transitions
+   - [_] Implement smooth transition animations/feedback
 
-- Voice-to-Text Transition
-  - Enhance system to re-enable processing hooks when returning to text mode
-  - Ensure conversation history is properly maintained across transitions
+4. [_] Optimize Performance for Mobile (Priority: High)
+   - [_] Improve responsiveness of voice mode on mobile devices
+   - [_] Optimize audio processing to reduce battery consumption
+   - [_] Enhance touch interactions for voice controls
+   - [_] Test and fix any mobile-specific issues with microphone access
 
-- BotRegistry Voice Ghost Management
-  - Add tracking of both standard bots and their voice ghost counterparts
-  - Implement voice ghost lifecycle management
+5. [_] Enhance Error Handling and Resilience (Priority: Medium)
+   - [_] Implement more robust error recovery for broken connections
+   - [_] Add automatic reconnection logic for interrupted voice sessions
+   - [_] Improve error messaging for users when voice mode fails
+   - [_] Add telemetry for tracking voice mode stability
 
-- Voice Mode Settings Configuration
-  - Add UI controls for voice mode settings in GroupSettingsPanel
-  - Create settings storage for voice ghost behavior options
+6. [_] Reduce State Duplication (Priority: Medium)
+   - [_] Continue reducing redundant state tracking across components
+   - [_] Consolidate voice-related state management
+   - [_] Improve type safety across component boundaries
 
-- Bot Manager Voice Ghost Controls
-  - Implement creation/destruction methods for voice ghosts
-  - Add state tracking for active voice mode sessions
+7. [_] Bot Manager Voice Ghost Controls (Priority: Medium)
+   - [X] Implement creation/destruction methods for voice ghosts
+   - [_] Add state tracking for active voice mode sessions
+   - [X] Create event hooks for voice mode transitions
+   - [_] Add logging for voice ghost lifecycle events
 
+8. [_] Unified Text Chat Enhancements (Priority: Medium)
+   - [X] Improve transcription display in chat interface
+   - [X] Add visual indicators for voice vs. text messages
+   - [X] Implement collapsible details for voice processing information
+   - [_] Enhance accessibility for voice interactions
+   - [_] Add visual indicators for active speaker
+
+9. [_] Cross-Browser Compatibility (Priority: Low)
+   - [_] Test and fix WebRTC compatibility issues across browsers
+   - [_] Ensure consistent audio processing across platforms
+   - [_] Implement fallback mechanisms for unsupported browsers
+
+10. [_] Voice Experience Refinements (Priority: Low)
+    - [_] Add voice tone/emotion detection
+    - [_] Implement natural turn-taking mechanisms
+    - [_] Enhance voice activity detection accuracy in noisy environments
+    - [_] Add support for multiple languages
+
+## Implementation Plan
+
+1. [X] Voice Detection and Processing
+   - [X] Implement robust voice activity detection
+   - [X] Fix transcription handling via Web Speech API
+   - [X] Connect voice transcriptions to unified text chat
+   - [X] Add voice mode state management
+   - [X] Add visual feedback for microphone levels
+
+2. [X] Code Modularization (Priority: High)
+   - [X] Split multimodal-agent-service.ts into smaller, focused modules
+   - [X] Refactor voice-activity-service.ts into specialized components
+   - [X] Extract audio initialization logic from VoiceInputButton.tsx
+   - [X] Create a centralized VoiceModeManager with state machine
+   - [X] Implement AudioContextManager for managing browser audio context
+   - [X] Create AudioAnalyzerService for audio processing and level detection
+   - [X] Build dedicated VoiceActivityDetector with improved accuracy
+
+3. [X] Architecture Simplification (Priority: High)
+   - [X] Implement unified connection management
+   - [X] Create cleaner service interfaces with single responsibilities
+   - [X] Streamline event handling with centralized event bus
+   - [_] Reduce redundant state tracking across components
+   - [X] Create strongly typed event systems
+
+4. [_] BotRegistry Voice Ghost Management (Priority: High)
+   - [X] Design data structure for tracking ghost and standard bots
+   - [X] Add tracking of both standard bots and their voice ghost counterparts
+   - [_] Implement voice ghost lifecycle management
+   - [_] Add proper cleanup of voice ghosts when returning to text mode
+
+5. [_] Voice Mode Settings Configuration (Priority: High)
+   - [_] Add UI controls for voice mode settings in GroupSettingsPanel
+   - [_] Create settings storage for voice ghost behavior options
+   - [X] Implement settings inheritance/override mechanism
+   - [_] Add user preferences for voice model selection
+
+6. [X] Voice Ghost Implementation (Priority: Medium)
+   - [X] Create logic to clone text bots when entering voice mode
+   - [X] Implement specialized settings for voice-optimized interactions
+   - [X] Add state management for voice ghost bots
+
+7. [X] Text-to-Voice Transition (Priority: Medium)
+   - [X] Build mechanism to disable pre/post/rework hooks on voice ghosts
+   - [X] Develop context inheritance from text bot to voice ghost
+   - [_] Implement smooth transition animations/feedback
+
+8. [_] Voice-to-Text Transition (Priority: High)
+   - [_] Create system to re-enable processing hooks when returning to text mode
+   - [_] Ensure conversation history is maintained across transitions
+   - [_] Handle interrupted voice sessions gracefully
+   - [_] Develop error recovery mechanisms for failed transitions
+
+9. [_] Bot Manager Voice Ghost Controls (Priority: Medium)
+   - [_] Implement creation/destruction methods for voice ghosts
+   - [_] Add state tracking for active voice mode sessions
+   - [_] Create event hooks for voice mode transitions
+   - [_] Add logging for voice ghost lifecycle events
+
+10. [_] Unified Text Chat Enhancements (Priority: Medium)
+    - [_] Improve transcription display in chat interface
+    - [_] Ensure proper formatting of voice interactions in text format
+    - [_] Add visual indicators for voice vs. text messages
+    - [_] Implement collapsible details for voice processing information
+
+## Current Progress (Updated)
+
+The project has made significant progress in implementing the core voice mode architecture:
+
+1. **VoiceModeManager**: Successfully implemented as a state machine that handles voice mode transitions, ghost creation, and context inheritance.
+
+2. **Voice Context Inheritance**: Implemented and working through the VoiceContextInheritance component, which creates voice bot clones with full conversation history.
+
+3. **BotRegistryProvider**: Enhanced with robust voice ghost creation capabilities through the cloneBotInstanceForVoice method.
+
+## Next Priorities
+
+1. **Complete Voice-to-Text Transition** (High Priority):
+   - Implement system to properly restore text mode with all processing hooks
+   - Ensure all voice interactions are preserved in conversation history
+   - Add error handling for interrupted voice sessions
+
+2. **Enhance Voice Mode Settings UI** (High Priority):
+   - Add dedicated UI controls in GroupSettingsPanel for configuring voice mode
+   - Create persistent storage for voice ghost behavior preferences
+   - Add voice model selection options with dynamic model fetching
+
+3. **Finalize Voice Ghost Lifecycle Management** (High Priority):
+   - Implement proper cleanup and garbage collection for voice ghosts
+   - Add event listeners for voice mode state changes
+   - Ensure seamless transition between voice and text modes
+
+## Modular Voice Architecture Implementation
+
+The modular architecture has been implemented with the following components:
+
+### Voice Mode Manager
+- **VoiceModeManager**: Central state machine for controlling voice mode transitions
+  - Implements state transitions (idle, initializing, active, processing, error, etc.)
+  - Manages voice ghost creation and lifecycle
+  - Handles configuration for voice mode settings (hooks, voice preferences)
+  - Provides events for state changes and ghost creation/deletion
+
+### Audio System Services
+- **AudioContextManager**: Manages the Web Audio API context
+  - Handles browser audio context initialization and resume logic
+  - Provides audio context state management
+  - Abstracts browser compatibility concerns
+
+- **AudioAnalyzerService**: Analyzes audio stream data
+  - Processes audio input using frequency and time domain analysis
+  - Optimized for human voice frequency range
+  - Emits audio level data for visualization and voice detection
+
+- **VoiceActivityDetector**: Detects voice activity from audio streams
+  - Implements configurable thresholds with hysteresis for accurate detection
+  - Buffers audio to include the beginning of speech
+  - Handles silence detection and minimum speech duration
+  - Works in automatic, sensitive, and manual modes
+
+### Connection with Existing Components
+- **VoiceInputButton**: Updated to use the new modular services
+  - Uses AudioContextManager for browser audio system access
+  - Receives audio levels from AudioAnalyzerService for visualization
+  - Responds to voice mode state changes
+
+### Current Architecture Benefits
+- Clean separation of concerns with single-responsibility components
+- State management isolated in dedicated manager
+- Improved error handling and recovery
+- Better configurability for voice detection settings
+- Voice ghosts with specialized voice-optimized settings
+
+## Centralized Communication Architecture
+
+The new architecture integrates event management and connection handling through centralized services:
+
+### EventBus System
+- **EventBus**: Type-safe centralized event management
+  - Provides strongly-typed publish/subscribe pattern for all application events
+  - Eliminates point-to-point coupling between components
+  - Categorized events (audio, voice, transcription, bot, etc.)
+  - Supports one-time events, event filtering, and debugging
+  - Prevents event handling collisions between components
+
+### Unified Connection Management
+- **ConnectionManager**: Manages all WebRTC/media connections
+  - Centralizes media stream acquisition
+  - Handles permission requests and errors
+  - Implements automatic reconnection logic
+  - Provides consistent connection state management
+  - Emits standardized events through EventBus
+
+### Integration Benefits
+- Components no longer need direct references to each other
+- Event handling is consistent across the application
+- Clear event naming conventions and categorization
+- Connection state is managed in one place with consistent error handling
+- Improved developer experience with TypeScript type safety
+
+## Voice Context Inheritance Implementation
+
+The system implements a robust mechanism to inherit conversation context between text and voice modes, ensuring seamless transitions for users when switching between typing and speaking to AI assistants.
+
+### Key Components
+
+1. **VoiceModeManager** (`services/voice/VoiceModeManager.ts`)
+   - The core service responsible for managing voice ghosts
+   - Implements the filtering and inheritance of conversation contexts
+   - Controls voice mode state transitions
+
+2. **VoiceContextInheritance Component** (`components/voice/VoiceContextInheritance.tsx`)
+   - React component that monitors voice mode state changes
+   - Automatically triggers context inheritance when entering voice mode
+   - Reports success or errors in the inheritance process
+
+3. **Enhanced BotRegistryProvider** (`context/BotRegistryProvider.tsx`)
+   - Provides the `cloneBotInstanceForVoice` method for creating voice-optimized bot clones
+   - Integrates with VoiceModeManager for context inheritance
+   - Preserves conversation context when creating voice bot instances
+
+### Implementation Details
+
+The context inheritance process follows these steps:
+
+1. When voice mode is activated, the VoiceModeManager creates "voice ghosts" for each active bot
+2. The system filters messages to include only relevant context for each bot:
+   - User messages (all of them)
+   - System messages (global context)
+   - Bot-specific messages (only from the original bot being cloned)
+3. This filtered context is stored in the voice ghost and used to initialize the voice model
+4. When voice mode is deactivated, all voice interactions remain in the unified text chat
+
+### Benefits
+
+- **Seamless Continuity**: Users experience no loss of context when switching between modes
+- **Optimized Voice Experience**: Voice ghosts use voice-optimized settings for better interactions
+- **Memory Efficiency**: Context filtering ensures only relevant messages are included
+- **Specialized Configurations**: Voice bots can have different processing settings (e.g., disabled hooks)
+
+## Voice-to-Text Transition System Implementation
+
+The voice-to-text transition system has been implemented with a focus on robustness, context preservation, and configurability. Key components include:
+
+### Core Components
+
+1. **VoiceModeManager Enhancements**
+   - Added comprehensive event system for transition state management
+   - Implemented methods for handling voice-to-text transitions
+   - Added configuration system for voice ghost behavior
+   - Added hooks for tracking and preserving conversation history
+
+2. **VoiceTextTransitionHandler Component**
+   - Monitors transition events from VoiceModeManager
+   - Handles re-enabling of processing hooks when returning to text mode
+   - Manages error recovery for interrupted voice sessions
+   - Ensures voice ghost instances are properly cleaned up
+
+3. **VoiceTransitionSettings Component**
+   - Provides UI controls for voice transition behavior
+   - Allows configuration of processing hook behavior in voice mode
+   - Enables customization of context preservation settings
+   - Integrated with GroupSettingsPanel for easy access
+
+### Key Features
+
+1. **Seamless Context Inheritance**
+   - Voice ghosts inherit filtered conversation context from text bots
+   - All voice interactions are preserved in unified text chat
+   - Processing hooks can be selectively enabled/disabled for voice mode
+
+2. **State Machine Approach**
+   - Clear state transitions (idle → initializing → active → processing → transitioning)
+   - Event-driven architecture for handling state changes
+   - Comprehensive error handling for interrupted sessions
+
+3. **Configurability**
+   - User-facing controls for voice-to-text transition behavior
+   - Settings for pre/post processing hook behavior in voice mode
+   - Options for context preservation and cleanup
+
+### Benefits
+
+- **Improved Reliability**: Robust error handling and recovery for interrupted voice sessions
+- **Better User Experience**: Seamless transitions with no loss of context
+- **Enhanced Performance**: Optimized voice interactions with selective hook disabling
+- **Greater Flexibility**: User-configurable behavior for different use cases
+
+The implementation ensures that users can freely switch between voice and text modes without losing conversation context, while maintaining optimal performance characteristics appropriate for each modality.
+
+## Recent Voice-to-Text Transition System Enhancements
+
+Based on the implementation plan, we've made several important enhancements to the voice-to-text transition system:
+
+### 1. Improved Voice Ghost Lifecycle Management
+
+- **Enhanced BotRegistry Cleanup**: Added robust cleanup methods for voice ghosts in the BotRegistryProvider.
+- **Proper Deactivation**: Implemented a staged approach to ghost deactivation (first disable, then remove) to prevent UI glitches.
+- **Event-Driven Cleanup**: Voice ghost cleanup is now triggered by voice-to-text transition events from the VoiceModeManager.
+- **Error Recovery**: Added specific error handling for interrupted voice sessions with automatic cleanup.
+
+### 2. Enhanced Message Display for Voice Messages
+
+- **Visual Voice Indicators**: Messages generated from voice interactions now show a microphone icon and "Voice" label.
+- **Voice-Specific Metadata**: Added VoiceProcessingMetadata to track transcription confidence, speech duration, and other voice-specific information.
+- **Improved Debug View**: Enhanced the ProcessingInfo component to display detailed voice processing data in the debug panel.
+- **Collapsible Details**: Voice processing information is now available in a collapsible section for easy inspection.
+
+### 3. Automatic Voice Model Selection
+
+- **Dynamic Model Fetching**: Added a fetchLatestVoiceModel method to automatically select the best available voice model.
+- **Fallback Mechanisms**: Implemented graceful fallbacks when model fetching fails to maintain functionality.
+- **Configuration Persistence**: Voice model selections are now properly persisted in the settings.
+
+### 4. Type System Improvements
+
+- **Renamed Bot Voice Settings**: Renamed the Bot-specific VoiceSettings to BotVoiceSettings to avoid conflicts with the global VoiceSettings interface.
+- **Enhanced Voice Processing Types**: Added specific types for voice processing metadata to ensure type safety.
+- **Clearer Type Definitions**: Improved the separation of concerns in the type system by properly differentiating voice types.
+
+These enhancements significantly improve the robustness and user experience of the voice-to-text transition system, ensuring seamless switching between modalities while maintaining proper cleanup and context preservation.
 ## Type System
 
 ```typescript
 // Bot types
 export type BotId = string;
 
-export interface VoiceSettings {
+export interface BotVoiceSettings {
   voice?: string;
   speed?: number;
   quality?: 'standard' | 'high-quality';
@@ -239,7 +551,7 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
-  voiceSettings?: VoiceSettings;
+  voiceSettings?: BotVoiceSettings;
 }
 
 // Message types
@@ -282,6 +594,13 @@ export interface ToolResult {
   executionTime?: number;
 }
 
+export interface VoiceProcessingMetadata {
+  transcriptionConfidence?: number;
+  speechDuration?: number;
+  speechModel?: string;
+  interimTranscripts?: string[];
+}
+
 export interface ProcessingMetadata {
   preProcessed?: boolean;
   postProcessed?: boolean;
@@ -292,6 +611,7 @@ export interface ProcessingMetadata {
   preprocessedContent?: string;
   postprocessedContent?: string;
   usedMockService?: boolean;
+  voiceProcessing?: VoiceProcessingMetadata;
 }
 
 // Voice-related settings
@@ -406,26 +726,27 @@ export type GroupChatAction =
     ├── ChatContainer.tsx (0.4KB)
     ├── ChatHeader.tsx (1KB)
     ├── ChatInput.tsx (3.7KB)
-    ├── ChatInterface.tsx (7.9KB)
+    ├── ChatInterface.tsx (8.6KB)
     ├── MessageBubble.tsx (3.5KB)
     ├── MessageInput.tsx (2.7KB)
-    ├── MessageItem.tsx (22.4KB)
+    ├── MessageItem.tsx (22.6KB)
     ├── MessageList.tsx (1.2KB)
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
     ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (19.8KB)
+    ├── VoiceInputButton.tsx (11KB)
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
-    ├── ProcessingInfo.tsx (3.5KB)
+    ├── ProcessingInfo.tsx (6KB)
   ├── settings/
     ├── BotConfigPanel.tsx (21.8KB)
     ├── BotSettingsModal.tsx (1KB)
-    ├── GroupSettingsPanel.tsx (13.3KB)
+    ├── GroupSettingsPanel.tsx (13.6KB)
     ├── PromptEditor.tsx (4.8KB)
     ├── SettingsModal.tsx (2.5KB)
     ├── SettingsPanel.tsx (10.4KB)
     ├── VoiceSettingsPanel.tsx (15.8KB)
+    ├── VoiceTransitionSettings.tsx (10KB)
   ├── tools/
     ├── ToolCallWrapper.tsx (3.4KB)
     ├── ToolIntegrationProvider.tsx (0.5KB) # State/service provider
@@ -437,26 +758,29 @@ export type GroupChatAction =
     ├── VoiceAnalytics.tsx (7.2KB)
     ├── VoiceBotSelector.tsx (4.7KB)
     ├── VoiceCommandController.tsx (19.8KB)
-    ├── VoiceConversationController.tsx (12.8KB)
-    ├── VoiceInputButton.tsx (3.1KB)
+    ├── VoiceContextInheritance.tsx (4.1KB) # Context definition
+    ├── VoiceConversationController.tsx (13.9KB)
+    ├── VoiceInputButton.tsx (7.6KB)
     ├── VoiceIntegration.tsx (3.1KB)
     ├── VoiceOverlay.tsx (15KB)
     ├── VoicePlaybackControls.tsx (3.4KB)
     ├── VoiceResponseManager.tsx (6KB)
+    ├── VoiceTextTransitionHandler.tsx (4.6KB)
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
-  ├── BotRegistryProvider.tsx (5.7KB) # State/service provider
+  ├── BotRegistryProvider.tsx (9.9KB) # State/service provider
   ├── GroupChatContext.tsx (3.4KB) # Context definition
   ├── GroupChatProvider.tsx (6.5KB) # State/service provider
-  ├── LiveKitIntegrationProvider.tsx (33.1KB) # State/service provider
-  ├── LiveKitProvider.tsx (6.4KB) # State/service provider
+  ├── LiveKitIntegrationProvider.tsx (34.1KB) # State/service provider
+  ├── LiveKitProvider.tsx (10.4KB) # State/service provider
   ├── ToolCallProvider.tsx (5.4KB) # State/service provider
 ├── data/
   ├── defaultSettings.ts (1KB)
   ├── sampleBots.ts (3.7KB)
 ├── docs/
   ├── pinecone-integration.md (2.8KB)
+  ├── voice-context-inheritance.md (4.1KB)
 ├── hooks/
   ├── useGroupChat.ts (3.2KB)
   ├── useLiveKit.ts (4KB)
@@ -465,15 +789,19 @@ export type GroupChatAction =
   ├── useToolIntegration.ts (6.9KB)
   ├── useTurnTaking.ts (4.2KB)
   ├── useVoiceActivity.ts (2.5KB)
-  ├── useVoiceSettings.ts (5.7KB)
+  ├── useVoiceSettings.ts (6.2KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (19.2KB)
+├── llm_copilot_overview_and_todo.md (31.6KB)
 ├── llm_copilot_overview_and_todo.md.bak (17.9KB)
 ├── mobile.css (2.3KB)
 ├── page.tsx (9.5KB)
 ├── scripts/
 ├── services/
+  ├── connection/
+    ├── ConnectionManager.ts (9.7KB)
+  ├── events/
+    ├── EventBus.ts (5.6KB)
   ├── livekit/
     ├── README.md (3.3KB)
     ├── REFACTORING.md (2.5KB)
@@ -482,15 +810,15 @@ export type GroupChatAction =
     ├── index.ts (1.5KB)
     ├── livekit-api-client.ts (3.8KB)
     ├── livekit-service.ts (8.6KB)
-    ├── multimodal-agent-service.ts (17.7KB)
+    ├── multimodal-agent-service.ts (20.4KB)
     ├── participant-manager.ts (5.5KB)
     ├── room-session-manager.ts (4.4KB)
     ├── session-connection-manager.ts (8.6KB)
     ├── speech-synthesis-service.ts (6.2KB)
     ├── tool-detection-service.ts (6.2KB)
-    ├── transcription-manager.ts (6.6KB)
+    ├── transcription-manager.ts (11.1KB)
     ├── turn-taking-service.ts (20.3KB)
-    ├── voice-activity-service.ts (16.4KB)
+    ├── voice-activity-service.ts (17.4KB)
   ├── mockBotService.ts (8.1KB) # Service implementation
   ├── openaiChatService.ts (2.7KB) # Service implementation
   ├── openaiRealtimeService.ts (12.8KB) # Service implementation
@@ -502,6 +830,10 @@ export type GroupChatAction =
     ├── voiceTimerTool.ts (8.8KB)
     ├── voiceWeatherTool.ts (6.9KB)
   ├── voice/
+    ├── AudioAnalyzerService.ts (6.4KB) # Service implementation
+    ├── AudioContextManager.ts (5.3KB) # Context definition
+    ├── VoiceActivityDetector.ts (11.6KB)
+    ├── VoiceModeManager.ts (13.2KB)
     ├── voice-analytics-service.ts (13KB)
     ├── voice-auth-service.ts (12.1KB)
   ├── voiceSynthesisService.ts (11.2KB) # Service implementation
@@ -518,11 +850,11 @@ export type GroupChatAction =
   ├── messages.ts (2.7KB)
   ├── settings.ts (3.1KB)
   ├── voice.ts (2.9KB)
-├── types.ts (4.2KB) # Type definitions
+├── types.ts (4.4KB) # Type definitions
 ├── utils/
   ├── generateReadme.js (4.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (9.4KB)
+  ├── llm_copilot_part1.md (25.7KB)
   ├── llm_copilot_todo.txt (1.5KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```
