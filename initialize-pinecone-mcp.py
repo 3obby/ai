@@ -7,7 +7,7 @@ from mcp_pinecone.pinecone import PineconeClient
 
 def main():
     parser = argparse.ArgumentParser(description='Initialize Pinecone for MCP server')
-    parser.add_argument('--api-key', default=os.environ.get('PINECONE_API_KEY', 'pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ'), help='Pinecone API key')
+    parser.add_argument('--api-key', default=os.environ.get('PINECONE_API_KEY'), help='Pinecone API key')
     parser.add_argument('--index-name', default='agentconsult', help='Pinecone index name')
     args = parser.parse_args()
     
@@ -63,7 +63,7 @@ def main():
   "mcpServers": {{
     "pinecone": {{
       "command": "{os.path.abspath('.pinecone-venv/bin/python3')}",
-      "args": ["-m", "mcp_pinecone", "--index-name", "{args.index_name}", "--api-key", "{args.api_key}"]
+      "args": ["-m", "mcp_pinecone", "--index-name", "{args.index_name}", "--api-key", "<YOUR_PINECONE_API_KEY>"]
     }}
   }}
 }}

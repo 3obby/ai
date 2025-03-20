@@ -12,7 +12,12 @@ import openai
 from pinecone import Pinecone, ServerlessSpec
 
 # Your Pinecone API key and index name
-PINECONE_API_KEY = "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
+if not PINECONE_API_KEY:
+    print("Error: PINECONE_API_KEY environment variable is not set.")
+    print("Please set it before running this script.")
+    sys.exit(1)
+
 INDEX_NAME = "agentconsult"
 
 # Initialize OpenAI for embeddings - strip quotes if present in env var

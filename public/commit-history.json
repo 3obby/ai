@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "9a33a03",
+      "fullHash": "9a33a038821f994c6bf573fd0b08630adcfc4699",
+      "date": "2025-03-20 12:28:14 +0700",
+      "author": "3obby",
+      "message": "test trash push",
+      "category": "other"
+    },
+    {
       "hash": "4069bc3",
       "fullHash": "4069bc3cd038ed276427208cf5909f44d08fae41",
       "date": "2025-03-19 21:46:05 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Change XP terminology to 'tokens burned' across the codebase",
       "category": "other"
-    },
-    {
-      "hash": "8064266",
-      "fullHash": "80642664f8a348acbb2bb091a7f72bb9a07983ab",
-      "date": "2025-03-09 12:39:30 +0700",
-      "author": "3obby",
-      "message": "Enhance bot image handling with auto-formatting and fallback mechanism",
-      "category": "enhancement"
     }
   ]
 }

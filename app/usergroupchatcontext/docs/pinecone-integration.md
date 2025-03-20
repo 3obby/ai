@@ -27,7 +27,7 @@ npm install @pinecone-database/pinecone
 The Pinecone API key is stored in `.env.local`:
 
 ```
-PINECONE_API_KEY=pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ
+PINECONE_API_KEY=<YOUR_PINECONE_API_KEY>
 ```
 
 ### Cursor IDE Configuration
@@ -40,7 +40,7 @@ The Cursor MCP server is configured in `.cursor.json`:
     "command": "npx",
     "args": ["-y", "@pinecone-database/pinecone-mcp-server"],
     "env": {
-      "PINECONE_API_KEY": "pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ"
+      "PINECONE_API_KEY": "<YOUR_PINECONE_API_KEY>"
     }
   }
 },

@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const os = require('os');
 
 // Configuration
-const API_KEY = 'pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ';
+const API_KEY = process.env.PINECONE_API_KEY || '<YOUR_PINECONE_API_KEY>';
 const INDEX_NAME = 'agentconsult';
 const VENV_DIR = path.join(process.cwd(), '.pinecone-venv');
 const CURSOR_MCP_PATH = path.join(os.homedir(), '.cursor', 'mcp.json');

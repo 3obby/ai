@@ -24,7 +24,7 @@ async function testPineconeConnection() {
     };
 
     // Convert command to a direct mcp-pinecone call via pipx
-    const command = `/Users/dev/.local/bin/mcp-pinecone --index-name agentconsult --api-key pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ`;
+    const command = `/Users/dev/.local/bin/mcp-pinecone --index-name agentconsult --api-key ${process.env.PINECONE_API_KEY || '<YOUR_PINECONE_API_KEY>'}`;
     
     console.log('Executing direct Pinecone command...');
     console.log(`Command: ${command}`);

@@ -9,7 +9,7 @@ const args = [
   '--index-name',
   'agentconsult',
   '--api-key',
-  'pcsk_n1c4F_Nx9ekfBQEG67R493SmxB3ar3URk4bUzUHWx6ybBJda5yZ7fC9MQfWSXN1wz4McQ'
+  process.env.PINECONE_API_KEY || '<YOUR_PINECONE_API_KEY>'
 ];
 
 console.log('Creating transport...');
