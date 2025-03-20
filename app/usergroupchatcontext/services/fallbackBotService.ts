@@ -61,7 +61,7 @@ async function callOpenAIApi(bot: Bot, userMessage: string, chatHistory: Message
     }
     
     // Call the OpenAI API
-    const response = await fetch('/api/openai/chat', {
+    const response = await fetch('/usergroupchatcontext/api/openai/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

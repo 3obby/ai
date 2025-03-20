@@ -19,10 +19,10 @@ export class SpeechSynthesisService {
     options: SpeechSynthesisOptions 
   }> = [];
   private options: SpeechSynthesisOptions = {
-    voice: 'alloy',
+    voice: 'coral',
     speed: 1.0,
     quality: 'high-quality',
-    preferredVoices: ['ash', 'coral']
+    preferredVoices: ['coral', 'nova']
   };
   private isSpeakingState: boolean = false;
 
@@ -98,7 +98,7 @@ export class SpeechSynthesisService {
       };
       
       // Request speech synthesis with high quality settings
-      const response = await fetch('/api/synthesize-speech', {
+      const response = await fetch('/usergroupchatcontext/api/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

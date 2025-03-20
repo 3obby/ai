@@ -521,6 +521,31 @@ Based on the implementation plan, we've made several important enhancements to t
 
 These enhancements significantly improve the robustness and user experience of the voice-to-text transition system, ensuring seamless switching between modalities while maintaining proper cleanup and context preservation.
 
+## Recent Voice Mode Connection Improvements
+
+We've resolved a critical issue with voice mode activation that was causing connection failures. The problem occurred when users attempted to enter voice mode - the UI would show voice mode was active, but the LiveKit connection was not properly established, resulting in errors about "LiveKit connection not ready" and "Cannot start listening - LiveKit connection not established".
+
+### Key Improvements:
+
+1. **Enhanced Connection Verification**: The `MultimodalAgentService.ensureConnection()` method has been improved to use a more robust connection check that:
+   - First checks if `roomSessionManager` exists
+   - Attempts to get the active session and verifies its connection state
+   - Falls back to direct room access via `livekitService` if no active session is found
+   - Provides more specific error messages to help debug connection issues
+
+2. **Improved Connection Retry Logic**: The `VoiceInputButton` component now includes:
+   - A retry mechanism with exponential backoff when attempting to establish a LiveKit connection
+   - Proper sequencing to ensure UI feedback happens immediately regardless of connection state
+   - Better error handling to show voice mode UI even when connections fail
+   - Clear separation of UI state from connection state
+
+3. **Voice Mode State Management**: Fixed issues with voice mode state tracking:
+   - Explicitly setting voice mode as active in the session connection manager before attempting connection
+   - Preserving UI state during connection retries
+   - Properly handling failed connection attempts without disrupting the user experience
+
+These improvements ensure that voice mode provides immediate visual feedback to users while working to establish the necessary connections in the background, with multiple retry attempts before giving up.
+
 ## Recent Implementation Progress
 
 ### Blackbar Implementation and UI Reorganization
@@ -552,6 +577,32 @@ We've implemented a new UI structure that better encapsulates our voice and text
    - Enhanced text-to-speech toggle with proper ARIA attributes and visual indicators
 
 This consolidation creates a cleaner interface with clear entry points for both voice and text interactions, all while maintaining accessibility and enhancing the user experience with appropriate visual feedback during mode transitions.
+
+## Voice Settings Standardization
+
+We've standardized the voice settings across the application to use OpenAI's "coral" voice as the default:
+
+1. **Default Voice Configuration**:
+   - Updated all default voice settings to use 'coral' instead of 'alloy'
+   - Set TTS-1 as the default model for text-to-speech synthesis
+   - Configured 'coral' as the first preferred voice in rotation lists
+
+2. **Voice Ghost Inheritance**:
+   - Modified the bot cloning process to properly inherit voice settings when creating voice ghosts
+   - Ensured voice preferences propagate from text bots to their voice counterparts
+   - Maintained 'coral' as the fallback voice if no specific voice is set
+
+3. **API Route Updates**:
+   - Updated the synthesize-speech API route to use 'coral' as its default voice
+   - Enhanced error handling to provide better fallback behavior
+   - Fixed compatibility with OpenAI SDK v4.87.3
+
+4. **Service Configuration**:
+   - Updated VoiceSynthesisService and SpeechSynthesisService to use 'coral' by default
+   - Added coral voice setting to all sample bots in the sampleBots.ts configuration
+   - Set 'coral' voice in global GroupChatSettings
+
+These changes ensure a consistent, high-quality voice experience across the application when using text-to-speech functionality, with proper inheritance when transitioning between text and voice modes.
 ## Type System
 
 ```typescript
@@ -638,7 +689,7 @@ export interface ProcessingMetadata {
   modifiedContent?: string;
   preprocessedContent?: string;
   postprocessedContent?: string;
-  usedMockService?: boolean;
+  usedFallbackService?: boolean;
   voiceProcessing?: VoiceProcessingMetadata;
 }
 
@@ -748,12 +799,15 @@ export type GroupChatAction =
     ├── token/
       ├── route.ts (5.4KB)
   ├── livekit-token/
+    ├── index.ts (0.3KB)
     ├── route.ts (3.8KB)
+  ├── livekit-token-redirect/
+    ├── route.ts (1.1KB)
   ├── openai/
     ├── chat/
       ├── route.ts (2.2KB)
   ├── synthesize-speech/
-    ├── route.ts (1.9KB)
+    ├── route.ts (2.2KB)
 ├── components/
   ├── accessibility/
     ├── AccessibilityControls.tsx (9.7KB)
@@ -771,7 +825,7 @@ export type GroupChatAction =
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
     ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (12.4KB)
+    ├── VoiceInputButton.tsx (13.4KB)
     ├── VoiceModeBlackbar.tsx (8.1KB)
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
@@ -813,15 +867,15 @@ export type GroupChatAction =
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
-  ├── BotRegistryProvider.tsx (10.4KB) # State/service provider
+  ├── BotRegistryProvider.tsx (10.7KB) # State/service provider
   ├── GroupChatContext.tsx (3.4KB) # Context definition
   ├── GroupChatProvider.tsx (6.7KB) # State/service provider
-  ├── LiveKitIntegrationProvider.tsx (32.8KB) # State/service provider
-  ├── LiveKitProvider.tsx (10.4KB) # State/service provider
+  ├── LiveKitIntegrationProvider.tsx (33.5KB) # State/service provider
+  ├── LiveKitProvider.tsx (10.7KB) # State/service provider
   ├── ToolCallProvider.tsx (5.4KB) # State/service provider
 ├── data/
-  ├── defaultSettings.ts (1KB)
-  ├── sampleBots.ts (3.7KB)
+  ├── defaultSettings.ts (1.3KB)
+  ├── sampleBots.ts (4.4KB)
 ├── docs/
   ├── pinecone-integration.md (2.8KB)
   ├── voice-context-inheritance.md (4.1KB)
@@ -837,7 +891,7 @@ export type GroupChatAction =
   ├── useVoiceState.ts (3.8KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (39.4KB)
+├── llm_copilot_overview_and_todo.md (42.8KB)
 ├── mobile.css (4.1KB)
 ├── page.tsx (9.9KB)
 ├── scripts/
@@ -846,15 +900,16 @@ export type GroupChatAction =
     ├── ConnectionManager.ts (20.5KB)
   ├── events/
     ├── EventBus.ts (5.6KB)
+  ├── fallbackBotService.ts (8.1KB) # Service implementation
   ├── livekit/
     ├── README.md (3.3KB)
     ├── REFACTORING.md (2.5KB)
-    ├── audio-publishing-service.ts (10.5KB)
+    ├── audio-publishing-service.ts (8.2KB)
     ├── audio-track-manager.ts (9.3KB)
     ├── index.ts (1.5KB)
-    ├── livekit-api-client.ts (3.8KB)
+    ├── livekit-api-client.ts (3.9KB)
     ├── livekit-service.ts (8.6KB)
-    ├── multimodal-agent-service.ts (20.4KB)
+    ├── multimodal-agent-service.ts (21.1KB)
     ├── participant-manager.ts (5.5KB)
     ├── room-session-manager.ts (4.4KB)
     ├── session-connection-manager.ts (8.6KB)
@@ -863,11 +918,10 @@ export type GroupChatAction =
     ├── transcription-manager.ts (11.1KB)
     ├── turn-taking-service.ts (20.3KB)
     ├── voice-activity-service.ts (17.4KB)
-  ├── mockBotService.ts (8.1KB) # Service implementation
   ├── openaiChatService.ts (2.7KB) # Service implementation
   ├── openaiRealtimeService.ts (12.8KB) # Service implementation
   ├── pineconeService.ts (1.6KB) # Service implementation
-  ├── prompt-processor-service.ts (11.9KB)
+  ├── prompt-processor-service.ts (12.5KB)
   ├── toolCallService.ts (5.8KB) # Service implementation
   ├── toolProcessorService.ts (4.7KB) # Service implementation
   ├── tools/
@@ -881,8 +935,8 @@ export type GroupChatAction =
     ├── VoiceStateManager.ts (5KB)
     ├── voice-analytics-service.ts (13KB)
     ├── voice-auth-service.ts (12.1KB)
-  ├── voiceSynthesisService.ts (11.2KB) # Service implementation
-  ├── voiceToolCallingService.ts (11.7KB) # Service implementation
+  ├── voiceSynthesisService.ts (12.7KB) # Service implementation
+  ├── voiceToolCallingService.ts (11.8KB) # Service implementation
   ├── voiceToolRegistry.ts (2.9KB)
   ├── voiceTranscriptionService.ts (7.3KB) # Service implementation
 ├── speech-test/
@@ -901,7 +955,7 @@ export type GroupChatAction =
 ├── utils/
   ├── generateReadme.js (4.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (28.4KB)
+  ├── llm_copilot_part1.md (31.6KB)
   ├── llm_copilot_todo.txt (1.5KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```

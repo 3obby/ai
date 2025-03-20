@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 // Default options for the most natural, high-quality voice
 const DEFAULT_MODEL = 'tts-1-hd';  // Use the high-definition TTS model instead of realtime
-const DEFAULT_VOICE = 'alloy';
+const DEFAULT_VOICE = 'coral';  // Change default from 'alloy' to 'coral'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,18 +30,18 @@ export async function POST(req: NextRequest) {
     // Log what we're using
     console.log(`Synthesizing speech with model=${model}, voice=${voice}`);
     
-    // Always use the standard TTS API
+    // Fixed OpenAI API call to properly use SDK v4.87.3
     const response = await openai.audio.speech.create({
       model: model,
       voice: voice,
       input: text,
       speed: speed,
-      response_format: 'mp3',
     });
     
+    // Get the audio as an ArrayBuffer
     const audioData = await response.arrayBuffer();
     
-    // Get the audio as a buffer
+    // Convert to Buffer for response
     const buffer = Buffer.from(audioData);
     
     // Return the audio with appropriate headers
@@ -54,10 +54,13 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error synthesizing speech:', error);
     
+    // Implement graceful fallback in the API route itself
+    // This way, if there's an issue with OpenAI, we at least return a readable error
     return NextResponse.json(
       { 
         error: 'Failed to synthesize speech', 
-        details: error instanceof Error ? error.message : String(error) 
+        details: error instanceof Error ? error.message : String(error),
+        fallback: true, // Indicate to the client that it should use browser TTS
       }, 
       { status: 500 }
     );

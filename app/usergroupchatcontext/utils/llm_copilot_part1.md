@@ -521,6 +521,31 @@ Based on the implementation plan, we've made several important enhancements to t
 
 These enhancements significantly improve the robustness and user experience of the voice-to-text transition system, ensuring seamless switching between modalities while maintaining proper cleanup and context preservation.
 
+## Recent Voice Mode Connection Improvements
+
+We've resolved a critical issue with voice mode activation that was causing connection failures. The problem occurred when users attempted to enter voice mode - the UI would show voice mode was active, but the LiveKit connection was not properly established, resulting in errors about "LiveKit connection not ready" and "Cannot start listening - LiveKit connection not established".
+
+### Key Improvements:
+
+1. **Enhanced Connection Verification**: The `MultimodalAgentService.ensureConnection()` method has been improved to use a more robust connection check that:
+   - First checks if `roomSessionManager` exists
+   - Attempts to get the active session and verifies its connection state
+   - Falls back to direct room access via `livekitService` if no active session is found
+   - Provides more specific error messages to help debug connection issues
+
+2. **Improved Connection Retry Logic**: The `VoiceInputButton` component now includes:
+   - A retry mechanism with exponential backoff when attempting to establish a LiveKit connection
+   - Proper sequencing to ensure UI feedback happens immediately regardless of connection state
+   - Better error handling to show voice mode UI even when connections fail
+   - Clear separation of UI state from connection state
+
+3. **Voice Mode State Management**: Fixed issues with voice mode state tracking:
+   - Explicitly setting voice mode as active in the session connection manager before attempting connection
+   - Preserving UI state during connection retries
+   - Properly handling failed connection attempts without disrupting the user experience
+
+These improvements ensure that voice mode provides immediate visual feedback to users while working to establish the necessary connections in the background, with multiple retry attempts before giving up.
+
 ## Recent Implementation Progress
 
 ### Blackbar Implementation and UI Reorganization
@@ -552,3 +577,29 @@ We've implemented a new UI structure that better encapsulates our voice and text
    - Enhanced text-to-speech toggle with proper ARIA attributes and visual indicators
 
 This consolidation creates a cleaner interface with clear entry points for both voice and text interactions, all while maintaining accessibility and enhancing the user experience with appropriate visual feedback during mode transitions.
+
+## Voice Settings Standardization
+
+We've standardized the voice settings across the application to use OpenAI's "coral" voice as the default:
+
+1. **Default Voice Configuration**:
+   - Updated all default voice settings to use 'coral' instead of 'alloy'
+   - Set TTS-1 as the default model for text-to-speech synthesis
+   - Configured 'coral' as the first preferred voice in rotation lists
+
+2. **Voice Ghost Inheritance**:
+   - Modified the bot cloning process to properly inherit voice settings when creating voice ghosts
+   - Ensured voice preferences propagate from text bots to their voice counterparts
+   - Maintained 'coral' as the fallback voice if no specific voice is set
+
+3. **API Route Updates**:
+   - Updated the synthesize-speech API route to use 'coral' as its default voice
+   - Enhanced error handling to provide better fallback behavior
+   - Fixed compatibility with OpenAI SDK v4.87.3
+
+4. **Service Configuration**:
+   - Updated VoiceSynthesisService and SpeechSynthesisService to use 'coral' by default
+   - Added coral voice setting to all sample bots in the sampleBots.ts configuration
+   - Set 'coral' voice in global GroupChatSettings
+
+These changes ensure a consistent, high-quality voice experience across the application when using text-to-speech functionality, with proper inheritance when transitioning between text and voice modes.

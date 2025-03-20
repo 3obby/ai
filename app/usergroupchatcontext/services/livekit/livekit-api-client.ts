@@ -9,7 +9,7 @@ export class LiveKitApiClient {
     emptyTimeout?: number;
     maxParticipants?: number;
   }): Promise<{ room: any }> {
-    const response = await fetch('/api/livekit/room', {
+    const response = await fetch('/usergroupchatcontext/api/livekit/room', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export class LiveKitApiClient {
    * Gets a list of all LiveKit rooms
    */
   public static async listRooms(): Promise<{ rooms: any[] }> {
-    const response = await fetch('/api/livekit/room');
+    const response = await fetch('/usergroupchatcontext/api/livekit/room');
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -47,7 +47,7 @@ export class LiveKitApiClient {
    * Deletes a LiveKit room
    */
   public static async deleteRoom(roomName: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`/api/livekit/room?name=${encodeURIComponent(roomName)}`, {
+    const response = await fetch(`/usergroupchatcontext/api/livekit/room?name=${encodeURIComponent(roomName)}`, {
       method: 'DELETE',
     });
 
@@ -70,7 +70,7 @@ export class LiveKitApiClient {
   }): Promise<{ token: string }> {
     const { type, roomName, id, name } = options;
     
-    const response = await fetch('/api/livekit/token', {
+    const response = await fetch('/usergroupchatcontext/api/livekit/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

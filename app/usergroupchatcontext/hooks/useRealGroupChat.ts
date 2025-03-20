@@ -3,7 +3,7 @@
 import { useGroupChatContext } from '../context/GroupChatContext';
 import { useBotRegistry } from '../context/BotRegistryProvider';
 import { v4 as uuidv4 } from 'uuid';
-import { getMockBotResponse } from '../services/mockBotService';
+import { getFallbackBotResponse } from '../services/fallbackBotService';
 import { processMessage, ProcessingContext } from '../services/prompt-processor-service';
 import { GroupChatSettings } from '../types';
 

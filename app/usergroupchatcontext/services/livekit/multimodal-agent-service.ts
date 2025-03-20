@@ -267,20 +267,41 @@ export class MultimodalAgentService {
    */
   private async ensureConnection(): Promise<boolean> {
     try {
-      // Use a simpler check - access the room property via any to bypass type checking
-      // This is safer than trying to navigate the room session manager's specific API
-      const isConnected = 
-        roomSessionManager && 
-        (roomSessionManager as any).activeSession && 
-        (roomSessionManager as any).activeSession.room && 
-        (roomSessionManager as any).activeSession.room.state === 'connected';
-      
-      if (!isConnected) {
-        console.warn('[DEBUG] No active LiveKit connection found');
+      // Use a more comprehensive check approach that handles edge cases
+      // First check if roomSessionManager exists
+      if (!roomSessionManager) {
+        console.warn('[DEBUG] No roomSessionManager instance found');
         return false;
       }
       
-      console.log('[DEBUG] LiveKit connection verified');
+      // Get the active session
+      const activeSession = roomSessionManager.getActiveSession();
+      
+      // If no active session, try to access the room directly as a fallback
+      if (!activeSession) {
+        console.warn('[DEBUG] No active LiveKit session found, checking direct room access');
+        const room = livekitService.getRoom();
+        const isConnected = room && room.state === 'connected';
+        
+        if (!isConnected) {
+          console.warn('[DEBUG] No active LiveKit connection found');
+          return false;
+        }
+        
+        console.log('[DEBUG] LiveKit connection verified via direct room access');
+        return true;
+      }
+      
+      // Check session connection state
+      const isConnected = activeSession && 
+                          activeSession.connectionState === 'connected';
+      
+      if (!isConnected) {
+        console.warn('[DEBUG] LiveKit session exists but is not connected');
+        return false;
+      }
+      
+      console.log('[DEBUG] LiveKit connection verified via active session');
       return true;
     } catch (error) {
       console.error('[DEBUG] Error checking LiveKit connection:', error);

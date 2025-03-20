@@ -81,7 +81,7 @@ export interface ProcessingMetadata {
   modifiedContent?: string;
   preprocessedContent?: string;
   postprocessedContent?: string;
-  usedMockService?: boolean;
+  usedFallbackService?: boolean;
   voiceProcessing?: VoiceProcessingMetadata;
 }
 

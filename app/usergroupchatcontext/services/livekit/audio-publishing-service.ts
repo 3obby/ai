@@ -240,83 +240,16 @@ export class AudioPublishingService {
       console.log('Attempting to initialize LiveKit connection...');
       
       // Get a token for LiveKit connection
-      const response = await fetch('/usergroupchatcontext/api/livekit-token');
+      const response = await fetch('/usergroupchatcontext/api/livekit-token/');
       if (!response.ok) {
         throw new Error(`Failed to get LiveKit token: ${response.status}`);
       }
-      
-      const tokenData = await response.json();
-      if (!tokenData?.token) {
-        throw new Error('No token received from LiveKit token API');
-      }
-      
-      // Get LiveKit URL
-      const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-      if (!livekitUrl) {
-        throw new Error('LiveKit URL not configured in environment variables');
-      }
-      
-      // Create a new LiveKit session
-      const roomName = tokenData.roomName || 'default-room';
-      await roomSessionManager.createSession(roomName, tokenData.token, livekitUrl);
-      
-      console.log('LiveKit connection established successfully');
+
+      // If connected, return true
       return true;
     } catch (error) {
-      console.error('Failed to initialize LiveKit connection:', error);
+      console.error('Error ensuring LiveKit connection:', error);
       return false;
     }
   }
-
-  /**
-   * Subscribe to audio publishing events
-   */
-  public on(event: string, listener: (...args: any[]) => void): void {
-    this.emitter.on(event, listener);
-  }
-
-  /**
-   * Unsubscribe from audio publishing events
-   */
-  public off(event: string, listener: (...args: any[]) => void): void {
-    this.emitter.off(event, listener);
-  }
-
-  /**
-   * Update audio publishing options
-   */
-  public updateOptions(options: Partial<AudioPublishingOptions>): void {
-    const prevOptions = this.options;
-    this.options = { ...this.options, ...options };
-    
-    // If we're currently publishing and key options have changed,
-    // we need to restart the audio publishing
-    if (this.isPublishing) {
-      const needsRestart = options.enhancedAudioProcessing !== undefined ||
-                          options.audioSampleRate !== undefined ||
-                          options.channelCount !== undefined ||
-                          options.echoCancellation !== undefined ||
-                          options.noiseSuppression !== undefined ||
-                          options.autoGainControl !== undefined;
-      
-      if (needsRestart) {
-        console.log('Audio options changed, restarting audio publishing...');
-        this.setupAudioProcessing();
-        this.stopPublishing();
-        this.startPublishing(); // Don't await as this is just a restart
-      }
-    } else {
-      // Just update the configuration for future use
-      this.setupAudioProcessing();
-    }
-    
-    console.log('Updated audio publishing options:', {
-      previous: prevOptions,
-      current: this.options
-    });
-  }
 }
-
-// Create a singleton instance
-const audioPublishingService = new AudioPublishingService();
-export default audioPublishingService; 

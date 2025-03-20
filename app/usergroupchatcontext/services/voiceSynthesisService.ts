@@ -37,16 +37,13 @@ export class VoiceSynthesisService {
       pitch: 1,
       volume: 1,
       model: 'gpt-4o-realtime-preview',
-      voice: 'alloy',
+      voice: 'coral',
       ...options,
     };
   }
 
   public async speak(text: string, options?: VoiceSynthesisOptions): Promise<void> {
-    const mergedOptions = {
-      ...this.options,
-      ...options,
-    };
+    const mergedOptions = { ...this.options, ...options };
 
     console.log('VoiceSynthesisService.speak called with text:', text.substring(0, 50) + '...', 'options:', mergedOptions);
 
@@ -67,18 +64,43 @@ export class VoiceSynthesisService {
           text,
           options: {
             model: mergedOptions.model || 'gpt-4o-realtime-preview',
-            voice: mergedOptions.voice || 'alloy',
+            voice: mergedOptions.voice || 'coral',
             speed: mergedOptions.rate || 1.0,
           }
         }),
       });
 
+      // Check both for !ok response and for fallback flag in JSON response
       if (!response.ok) {
+        // Try to get the response body to check for fallback flag
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.fallback) {
+            console.log('Server indicated we should use fallback TTS');
+            throw new Error('Fallback to browser TTS requested by server');
+          }
+        } catch (parseError) {
+          // If we can't parse the response, just use the original error
+        }
+        
         throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      // Check content type to ensure we received audio
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('audio/')) {
+        console.warn('Response may not be audio, content-type:', contentType);
       }
 
       console.log('Speech synthesis response received, converting to blob...');
       const audioBlob = await response.blob();
+      
+      // Make sure we actually got audio data
+      if (audioBlob.size < 100) {
+        console.warn('Audio blob is suspiciously small:', audioBlob.size, 'bytes');
+        throw new Error('Received audio file is too small to be valid');
+      }
+      
       console.log('Audio blob created, size:', audioBlob.size);
       
       this.audioUrl = URL.createObjectURL(audioBlob);
@@ -101,6 +123,17 @@ export class VoiceSynthesisService {
           console.error('Error loading audio:', e);
           reject(new Error(`Error loading audio: ${e}`));
         };
+
+        // Add safety timeout in case oncanplaythrough never fires
+        setTimeout(() => {
+          const audioEl = this.audioElement;
+          if (audioEl && audioEl.readyState >= 3) {
+            console.log('Audio seems ready to play (timeout check)');
+            resolve();
+          } else {
+            reject(new Error('Audio loading timed out'));
+          }
+        }, 3000);
       });
       
       // Wait for audio to be ready to play
@@ -144,6 +177,8 @@ export class VoiceSynthesisService {
     } catch (error) {
       console.error('Error using OpenAI API for speech synthesis:', error);
       
+      // Use fallback
+      console.log('Falling back to browser speech synthesis');
       this.fallbackToSpeechSynthesis(text, mergedOptions);
     }
   }

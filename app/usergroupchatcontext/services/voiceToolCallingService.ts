@@ -171,7 +171,7 @@ Respond with a JSON object containing:
     try {
       // If we're in the browser, use fetch to send request via our API route
       if (typeof window !== 'undefined') {
-        const response = await fetch('/api/openai/completion', {
+        const response = await fetch('/usergroupchatcontext/api/openai/completion', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 'use client';
 
-import { Bot, Message, ProcessingMetadata, GroupChatSettings } from '../types';
-import { getMockBotResponse } from './mockBotService';
+import { Bot, Message, ProcessingMetadata, GroupChatSettings, ToolResult } from '../types';
+import { getFallbackBotResponse } from './fallbackBotService';
 import { getOpenAIChatResponse } from './openaiChatService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -211,6 +211,19 @@ async function processWithLLM(
   }
 }
 
+// Mock tool execution function that should be imported from the correct service
+async function executeToolCalls(toolCalls: any[]): Promise<ToolResult[]> {
+  // This is a placeholder - in a real implementation, 
+  // this would be imported from toolCallService or similar
+  console.warn('Using mock executeToolCalls - replace with actual implementation');
+  return toolCalls.map(call => ({
+    toolName: call.name,
+    input: call.arguments,
+    output: { result: `Mock result for ${call.name}` },
+    executionTime: 0,
+  }));
+}
+
 /**
  * Process a message through the bot's response pipeline
  * Handles pre-processing, API calls, and post-processing
@@ -230,11 +243,13 @@ export const processMessage = async (
     originalContent: content,
     preProcessed: false,
     postProcessed: false,
-    fromVoiceMode: userMessage.type === 'voice'
   };
   
+  // Flag to track if this is a voice message
+  const isVoiceMessage = userMessage.type === 'voice';
+  
   // Log the message processing
-  console.log(`Processing message for bot ${bot.name}, type: ${userMessage.type}, voice mode: ${userMessage.type === 'voice'}`);
+  console.log(`Processing message for bot ${bot.name}, type: ${userMessage.type}, voice mode: ${isVoiceMessage}`);
   
   // Apply pre-processing if enabled and not at max reprocessing depth
   if (
@@ -242,9 +257,9 @@ export const processMessage = async (
     bot.preProcessingPrompt &&
     context.currentDepth < context.settings.maxReprocessingDepth
   ) {
-    const preprocessedContent = await preProcessMessage(userMessage, bot, context);
-    if (preprocessedContent !== content) {
-      content = preprocessedContent;
+    const result = await preProcessMessage(userMessage, bot, context);
+    if (result.content !== content) {
+      content = result.content;
       processingMetadata.preProcessed = true;
       processingMetadata.preprocessedContent = content;
     }
@@ -257,7 +272,6 @@ export const processMessage = async (
   }));
   
   // Set up API options based on whether this is a voice message
-  const isVoiceMessage = userMessage.type === 'voice';
   const modelToUse = isVoiceMessage && bot.voiceSettings?.model ? 
     bot.voiceSettings.model : 
     bot.model || 'gpt-4o';
@@ -270,11 +284,18 @@ export const processMessage = async (
   let toolResults: ToolResult[] = [];
   
   try {
-    if (process.env.NEXT_PUBLIC_USE_MOCK_SERVICE === 'true') {
-      // Use mock service for testing/dev
-      const { content: mockContent } = await getMockBotResponse(content, bot.name);
-      apiResponseContent = mockContent;
-      processingMetadata.usedMockService = true;
+    if (process.env.NEXT_PUBLIC_USE_FALLBACK_SERVICE === 'true') {
+      // Use fallback service when configured
+      apiResponseContent = await getFallbackBotResponse(
+        bot, 
+        content, 
+        context.messages,
+        {
+          includeToolCalls: options.includeToolCalls,
+          availableTools: options.availableTools
+        }
+      );
+      processingMetadata.usedFallbackService = true;
     } else {
       // Prepare request body
       let requestBody: any = {
@@ -320,7 +341,7 @@ export const processMessage = async (
         const toolResponseMessages = toolResults.map(result => ({
           role: 'tool' as const,
           content: JSON.stringify(result.output),
-          tool_call_id: result.id
+          tool_call_id: result.toolName // Use toolName instead of id
         }));
         
         // Get final response that includes tool outputs
@@ -363,9 +384,9 @@ export const processMessage = async (
       context.currentDepth < context.settings.maxReprocessingDepth &&
       !isVoiceMessage // Skip post-processing for voice messages
     ) {
-      const postprocessedContent = await postProcessMessage(apiResponseContent, userMessage, bot, context);
-      if (postprocessedContent !== apiResponseContent) {
-        apiResponseContent = postprocessedContent;
+      const result = await postProcessMessage(apiResponseContent, userMessage, bot, context);
+      if (result.content !== apiResponseContent) {
+        apiResponseContent = result.content;
         processingMetadata.postProcessed = true;
         processingMetadata.postprocessedContent = apiResponseContent;
       }

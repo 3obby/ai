@@ -150,7 +150,7 @@ export function BotRegistryProvider({
       if (!options?.realtimeModel) {
         try {
           // Try to fetch the latest OpenAI realtime model
-          const response = await fetch('/api/latest-openai-models');
+          const response = await fetch('/usergroupchatcontext/api/latest-openai-models');
           if (response.ok) {
             const data = await response.json();
             modelToUse = data.realtimeModel || 'gpt-4o-realtime-preview-2024-12-17';
@@ -179,10 +179,12 @@ export function BotRegistryProvider({
         enableReprocessing: false, // Disable reprocessing for voice mode
         // Add voice-specific properties using the first VoiceSettings interface from types.ts
         voiceSettings: {
-          voice: originalBot.voiceSettings?.voice || 'alloy',
+          // Prefer the bot's existing voice setting or fall back to default "coral" voice
+          voice: originalBot.voiceSettings?.voice || 'coral',
           speed: originalBot.voiceSettings?.speed || 1.0,
           quality: 'high-quality' as const,
-          model: modelToUse
+          // Use the realtime model for conversation but TTS-1 for synthesis
+          model: originalBot.voiceSettings?.model || 'tts-1'
         }
       };
 
@@ -267,7 +269,7 @@ export function BotRegistryProvider({
       const defaultModel = 'gpt-4o-realtime-preview';
       
       // Try to fetch the latest voice model from our API endpoint
-      const response = await fetch('/api/latest-openai-models');
+      const response = await fetch('/usergroupchatcontext/api/latest-openai-models');
       if (!response.ok) {
         console.warn('Failed to fetch latest models, status:', response.status);
         return defaultModel;

@@ -356,89 +356,131 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       let content = '';
       let toolResults: ToolResult[] = [];
       
-      // Use mock service for development/testing
-      if (process.env.NEXT_PUBLIC_USE_MOCK_SERVICE === 'true') {
-        // Wait a bit to simulate processing
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        content = `Response from ${bot.name} to: ${userMessage}`;
-      } else {
-        // If this is a voice mode response and we need to bypass pre/post processing,
-        // generate the response directly from OpenAI without using the prompt processor
-        if (options.isVoiceMode && options.skipPrePostProcessing) {
-          try {
-            console.log('Generating voice response using multimodal agent service');
-            
-            // Ensure we're using a realtime model for voice mode
-            const realtimeModel = bot.model?.includes('realtime') 
-              ? bot.model 
-              : 'gpt-4o-realtime-preview';
-            
-            // Configure multimodal agent with realtime model if not already configured
-            if (multimodalAgentService.getConfig().model !== realtimeModel) {
-              multimodalAgentService.updateConfig({
-                model: realtimeModel,
-                voice: bot.voiceSettings?.voice || 'alloy',
-                voiceSpeed: bot.voiceSettings?.speed || 1.0,
-                voiceQuality: 'high-quality'
-              });
-              
-              console.log('Updated multimodal agent config:', multimodalAgentService.getConfig());
-            }
-            
-            // Use standard API first to generate text response without audio,
-            // which helps ensure we have a text response even if voice synthesis fails
-            const textResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: [...history, { role: 'user', content: userMessage }],
-                model: 'gpt-4o', // Use standard model for text response
-                temperature: bot.temperature || 0.7,
-                max_tokens: bot.maxTokens || 1024,
-              }),
-            }).then(res => res.json());
-            
-            // Extract content from the OpenAI response structure
-            content = textResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
-            console.log('Generated text response first:', content);
-            
-            // Now synthesize speech for this content
+      try {
+        // Use mock service for development/testing
+        if (process.env.NEXT_PUBLIC_USE_FALLBACK_SERVICE === 'true') {
+          // Wait a bit to simulate processing
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          content = `Response from ${bot.name} to: ${userMessage}`;
+        } else {
+          // If this is a voice mode response and we need to bypass pre/post processing,
+          // generate the response directly from OpenAI without using the prompt processor
+          if (options.isVoiceMode && options.skipPrePostProcessing) {
             try {
-              // Configure voice settings
-              const voiceSettings = {
-                voice: bot.voiceSettings?.voice || 'alloy',
-                speed: bot.voiceSettings?.speed || 1.0,
-                quality: 'high-quality' as const
-              };
+              console.log('Generating voice response using multimodal agent service');
               
-              // Use VoiceSynthesisService directly instead of multimodalAgentService
-              // This provides better reliability for voice output
-              const speechService = new VoiceSynthesisService(voiceSettings);
+              // Ensure we're using a realtime model for voice mode
+              const realtimeModel = bot.model?.includes('realtime') 
+                ? bot.model 
+                : 'gpt-4o-realtime-preview';
               
-              // Start voice synthesis asynchronously - don't wait for it to complete
-              // This ensures we don't block the UI while synthesis is in progress
-              speechService.speak(content, voiceSettings)
-                .then(() => {
-                  console.log('Voice synthesis completed successfully');
-                })
-                .catch(synthError => {
-                  console.error('Voice synthesis error (non-blocking):', synthError);
+              // Configure multimodal agent with realtime model if not already configured
+              if (multimodalAgentService.getConfig().model !== realtimeModel) {
+                multimodalAgentService.updateConfig({
+                  model: realtimeModel,
+                  voice: bot.voiceSettings?.voice || 'alloy',
+                  voiceSpeed: bot.voiceSettings?.speed || 1.0,
+                  voiceQuality: 'high-quality'
                 });
                 
-              console.log('Initiated voice synthesis for response');
-            } catch (synthError) {
-              console.error('Failed to initiate voice synthesis:', synthError);
-              // Continue with text-only response if voice synthesis fails
+                console.log('Updated multimodal agent config:', multimodalAgentService.getConfig());
+              }
+              
+              // Use standard API first to generate text response without audio,
+              // which helps ensure we have a text response even if voice synthesis fails
+              const textResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...history, 
+                    { role: 'user', content: userMessage }
+                  ],
+                  model: 'gpt-4o',
+                  temperature: bot.temperature || 0.7,
+                  max_tokens: bot.maxTokens || 2048,
+                }),
+              }).then(res => res.json());
+              
+              // Extract content from the OpenAI response structure
+              content = textResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+              console.log('Generated text response first:', content);
+              
+              // Now synthesize speech for this content
+              try {
+                // Configure voice settings
+                const voiceSettings = {
+                  voice: bot.voiceSettings?.voice || 'alloy',
+                  speed: bot.voiceSettings?.speed || 1.0,
+                  quality: 'high-quality' as const
+                };
+                
+                // Use VoiceSynthesisService directly instead of multimodalAgentService
+                // This provides better reliability for voice output
+                const speechService = new VoiceSynthesisService(voiceSettings);
+                
+                // Start voice synthesis asynchronously - don't wait for it to complete
+                // This ensures we don't block the UI while synthesis is in progress
+                speechService.speak(content, voiceSettings)
+                  .then(() => {
+                    console.log('Voice synthesis completed successfully');
+                  })
+                  .catch(synthError => {
+                    console.error('Voice synthesis error (non-blocking):', synthError);
+                  });
+                  
+                console.log('Initiated voice synthesis for response');
+              } catch (synthError) {
+                console.error('Failed to initiate voice synthesis:', synthError);
+                // Continue with text-only response if voice synthesis fails
+              }
+            } catch (error) {
+              console.error('Error generating voice response:', error);
+              content = `I'm sorry, I encountered an error while processing your voice request. ${error instanceof Error ? error.message : ''}`;
+              
+              // Fall back to standard API if multimodal agent fails
+              try {
+                // Direct API call to OpenAI for voice mode responses as fallback
+                const response = await fetch('/usergroupchatcontext/api/openai/chat', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    messages: [...history, { role: 'user', content: userMessage }],
+                    model: bot.model || 'gpt-4o',
+                    temperature: bot.temperature || 0.7,
+                    max_tokens: bot.maxTokens || 1024,
+                    // No tools in voice mode
+                    tools: []
+                  }),
+                }).then(res => res.json());
+                
+                // Log the response structure to debug
+                console.log('Fallback voice mode OpenAI response:', response);
+                
+                // Extract content from the OpenAI response structure
+                content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+              } catch (fallbackError) {
+                console.error('Fallback API also failed:', fallbackError);
+              }
             }
-          } catch (error) {
-            console.error('Error generating voice response:', error);
-            content = `I'm sorry, I encountered an error while processing your voice request. ${error instanceof Error ? error.message : ''}`;
-            
-            // Fall back to standard API if multimodal agent fails
-            try {
-              // Direct API call to OpenAI for voice mode responses as fallback
+          } else {
+            // Normal text message processing flow remains unchanged
+            // Generate response with appropriate tools if bot has tools enabled
+            if (useTools) {
+              // Get the bot's enabled tools
+              // Since we're dealing with type inconsistencies, just use an empty array for now
+              // In a real implementation, this would filter the tools based on enabled tools
+              const enabledTools: ToolDefinition[] = [];
+              
+              // Get tool definitions for enabled tools
+              const toolDefinitions = enabledTools;
+              
+              // Call API with tool definitions
               const response = await fetch('/usergroupchatcontext/api/openai/chat', {
                 method: 'POST',
                 headers: {
@@ -449,119 +491,93 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                   model: bot.model || 'gpt-4o',
                   temperature: bot.temperature || 0.7,
                   max_tokens: bot.maxTokens || 1024,
-                  // No tools in voice mode
-                  tools: []
+                  tools: toolDefinitions
                 }),
               }).then(res => res.json());
               
-              // Log the response structure to debug
-              console.log('Fallback voice mode OpenAI response:', response);
+              // Log response structure to debug
+              console.log('Tool-enabled OpenAI response:', response);
               
-              // Extract content from the OpenAI response structure
-              content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
-            } catch (fallbackError) {
-              console.error('Fallback API also failed:', fallbackError);
-            }
-          }
-        } else {
-          // Normal text message processing flow remains unchanged
-          // Generate response with appropriate tools if bot has tools enabled
-          if (useTools) {
-            // Get the bot's enabled tools
-            // Since we're dealing with type inconsistencies, just use an empty array for now
-            // In a real implementation, this would filter the tools based on enabled tools
-            const enabledTools: ToolDefinition[] = [];
-            
-            // Get tool definitions for enabled tools
-            const toolDefinitions = enabledTools;
-            
-            // Call API with tool definitions
-            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: [...history, { role: 'user', content: userMessage }],
-                model: bot.model || 'gpt-4o',
-                temperature: bot.temperature || 0.7,
-                max_tokens: bot.maxTokens || 1024,
-                tools: toolDefinitions
-              }),
-            }).then(res => res.json());
-            
-            // Log response structure to debug
-            console.log('Tool-enabled OpenAI response:', response);
-            
-            // Check if response includes tool calls
-            if (response.choices?.[0]?.message?.tool_calls && 
-                response.choices[0].message.tool_calls.length > 0 && 
-                executeToolCalls) {
-              // Format tool calls for our tool execution service
-              const formattedToolCalls = response.choices[0].message.tool_calls.map((call: any) => ({
-                id: call.id,
-                name: call.function.name,
-                arguments: JSON.parse(call.function.arguments)
-              }));
-              
-              // Execute tool calls
-              toolResults = await executeToolCalls(formattedToolCalls);
-              
-              // Add tool results to the message history for a follow-up completion
-              const toolResponseMessages = toolResults.map(result => {
-                // Handle different ToolResult shapes in the codebase
-                const resultObj = result as any;
-                return {
-                  role: 'tool' as const,
-                  content: JSON.stringify(resultObj.output || resultObj.result),
-                  tool_call_id: resultObj.id || resultObj.toolName
-                };
-              });
-              
-              // Get final response that includes tool outputs
-              const finalResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+              // Check if response includes tool calls
+              if (response.choices?.[0]?.message?.tool_calls && 
+                  response.choices[0].message.tool_calls.length > 0 && 
+                  executeToolCalls) {
+                // Format tool calls for our tool execution service
+                const formattedToolCalls = response.choices[0].message.tool_calls.map((call: any) => ({
+                  id: call.id,
+                  name: call.function.name,
+                  arguments: JSON.parse(call.function.arguments)
+                }));
+                
+                // Execute tool calls
+                toolResults = await executeToolCalls(formattedToolCalls);
+                
+                // Add tool results to the message history for a follow-up completion
+                const toolResponseMessages = toolResults.map(result => {
+                  // Handle different ToolResult shapes in the codebase
+                  const resultObj = result as any;
+                  return {
+                    role: 'tool' as const,
+                    content: JSON.stringify(resultObj.output || resultObj.result),
+                    tool_call_id: resultObj.id || resultObj.toolName
+                  };
+                });
+                
+                // Get final response that includes tool outputs
+                const finalResponse = await fetch('/usergroupchatcontext/api/openai/chat', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    messages: [
+                      ...history, 
+                      { role: 'user', content: userMessage },
+                      ...toolResponseMessages
+                    ],
+                    model: bot.model || 'gpt-4o',
+                    temperature: bot.temperature || 0.7,
+                    max_tokens: bot.maxTokens || 1024,
+                  }),
+                }).then(res => res.json());
+                
+                content = finalResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+              } else {
+                // No tool calls or tool execution not enabled
+                content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
+              }
+            } else {
+              // Standard chat completion without tools
+              const response = await fetch('/usergroupchatcontext/api/openai/chat', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  messages: [
-                    ...history, 
-                    { role: 'user', content: userMessage },
-                    ...toolResponseMessages
-                  ],
+                  messages: [...history, { role: 'user', content: userMessage }],
                   model: bot.model || 'gpt-4o',
                   temperature: bot.temperature || 0.7,
                   max_tokens: bot.maxTokens || 1024,
                 }),
               }).then(res => res.json());
               
-              content = finalResponse.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
-            } else {
-              // No tool calls or tool execution not enabled
+              // Log response structure to debug
+              console.log('Standard OpenAI response:', response);
+              
               content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
             }
-          } else {
-            // Standard chat completion without tools
-            const response = await fetch('/usergroupchatcontext/api/openai/chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messages: [...history, { role: 'user', content: userMessage }],
-                model: bot.model || 'gpt-4o',
-                temperature: bot.temperature || 0.7,
-                max_tokens: bot.maxTokens || 1024,
-              }),
-            }).then(res => res.json());
-            
-            // Log response structure to debug
-            console.log('Standard OpenAI response:', response);
-            
-            content = response.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
           }
         }
+      } catch (error) {
+        console.error("Error generating bot response:", error);
+        content = `I'm sorry, I encountered an error while processing your request. ${error instanceof Error ? error.message : ''}`;
+        toolResults = [];
+      } finally {
+        // Remove this bot from typing indicators
+        dispatch({ 
+          type: 'SET_TYPING_BOT_IDS', 
+          payload: state.typingBotIds.filter(id => id !== botId) 
+        });
       }
       
       return { content, toolResults };
@@ -571,12 +587,6 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         content: `I'm sorry, I encountered an error while processing your request. ${error instanceof Error ? error.message : ''}`,
         toolResults: []
       };
-    } finally {
-      // Remove this bot from typing indicators
-      dispatch({ 
-        type: 'SET_TYPING_BOT_IDS', 
-        payload: state.typingBotIds.filter(id => id !== botId) 
-      });
     }
   };
   

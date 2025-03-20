@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "0831024",
+      "fullHash": "08310247b94e59b5c7ce7c11b339ec60a812bc66",
+      "date": "2025-03-20 20:42:45 +0700",
+      "author": "3obby",
+      "message": "kinda broken",
+      "category": "other"
+    },
+    {
       "hash": "297aa77",
       "fullHash": "297aa775342a2a7d8fc5fd703345e9f5bb8de39e",
       "date": "2025-03-20 19:53:52 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 14:56:01 +0700",
       "author": "3obby",
       "message": "Implement token shop with proactive token purchasing system",
-      "category": "other"
-    },
-    {
-      "hash": "026cedd",
-      "fullHash": "026ceddf8970f056a7f3aa892b5a56558e0a57d7",
-      "date": "2025-03-09 14:36:29 +0700",
-      "author": "3obby",
-      "message": "Make bot cards more compact with smaller images to reduce pixelation",
       "category": "other"
     }
   ]

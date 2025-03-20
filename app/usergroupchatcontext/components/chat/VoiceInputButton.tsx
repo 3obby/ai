@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Loader2, Volume2, Volume1, VolumeX } from 'lucide-react';
 import { useVoiceTranscription } from '../../services/voiceTranscriptionService';
 import { cn } from '@/lib/utils';
-import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
+import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
 import { useRealGroupChat } from '../../hooks/useRealGroupChat';
-import React from 'react';
 import { VoiceSynthesisService } from '../../services/voiceSynthesisService';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
+import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
 import sessionConnectionManager from '../../services/livekit/session-connection-manager';
-import audioTrackManager from '../../services/livekit/audio-track-manager';
-import participantManager from '../../services/livekit/participant-manager';
 import voiceModeManager from '../../services/voice/VoiceModeManager';
-import { useGroupChatContext } from '../../context/GroupChatContext';
+import { useLiveKit } from '../../context/LiveKitProvider';
 
 // Create a single instance of the service for use in this component
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -68,12 +66,14 @@ export function VoiceInputButton({
   } = useVoiceSettings();
   
   const { 
-    isListening: isLiveKitListening, 
-    startListening: startLiveKitListening,
+    startListening: startLiveKitListening, 
     stopListening: stopLiveKitListening,
     resumeAudioContext,
-    isInVoiceMode
+    isListening: isLiveKitListening,
   } = useLiveKitIntegration();
+  
+  // Get the ensureConnection function from LiveKit provider
+  const { ensureConnection } = useLiveKit();
   
   const [isInitializing, setIsInitializing] = useState(false);
 
@@ -84,7 +84,7 @@ export function VoiceInputButton({
   const [showRipple, setShowRipple] = useState(false);
   const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { state } = useGroupChatContext();
+  const { state, dispatch } = useGroupChatContext();
   
   /**
    * Handles the transition from voice mode back to text mode
@@ -269,23 +269,50 @@ export function VoiceInputButton({
             // Continue anyway - we want the UI to show
           }
           
-          // Try to start LiveKit listening - but continue even if it fails
+          // Force UI transition to voice mode before attempting connection
+          // This provides immediate feedback to the user
+          setIsInitializing(false);
+          console.log('Voice mode UI activated');
+          
+          // Set the voice mode as active in the session connection manager
+          sessionConnectionManager.setVoiceModeActive(true);
+          
+          // Try to establish LiveKit connection with retries
           try {
-            // Start LiveKit listening
+            // First ensure LiveKit connection is ready
+            console.log('Ensuring LiveKit connection is established...');
+            const connectionSuccessful = await ensureConnection();
+            
+            if (!connectionSuccessful) {
+              console.log('Initial connection attempt failed, retrying...');
+              
+              // Add retry mechanism with delay
+              for (let attempt = 0; attempt < 3; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+                console.log(`Retry attempt ${attempt + 1}...`);
+                
+                if (await ensureConnection()) {
+                  console.log('Connection established on retry');
+                  break;
+                }
+              }
+            }
+            
+            // Start LiveKit listening - continues even if connection failed
+            // to ensure the UI feedback works regardless
             await startLiveKitListening();
             
-            // Update LiveKit session connection
-            sessionConnectionManager.setVoiceModeActive(true);
-            
-            // Mark voice mode as active in multimodal agent service
-            multimodalAgentService.startListening();
+            // Force an attempt with multimodal agent service
+            try {
+              await multimodalAgentService.startListening();
+            } catch (agentErr) {
+              console.warn('Error starting multimodal agent:', agentErr);
+              // Continue even if agent service fails
+            }
           } catch (connErr) {
             console.error('Connection error (continuing with UI):', connErr);
             // Continue anyway to show the UI
           }
-          
-          setIsInitializing(false);
-          console.log('Voice mode UI activated');
         } catch (error) {
           console.error('Error activating voice mode:', error);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error initializing voice mode';
@@ -299,21 +326,11 @@ export function VoiceInputButton({
           } catch (cleanupErr) {
             console.error('Error during cleanup:', cleanupErr);
           }
-          
-          // Display the error as an alert so user knows what happened
-          alert("Voice Mode Error: " + errorMessage);
         }
       }
     } else {
-      // Fallback to Web Speech API if LiveKit integration is disabled
-      if (isRecording) {
-        stopRecording();
-        setIsRecordingComplete(true);
-      } else {
-        // Switch from text mode to voice mode
-        resetTranscript();
-        startRecording();
-      }
+      // Not using LiveKit voice mode - use the legacy recording approach
+      console.warn('Legacy recording not implemented');
     }
   };
 

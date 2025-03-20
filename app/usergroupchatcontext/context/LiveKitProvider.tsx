@@ -175,7 +175,14 @@ export const LiveKitProvider: React.FC<LiveKitProviderProps> = ({
       // Fetch token from the API endpoint with explicit error handling
       let response;
       try {
-        response = await fetch('/usergroupchatcontext/api/livekit-token');
+        console.log('[DEBUG] Attempting to fetch LiveKit token...');
+        response = await fetch('/usergroupchatcontext/api/livekit-token/');
+        
+        if (!response.ok) {
+          console.error(`[DEBUG] Failed to get LiveKit token: ${response.status} ${response.statusText}`);
+        } else {
+          console.log('[DEBUG] Successfully fetched LiveKit token');
+        }
       } catch (fetchError) {
         console.error('[DEBUG] Network error fetching LiveKit token:', fetchError);
         throw new Error('Network error fetching LiveKit token');

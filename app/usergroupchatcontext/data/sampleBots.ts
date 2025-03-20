@@ -14,7 +14,13 @@ export const sampleBots: Bot[] = [
     maxTokens: 2048,
     enabled: true,
     useTools: false,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   },
   {
     id: 'researcher',
@@ -27,7 +33,13 @@ export const sampleBots: Bot[] = [
     maxTokens: 2048,
     enabled: true,
     useTools: true,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   },
   {
     id: 'critic',
@@ -40,7 +52,13 @@ export const sampleBots: Bot[] = [
     maxTokens: 1024,
     enabled: true,
     useTools: false,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   },
   {
     id: 'creative',
@@ -53,7 +71,13 @@ export const sampleBots: Bot[] = [
     maxTokens: 1536,
     enabled: true,
     useTools: true,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   },
   {
     id: 'coder',
@@ -66,7 +90,13 @@ export const sampleBots: Bot[] = [
     maxTokens: 3072,
     enabled: false,
     useTools: true,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   },
   {
     id: 'summarizer',
@@ -79,6 +109,12 @@ export const sampleBots: Bot[] = [
     maxTokens: 768,
     enabled: false,
     useTools: false,
-    enableReprocessing: false
+    enableReprocessing: false,
+    voiceSettings: {
+      voice: 'coral',
+      speed: 1.0,
+      quality: 'high-quality',
+      model: 'tts-1'
+    }
   }
 ]; 

@@ -31,7 +31,7 @@ function BotsInitializer() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/latest-openai-models');
+      const response = await fetch('/usergroupchatcontext/api/latest-openai-models');
       if (!response.ok) {
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
