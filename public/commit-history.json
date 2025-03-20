@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "81a8653",
+      "fullHash": "81a8653289f151c42ea6b7b2a1c7ff1186d36ca7",
+      "date": "2025-03-20 12:42:09 +0700",
+      "author": "3obby",
+      "message": "deleted pinecone shit",
+      "category": "other"
+    },
+    {
       "hash": "8d626f9",
       "fullHash": "8d626f965439444a29e7bf3e9c21a8e76bc9de45",
       "date": "2025-03-20 12:31:36 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Implement 1:1 token burning system with global and user-specific tracking",
       "category": "other"
-    },
-    {
-      "hash": "094bfdd",
-      "fullHash": "094bfdd447be26110c76866934a1dcaf2ef028b7",
-      "date": "2025-03-09 13:00:14 +0700",
-      "author": "3obby",
-      "message": "Change XP to 'tokens burned' terminology and add fire emoji icon",
-      "category": "feature"
     }
   ]
 }
