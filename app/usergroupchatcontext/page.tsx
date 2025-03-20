@@ -14,6 +14,10 @@ import { Info, X } from 'lucide-react';
 import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
 import VoiceCommandController from './components/voice/VoiceCommandController';
+import { VoiceTransitionFeedback } from './components/voice/VoiceTransitionFeedback';
+import { MobileFriendlyVoiceControl } from './components/voice/MobileFriendlyVoiceControl';
+import { AccessibleVoiceControls } from './components/voice/AccessibleVoiceControls';
+import VoiceInputButton from './components/voice/VoiceInputButton';
 import './mobile.css';
 
 // Component to initialize bots after mounting
@@ -192,6 +196,7 @@ function BotsInitializer() {
 
 export default function GroupChatContextPage() {
   const [infoOpen, setInfoOpen] = useState(false);
+  const [showAccessibilityControls, setShowAccessibilityControls] = useState(false);
   
   // Select just the default bot
   const activeBot = useMemo(() => {
@@ -202,6 +207,12 @@ export default function GroupChatContextPage() {
       ...bot,
       enabled: true
     }));
+  }, []);
+
+  // Detect if using a mobile device
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }, []);
 
   return (
@@ -217,6 +228,26 @@ export default function GroupChatContextPage() {
                     <ChatInterface className="flex-1 h-full" />
                     <VoiceIntegration />
                     <VoiceResponseManager />
+                    <VoiceTransitionFeedback />
+                    {/* Fixed position for voice controls */}
+                    <div className="fixed bottom-20 right-4 z-10">
+                      {showAccessibilityControls ? (
+                        <AccessibleVoiceControls />
+                      ) : isMobile ? (
+                        <MobileFriendlyVoiceControl />
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <VoiceInputButton size="lg" showVisualizer />
+                          <button 
+                            onClick={() => setShowAccessibilityControls(true)}
+                            className="mt-2 text-xs text-primary hover:underline"
+                            aria-label="Show accessibility controls"
+                          >
+                            Accessibility Options
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     {/* Commenting out to prevent unwanted transcriptions */}
                     {/* <VoiceCommandController commandPrefix="system" /> */}
                   </div>
@@ -255,6 +286,7 @@ export default function GroupChatContextPage() {
                 <li>Powered by the latest GPT model (GPT-4o)</li>
                 <li>Mobile-optimized interface</li>
                 <li>Voice commands support</li>
+                <li>Accessibility features for all users</li>
               </ul>
             </div>
           </div>

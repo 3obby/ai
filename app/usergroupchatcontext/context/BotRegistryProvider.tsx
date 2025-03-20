@@ -257,25 +257,37 @@ export function BotRegistryProvider({
   }, [state.availableBots, dispatch]);
   
   /**
-   * Fetch the latest voice model from the API
-   * Provides automatic selection of the best available model for voice interactions
-   * 
+   * Fetch the latest available voice model from OpenAI
+   * This method ensures we always use the most recent model available
    * @returns Promise resolving to the model ID string
    */
-  const fetchLatestVoiceModel = useCallback(async (): Promise<string> => {
+  const fetchLatestVoiceModel = async (): Promise<string> => {
     try {
+      // Default fallback in case of API failure
+      const defaultModel = 'gpt-4o-realtime-preview';
+      
+      // Try to fetch the latest voice model from our API endpoint
       const response = await fetch('/api/latest-openai-models');
-      if (response.ok) {
-        const data = await response.json();
-        return data.realtimeModel || 'gpt-4o-realtime-preview';
+      if (!response.ok) {
+        console.warn('Failed to fetch latest models, status:', response.status);
+        return defaultModel;
       }
+      
+      const data = await response.json();
+      
+      // Make sure we have a valid model ID
+      if (!data.realtimeModel || typeof data.realtimeModel !== 'string') {
+        console.warn('Invalid model data returned from API', data);
+        return defaultModel;
+      }
+      
+      return data.realtimeModel;
     } catch (error) {
-      console.error('Failed to fetch latest voice model:', error);
+      console.error('Error fetching latest voice model:', error);
+      // Return a reasonable default if we can't fetch the latest
+      return 'gpt-4o-realtime-preview';
     }
-    
-    // Fallback to a default model
-    return 'gpt-4o-realtime-preview';
-  }, []);
+  };
 
   // Create the context value
   const contextValue = useMemo(() => {

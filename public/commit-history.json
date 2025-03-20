@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "a784fdb",
+      "fullHash": "a784fdb2bef314c5ae41bd134ca148666e823f85",
+      "date": "2025-03-20 16:53:23 +0700",
+      "author": "3obby",
+      "message": "good spot i guess",
+      "category": "other"
+    },
+    {
       "hash": "73f3226",
       "fullHash": "73f3226170c3480b46c63fd06e37108353e09aac",
       "date": "2025-03-20 15:36:56 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 13:57:24 +0700",
       "author": "3obby",
       "message": "UI improvements: switch to robot avatars, show tokens on smaller screens, add loading states for bot cards",
-      "category": "feature"
-    },
-    {
-      "hash": "23bc073",
-      "fullHash": "23bc0739f967b7655fb933d8a8c86337241e0743",
-      "date": "2025-03-09 13:47:19 +0700",
-      "author": "3obby",
-      "message": "Implement requested improvements: reset tokens, diversify avatars, add pagination, add vanilla GPT presets",
       "category": "feature"
     }
   ]

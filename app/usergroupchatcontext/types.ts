@@ -100,6 +100,13 @@ export interface VoiceSettings {
     createResponse?: boolean;
   };
   defaultVoice?: string;
+  defaultVoiceModel?: string;
+  speed?: number;
+  showTransitionFeedback?: boolean;
+  keepPreprocessingHooks?: boolean;
+  keepPostprocessingHooks?: boolean;
+  preserveVoiceHistory?: boolean;
+  automaticVoiceSelection?: boolean;
   modality?: 'both' | 'text' | 'audio';
 }
 

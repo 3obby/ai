@@ -524,6 +524,94 @@ Based on the implementation plan, we've made several important enhancements to t
 - **Clearer Type Definitions**: Improved the separation of concerns in the type system by properly differentiating voice types.
 
 These enhancements significantly improve the robustness and user experience of the voice-to-text transition system, ensuring seamless switching between modalities while maintaining proper cleanup and context preservation.
+
+## Recent Implementation Progress
+
+### Voice Mode Settings UI Enhancement
+
+We've completed significant improvements to the Voice Mode Settings UI:
+
+1. **Comprehensive Voice Settings Panel**
+   - Added voice model selection functionality with automatic fetching of the latest OpenAI models
+   - Integrated VoiceTransitionSettings component into the main settings panel
+   - Added visual feedback during transitions between voice and text modes
+   - Created settings storage for voice ghost behavior options
+
+2. **VoiceTransitionFeedback Component**
+   - Implemented real-time visual feedback during mode transitions
+   - Added different animated indicators based on the current transition state
+   - Made transition feedback configurable through user settings
+
+3. **Voice Model Selection System**
+   - Added fetchLatestVoiceModel method to dynamically query the newest available models
+   - Implemented automatic model selection based on user preferences
+   - Created fallback mechanisms to ensure the system remains functional even if API calls fail
+
+### Voice Ghost Lifecycle Management
+
+We've significantly improved the Voice Ghost Lifecycle Management:
+
+1. **Enhanced VoiceModeManager**
+   - Implemented robust cleanupVoiceGhosts method for proper resource cleanup
+   - Added enhanced state tracking with transition timing metrics
+   - Improved error handling and recovery for interrupted sessions
+   - Added comprehensive event system for tracking lifecycle events
+
+2. **VoiceTextTransitionHandler Component**
+   - Created dedicated component to manage voice-to-text transitions
+   - Implemented proper re-enabling of processing hooks when returning to text mode
+   - Added error recovery mechanisms for failed transitions
+   - Created event handling for interrupted voice sessions
+
+3. **BotRegistry Enhancements**
+   - Improved cloneBotInstanceForVoice method for creating voice-optimized bot clones
+   - Enhanced voice ghost cleanup process with staged approach to prevent UI glitches
+   - Added tracking of transition times for performance optimization
+
+These enhancements significantly improve the user experience when transitioning between voice and text modes, ensuring seamless conversation continuity while maintaining optimal performance characteristics for each modality.
+
+## Recent Progress on Reducing State Duplication
+
+We've made significant improvements to reduce state duplication in the voice-related components:
+
+1. **Centralized Voice Settings Management**
+   - Enhanced `useVoiceSettings` hook to serve as the single source of truth for all voice settings
+   - Implemented automatic synchronization between the settings state and VoiceModeManager
+   - Eliminated redundant storage of settings across components and services
+   - Added type-safe accessors for commonly used settings to reduce props drilling
+
+2. **Voice State Management Consolidation**
+   - Created `VoiceStateManager` service to centralize all voice mode state tracking
+   - Implemented event-based architecture to propagate state changes consistently
+   - Reduced duplicated state between UI components and manager classes
+   - Provided read-only access to state through getters to prevent inconsistent updates
+
+3. **React Integration with useVoiceState**
+   - Developed `useVoiceState` hook for React components to access the centralized state
+   - Added automatic synchronization with component state for proper rendering
+   - Implemented integration with other hooks (useGroupChat, useBotRegistry)
+   - Consolidated redundant voice control methods across components
+
+4. **Enhanced Type System for Voice Components**
+   - Created specialized type definitions for all voice-related data structures
+   - Added strong typing with explicit named types (VoiceOption, VadMode, AudioQuality)
+   - Improved consistency between component types and service interfaces
+   - Separated bot-specific voice settings from global voice settings
+   - Added detailed metadata interfaces for voice sessions and transitions
+
+5. **Component Updates to Use Centralized Hooks**
+   - Updated `VoiceInputButton` to use useVoiceState, replacing direct service calls
+   - Refactored `VoiceTransitionFeedback` to leverage centralized state for UI feedback
+   - Enhanced `VoiceSettingsPanel` to use the new hooks for synchronized settings
+   - Removed redundant event listeners and state tracking across components
+   - Simplified components by delegating state management to specialized hooks
+
+These improvements address the "Reduce State Duplication" priority from the roadmap, resulting in:
+- More reliable state tracking with fewer inconsistencies
+- Easier debugging of voice-related issues
+- Better separation of concerns with clear responsibilities
+- Reduced cognitive load when implementing new voice-related features
+- Improved type safety through consistent interfaces
 ## Type System
 
 ```typescript
@@ -629,6 +717,13 @@ export interface VoiceSettings {
     createResponse?: boolean;
   };
   defaultVoice?: string;
+  defaultVoiceModel?: string;
+  speed?: number;
+  showTransitionFeedback?: boolean;
+  keepPreprocessingHooks?: boolean;
+  keepPostprocessingHooks?: boolean;
+  preserveVoiceHistory?: boolean;
+  automaticVoiceSelection?: boolean;
   modality?: 'both' | 'text' | 'audio';
 }
 
@@ -738,14 +833,15 @@ export type GroupChatAction =
   ├── debug/
     ├── DebugInfo.tsx (5.3KB)
     ├── ProcessingInfo.tsx (6KB)
+    ├── VoiceGhostDebugger.tsx (13.5KB)
   ├── settings/
     ├── BotConfigPanel.tsx (21.8KB)
     ├── BotSettingsModal.tsx (1KB)
-    ├── GroupSettingsPanel.tsx (13.6KB)
+    ├── GroupSettingsPanel.tsx (21.2KB)
     ├── PromptEditor.tsx (4.8KB)
     ├── SettingsModal.tsx (2.5KB)
     ├── SettingsPanel.tsx (10.4KB)
-    ├── VoiceSettingsPanel.tsx (15.8KB)
+    ├── VoiceSettingsPanel.tsx (12.6KB)
     ├── VoiceTransitionSettings.tsx (10KB)
   ├── tools/
     ├── ToolCallWrapper.tsx (3.4KB)
@@ -753,23 +849,26 @@ export type GroupChatAction =
     ├── ToolPanel.tsx (5KB)
     ├── VoiceToolConfirmation.tsx (4.7KB)
   ├── voice/
+    ├── AccessibleVoiceControls.tsx (12.6KB)
     ├── AudioVisualizer.tsx (1.7KB)
+    ├── MobileFriendlyVoiceControl.tsx (6.1KB)
     ├── VoiceActivityIndicator.tsx (0.7KB)
     ├── VoiceAnalytics.tsx (7.2KB)
     ├── VoiceBotSelector.tsx (4.7KB)
     ├── VoiceCommandController.tsx (19.8KB)
     ├── VoiceContextInheritance.tsx (4.1KB) # Context definition
     ├── VoiceConversationController.tsx (13.9KB)
-    ├── VoiceInputButton.tsx (7.6KB)
+    ├── VoiceInputButton.tsx (3.9KB)
     ├── VoiceIntegration.tsx (3.1KB)
     ├── VoiceOverlay.tsx (15KB)
     ├── VoicePlaybackControls.tsx (3.4KB)
     ├── VoiceResponseManager.tsx (6KB)
     ├── VoiceTextTransitionHandler.tsx (4.6KB)
+    ├── VoiceTransitionFeedback.tsx (3.8KB)
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
-  ├── BotRegistryProvider.tsx (9.9KB) # State/service provider
+  ├── BotRegistryProvider.tsx (10.4KB) # State/service provider
   ├── GroupChatContext.tsx (3.4KB) # Context definition
   ├── GroupChatProvider.tsx (6.5KB) # State/service provider
   ├── LiveKitIntegrationProvider.tsx (34.1KB) # State/service provider
@@ -789,17 +888,17 @@ export type GroupChatAction =
   ├── useToolIntegration.ts (6.9KB)
   ├── useTurnTaking.ts (4.2KB)
   ├── useVoiceActivity.ts (2.5KB)
-  ├── useVoiceSettings.ts (6.2KB)
+  ├── useVoiceSettings.ts (3.3KB)
+  ├── useVoiceState.ts (3.8KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (31.6KB)
-├── llm_copilot_overview_and_todo.md.bak (17.9KB)
-├── mobile.css (2.3KB)
-├── page.tsx (9.5KB)
+├── llm_copilot_overview_and_todo.md (42.4KB)
+├── mobile.css (4.1KB)
+├── page.tsx (11.2KB)
 ├── scripts/
 ├── services/
   ├── connection/
-    ├── ConnectionManager.ts (9.7KB)
+    ├── ConnectionManager.ts (20.5KB)
   ├── events/
     ├── EventBus.ts (5.6KB)
   ├── livekit/
@@ -833,7 +932,8 @@ export type GroupChatAction =
     ├── AudioAnalyzerService.ts (6.4KB) # Service implementation
     ├── AudioContextManager.ts (5.3KB) # Context definition
     ├── VoiceActivityDetector.ts (11.6KB)
-    ├── VoiceModeManager.ts (13.2KB)
+    ├── VoiceModeManager.ts (22.9KB)
+    ├── VoiceStateManager.ts (5KB)
     ├── voice-analytics-service.ts (13KB)
     ├── voice-auth-service.ts (12.1KB)
   ├── voiceSynthesisService.ts (11.2KB) # Service implementation
@@ -849,12 +949,12 @@ export type GroupChatAction =
   ├── livekit.ts (2.4KB)
   ├── messages.ts (2.7KB)
   ├── settings.ts (3.1KB)
-  ├── voice.ts (2.9KB)
-├── types.ts (4.4KB) # Type definitions
+  ├── voice.ts (5KB)
+├── types.ts (4.6KB) # Type definitions
 ├── utils/
   ├── generateReadme.js (4.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (25.7KB)
+  ├── llm_copilot_part1.md (30.4KB)
   ├── llm_copilot_todo.txt (1.5KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```

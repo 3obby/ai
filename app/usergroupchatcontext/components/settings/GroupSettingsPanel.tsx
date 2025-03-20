@@ -3,9 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
-import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic } from 'lucide-react';
+import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic, Volume2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoiceTransitionSettings } from './VoiceTransitionSettings';
+import { useVoiceSettings } from '../../hooks/useVoiceSettings';
+import { VoiceTransitionFeedback } from '../voice/VoiceTransitionFeedback';
+
+// Voice models options
+const VOICE_MODELS = [
+  { id: 'gpt-4o-realtime-preview', name: 'GPT-4o Realtime', description: 'Latest model optimized for voice' },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'Fast and capable model' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Efficient, low-latency model' },
+];
+
+// Voice options
+const VOICE_OPTIONS = [
+  { id: 'alloy', name: 'Alloy', description: 'Versatile, balanced voice' },
+  { id: 'echo', name: 'Echo', description: 'Soft, mellow voice' },
+  { id: 'fable', name: 'Fable', description: 'Whimsical, animated voice' },
+  { id: 'onyx', name: 'Onyx', description: 'Deep, powerful voice' },
+  { id: 'nova', name: 'Nova', description: 'Bright, energetic voice' },
+  { id: 'shimmer', name: 'Shimmer', description: 'Clear, melodic voice' },
+];
 
 interface GroupSettingsPanelProps {
   onClose?: () => void;
@@ -14,6 +33,7 @@ interface GroupSettingsPanelProps {
 export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
   const { state, updateSettings, resetChat } = useGroupChat();
   const { state: botState } = useBotRegistry();
+  const { voiceSettings, updateVoiceSettings, isVoiceEnabled } = useVoiceSettings();
   const allBots = botState.availableBots;
   
   // Create state for form values - use default values if settings not loaded
@@ -27,7 +47,15 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
     maxReprocessingDepth: 3,
     systemPrompt: '',
     activeBots: [] as string[],
+    // Voice settings
+    defaultVoiceModel: 'gpt-4o-realtime-preview',
+    defaultVoice: 'alloy',
+    voiceSpeed: 1.0,
+    showTransitionFeedback: true,
   });
+  
+  // State for voice settings section
+  const [voiceSettingsExpanded, setVoiceSettingsExpanded] = useState(false);
   
   // Extract active bots from state or use empty array
   const [activeBotIds, setActiveBotIds] = useState<string[]>([]);
@@ -45,6 +73,11 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
       maxReprocessingDepth: state.settings?.maxReprocessingDepth || 3,
       systemPrompt: state.settings?.systemPrompt || '',
       activeBots: state.settings?.activeBotIds || [],
+      // Voice settings
+      defaultVoiceModel: state.settings?.voiceSettings?.defaultVoiceModel || 'gpt-4o-realtime-preview',
+      defaultVoice: state.settings?.voiceSettings?.defaultVoice || 'alloy',
+      voiceSpeed: state.settings?.voiceSettings?.speed || 1.0,
+      showTransitionFeedback: state.settings?.voiceSettings?.showTransitionFeedback !== false,
     });
     
     // Also update active bot IDs from state
@@ -74,7 +107,7 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
         ...prev,
         [name]: checked
       }));
-    } else if (type === 'number' || name === 'maxReprocessingDepth') {
+    } else if (type === 'number' || name === 'maxReprocessingDepth' || name === 'voiceSpeed') {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         setFormValues(prev => ({
@@ -110,6 +143,14 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
       activeBots: formValues.activeBots,
     });
     
+    // Update voice settings
+    updateVoiceSettings({
+      defaultVoiceModel: formValues.defaultVoiceModel,
+      defaultVoice: formValues.defaultVoice,
+      speed: formValues.voiceSpeed,
+      showTransitionFeedback: formValues.showTransitionFeedback,
+    });
+    
     // Close the modal
     if (onClose) onClose();
   };
@@ -133,6 +174,11 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
       activeBots: newActiveBotIds
     }));
     setActiveBotIds(newActiveBotIds);
+  };
+  
+  // Toggle voice settings section
+  const toggleVoiceSettings = () => {
+    setVoiceSettingsExpanded(!voiceSettingsExpanded);
   };
   
   return (
@@ -253,7 +299,7 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
       {/* UI Settings */}
       <div>
         <h3 className="text-lg font-medium mb-4 flex items-center">
-          <Sliders className="h-5 w-5 mr-2" />
+          <Settings className="h-5 w-5 mr-2" />
           UI Settings
         </h3>
         <div className="space-y-3">
@@ -287,6 +333,135 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
         </div>
       </div>
       
+      {/* Voice Settings */}
+      {formValues.enableVoice && (
+        <div>
+          <button
+            type="button"
+            onClick={toggleVoiceSettings}
+            className="flex items-center justify-between w-full mb-2 group"
+          >
+            <h3 className="text-lg font-medium flex items-center">
+              <Volume2 className="h-5 w-5 mr-2" />
+              Voice Settings
+            </h3>
+            <span className="text-xs group-hover:underline">
+              {voiceSettingsExpanded ? 'Hide' : 'Show'} voice settings
+            </span>
+          </button>
+          
+          {voiceSettingsExpanded && (
+            <div className="p-4 border rounded-md space-y-4 bg-background">
+              {/* Voice Model Selection */}
+              <div className="space-y-2">
+                <label htmlFor="defaultVoiceModel" className="text-sm font-medium">
+                  Default Voice Model
+                </label>
+                <select
+                  id="defaultVoiceModel"
+                  name="defaultVoiceModel"
+                  value={formValues.defaultVoiceModel}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                >
+                  {VOICE_MODELS.map(model => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} - {model.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  This model will be used automatically when switching to voice mode.
+                </p>
+              </div>
+              
+              {/* Voice Selection */}
+              <div className="space-y-2">
+                <label htmlFor="defaultVoice" className="text-sm font-medium">
+                  Default Voice
+                </label>
+                <select
+                  id="defaultVoice"
+                  name="defaultVoice"
+                  value={formValues.defaultVoice}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                >
+                  {VOICE_OPTIONS.map(voice => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name} - {voice.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Voice Speed */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="voiceSpeed" className="text-sm font-medium">
+                    Voice Speed
+                  </label>
+                  <span className="text-xs text-muted-foreground">
+                    {formValues.voiceSpeed.toFixed(1)}x
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  id="voiceSpeed"
+                  name="voiceSpeed"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={formValues.voiceSpeed}
+                  onChange={handleChange}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-neutral-200 dark:bg-neutral-700"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Slower</span>
+                  <span>Normal</span>
+                  <span>Faster</span>
+                </div>
+              </div>
+              
+              {/* Visual Feedback */}
+              <div className="flex items-center justify-between mt-4">
+                <div>
+                  <label htmlFor="showTransitionFeedback" className="text-sm font-medium">
+                    Show Voice Transition Feedback
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Display visual feedback when switching between voice and text modes
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="showTransitionFeedback"
+                  onClick={() => setFormValues(prev => ({
+                    ...prev,
+                    showTransitionFeedback: !prev.showTransitionFeedback
+                  }))}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                    formValues.showTransitionFeedback ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
+                  )}
+                  aria-pressed={formValues.showTransitionFeedback}
+                >
+                  <span className="sr-only">
+                    {formValues.showTransitionFeedback ? "Enabled" : "Disabled"}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      formValues.showTransitionFeedback ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Voice Transition Settings */}
       {formValues.enableVoice && (
         <div>
@@ -294,7 +469,9 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
             <Mic className="h-5 w-5 mr-2" />
             Voice Mode Transition
           </h3>
-          <VoiceTransitionSettings />
+          <div className="p-4 border rounded-md bg-background">
+            <VoiceTransitionSettings />
+          </div>
         </div>
       )}
       

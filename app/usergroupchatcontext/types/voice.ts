@@ -1,16 +1,51 @@
-// Voice Settings Type
+import { VoiceModeState } from '../services/voice/VoiceModeManager';
+
+/**
+ * Voice Activity Detection modes
+ */
+export type VadMode = 'auto' | 'sensitive' | 'manual';
+
+/**
+ * Voice options available from OpenAI
+ */
+export type VoiceOption = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+
+/**
+ * Audio quality settings for voice interactions
+ */
+export type AudioQuality = 'standard' | 'high-quality';
+
+/**
+ * Modality options for interaction
+ */
+export type Modality = 'text' | 'audio' | 'both';
+
+/**
+ * Voice state change event data
+ */
+export interface VoiceStateChangeEvent {
+  prevState: VoiceModeState;
+  nextState: VoiceModeState;
+  isRecording: boolean;
+  isProcessing: boolean;
+  timestamp: number;
+}
+
+/**
+ * Voice settings that control speech recognition and synthesis
+ */
 export interface VoiceSettings {
   // Voice Activity Detection
-  vadMode: 'auto' | 'sensitive' | 'manual';
+  vadMode: VadMode;
   vadThreshold?: number; // 0.1-0.9
   prefixPaddingMs?: number;
   silenceDurationMs?: number;
   
-  // Audio Processing
+  // Audio format
   audioFormat?: 'pcm16' | 'g711_ulaw' | 'g711_alaw';
   sampleRate?: number;
   
-  // Turn Detection
+  // Turn detection
   turnDetection?: {
     threshold?: number;
     prefixPaddingMs?: number;
@@ -18,10 +53,81 @@ export interface VoiceSettings {
     createResponse?: boolean;
   };
   
-  // Default Voice
-  defaultVoice?: string;
-  voiceSpeed?: number; // 0.5 to 2.0, controls speech rate
-  modality?: 'both' | 'text' | 'audio';
+  // Voice options
+  defaultVoice?: VoiceOption;
+  defaultVoiceModel?: string;
+  speed?: number;
+  quality?: AudioQuality;
+  
+  // Voice transition settings
+  showTransitionFeedback?: boolean;
+  keepPreprocessingHooks?: boolean;
+  keepPostprocessingHooks?: boolean;
+  preserveVoiceHistory?: boolean;
+  automaticVoiceSelection?: boolean;
+  
+  // General settings
+  modality?: Modality;
+}
+
+/**
+ * Bot-specific voice settings that override global settings
+ */
+export interface BotVoiceSettings {
+  voice?: VoiceOption;
+  speed?: number;
+  quality?: AudioQuality;
+  model?: string;
+}
+
+/**
+ * Voice processing metadata for messages
+ */
+export interface VoiceProcessingMetadata {
+  transcriptionConfidence?: number;
+  speechDuration?: number;
+  speechModel?: string;
+  interimTranscripts?: string[];
+  wakeWordDetected?: boolean;
+  audioLevel?: number;
+}
+
+/**
+ * Voice ghost data structure
+ */
+export interface VoiceGhost {
+  id: string;
+  originalBotId: string;
+  bot: any;
+  conversationContext?: any[];
+  created: number;
+  lastActive?: number;
+}
+
+/**
+ * Voice session data for analytics and debugging
+ */
+export interface VoiceSessionData {
+  sessionId: string;
+  startTime: number;
+  endTime?: number;
+  duration?: number;
+  messageCount: number;
+  botIds: string[];
+  errorCount: number;
+  lastError?: string;
+}
+
+/**
+ * Voice transition metrics
+ */
+export interface VoiceTransitionMetrics {
+  direction: 'text-to-voice' | 'voice-to-text';
+  startTime: number;
+  endTime: number;
+  duration: number;
+  success: boolean;
+  errorMessage?: string;
 }
 
 // Voice Configuration

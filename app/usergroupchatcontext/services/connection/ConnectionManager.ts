@@ -8,6 +8,51 @@
 import { EventEmitter } from 'events';
 import eventBus from '../events/EventBus';
 
+// Add proper typings for WebKit prefixed interfaces
+interface Window {
+  webkitAudioContext: typeof AudioContext;
+  webkitSpeechRecognition: any;
+}
+
+// Add proper AudioContext options type if needed
+interface AudioContextOptions {
+  latencyHint?: 'interactive' | 'balanced' | 'playback' | number;
+  sampleRate?: number;
+}
+
+/**
+ * Connection options interface
+ */
+export interface ConnectionOptions {
+  audioOnly?: boolean;
+  echoCancellation?: boolean;
+  noiseSuppression?: boolean;
+  autoGainControl?: boolean;
+  lowLatency?: boolean;
+}
+
+/**
+ * Connection state information object
+ */
+export interface ConnectionStateInfo {
+  isConnected: boolean;
+  isConnecting: boolean;
+  hasStream: boolean;
+  hasMicrophonePermission: boolean;
+  timestamp: number;
+}
+
+/**
+ * Connection state enum
+ */
+export enum ConnectionState {
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+  RECONNECTING = 'reconnecting',
+  ERROR = 'error'
+}
+
 export interface ConnectionConfig {
   roomName?: string;
   userName?: string;
@@ -20,19 +65,346 @@ export interface ConnectionConfig {
   reconnectDelay?: number;
 }
 
-export enum ConnectionState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  RECONNECTING = 'reconnecting',
-  ERROR = 'error'
-}
-
 export interface MediaStreamInfo {
   stream: MediaStream;
   audioTracks: MediaStreamTrack[];
   videoTracks: MediaStreamTrack[];
   timestamp: number;
+}
+
+export interface BrowserCapabilities {
+  supportsWebRTC: boolean;
+  supportsMediaDevices: boolean;
+  supportsAudioContext: boolean;
+  supportsSpeechRecognition: boolean;
+  name: string;
+  version: string;
+  isIOS: boolean;
+  isAndroid: boolean;
+  isMobile: boolean;
+  requiresUserGesture: boolean;
+}
+
+export function detectBrowserCapabilities(): BrowserCapabilities {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  const isMobile = isIOS || isAndroid || /Mobi|Mobile/.test(ua);
+  
+  // Detect browser name and version
+  const isChrome = /Chrome/.test(ua) && !/Edge|Edg/.test(ua);
+  const isFirefox = /Firefox/.test(ua);
+  const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Edge|Edg/.test(ua);
+  const isEdge = /Edge|Edg/.test(ua);
+  
+  let name = "Unknown";
+  let version = "Unknown";
+  
+  if (isChrome) {
+    name = "Chrome";
+    const match = ua.match(/Chrome\/(\d+\.\d+)/);
+    version = match ? match[1] : "Unknown";
+  } else if (isFirefox) {
+    name = "Firefox";
+    const match = ua.match(/Firefox\/(\d+\.\d+)/);
+    version = match ? match[1] : "Unknown";
+  } else if (isSafari) {
+    name = "Safari";
+    const match = ua.match(/Version\/(\d+\.\d+)/);
+    version = match ? match[1] : "Unknown";
+  } else if (isEdge) {
+    name = "Edge";
+    const match = ua.match(/Edge\/(\d+\.\d+)|Edg\/(\d+\.\d+)/);
+    version = match ? (match[1] || match[2]) : "Unknown";
+  }
+  
+  // Feature detection is more reliable than browser detection
+  const supportsWebRTC = (
+    typeof RTCPeerConnection !== 'undefined' && 
+    typeof navigator.mediaDevices !== 'undefined' && 
+    typeof navigator.mediaDevices.getUserMedia !== 'undefined'
+  );
+  
+  const supportsMediaDevices = (
+    typeof navigator.mediaDevices !== 'undefined' && 
+    typeof navigator.mediaDevices.enumerateDevices !== 'undefined'
+  );
+  
+  const supportsAudioContext = (
+    typeof (window.AudioContext || (window as any).webkitAudioContext) !== 'undefined'
+  );
+  
+  const supportsSpeechRecognition = (
+    typeof (window.SpeechRecognition || (window as any).webkitSpeechRecognition) !== 'undefined'
+  );
+  
+  // iOS/Safari requires user gesture to start audio
+  const requiresUserGesture = isIOS || isSafari;
+  
+  return {
+    supportsWebRTC,
+    supportsMediaDevices,
+    supportsAudioContext,
+    supportsSpeechRecognition,
+    name,
+    version,
+    isIOS,
+    isAndroid,
+    isMobile,
+    requiresUserGesture
+  };
+}
+
+/**
+ * Enhanced connection state information
+ */
+export interface EnhancedConnectionStateInfo extends ConnectionStateInfo {
+  lastError?: Error;
+  reconnectAttempts: number;
+  browserCapabilities: BrowserCapabilities;
+  fallbackMode: boolean;
+  errorDetails?: {
+    code?: string;
+    name?: string;
+    message: string;
+    timestamp: number;
+    browserInfo: string;
+  };
+}
+
+export interface EnhancedConnectionOptions extends ConnectionOptions {
+  enableFallbackMode?: boolean;
+  maxReconnectAttempts?: number;
+  reconnectInterval?: number;
+  useLowLatencyMode?: boolean;
+  forcePolyfill?: boolean;
+  audioContextOptions?: AudioContextOptions;
+  mediaConstraintsOverride?: MediaStreamConstraints;
+  iosWorkarounds?: boolean;
+}
+
+export function getOptimizedMediaConstraints(capabilities: BrowserCapabilities): MediaStreamConstraints {
+  // Base constraints that work for most browsers
+  const baseConstraints: MediaStreamConstraints = {
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    },
+    video: false
+  };
+  
+  // Safari doesn't support some of the advanced constraints
+  if (capabilities.name === 'Safari') {
+    return {
+      audio: true,
+      video: false
+    };
+  }
+  
+  // Chrome/Edge support advanced audio constraints
+  if (capabilities.name === 'Chrome' || capabilities.name === 'Edge') {
+    return {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        // @ts-ignore - Chrome-specific properties
+        googEchoCancellation: true,
+        googNoiseSuppression: true,
+        googAutoGainControl: true,
+        googHighpassFilter: true
+      },
+      video: false
+    };
+  }
+  
+  // Firefox has different naming for some constraints
+  if (capabilities.name === 'Firefox') {
+    return {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        // @ts-ignore - Firefox-specific properties
+        mozAutoGainControl: true,
+        mozNoiseSuppression: true
+      },
+      video: false
+    };
+  }
+  
+  // For all other browsers or mobile devices
+  return baseConstraints;
+}
+
+export function handleBrowserSpecificError(error: any, capabilities: BrowserCapabilities): { 
+  message: string, 
+  retry: boolean,
+  fallback: boolean 
+} {
+  // Default response
+  let result = {
+    message: error.message || 'Unknown WebRTC error',
+    retry: false,
+    fallback: false
+  };
+  
+  // NotAllowedError - Permission denied
+  if (error.name === 'NotAllowedError' || error.message?.includes('Permission denied')) {
+    result.message = 'Microphone access was denied. Please grant permission to use your microphone.';
+    result.retry = true;
+    return result;
+  }
+  
+  // NotFoundError - No microphone available
+  if (error.name === 'NotFoundError' || error.message?.includes('Requested device not found')) {
+    result.message = 'No microphone was found. Please connect a microphone and try again.';
+    result.retry = false;
+    return result;
+  }
+  
+  // NotReadableError - Hardware/OS error
+  if (error.name === 'NotReadableError' || error.message?.includes('Could not start audio')) {
+    result.message = 'Could not access your microphone. It may be in use by another application.';
+    result.retry = true;
+    return result;
+  }
+  
+  // Safari-specific issues
+  if (capabilities.name === 'Safari') {
+    if (capabilities.isIOS && error.message?.includes('audio input')) {
+      result.message = 'On iOS, voice mode requires a user gesture. Please tap the voice button again.';
+      result.retry = true;
+      return result;
+    }
+    
+    if (error.name === 'TypeError' && error.message?.includes('getUserMedia is not a function')) {
+      result.message = 'Your browser does not support voice input. Try using Chrome or Firefox.';
+      result.fallback = true;
+      return result;
+    }
+  }
+  
+  // iOS-specific issues
+  if (capabilities.isIOS) {
+    if (error.message?.includes('audio input')) {
+      result.message = 'iOS requires a user gesture to access the microphone. Please tap the voice button again.';
+      result.retry = true;
+      return result;
+    }
+  }
+  
+  // Firefox-specific issues
+  if (capabilities.name === 'Firefox') {
+    if (error.name === 'MediaDeviceFailedDueToShutdown') {
+      result.message = 'Microphone access failed. Please restart Firefox and try again.';
+      result.retry = false;
+      return result;
+    }
+  }
+  
+  // General browser support issue
+  if (!capabilities.supportsWebRTC) {
+    result.message = 'Your browser does not support voice features. Please use a modern browser like Chrome, Firefox, or Edge.';
+    result.fallback = true;
+    return result;
+  }
+  
+  // Default case for unhandled errors
+  console.error('Unhandled WebRTC error:', error);
+  return result;
+}
+
+export class FallbackModeHandler {
+  private static isActive = false;
+  private static capabilities: BrowserCapabilities;
+  
+  public static initialize(capabilities: BrowserCapabilities) {
+    this.capabilities = capabilities;
+    this.isActive = !capabilities.supportsWebRTC || 
+                    !capabilities.supportsAudioContext ||
+                    !capabilities.supportsMediaDevices;
+    
+    return this.isActive;
+  }
+  
+  public static isEnabled(): boolean {
+    return this.isActive;
+  }
+  
+  public static getAlternativeInput(callback: (text: string) => void): (() => void) | null {
+    if (!this.isActive) return null;
+    
+    // Create a simple text input as fallback
+    const fallbackContainer = document.createElement('div');
+    fallbackContainer.style.position = 'fixed';
+    fallbackContainer.style.bottom = '80px';
+    fallbackContainer.style.left = '0';
+    fallbackContainer.style.right = '0';
+    fallbackContainer.style.padding = '10px';
+    fallbackContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    fallbackContainer.style.zIndex = '1000';
+    fallbackContainer.style.display = 'flex';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Type your voice command here...';
+    input.style.flex = '1';
+    input.style.padding = '8px';
+    input.style.border = 'none';
+    input.style.borderRadius = '4px';
+    
+    const button = document.createElement('button');
+    button.textContent = 'Send';
+    button.style.marginLeft = '8px';
+    button.style.padding = '8px 16px';
+    button.style.backgroundColor = 'var(--primary)';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '4px';
+    
+    fallbackContainer.appendChild(input);
+    fallbackContainer.appendChild(button);
+    
+    document.body.appendChild(fallbackContainer);
+    
+    // Set focus to input
+    setTimeout(() => input.focus(), 100);
+    
+    // Handle submit
+    const handleSubmit = () => {
+      const text = input.value.trim();
+      if (text) {
+        callback(text);
+        input.value = '';
+      }
+    };
+    
+    button.addEventListener('click', handleSubmit);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSubmit();
+    });
+    
+    // Return cleanup function
+    return () => {
+      document.body.removeChild(fallbackContainer);
+    };
+  }
+  
+  public static getCompatibilityMessage(): string {
+    if (!this.isActive) return '';
+    
+    if (!this.capabilities.supportsWebRTC) {
+      return 'Voice mode is not available in your browser. Using text input instead.';
+    }
+    
+    if (!this.capabilities.supportsAudioContext) {
+      return 'Audio processing is not supported in your browser. Using simplified voice input.';
+    }
+    
+    return 'Using compatibility mode for voice input.';
+  }
 }
 
 export class ConnectionManager extends EventEmitter {

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
 import { cn } from '@/lib/utils';
-import voiceModeManager from '../../services/voice/VoiceModeManager';
 
 interface VoiceTransitionSettingsProps {
   className?: string;
@@ -25,44 +24,23 @@ export function VoiceTransitionSettings({ className }: VoiceTransitionSettingsPr
   const { state, dispatch } = useGroupChatContext();
   const { voiceSettings, updateVoiceSettings } = useVoiceSettings();
   
-  // Local state for the form
-  const [keepPreProcessingHooks, setKeepPreProcessingHooks] = useState(false);
-  const [keepPostProcessingHooks, setKeepPostProcessingHooks] = useState(false);
-  const [preserveVoiceHistory, setPreserveVoiceHistory] = useState(true);
-  const [automaticVoiceSelection, setAutomaticVoiceSelection] = useState(true);
+  // Initialize from voice settings
+  const keepPreProcessingHooks = voiceSettings.keepPreprocessingHooks || false;
+  const keepPostProcessingHooks = voiceSettings.keepPostprocessingHooks || false;
+  const preserveVoiceHistory = voiceSettings.preserveVoiceHistory !== false;
+  const automaticVoiceSelection = voiceSettings.automaticVoiceSelection !== false;
   
-  // Initialize from the voice mode manager
-  useEffect(() => {
-    const config = voiceModeManager.getConfig();
-    setKeepPreProcessingHooks(config.keepPreprocessingHooks || false);
-    setKeepPostProcessingHooks(config.keepPostprocessingHooks || false);
-    setPreserveVoiceHistory(config.preserveVoiceHistory !== false);
-    setAutomaticVoiceSelection(config.automaticVoiceSelection !== false);
-  }, []);
-  
-  // Handle changes to the configuration
+  /**
+   * Update voice settings configuration
+   */
   const updateConfig = (updates: {
     keepPreProcessingHooks?: boolean;
     keepPostProcessingHooks?: boolean;
     preserveVoiceHistory?: boolean;
     automaticVoiceSelection?: boolean;
   }) => {
-    // Update local state
-    if (updates.keepPreProcessingHooks !== undefined) {
-      setKeepPreProcessingHooks(updates.keepPreProcessingHooks);
-    }
-    if (updates.keepPostProcessingHooks !== undefined) {
-      setKeepPostProcessingHooks(updates.keepPostProcessingHooks);
-    }
-    if (updates.preserveVoiceHistory !== undefined) {
-      setPreserveVoiceHistory(updates.preserveVoiceHistory);
-    }
-    if (updates.automaticVoiceSelection !== undefined) {
-      setAutomaticVoiceSelection(updates.automaticVoiceSelection);
-    }
-    
-    // Update the voice mode manager configuration
-    voiceModeManager.updateConfig({
+    // Update in the global settings
+    updateVoiceSettings({
       keepPreprocessingHooks: updates.keepPreProcessingHooks !== undefined 
         ? updates.keepPreProcessingHooks 
         : keepPreProcessingHooks,
@@ -76,19 +54,6 @@ export function VoiceTransitionSettings({ className }: VoiceTransitionSettingsPr
         ? updates.automaticVoiceSelection 
         : automaticVoiceSelection,
     });
-    
-    // Also update the global voice settings if needed
-    const newVoiceSettings = {
-      ...voiceSettings,
-      preserveVoiceHistory: updates.preserveVoiceHistory !== undefined 
-        ? updates.preserveVoiceHistory 
-        : preserveVoiceHistory,
-      automaticVoiceSelection: updates.automaticVoiceSelection !== undefined 
-        ? updates.automaticVoiceSelection 
-        : automaticVoiceSelection,
-    };
-    
-    updateVoiceSettings(newVoiceSettings);
   };
   
   return (

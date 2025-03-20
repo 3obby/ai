@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
+import { useVoiceState } from '../../hooks/useVoiceState';
 
 interface VoiceContextInheritanceProps {
   onContextInherited?: (voiceBotIds: string[]) => void;
@@ -28,6 +29,8 @@ const VoiceContextInheritance: React.FC<VoiceContextInheritanceProps> = ({
 }) => {
   const { state } = useGroupChatContext();
   const { cloneBotInstanceForVoice } = useBotRegistry();
+  const { isRecording, currentState } = useVoiceState();
+  
   const [activeVoiceBots, setActiveVoiceBots] = useState<string[]>([]);
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,17 +41,17 @@ const VoiceContextInheritance: React.FC<VoiceContextInheritanceProps> = ({
     // 1. Voice recording is active
     // 2. We're not already initializing
     // 3. No voice bots have been created yet
-    if (state.isRecording && !isInitializing && activeVoiceBots.length === 0) {
+    if (isRecording && !isInitializing && activeVoiceBots.length === 0) {
       inheritContext();
     }
-  }, [state.isRecording]);
+  }, [isRecording, isInitializing, activeVoiceBots.length]);
 
   // Clean up when voice mode is deactivated
   useEffect(() => {
-    if (!state.isRecording && activeVoiceBots.length > 0) {
+    if (!isRecording && activeVoiceBots.length > 0) {
       setActiveVoiceBots([]);
     }
-  }, [state.isRecording]);
+  }, [isRecording, activeVoiceBots.length]);
 
   /**
    * Core method that handles the context inheritance process

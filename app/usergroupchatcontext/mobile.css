@@ -47,6 +47,22 @@
   .mobile-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0.5rem);
   }
+  
+  /* Optimize rendering for mobile */
+  .mobile-optimize {
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    perspective: 1000px;
+  }
+  
+  /* Reduce motion for battery saving */
+  @media (prefers-reduced-motion: reduce) {
+    .battery-save {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 }
 
 /* Mobile input optimizations */
@@ -109,6 +125,32 @@
   position: relative;
 }
 
+/* Ripple effect for touch feedback */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.after\:animate-ripple::after {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  left: 25%;
+  top: 25%;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.4);
+  animation: ripple 600ms linear;
+  pointer-events: none;
+}
+
+/* Standard animations */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -118,9 +160,50 @@
   }
 }
 
-/* Mobile safe area insets */
+/* Enhanced mobile touch controls */
 @media (max-width: 640px) {
+  /* Larger touch targets for voice controls */
+  .voice-large-target {
+    min-width: 56px;
+    min-height: 56px;
+  }
+  
+  /* Bottom position accounting for safe area */
   .mobile-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+  
+  /* Increased button size for easier tapping */
+  .voice-mode-btn {
+    width: 56px; /* Increased from 42px */
+    height: 56px; /* Increased from 42px */
+  }
+  
+  /* Enhanced audio visualizer for mobile */
+  .mobile-visualizer {
+    transform: scale(1.2);
+    transform-origin: center;
+    will-change: opacity, transform;
+  }
+  
+  /* Mobile-optimized animations */
+  .mobile-animate {
+    animation-duration: 300ms;
+    animation-timing-function: ease-out;
+  }
+  
+  /* Hardware-accelerated elements */
+  .hardware-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* Battery-saving mode when device is on low power */
+@media (prefers-reduced-motion: reduce) {
+  .low-power-mode * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 } 
