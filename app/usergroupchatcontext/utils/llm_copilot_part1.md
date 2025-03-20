@@ -215,6 +215,7 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Fix AudioContext initialization issues to ensure proper resuming on user interaction
    - [X] Make voice mode UI show even when backend connections fail
    - [X] Add comprehensive error handling for voice mode activation failures
+   - [X] Fix audio-publishing-service.ts missing default export bug
    - [_] Test voice mode button activation flow end-to-end
 
 2. [_] **Finalize Voice Ghost Lifecycle Management** (Priority: High)
@@ -255,7 +256,8 @@ We have shifted our efforts to create a robust production-ready system. By defau
 7. [_] **Enhance Error Handling and Resilience** (Priority: Medium)
    - [_] Implement more robust error recovery for broken connections
    - [_] Add automatic reconnection logic for interrupted voice sessions
-   - [_] Improve error messaging for users when voice mode fails
+   - [X] Improve error messaging for users when voice mode fails
+   - [X] Fix OpenAI API routes to properly validate models and handle errors
    - [_] Add telemetry for tracking voice mode stability
 
 8. [_] **Reduce State Duplication** (Priority: Medium)
@@ -603,3 +605,74 @@ We've standardized the voice settings across the application to use OpenAI's "co
    - Set 'coral' voice in global GroupChatSettings
 
 These changes ensure a consistent, high-quality voice experience across the application when using text-to-speech functionality, with proper inheritance when transitioning between text and voice modes.
+
+## Recent API Improvements
+
+We've implemented several improvements to the API routes to make them more robust and handle errors gracefully:
+
+1. **OpenAI Chat Completion API Route**:
+   - Added model validation to ensure only chat-compatible models are used (gpt-4o, gpt-3.5-turbo, etc.)
+   - Implemented automatic model mapping for realtime models in chat contexts
+   - Enhanced error messaging with specific guidance for incorrect model usage
+   - Added a list of supported models that's returned with error responses
+   - Improved logging for debugging request/response flows
+
+2. **Speech Synthesis API Route**:
+   - Fixed compatibility issues with the OpenAI SDK audio endpoints
+   - Added validation for TTS model names to ensure only proper TTS models are used (tts-1, tts-1-hd)
+   - Implemented automatic model fallback when non-TTS models are specified
+   - Enhanced error handling with graceful degradation to browser TTS
+   - Added nested try-catch blocks to better isolate and report API-specific errors
+
+3. **Default Export Fix**:
+   - Fixed missing default export in audio-publishing-service.ts
+   - Added proper singleton pattern implementation to ensure consistent service instances
+
+4. **Voice Mode Model Compatibility**:
+   - Added model conversion in prompt-processor-service.ts to handle realtime models in voice mode
+   - Implemented detection and replacement of realtime models with standard models for API compatibility
+   - Added logging to show when model conversions happen for better debugging
+   - Ensures voice mode works seamlessly with both standard and realtime models
+
+5. **Enhanced Voice Mode Error Handling**:
+   - Added fallback responses for voice mode when API calls fail
+   - Improved error details in API routes to provide clearer debugging information
+   - Added validation for message content to prevent undefined/null content issues
+   - Enhanced error display with detailed API error information in client logs
+   - Updated ProcessingMetadata type to include error field for tracking issues
+
+## Voice Mode Processing Hook Issue
+
+We identified an issue with voice mode where preprocessing, postprocessing, and retry processing hooks are being incorrectly applied to voice ghosts. The problem occurs because:
+
+1. The `VoiceModeManager.createVoiceGhosts()` method correctly creates voice ghosts with processing hooks disabled if configured to do so.
+2. However, the message processing pipeline in `prompt-processor-service.ts` still checks for and applies these hooks based on global settings without properly respecting the ghost-specific settings.
+3. When a user enters voice mode, the ghost bots should inherit their processing hooks settings from the original bot, and additionally have them disabled if voice mode is configured to not use these hooks.
+
+The solution requires:
+
+1. Enhancing the `processMessage` function to check if we're dealing with a voice ghost bot (by checking ID prefix or a new flag).
+2. Respecting the bot's ghost-specific settings for processing hooks, even when global hooks are enabled.
+3. Ensuring that even if the hook functions exist on a bot, they're not used during voice mode unless explicitly configured.
+
+This fix will ensure voice interactions remain streamlined with minimal processing overhead unless specifically requested by the user.
+
+## Voice Mode Model Selection Fix
+
+We identified and fixed an issue where voice mode was incorrectly attempting to use text-to-speech (TTS) models for chat completions. The problem manifested as errors stating:
+
+```
+Error: Model "tts-1" is not supported for chat completions. Use a GPT model like gpt-4o, gpt-4, or gpt-3.5-turbo.
+```
+
+The issue was in the `prompt-processor-service.ts` file where model selection logic incorrectly prioritized `bot.voiceSettings?.model` when processing voice messages. This was problematic because:
+
+1. `bot.voiceSettings.model` is meant to specify the TTS model (e.g., "tts-1") for speech synthesis
+2. Chat completions require GPT models like gpt-4o, not TTS models
+3. The voice ghost creation correctly set both:
+   - `model` (for chat completions)
+   - `voiceSettings.model` (for TTS)
+   
+The fix removed the conditional logic that was prioritizing voiceSettings.model for voice messages and now consistently uses the bot's primary model field for all completions.
+
+This ensures that voice ghosts use appropriate models for both understanding (chat completions) and speaking (TTS), preventing API errors and the "multitude of voices" issue that occurred when multiple fallback responses were triggered due to failed API calls.

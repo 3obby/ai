@@ -253,3 +253,7 @@ export class AudioPublishingService {
     }
   }
 }
+
+// Create and export a singleton instance
+const audioPublishingService = new AudioPublishingService();
+export default audioPublishingService;

@@ -237,7 +237,7 @@ export const processMessage = async (
     includeToolCalls?: boolean;
     availableTools?: any[];
   } = {}
-) => {
+): Promise<void> => {
   let content = userMessage.content;
   let processingMetadata: ProcessingMetadata = {
     originalContent: content,
@@ -248,55 +248,57 @@ export const processMessage = async (
   // Flag to track if this is a voice message
   const isVoiceMessage = userMessage.type === 'voice';
   
-  // Log the message processing
-  console.log(`Processing message for bot ${bot.name}, type: ${userMessage.type}, voice mode: ${isVoiceMessage}`);
+  // Check if this is a voice ghost bot (created for voice mode)
+  const isVoiceGhost = bot.id.startsWith('ghost-') || bot.id.startsWith('voice-');
   
-  // Apply pre-processing if enabled and not at max reprocessing depth
-  if (
-    context.settings.processing.enablePreProcessing &&
-    bot.preProcessingPrompt &&
-    context.currentDepth < context.settings.maxReprocessingDepth
-  ) {
-    const result = await preProcessMessage(userMessage, bot, context);
-    if (result.content !== content) {
-      content = result.content;
-      processingMetadata.preProcessed = true;
-      processingMetadata.preprocessedContent = content;
-    }
-  }
-  
-  // Get messages for context
-  const messageHistory = context.messages.map(msg => ({
-    role: msg.role,
-    content: msg.content
-  }));
-  
-  // Set up API options based on whether this is a voice message
-  const modelToUse = isVoiceMessage && bot.voiceSettings?.model ? 
-    bot.voiceSettings.model : 
-    bot.model || 'gpt-4o';
-    
-  // Log the model selection
-  console.log(`Using model ${modelToUse} for ${isVoiceMessage ? 'voice' : 'text'} message`);
-  
-  // Make API call to OpenAI
-  let apiResponseContent = '';
-  let toolResults: ToolResult[] = [];
+  // Start timing
+  const startTime = Date.now();
   
   try {
-    if (process.env.NEXT_PUBLIC_USE_FALLBACK_SERVICE === 'true') {
-      // Use fallback service when configured
-      apiResponseContent = await getFallbackBotResponse(
-        bot, 
-        content, 
-        context.messages,
-        {
-          includeToolCalls: options.includeToolCalls,
-          availableTools: options.availableTools
-        }
-      );
-      processingMetadata.usedFallbackService = true;
-    } else {
+    // Log the message processing
+    console.log(`Processing message for bot ${bot.name}, type: ${userMessage.type}, voice mode: ${isVoiceMessage}, is ghost: ${isVoiceGhost}`);
+    
+    // Apply pre-processing if:
+    // 1. Pre-processing is enabled in settings
+    // 2. Bot has a pre-processing prompt
+    // 3. Not at max reprocessing depth
+    // 4. Not a voice ghost OR voice ghost with pre-processing enabled
+    if (
+      context.settings.processing.enablePreProcessing &&
+      bot.preProcessingPrompt &&
+      context.currentDepth < context.settings.maxReprocessingDepth &&
+      (!isVoiceGhost || context.settings.voiceSettings?.keepPreprocessingHooks)
+    ) {
+      const result = await preProcessMessage(userMessage, bot, context);
+      if (result.content !== content) {
+        content = result.content;
+        processingMetadata.preProcessed = true;
+        processingMetadata.preprocessedContent = content;
+      }
+    }
+    
+    // Get messages for context
+    const messageHistory = context.messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+    
+    // Set up API options based on whether this is a voice message
+    let modelToUse = bot.model || 'gpt-4o';
+    
+    // Check if this is a realtime model and replace it with a standard model for API compatibility
+    if (modelToUse.includes('realtime')) {
+      console.log(`Converting realtime model ${modelToUse} to gpt-4o for API compatibility`);
+      modelToUse = 'gpt-4o';
+    }
+      
+    // Log the model selection
+    console.log(`Using model ${modelToUse} for ${isVoiceMessage ? 'voice' : 'text'} message`);
+    
+    // Process message with OpenAI
+    let toolResults: ToolResult[] = [];
+    
+    try {
       // Prepare request body
       let requestBody: any = {
         messages: [...messageHistory, { role: 'user', content }],
@@ -310,6 +312,16 @@ export const processMessage = async (
         requestBody.tools = options.availableTools || [];
       }
       
+      // Debug log the request body (redact long messages for clarity)
+      const debugRequestBody = {
+        ...requestBody,
+        messages: requestBody.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content.length > 50 ? `${msg.content.substring(0, 50)}...` : msg.content
+        }))
+      };
+      console.log(`Sending request to OpenAI chat API:`, debugRequestBody);
+      
       // Make API call
       const response = await fetch('/usergroupchatcontext/api/openai/chat', {
         method: 'POST',
@@ -320,7 +332,17 @@ export const processMessage = async (
       });
       
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        // Try to get more details from the error response
+        let errorDetails = '';
+        try {
+          const errorData = await response.json();
+          errorDetails = JSON.stringify(errorData);
+          console.error('API error details:', errorData);
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+        }
+        
+        throw new Error(`API request failed with status ${response.status}${errorDetails ? `: ${errorDetails}` : ''}`);
       }
       
       const data = await response.json();
@@ -352,7 +374,7 @@ export const processMessage = async (
           },
           body: JSON.stringify({
             messages: [
-              ...messageHistory, 
+              ...messageHistory,
               { role: 'user', content },
               ...toolResponseMessages
             ],
@@ -367,35 +389,23 @@ export const processMessage = async (
         }
         
         const finalData = await finalResponse.json();
-        apiResponseContent = finalData.choices?.[0]?.message?.content || "I couldn't generate a response.";
+        content = finalData.choices?.[0]?.message?.content || "I couldn't generate a response.";
       } else {
         // Extract the content from a regular response
-        apiResponseContent = data.choices?.[0]?.message?.content || "I couldn't generate a response.";
+        content = data.choices?.[0]?.message?.content || "I couldn't generate a response.";
       }
+    } catch (error) {
+      console.error('Error processing with OpenAI:', error);
+      throw error;
     }
     
     // Update metadata
-    processingMetadata.modifiedContent = apiResponseContent;
-    
-    // Apply post-processing if enabled and not at max reprocessing depth
-    if (
-      context.settings.processing.enablePostProcessing &&
-      bot.postProcessingPrompt &&
-      context.currentDepth < context.settings.maxReprocessingDepth &&
-      !isVoiceMessage // Skip post-processing for voice messages
-    ) {
-      const result = await postProcessMessage(apiResponseContent, userMessage, bot, context);
-      if (result.content !== apiResponseContent) {
-        apiResponseContent = result.content;
-        processingMetadata.postProcessed = true;
-        processingMetadata.postprocessedContent = apiResponseContent;
-      }
-    }
+    processingMetadata.modifiedContent = content;
     
     // Create bot response message
     const botResponse: Message = {
       id: uuidv4(),
-      content: apiResponseContent,
+      content: content,
       role: 'assistant',
       sender: bot.id,
       senderName: bot.name,
@@ -407,13 +417,85 @@ export const processMessage = async (
       }
     };
     
-    // Call the callback with the bot response
+    // Apply post-processing if enabled and not at max reprocessing depth
+    if (
+      context.settings.processing.enablePostProcessing &&
+      bot.postProcessingPrompt &&
+      context.currentDepth < context.settings.maxReprocessingDepth &&
+      (!isVoiceGhost || context.settings.voiceSettings?.keepPostprocessingHooks)
+    ) {
+      const result = await postProcessMessage(botResponse.content, userMessage, bot, context);
+      if (result.content !== botResponse.content) {
+        botResponse.content = result.content;
+        processingMetadata.postProcessed = true;
+        processingMetadata.postprocessedContent = result.content;
+        
+        // Update the metadata in the response
+        botResponse.metadata = {
+          ...botResponse.metadata,
+          processing: processingMetadata
+        };
+        
+        // Check if response needs further reprocessing
+        const reprocessingEnabled = (
+          context.settings.processing.enablePreProcessing && // Use enablePreProcessing as a fallback since enableReprocessing doesn't exist in GroupChatSettings
+          bot.enableReprocessing === true && 
+          (!isVoiceGhost || context.settings.voiceSettings?.keepPreprocessingHooks)
+        );
+        
+        if (
+          reprocessingEnabled &&
+          needsReprocessing(result, bot, context) && 
+          context.currentDepth < context.settings.maxReprocessingDepth - 1
+        ) {
+          processingMetadata.reprocessingDepth = (processingMetadata.reprocessingDepth || 0) + 1;
+          // Create new context with increased depth
+          const newContext = {
+            ...context,
+            currentDepth: context.currentDepth + 1,
+          };
+          
+          // Process recursively
+          processMessage(userMessage, bot, newContext, onBotResponse, options);
+          return;
+        }
+      }
+    }
+    
+    // Call the onBotResponse callback with the final response
     onBotResponse(botResponse);
     
     // Return the response content
-    return apiResponseContent;
+    return;
   } catch (error) {
     console.error('Error processing message:', error);
+    
+    // For voice mode, provide a fallback response rather than failing completely
+    if (isVoiceMessage) {
+      const errorResponse: Message = {
+        id: uuidv4(),
+        content: "I'm sorry, I encountered a problem processing your voice input. Please try again or switch to text mode if the issue persists.",
+        role: 'assistant',
+        sender: bot.id,
+        senderName: bot.name,
+        timestamp: Date.now(),
+        type: 'voice',
+        metadata: {
+          processing: {
+            ...processingMetadata,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        }
+      };
+      
+      // Call the callback with the error response
+      onBotResponse(errorResponse);
+      
+      // Return the error message as content
+      return;
+    }
+    
+    // For text mode, throw the error to be handled by the caller
     throw error;
   }
 } 

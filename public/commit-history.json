@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "e97de4b",
+      "fullHash": "e97de4b3e71ad2577533b6bc6cc12d7db0b497fb",
+      "date": "2025-03-20 21:42:33 +0700",
+      "author": "3obby",
+      "message": "multitude of voices",
+      "category": "other"
+    },
+    {
       "hash": "0831024",
       "fullHash": "08310247b94e59b5c7ce7c11b339ec60a812bc66",
       "date": "2025-03-20 20:42:45 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Improve token system: add 20% subscriber discount, consolidate subscription and token purchasing, revise UI with tabs",
       "category": "feature"
-    },
-    {
-      "hash": "3f25c64",
-      "fullHash": "3f25c64104290a6bd8e02ecb163b4b7d9c903053",
-      "date": "2025-03-09 14:56:01 +0700",
-      "author": "3obby",
-      "message": "Implement token shop with proactive token purchasing system",
-      "category": "other"
     }
   ]
 }
