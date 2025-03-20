@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "ec1a73e",
+      "fullHash": "ec1a73ea8a7eb7c42670aff4a9ffd5bc1f4e5bb1",
+      "date": "2025-03-20 14:20:43 +0700",
+      "author": "3obby",
+      "message": "ok",
+      "category": "other"
+    },
+    {
       "hash": "81a8653",
       "fullHash": "81a8653289f151c42ea6b7b2a1c7ff1186d36ca7",
       "date": "2025-03-20 12:42:09 +0700",
@@ -790,14 +798,6 @@
       "date": "2025-03-09 13:33:19 +0700",
       "author": "3obby",
       "message": "Import companions and restore database",
-      "category": "other"
-    },
-    {
-      "hash": "6350e59",
-      "fullHash": "6350e59ef50eb3399fdc127bf16e719a37f54605",
-      "date": "2025-03-09 13:19:58 +0700",
-      "author": "3obby",
-      "message": "Implement 1:1 token burning system with global and user-specific tracking",
       "category": "other"
     }
   ]

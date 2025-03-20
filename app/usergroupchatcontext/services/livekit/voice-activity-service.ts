@@ -12,6 +12,7 @@ export interface VoiceActivityState {
   isSpeaking: boolean;
   level: number;
   timestamp: number;
+  wasSpeaking: boolean;
 }
 
 export type VoiceActivityCallback = (state: VoiceActivityState) => void;
@@ -39,6 +40,12 @@ export class VoiceActivityService {
   private audioTrack: AudioTrack | null = null;
   private threshold: number = 0.3;
   private emitter: EventEmitter = new EventEmitter();
+  private state: VoiceActivityState = {
+    isSpeaking: false,
+    level: 0,
+    timestamp: 0,
+    wasSpeaking: false,
+  };
 
   /**
    * Initialize voice activity detection
@@ -206,6 +213,7 @@ export class VoiceActivityService {
       isSpeaking: this.isSpeaking,
       level: this.level,
       timestamp: Date.now(),
+      wasSpeaking: this.state.wasSpeaking,
     };
   }
 
@@ -214,7 +222,7 @@ export class VoiceActivityService {
    */
   public setSpeaking(isSpeaking: boolean): void {
     if (this.options.mode === 'manual') {
-      this.updateSpeakingState(isSpeaking, this.level);
+      this.updateSpeakingState(isSpeaking);
     }
   }
 
@@ -310,35 +318,53 @@ export class VoiceActivityService {
       
       if (!this.isSpeaking) {
         console.log(`Voice activity started - level: ${this.level.toFixed(2)}, threshold: ${this.threshold.toFixed(2)}`);
-        this.updateSpeakingState(true, this.level);
+        this.updateSpeakingState(true);
       }
     } else if (
       this.isSpeaking &&
       Date.now() - this.lastVoiceActivityTime > (this.options.silenceDurationMs || 1000)
     ) {
       console.log(`Voice activity ended - last activity: ${Date.now() - this.lastVoiceActivityTime}ms ago`);
-      this.updateSpeakingState(false, this.level);
+      this.updateSpeakingState(false);
     }
   }
 
   /**
-   * Update the speaking state and notify callbacks
+   * Update the speaking state and notify listeners
    */
-  private updateSpeakingState(isSpeaking: boolean, level: number): void {
-    this.isSpeaking = isSpeaking;
+  private updateSpeakingState(isSpeaking: boolean): void {
+    // Don't update if the state hasn't changed
+    if (this.state.isSpeaking === isSpeaking) return;
     
-    const state: VoiceActivityState = {
-      isSpeaking,
-      level,
-      timestamp: Date.now(),
-    };
+    this.state.isSpeaking = isSpeaking;
     
-    // Notify all callbacks
-    this.callbacks.forEach((callback) => {
+    // Notify all voice activity handlers
+    this.callbacks.forEach(handler => {
       try {
-        callback(state);
+        // Check if we're in a transition to speaking
+        const isTransitionToSpeaking = isSpeaking && !this.state.wasSpeaking;
+        
+        // Only call startSpeechProcessing once when transitioning to speaking
+        // to avoid multiple SpeechRecognition starts
+        if (isTransitionToSpeaking) {
+          // Make sure to update wasSpeaking before emitting so we don't duplicate
+          this.state.wasSpeaking = true;
+        }
+        
+        // Always emit the state change event
+        handler({
+          isSpeaking,
+          level: this.level,
+          timestamp: Date.now(),
+          wasSpeaking: this.state.wasSpeaking
+        });
+        
+        // If it's a transition back to not speaking, update wasSpeaking
+        if (!isSpeaking) {
+          this.state.wasSpeaking = false;
+        }
       } catch (error) {
-        console.error('Error in voice activity callback:', error);
+        console.error('Error in voice activity handler:', error);
       }
     });
   }

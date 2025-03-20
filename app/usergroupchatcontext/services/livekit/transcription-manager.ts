@@ -40,6 +40,21 @@ export class TranscriptionManager {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       
       if (SpeechRecognition) {
+        console.log('[DEBUG] Browser supports SpeechRecognition API, initializing...');
+        
+        // Clean up any previous instance first
+        if (this.speechRecognition) {
+          try {
+            this.speechRecognition.onresult = null;
+            this.speechRecognition.onerror = null;
+            this.speechRecognition.onend = null;
+            this.speechRecognition.stop();
+          } catch (e) {
+            // Ignore - may not be active
+          }
+        }
+        
+        // Create fresh instance
         this.speechRecognition = new SpeechRecognition();
         this.speechRecognition.continuous = this.options.continuous;
         this.speechRecognition.interimResults = this.options.interimResults;
@@ -47,19 +62,42 @@ export class TranscriptionManager {
         
         // Set up event handlers
         this.speechRecognition.onresult = (event: any) => {
-          const lastResult = event.results[event.results.length - 1];
-          const transcript = lastResult[0].transcript;
-          const isFinal = lastResult.isFinal;
-          
-          this.recognitionTranscript = transcript;
-          
-          // Notify handlers with the transcription
-          this.notifyTranscriptionHandlers(transcript, isFinal);
+          try {
+            if (!event || !event.results || event.results.length === 0) {
+              console.warn('[DEBUG] Received empty speech recognition result event');
+              return;
+            }
+            
+            const lastResult = event.results[event.results.length - 1];
+            if (!lastResult || !lastResult[0]) {
+              console.warn('[DEBUG] Invalid recognition result structure');
+              return;
+            }
+            
+            const transcript = lastResult[0].transcript;
+            const isFinal = lastResult.isFinal;
+            const confidence = lastResult[0].confidence;
+            
+            console.log('[DEBUG SPEECH] Recognition result:', { 
+              transcript, 
+              isFinal, 
+              confidence,
+              handlerCount: this.transcriptionHandlers.length,
+              isActive: this.recognitionActive
+            });
+            
+            this.recognitionTranscript = transcript;
+            
+            // Notify handlers with the transcription
+            this.notifyTranscriptionHandlers(transcript, isFinal);
+          } catch (error) {
+            console.error('[DEBUG] Error processing speech recognition result:', error);
+          }
         };
         
         this.speechRecognition.onerror = (event: any) => {
           this.speechRecognitionErrorCount++;
-          console.error('Speech recognition error:', event.error, `(Count: ${this.speechRecognitionErrorCount})`);
+          console.error('[DEBUG] Speech recognition error:', event.error, `(Count: ${this.speechRecognitionErrorCount})`);
           
           if (this.recognitionActive) {
             // Only try to restart if we haven't had too many errors
@@ -73,7 +111,7 @@ export class TranscriptionManager {
               }, 1000);
             } else {
               // Too many errors, stop trying to restart
-              console.warn('Too many speech recognition errors, stopping auto-restart');
+              console.warn('[DEBUG] Too many speech recognition errors, stopping auto-restart');
               this.recognitionActive = false;
               this.emitter.emit('speech-recognition-failed', {
                 errorCount: this.speechRecognitionErrorCount,
@@ -84,20 +122,35 @@ export class TranscriptionManager {
         };
         
         this.speechRecognition.onend = () => {
+          console.log('[DEBUG] SpeechRecognition onend fired');
+          
           if (this.recognitionActive) {
             // Restart recognition if it ends unexpectedly
             // But only if we haven't had too many errors
             if (this.speechRecognitionErrorCount < 5) {
-              console.log('Speech recognition ended unexpectedly, restarting...');
-              this.speechRecognition.start();
+              console.log('[DEBUG] Speech recognition ended unexpectedly, restarting...');
+              
+              // Give a small delay before restarting
+              setTimeout(() => {
+                if (this.recognitionActive) {
+                  try {
+                    this.speechRecognition.start();
+                    console.log('[DEBUG] Successfully restarted speech recognition');
+                  } catch (e) {
+                    console.error('[DEBUG] Failed to restart speech recognition:', e);
+                  }
+                }
+              }, 100);
             }
           }
         };
         
-        console.log('Speech recognition initialized successfully');
+        console.log('[DEBUG] Speech recognition initialized successfully');
       } else {
-        console.warn('Speech recognition not supported in this browser');
+        console.warn('[DEBUG] Speech recognition not supported in this browser');
       }
+    } else {
+      console.warn('[DEBUG] Window is undefined - likely running in SSR context');
     }
   }
   
@@ -106,17 +159,76 @@ export class TranscriptionManager {
    */
   public startRecognition(): boolean {
     if (!this.speechRecognition) {
-      console.warn('Speech recognition not initialized');
-      return false;
+      console.warn('[DEBUG] Speech recognition not initialized, attempting to initialize now');
+      this.initialize({
+        lang: 'en-US',
+        continuous: true,
+        interimResults: true,
+      });
+      
+      // If still not available after initialization attempt, give up
+      if (!this.speechRecognition) {
+        console.error('[DEBUG] Failed to initialize speech recognition after attempt');
+        return false;
+      }
+    }
+    
+    // If recognition is already active, don't try to start it again
+    if (this.recognitionActive) {
+      console.log('[DEBUG] Speech recognition is already active, not starting again');
+      return true;
     }
     
     try {
-      this.speechRecognition.start();
-      this.recognitionActive = true;
-      console.log('Speech recognition started');
-      return true;
+      console.log('[DEBUG] Starting speech recognition with Web Speech API');
+      
+      // Reset error count on fresh start
+      this.speechRecognitionErrorCount = 0;
+      
+      // First stop any existing recognition
+      try {
+        this.speechRecognition.stop();
+        // Wait a moment to ensure it's fully stopped
+        setTimeout(() => {
+          if (!this.recognitionActive) {
+            try {
+              this.speechRecognition.start();
+              this.recognitionActive = true;
+              console.log('[DEBUG] Speech recognition started successfully');
+              
+              // Emit an event for successful start
+              this.emitter.emit('recognition-started', {
+                timestamp: Date.now(),
+                availableVoices: typeof window !== 'undefined' && window.speechSynthesis ? 
+                  window.speechSynthesis.getVoices() : []
+              });
+            } catch (startError) {
+              console.error('[DEBUG] Error starting speech recognition after delay:', startError);
+              return false;
+            }
+          }
+        }, 50);
+        
+        return true;
+      } catch (e) {
+        // Ignore errors when stopping - it may not be active
+        // Continue with starting the recognition
+        this.speechRecognition.start();
+        this.recognitionActive = true;
+        console.log('[DEBUG] Speech recognition started successfully');
+        
+        // Emit an event for successful start
+        this.emitter.emit('recognition-started', {
+          timestamp: Date.now(),
+          availableVoices: typeof window !== 'undefined' && window.speechSynthesis ? 
+            window.speechSynthesis.getVoices() : []
+        });
+        
+        return true;
+      }
     } catch (error) {
-      console.error('Error starting speech recognition:', error);
+      console.error('[DEBUG] Error starting speech recognition:', error);
+      this.recognitionActive = false;
       return false;
     }
   }
@@ -159,9 +271,18 @@ export class TranscriptionManager {
    * Notify all transcription handlers
    */
   private notifyTranscriptionHandlers(text: string, isFinal: boolean): void {
+    console.log(`[DEBUG SPEECH] Notifying ${this.transcriptionHandlers.length} handlers of transcription:`, 
+      text.substring(0, 30) + (text.length > 30 ? '...' : ''), 
+      `isFinal: ${isFinal}`
+    );
+    
     // Call all registered transcription handlers
     for (const handler of this.transcriptionHandlers) {
-      handler(text, isFinal);
+      try {
+        handler(text, isFinal);
+      } catch (error) {
+        console.error('[DEBUG] Error in transcription handler:', error);
+      }
     }
     
     // Emit event for other listeners

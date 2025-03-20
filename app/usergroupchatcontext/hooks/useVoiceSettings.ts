@@ -93,17 +93,17 @@ export function useVoiceSettings(): UseVoiceSettingsReturn {
   // Start listening using LiveKit integration
   const startListening = useCallback(async () => {
     if (!liveKitIntegration) {
-      console.error('LiveKit integration is not available');
+      console.error('[DEBUG] LiveKit integration is not available');
       return false;
     }
     
     try {
-      console.log('Starting voice listening via hooks...');
+      console.log('[DEBUG] Starting voice listening via hooks...');
       
       // First, make sure we have a valid voice settings configuration
       const currentSettings = state.settings?.voiceSettings;
       if (!currentSettings) {
-        console.warn('No voice settings found in state, using defaults');
+        console.warn('[DEBUG] No voice settings found in state, using defaults');
       }
       
       // Ensure voice activity service is properly configured
@@ -115,17 +115,26 @@ export function useVoiceSettings(): UseVoiceSettingsReturn {
       });
       
       // Start the multimodal agent's listening service first
-      await liveKitIntegration.resumeAudioContext();
+      try {
+        await liveKitIntegration.resumeAudioContext();
+      } catch (audioError) {
+        console.error('[DEBUG] Failed to resume audio context:', audioError);
+        throw new Error('Failed to initialize audio. Please try again.');
+      }
       
       // This will call into LiveKitIntegrationProvider's startListening
-      await liveKitIntegration.startListening();
-      setIsListening(true);
-      
-      return true;
+      try {
+        await liveKitIntegration.startListening();
+        setIsListening(true);
+        return true;
+      } catch (listenError) {
+        console.error('[DEBUG] Failed to start listening:', listenError);
+        throw new Error('Failed to start listening. Please check your microphone permissions.');
+      }
     } catch (error) {
-      console.error('Failed to start listening in useVoiceSettings:', error);
+      console.error('[DEBUG] Failed to start listening in useVoiceSettings:', error);
       setIsListening(false);
-      return false;
+      throw error; // Re-throw to let caller handle or display the error
     }
   }, [liveKitIntegration, state.settings?.voiceSettings]);
 

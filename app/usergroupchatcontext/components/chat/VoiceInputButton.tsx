@@ -76,8 +76,10 @@ export function VoiceInputButton({
     if (!isVoiceEnabled || !isLiveKitListening) return;
     
     const handleLiveKitTranscription = (text: string, isFinal: boolean) => {
+      console.log('[DEBUG] Voice transcription received:', { text, isFinal, isVoiceEnabled, isLiveKitListening });
+      
       if (isFinal && text.trim()) {
-        console.log('Final transcription received in VoiceInputButton:', text.trim());
+        console.log('[DEBUG] Final transcription received in VoiceInputButton:', text.trim());
         
         // Store the last transcription for deduplication purposes
         lastSentMessageRef.current = text.trim();
@@ -91,17 +93,19 @@ export function VoiceInputButton({
         }
       } else if (!isFinal && text.trim() && text !== 'Listening...' && text !== 'Processing...') {
         // For interim results, we could update a state to show this is being transcribed
-        console.log('Interim transcription:', text);
+        console.log('[DEBUG] Interim transcription:', text);
       }
     };
     
     // Use the multimodalAgentService directly rather than DOM events
+    console.log('[DEBUG] Setting up LiveKit transcription handler');
     multimodalAgentService.onTranscription(handleLiveKitTranscription);
 
     return () => {
+      console.log('[DEBUG] Cleaning up LiveKit transcription handler');
       multimodalAgentService.offTranscription(handleLiveKitTranscription);
     };
-  }, [onTranscriptionComplete, autoSend, lastSentMessageRef, isVoiceEnabled, isLiveKitListening]);
+  }, [onTranscriptionComplete, autoSend, isVoiceEnabled, isLiveKitListening]);
 
   // When recording is complete and we have a transcript
   useEffect(() => {
@@ -217,185 +221,72 @@ export function VoiceInputButton({
           }
           
           // Connect to LiveKit service with a fresh token
-          console.log('Fetching LiveKit token...');
+          console.log('[DEBUG] Fetching LiveKit token...');
 
-          // Add retry logic for token fetch
-          const maxTokenRetries = 3;
-          let tokenRetries = 0;
-          let tokenData;
-
-          while (tokenRetries < maxTokenRetries) {
-            try {
-              const response = await fetch('/usergroupchatcontext/api/livekit-token');
-              if (!response.ok) {
-                console.error(`LiveKit token API returned status: ${response.status}`);
-                throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
-              }
-
-              // Log raw response for debugging
-              const responseText = await response.text();
-              console.log(`LiveKit token response (attempt ${tokenRetries + 1}):`, 
-                responseText.length > 100 ? `${responseText.substring(0, 100)}...` : responseText);
-
-              // Parse the JSON response
-              try {
-                tokenData = JSON.parse(responseText);
-                
-                // If we got an error response from our API
-                if (tokenData.error) {
-                  console.error('API returned error:', tokenData.error, tokenData.details || '');
-                  throw new Error(`LiveKit API error: ${tokenData.error}`);
-                }
-                
-                console.log('Token data keys:', Object.keys(tokenData));
-                
-                // Validate token
-                if (!tokenData || typeof tokenData !== 'object') {
-                  console.error('Invalid token data format:', tokenData);
-                  throw new Error('Invalid token data format received');
-                }
-
-                if (!tokenData.token || typeof tokenData.token !== 'string') {
-                  console.error('No valid token in response:', tokenData);
-                  throw new Error('No token received from LiveKit token API');
-                }
-                
-                // If we got here, we have a valid token
-                break;
-              } catch (parseError) {
-                console.error(`Failed to parse token response as JSON (attempt ${tokenRetries + 1}):`, parseError);
-                
-                // If we've already retried several times, give up
-                if (tokenRetries >= maxTokenRetries - 1) {
-                  throw new Error('Invalid token response format after multiple attempts');
-                }
-                
-                // Otherwise, retry
-                tokenRetries++;
-                await new Promise(resolve => setTimeout(resolve, 1000 * tokenRetries));
-              }
-            } catch (fetchError) {
-              console.error(`Error fetching token (attempt ${tokenRetries + 1}):`, fetchError);
-              
-              // If we've already retried several times, give up
-              if (tokenRetries >= maxTokenRetries - 1) {
-                throw fetchError;
-              }
-              
-              // Otherwise, retry
-              tokenRetries++;
-              await new Promise(resolve => setTimeout(resolve, 1000 * tokenRetries));
-            }
-          }
-
-          // Initialize LiveKit connection with fresh token
-          const roomName = tokenData.roomName || 'default-room';
-          const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-          
-          if (!livekitUrl) {
-            throw new Error('LiveKit URL not configured in environment variables');
-          }
-          
-          // Create a new LiveKit connection
-          await sessionConnectionManager.createConnection(roomName, tokenData.token, livekitUrl);
-          
-          // Resume the AudioContext (this requires user interaction)
-          let audioContextResumed = false;
-          let retryCount = 0;
-          const maxRetries = 3;
-          
-          while (!audioContextResumed && retryCount < maxRetries) {
-            audioContextResumed = await multimodalAgentService.resumeAudioContext();
-            if (!audioContextResumed) {
-              console.log(`AudioContext resume attempt ${retryCount + 1} failed, retrying...`);
-              // Small delay between retries
-              await new Promise(resolve => setTimeout(resolve, 300));
-              retryCount++;
-            }
-          }
-          
-          if (!audioContextResumed) {
-            // If we still can't resume after retries, show a more helpful error
-            throw new Error('Could not initialize audio. Please try clicking the button again.');
-          }
-          
-          // Request microphone permission explicitly
+          // Using the direct API endpoint for token
           try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            // Stop the stream after getting permission
-            stream.getTracks().forEach(track => track.stop());
-          } catch (micError) {
-            throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
-          }
-          
-          // Enable local audio publication
-          await audioTrackManager.enableLocalAudio();
-          
-          // Activate session for voice mode
-          sessionConnectionManager.setVoiceModeActive(true);
-          
-          // Start voice listening with retry logic
-          let success = false;
-          retryCount = 0;
-          
-          while (!success && retryCount < maxRetries) {
+            const response = await fetch('/usergroupchatcontext/api/livekit-token');
+            if (!response.ok) {
+              throw new Error(`Failed to get LiveKit token: ${response.status} ${response.statusText}`);
+            }
+            
+            // Parse the JSON response
+            const tokenData = await response.json();
+            if (!tokenData || !tokenData.token) {
+              throw new Error('Invalid token response from server');
+            }
+
+            // Initialize LiveKit connection with fresh token
+            const roomName = tokenData.roomName || 'default-room';
+            const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+            
+            if (!livekitUrl) {
+              throw new Error('LiveKit URL not configured in environment variables');
+            }
+            
+            // Create a new LiveKit connection
+            await sessionConnectionManager.createConnection(roomName, tokenData.token, livekitUrl);
+            
+            // Resume the AudioContext (this requires user interaction)
+            let audioContextResumed = await multimodalAgentService.resumeAudioContext();
+            if (!audioContextResumed) {
+              console.log('Audio context resume failed on first attempt, retrying...');
+              // Try one more time with a small delay
+              await new Promise(resolve => setTimeout(resolve, 300));
+              audioContextResumed = await multimodalAgentService.resumeAudioContext();
+              
+              if (!audioContextResumed) {
+                throw new Error('Could not initialize audio. Please try clicking the button again.');
+              }
+            }
+            
+            // Enable local audio publication
+            await audioTrackManager.enableLocalAudio();
+            
+            // Activate session for voice mode
+            sessionConnectionManager.setVoiceModeActive(true);
+            
+            // Start voice listening
             try {
-              // Try to start voice listening
-              success = await startVoiceListening();
+              const success = await startVoiceListening();
               
               if (success) {
-                // Wait a moment to ensure everything is initialized properly
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Start the multimodal agent listening
+                await multimodalAgentService.startListening();
                 
-                // Start the multimodal agent listening - this should trigger the voice recognition
-                try {
-                  await multimodalAgentService.startListening();
-                  
-                  // Add a message to chat to confirm voice mode activation
-                  sendMessage("Voice mode activated. You can speak now.", "text");
-                  
-                  // Show the voice overlay
-                  setShowVoiceOverlay(true);
-                  break; // Success! Exit the retry loop
-                } catch (listenerError) {
-                  console.error('Error starting multimodal agent listening:', listenerError);
-                  
-                  // Try to recover automatically
-                  sessionConnectionManager.setVoiceModeActive(true);
-                  
-                  // Use a more basic approach as fallback
-                  const webSpeechAvailable = multimodalAgentService.isWebSpeechAvailable();
-                  if (webSpeechAvailable) {
-                    console.log('Using Web Speech API as fallback');
-                    sendMessage("Voice mode activated with fallback transcription. You can speak now.", "text");
-                    setShowVoiceOverlay(true);
-                    break;
-                  } else {
-                    throw new Error('Voice recognition unavailable. Please try another browser.');
-                  }
-                }
+                // Show the voice overlay
+                setShowVoiceOverlay(true);
               } else {
-                console.log(`Failed to start voice listening (attempt ${retryCount + 1})...`);
-                retryCount++;
-                
-                if (retryCount >= maxRetries) {
-                  throw new Error('Failed to start voice mode after multiple attempts');
-                }
-                
-                // Wait before retrying (increasing delay for each retry)
-                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                console.warn('[DEBUG] startVoiceListening returned false without throwing an error');
+                throw new Error('Failed to start voice mode. Please try again.');
               }
             } catch (listenError) {
-              console.error(`Error in voice mode start attempt ${retryCount + 1}:`, listenError);
-              retryCount++;
-              
-              if (retryCount >= maxRetries) {
-                throw listenError;
-              }
-              
-              // Wait before retrying
-              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              console.error('[DEBUG] Voice listening failed:', listenError);
+              throw new Error(`Voice mode error: ${listenError instanceof Error ? listenError.message : 'Failed to start voice mode'}`);
             }
+          } catch (tokenError) {
+            console.error('Error getting token or starting voice mode:', tokenError);
+            throw tokenError;
           }
         } catch (error) {
           console.error('Failed to start listening:', error);

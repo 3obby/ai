@@ -7,7 +7,6 @@ const { execSync } = require('child_process');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const README_PATH = path.join(ROOT_DIR, 'llm_copilot_overview_and_todo.md');
 const PART1_PATH = path.join(__dirname, 'llm_copilot_part1.md');
-const TODO_PATH = path.join(__dirname, 'llm_copilot_todo.txt');
 
 /**
  * Generates the directory structure as a markdown-formatted string
@@ -141,18 +140,8 @@ ${generateDirectoryStructure().trimEnd()}
 
 `;
 
-  // 3. Load TODO content
-  let todoContent = '';
-  try {
-    todoContent = fs.readFileSync(TODO_PATH, 'utf8');
-    console.log('Successfully loaded TODO content');
-  } catch (error) {
-    console.error('Error reading todo file:', error);
-    todoContent = '## TODO\n\n- Error: Could not read llm_copilot_todo.txt\n';
-  }
-
-  // 4. Combine everything in the requested order
-  return part1Content + dynamicContent + todoContent;
+  // 3. Combine everything in the requested order
+  return part1Content + dynamicContent;
 }
 
 /**

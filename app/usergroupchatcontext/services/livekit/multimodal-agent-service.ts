@@ -187,8 +187,17 @@ export class MultimodalAgentService {
     }
 
     try {
+      console.log('[DEBUG] Starting multimodal agent listening...');
+      
       // Resume audio context
-      await audioPublishingService.resumeAudioContext();
+      await this.resumeAudioContext();
+      
+      // Ensure LiveKit connection is established first
+      const sessionActive = await this.ensureConnection();
+      if (!sessionActive) {
+        console.error('[DEBUG] Cannot start listening - LiveKit connection not established');
+        throw new Error('LiveKit connection not ready');
+      }
       
       // Start audio publishing
       const audioTrack = await audioPublishingService.startPublishing();
@@ -199,15 +208,41 @@ export class MultimodalAgentService {
       // Start voice activity detection
       await voiceActivityService.startDetection(audioTrack);
       
+      // Explicitly initialize the transcription manager first
+      console.log('[DEBUG] Initializing transcription manager');
+      transcriptionManager.initialize({
+        lang: 'en-US',
+        continuous: true,
+        interimResults: true
+      });
+      
+      // Explicitly start speech recognition with Web Speech API
+      console.log('[DEBUG] Starting speech recognition via transcription manager');
+      const recognitionStarted = transcriptionManager.startRecognition();
+      if (!recognitionStarted) {
+        console.warn('[DEBUG] Failed to start speech recognition with Web Speech API');
+        console.log('[DEBUG] Attempting to verify Web Speech API availability');
+        
+        const isAvailable = transcriptionManager.isAvailable();
+        console.log(`[DEBUG] Web Speech API available: ${isAvailable}`);
+        
+        if (!isAvailable) {
+          console.error('[DEBUG] Web Speech API is not available in this browser');
+          throw new Error('Speech recognition not supported in this browser');
+        }
+      } else {
+        console.log('[DEBUG] Web Speech API recognition started successfully');
+      }
+      
       this.isListening = true;
-      console.log('Started listening for speech input');
+      console.log('[DEBUG] Started listening for speech input');
       
       // Emit a listening started event
       this.emitter.emit('listening-started', { timestamp: Date.now() });
       
       return true;
     } catch (error) {
-      console.error('Error starting listening:', error);
+      console.error('[DEBUG] Error starting listening:', error);
       
       // Clean up any partial state
       this.stopListening();
@@ -218,9 +253,37 @@ export class MultimodalAgentService {
           this.emitter.emit('error', { type: 'permission-denied', message: 'Microphone permission denied' });
         } else if (error.message.includes('timeout') || error.message.includes('publish')) {
           this.emitter.emit('error', { type: 'publish-timeout', message: 'Could not publish audio track' });
+        } else if (error.message.includes('connection')) {
+          this.emitter.emit('error', { type: 'connection-error', message: 'Could not connect to audio server' });
         }
       }
       
+      throw error; // Rethrow so caller can handle it
+    }
+  }
+
+  /**
+   * Ensure that LiveKit connection is established
+   */
+  private async ensureConnection(): Promise<boolean> {
+    try {
+      // Use a simpler check - access the room property via any to bypass type checking
+      // This is safer than trying to navigate the room session manager's specific API
+      const isConnected = 
+        roomSessionManager && 
+        (roomSessionManager as any).activeSession && 
+        (roomSessionManager as any).activeSession.room && 
+        (roomSessionManager as any).activeSession.room.state === 'connected';
+      
+      if (!isConnected) {
+        console.warn('[DEBUG] No active LiveKit connection found');
+        return false;
+      }
+      
+      console.log('[DEBUG] LiveKit connection verified');
+      return true;
+    } catch (error) {
+      console.error('[DEBUG] Error checking LiveKit connection:', error);
       return false;
     }
   }
@@ -312,12 +375,14 @@ export class MultimodalAgentService {
    * Handle transcription results
    */
   private handleTranscription(text: string, isFinal: boolean): void {
-    // Notify transcription handlers
-    this.notifyTranscriptionHandlers(text, isFinal);
+    console.log('[DEBUG] MultimodalAgentService received transcription:', { text, isFinal });
     
-    // Process for tool detection if final
-    if (isFinal) {
-      this.processTranscriptionForTools(text, isFinal);
+    // Emit the transcription event to all listeners
+    this.emitter.emit('transcription', { text, isFinal });
+    
+    // Log successful emission of final transcriptions
+    if (isFinal && text.trim()) {
+      console.log('[DEBUG] Final transcription emitted:', text.trim());
     }
   }
 

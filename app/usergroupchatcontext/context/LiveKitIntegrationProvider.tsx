@@ -57,7 +57,7 @@ interface LiveKitIntegrationProviderProps {
 
 export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProviderProps) {
   const { state, dispatch } = useGroupChatContext();
-  const { room, isConnected: liveKitIsConnected } = useLiveKit();
+  const { room, isConnected: liveKitIsConnected, ensureConnection } = useLiveKit();
   const { state: botRegistryState } = useBotRegistry();
   const { executeToolCalls } = useToolCall();
   
@@ -98,19 +98,21 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
 
     const handleTranscription = async (text: string, isFinal: boolean) => {
       if (!isFinal || !text.trim()) return; // Only process final, non-empty transcriptions
-      console.log('LiveKitIntegrationProvider received transcription:', text, 'isFinal:', isFinal);
+      console.log('[DEBUG TRANSCRIPT] LiveKitIntegrationProvider received transcription:', text, 'isFinal:', isFinal);
       
       // Check if we're still connected and in voice mode
       if (!isInVoiceMode || !isConnected) {
-        console.log('Skipping transcription processing - no longer in voice mode or not connected');
+        console.log('[DEBUG TRANSCRIPT] Skipping transcription processing - voice mode:', isInVoiceMode, 'connected:', isConnected);
         return;
       }
       
       // Add a deduplication check to prevent duplicate messages
-      const recentMessages = state.messages.slice(-10); // Check more recent messages (increased from 5)
+      const recentMessages = state.messages.slice(-10); // Check more recent messages
+      console.log('[DEBUG TRANSCRIPT] Checking duplication against recent messages:', recentMessages.length);
+      
       const isDuplicate = recentMessages.some(msg => 
         msg.role === 'user' && 
-        (msg.type === 'voice' || msg.type === 'text') && // Consider both voice and text messages
+        (msg.type === 'voice' || msg.type === 'text') && 
         (
           // Exact match
           msg.content.trim() === text.trim() ||
@@ -123,12 +125,14 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
             )
           )
         ) &&
-        Date.now() - msg.timestamp < 10000 // Within last 10 seconds (increased from 5)
+        Date.now() - msg.timestamp < 10000
       );
       
       if (isDuplicate) {
-        console.log('Skipping duplicate transcription message:', text);
+        console.log('[DEBUG TRANSCRIPT] Skipping duplicate transcription message:', text);
         return;
+      } else {
+        console.log('[DEBUG TRANSCRIPT] Not a duplicate, proceeding with message');
       }
       
       // Check if it contains a tool call
@@ -136,6 +140,7 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       
       // If it was a tool call, skip normal message processing
       if (isToolCall) {
+        console.log('[DEBUG TRANSCRIPT] Skipping normal processing - detected tool call');
         return;
       }
       
@@ -156,22 +161,25 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       };
       
       // Add message to chat
+      console.log('[DEBUG TRANSCRIPT] Dispatching transcription to chat:', message);
       dispatch({
         type: 'ADD_MESSAGE',
         payload: message
       });
       
       // Process message through bot response system
+      console.log('[DEBUG TRANSCRIPT] Processing message through bot response system');
       await processUserMessage(message);
     };
     
     // Set up listener directly on the multimodalAgentService
+    console.log('[DEBUG TRANSCRIPT] Setting up transcription handler on multimodalAgentService');
     multimodalAgentService.onTranscription(handleTranscription);
     
     return () => {
       multimodalAgentService.offTranscription(handleTranscription);
     };
-  }, [room, isConnected, dispatch, isInVoiceMode]);
+  }, [room, isConnected, dispatch, isInVoiceMode, state.messages]);
   
   // Process user message through bot response system
   const processUserMessage = async (message: Message) => {
@@ -572,16 +580,57 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     }
   };
   
-  // Start listening for voice input
+  // Add this simple debug function at the beginning of the component
+  const debugVoiceMode = () => {
+    console.log('---- VOICE MODE DEBUG ----');
+    console.log('- Connected to LiveKit:', isConnected);
+    console.log('- Voice mode active:', isInVoiceMode);
+    console.log('- Listening state:', isListening);
+    console.log('- Bot speaking:', isBotSpeaking);
+    console.log('- Current speaking bot:', currentSpeakingBotId);
+    console.log('- Available bots:', botRegistryState.availableBots);
+    console.log('- Voice multimodal agent config:', multimodalAgentService.getConfig());
+    console.log('- Room connection:', room ? room.state : 'No room');
+    console.log('-------------------------');
+  };
+
+  // Add debug logging to startListening to track voice mode startup issues
   const startListening = async () => {
-    // First check if we're already connected through the room object directly
-    if (room && room.state === 'connected') {
-      setIsConnected(true);
+    console.log('[DEBUG] Starting voice listening mode...');
+    
+    // Set voice mode active flag immediately - this is critical for proper transcription handling
+    setIsInVoiceMode(true);
+    
+    // Debug connection state
+    debugVoiceMode();
+    
+    // First ensure we have a LiveKit connection - this is critical
+    const connected = await ensureConnection();
+    
+    if (!connected) {
+      console.error('[DEBUG] Failed to establish LiveKit connection - cannot start voice mode');
+      setIsInVoiceMode(false); // Reset flag on failure
+      
+      // Add a helpful message to chat
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: uuidv4(),
+          content: "Voice mode failed to initialize. Please try again. If the problem persists, please check your network connection.",
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+      
+      return;
     }
     
-    // Now verify connection state, using both our local state and direct room check
+    // Now verify connection state with the established connection
     if (!isConnected && (!room || room.state !== 'connected')) {
-      console.error('Cannot start listening - not connected to LiveKit');
+      console.error('[DEBUG] Cannot start listening - not connected to LiveKit');
+      setIsInVoiceMode(false); // Reset flag on failure
       
       // Add a helpful message to chat
       dispatch({
@@ -600,14 +649,30 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     }
     
     try {
-      console.log('Starting voice listening mode...');
       await multimodalAgentService.resumeAudioContext();
       await multimodalAgentService.startListening();
       roomSessionManager.setVoiceModeActive(true);
       setIsListening(true);
-      setIsInVoiceMode(true);
+      // isInVoiceMode is already set to true at the beginning of the function
+      
+      // Add a system message to indicate voice mode is active
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: uuidv4(),
+          content: "🎤 Voice mode activated. You can speak now.",
+          role: 'system',
+          sender: 'system',
+          timestamp: Date.now(),
+          type: 'text'
+        }
+      });
+      
+      // Log successful startup
+      console.log('[DEBUG] Voice mode successfully activated');
     } catch (error) {
-      console.error('Failed to start voice listening:', error);
+      console.error('[DEBUG] Failed to start voice listening:', error);
+      setIsInVoiceMode(false); // Reset flag on failure
       
       // Add error message to chat
       dispatch({
@@ -642,106 +707,59 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   
   // Play bot response using text-to-speech
   const playBotResponse = async (botId: BotId, text: string) => {
-    if (!text.trim()) return;
+    if (!text || !botId) {
+      console.error('[DEBUG] Cannot play bot response - missing text or botId:', { botId, textLength: text?.length });
+      return;
+    }
+
+    console.log('[DEBUG] Starting to play bot response:', { botId, textLength: text.length });
     
     try {
-      // Find the bot
-      const bot = botRegistryState.availableBots.find(b => b.id === botId);
-      if (!bot) {
-        throw new Error(`Bot with ID ${botId} not found`);
-      }
-      
-      // First generate the text response, as a fallback if voice fails
-      const responseTextId = uuidv4();
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          id: responseTextId,
-          content: text,
-          role: 'assistant',
-          sender: botId,
-          timestamp: Date.now(),
-          type: 'text'
-        }
-      });
-      
-      // Set the current speaking bot
+      // Set UI state for speech
       setIsBotSpeaking(true);
       setCurrentSpeakingBotId(botId);
       
-      // Configure voice options for the bot
-      const voiceOptions = {
-        // Start with default settings
-        voice: 'alloy',
-        speed: 1.0,
-        model: 'gpt-4o-realtime-preview', // Default to latest realtime model
-        quality: 'high-quality' as const,
-        // Override with any settings the bot has defined
-        ...(bot.voiceSettings || {})
-      };
-      
-      console.log(`Using voice settings for bot ${bot.name}:`, voiceOptions);
-      
-      // Use the standard voice synthesis service directly instead of going through multimodal service
-      // This provides more reliability and better error handling
-      let synthesisSuccess = false;
-      let retryCount = 0;
-      const maxRetries = 2;
-      
-      while (!synthesisSuccess && retryCount <= maxRetries) {
-        try {
-          // Create a new service instance for each attempt to avoid stale state
-          const responseSynthesisService = new VoiceSynthesisService(voiceOptions);
-          
-          // Add event listeners for progress
-          const startTime = Date.now();
-          responseSynthesisService.onStart(() => {
-            console.log(`Speech synthesis started for bot ${bot.name}`);
-          });
-          
-          // Begin voice synthesis asynchronously
-          const speakPromise = responseSynthesisService.speak(text, voiceOptions);
-          
-          // Wait for completion or timeout
-          const timeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Speech synthesis timed out')), 15000));
-          
-          await Promise.race([speakPromise, timeout]);
-          synthesisSuccess = true;
-          
-          // Log success
-          const duration = Date.now() - startTime;
-          console.log(`Speech synthesis completed in ${duration}ms`);
-          
-        } catch (synthError) {
-          retryCount++;
-          console.error(`Speech synthesis attempt ${retryCount} failed:`, synthError);
-          
-          if (retryCount >= maxRetries) {
-            console.error(`Failed to synthesize speech after ${maxRetries} attempts`);
-            break;
-          }
-          
-          // Wait before retrying with different settings
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Try with different voice on retry
-          if (retryCount === 1) {
-            voiceOptions.voice = 'echo'; // Try a different voice for retry
-          }
+      // First stop any currently playing audio using the available method
+      try {
+        if (typeof voiceSynthesisService.stop === 'function') {
+          voiceSynthesisService.stop();
         }
+      } catch (stopError) {
+        console.warn('[DEBUG] Error stopping previous voice synthesis:', stopError);
       }
       
-      // Always resolve regardless of synthesis success, since we already added the text message
-      setIsBotSpeaking(false);
-      setCurrentSpeakingBotId(null);
-      return Promise.resolve();
+      // Get bot configuration for voice settings
+      const bot = botRegistryState.availableBots.find(b => b.id === botId);
+      if (!bot) {
+        console.error('[DEBUG] Bot not found for voice playback:', botId);
+        return;
+      }
       
+      // Determine voice settings 
+      const voiceId = bot.voiceSettings?.voice || 'alloy';
+      const speed = bot.voiceSettings?.speed || 1.0;
+      const quality = bot.voiceSettings?.quality || 'high-quality';
+      
+      console.log('[DEBUG] Using voice settings:', { voiceId, speed, quality });
+      
+      // Use the VoiceSynthesisService with a fresh instance to avoid state issues
+      const synthService = new VoiceSynthesisService({
+        voice: voiceId,
+        rate: speed,
+        model: 'gpt-4o',
+      });
+      
+      // Start synthesizing speech
+      console.log('[DEBUG] Calling speak method on VoiceSynthesisService');
+      await synthService.speak(text);
+      
+      console.log('[DEBUG] Bot response playback completed successfully');
     } catch (error) {
-      console.error('Error playing bot response:', error);
+      console.error('[DEBUG] Error playing bot response:', error);
+    } finally {
+      // Reset UI state
       setIsBotSpeaking(false);
       setCurrentSpeakingBotId(null);
-      return Promise.resolve(); // Resolve anyway to avoid hanging the UI
     }
   };
   
