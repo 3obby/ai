@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { GroupSettingsPanel } from './GroupSettingsPanel';
+import { AccessibilitySettingsPanel } from './AccessibilitySettingsPanel';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,7 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { state, dispatch } = useGroupChat();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'accessibility'>('general');
   
   // Handle animation on open/close
   useEffect(() => {
@@ -60,8 +62,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }}
       >
         <div className="flex items-center border-b sticky top-0 bg-background z-10">
-          <div className="flex-1 px-4 py-3 text-sm font-medium">
-            Group Settings
+          <div className="flex-1 flex items-center">
+            <button
+              onClick={() => setActiveTab('general')}
+              className={cn(
+                "px-4 py-3 text-sm font-medium whitespace-nowrap",
+                activeTab === 'general' ? "border-b-2 border-primary" : "text-muted-foreground"
+              )}
+            >
+              General Settings
+            </button>
+            <button
+              onClick={() => setActiveTab('accessibility')}
+              className={cn(
+                "px-4 py-3 text-sm font-medium whitespace-nowrap",
+                activeTab === 'accessibility' ? "border-b-2 border-primary" : "text-muted-foreground"
+              )}
+            >
+              Accessibility
+            </button>
           </div>
           
           <div className="ml-auto">
@@ -76,9 +95,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
         
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 49px)' }}>
-          <GroupSettingsPanel 
-            onClose={handleClose} 
-          />
+          {activeTab === 'general' && (
+            <GroupSettingsPanel onClose={handleClose} />
+          )}
+          
+          {activeTab === 'accessibility' && (
+            <AccessibilitySettingsPanel />
+          )}
         </div>
       </div>
     </div>

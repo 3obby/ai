@@ -206,4 +206,53 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Styled button wrappers */
+.voice-button-wrapper,
+.send-button-wrapper {
+  position: relative;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.voice-button-wrapper .voice-mode-btn,
+.blackbar-send-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transform-origin: center;
+  transition: all 0.15s ease;
+}
+
+.voice-button-wrapper:hover .voice-mode-btn,
+.blackbar-send-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.voice-button-wrapper:active .voice-mode-btn,
+.blackbar-send-btn:active {
+  transform: scale(0.95);
+}
+
+/* Add styles for ghost prompts */
+.ghost-prompt {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.ghost-prompt:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ghost-prompt:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion) {
+  .voice-button-wrapper:hover .voice-mode-btn,
+  .blackbar-send-btn:hover,
+  .ghost-prompt:hover {
+    transform: none;
+  }
 } 

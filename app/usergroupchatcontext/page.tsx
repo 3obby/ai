@@ -7,6 +7,7 @@ import { ToolCallProvider } from './context/ToolCallProvider';
 import { ToolIntegrationProvider } from './components/tools/ToolIntegrationProvider';
 import { LiveKitProvider } from './context/LiveKitProvider';
 import { LiveKitIntegrationProvider } from './context/LiveKitIntegrationProvider';
+import { PromptsProvider, usePromptsContext } from './context/PromptsContext';
 import { sampleBots } from './data/sampleBots';
 import { defaultGroupChatSettings } from './data/defaultSettings';
 import { ChatInterface } from './components/chat/ChatInterface';
@@ -21,6 +22,7 @@ import './mobile.css';
 function BotsInitializer() {
   const { state, dispatch } = useGroupChatContext();
   const botRegistry = useBotRegistry();
+  const { state: promptsState } = usePromptsContext();
   const stableId = useId(); // Use a stable ID instead of Date.now()
   
   const [latestModels, setLatestModels] = useState(null);
@@ -142,6 +144,17 @@ function BotsInitializer() {
     }
   };
   
+  // Check if there are any enabled prompts in the PromptsContext
+  const hasEnabledPrompts = useMemo(() => {
+    const containerPrompts = promptsState.containers
+      .filter(container => container.enabled)
+      .some(container => container.prompts.some(prompt => prompt.enabled));
+    
+    const standalonePrompts = promptsState.standalonePrompts.some(prompt => prompt.enabled);
+    
+    return containerPrompts || standalonePrompts;
+  }, [promptsState]);
+  
   useEffect(() => {
     // Get the default bot
     const botId = 'default';
@@ -158,31 +171,35 @@ function BotsInitializer() {
         }
       });
       
-      // Check if a welcome message already exists before adding a new one
-      const hasWelcomeMessage = state.messages.some(msg => 
-        msg.role === 'system' && msg.sender === 'system' && msg.content.includes("I'm your AI assistant")
-      );
-      
-      if (!hasWelcomeMessage) {
-        // Add initial system message with a unique ID including timestamp
-        dispatch({
-          type: 'ADD_MESSAGE',
-          payload: {
-            id: `welcome-message-${Date.now()}`,
-            content: "Hello! I'm your AI assistant powered by the latest GPT model. I can help with a wide range of questions and tasks. You can type your messages and I'll respond with text. If you'd like to use voice input and hear my responses, click the microphone button in the message box to activate voice mode.",
-            role: 'system',
-            sender: 'system',
-            timestamp: Date.now(),
-            type: 'text'
-          }
-        });
+      // Only add welcome message if no enabled prompts are configured
+      // and no welcome message exists already
+      if (!hasEnabledPrompts) {
+        // Check if a welcome message already exists before adding a new one
+        const hasWelcomeMessage = state.messages.some(msg => 
+          msg.role === 'system' && msg.sender === 'system' && msg.content.includes("I'm your AI assistant")
+        );
+        
+        if (!hasWelcomeMessage) {
+          // Add initial system message with a unique ID including timestamp
+          dispatch({
+            type: 'ADD_MESSAGE',
+            payload: {
+              id: `welcome-message-${Date.now()}`,
+              content: "Hello! I'm your AI assistant powered by the latest GPT model. I can help with a wide range of questions and tasks. You can type your messages and I'll respond with text. If you'd like to use voice input and hear my responses, click the microphone button in the message box to activate voice mode.",
+              role: 'system',
+              sender: 'system',
+              timestamp: Date.now(),
+              type: 'text'
+            }
+          });
+        }
       }
       
       console.log("Bot initialized:", availableBots.find(bot => bot.id === botId));
     } else if (availableBots.length === 0) {
       console.warn("No bots available for initialization");
     }
-  }, [botRegistry.state.availableBots, dispatch, state.messages.length]);
+  }, [botRegistry.state.availableBots, dispatch, state.messages.length, state.messages, hasEnabledPrompts]);
   
   return (
     <div className="hidden">
@@ -219,15 +236,17 @@ export default function GroupChatContextPage() {
             <LiveKitProvider>
               <LiveKitIntegrationProvider>
                 <ToolIntegrationProvider>
-                  <BotsInitializer />
-                  <div className="flex h-full">
-                    <ChatInterface className="flex-1 h-full" />
-                    {/* Essential voice components - keep these */}
-                    <VoiceIntegration />
-                    <VoiceResponseManager />
-                    <VoiceTransitionFeedback />
-                    {/* Remove the floating controls - we're using the blackbar now */}
-                  </div>
+                  <PromptsProvider>
+                    <BotsInitializer />
+                    <div className="flex h-full">
+                      <ChatInterface className="flex-1 h-full" />
+                      {/* Essential voice components - keep these */}
+                      <VoiceIntegration />
+                      <VoiceResponseManager />
+                      <VoiceTransitionFeedback />
+                      {/* Remove the floating controls - we're using the blackbar now */}
+                    </div>
+                  </PromptsProvider>
                 </ToolIntegrationProvider>
               </LiveKitIntegrationProvider>
             </LiveKitProvider>

@@ -9,6 +9,7 @@ import { Settings, Mic, VolumeX, Volume2 } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageItem } from './MessageItem';
 import { ChatInput } from './ChatInput';
+import { GhostPromptsList } from './GhostPromptsList';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { VoicePlaybackControls } from '../voice/VoicePlaybackControls';
 import { VoiceActivityIndicator } from '../voice/VoiceActivityIndicator';
@@ -20,9 +21,10 @@ import { cn } from '@/lib/utils';
 import { Bot } from '../../types';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
-import { AccessibilityControls } from '../accessibility/AccessibilityControls';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { MessageList } from './MessageList';
+import { PromptsButton, PromptsDrawer } from '../prompts';
+import { usePromptsContext } from '../../context/PromptsContext';
 
 interface ChatInterfaceProps {
   className?: string;
@@ -32,12 +34,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
   const { state, dispatch } = useGroupChatContext();
   const { state: botState } = useBotRegistry();
   const { isBotSpeaking, isListening, isInVoiceMode } = useLiveKitIntegration();
+  const { sendMessage } = useRealGroupChat();
   const bots = botState.availableBots;
   
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   const [showVoiceBotSelector, setShowVoiceBotSelector] = useState(false);
   const [allowInterruptions, setAllowInterruptions] = useState(false);
+  const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll on new messages or when typing
@@ -112,10 +116,21 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     console.log('Voice context inheritance completed');
   };
 
+  const handlePromptSelected = (text: string) => {
+    setActivePrompt(text);
+  };
+
+  const handleActivePromptSent = () => {
+    setActivePrompt(null);
+  };
+
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
-      {/* Accessibility Controls at the top of the page */}
-      <AccessibilityControls className="accessibility-controls-top" />
+      {/* Prompts Button */}
+      <PromptsButton />
+      
+      {/* Prompts Drawer */}
+      <PromptsDrawer />
       
       {/* Chat Header with settings button */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/10">
@@ -133,10 +148,14 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
       
       {/* Main chat area with messages */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <MessageList
-          messages={state.messages}
-          showDebugInfo={state.settings?.ui?.showDebugInfo || false}
-        />
+        {state.messages.length === 0 ? (
+          <GhostPromptsList onPromptSelected={handlePromptSelected} />
+        ) : (
+          <MessageList
+            messages={state.messages}
+            showDebugInfo={state.settings?.ui?.showDebugInfo || false}
+          />
+        )}
       </div>
       
       {/* Voice mode indicator */}
@@ -152,6 +171,8 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         <ChatInput
           disabled={state.isProcessing || state.isRecording}
           className={cn(isInVoiceMode && "voice-mode")}
+          activePrompt={activePrompt}
+          onActivePromptSent={handleActivePromptSent}
         />
       </div>
       

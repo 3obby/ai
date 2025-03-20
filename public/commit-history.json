@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "f1dd3a0",
+      "fullHash": "f1dd3a04a333f055c8382d815cb9a8f5191ca38f",
+      "date": "2025-03-21 01:53:02 +0700",
+      "author": "3obby",
+      "message": "preprompts good",
+      "category": "other"
+    },
+    {
       "hash": "8ac8630",
       "fullHash": "8ac86307df4adad127b2c9f9be40a5c207bbdefb",
       "date": "2025-03-20 22:37:14 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update domain references to groupchatbotbuilder.com and fix README page component",
       "category": "bugfix"
-    },
-    {
-      "hash": "d9c7ff4",
-      "fullHash": "d9c7ff4764c36a4cdca150f6c345bde59c15c975",
-      "date": "2025-03-09 15:28:20 +0700",
-      "author": "3obby",
-      "message": "Add /readme route, sitemap.xml and robots.txt for improved SEO",
-      "category": "feature"
     }
   ]
 }

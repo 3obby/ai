@@ -9,11 +9,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import VoiceModeRedbar from './VoiceModeRedbar';
 import voiceModeManager from '../../services/voice/VoiceModeManager';
+import { usePromptsContext } from '../../context/PromptsContext';
 
 interface ChatInputProps {
   className?: string;
   placeholder?: string;
   disabled?: boolean;
+  activePrompt?: string | null;
+  onActivePromptSent?: () => void;
 }
 
 /**
@@ -27,11 +30,48 @@ export function ChatInput({
   className,
   placeholder = "Type a message...",
   disabled = false,
+  activePrompt = null,
+  onActivePromptSent,
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, isProcessing } = useRealGroupChat();
   const { isInVoiceMode } = useLiveKitIntegration();
+  const { state: promptsState } = usePromptsContext();
+
+  // Check if there are any enabled prompts
+  const hasEnabledPrompts = React.useMemo(() => {
+    const containerPrompts = promptsState.containers
+      .filter(container => container.enabled)
+      .some(container => container.prompts.some(prompt => prompt.enabled));
+    
+    const standalonePrompts = promptsState.standalonePrompts.some(prompt => prompt.enabled);
+    
+    return containerPrompts || standalonePrompts;
+  }, [promptsState]);
+
+  // Get the first enabled prompt text
+  const firstEnabledPromptText = React.useMemo(() => {
+    // Start with container prompts
+    for (const container of promptsState.containers) {
+      if (container.enabled) {
+        for (const prompt of container.prompts) {
+          if (prompt.enabled) {
+            return prompt.text;
+          }
+        }
+      }
+    }
+    
+    // Then check standalone prompts
+    for (const prompt of promptsState.standalonePrompts) {
+      if (prompt.enabled) {
+        return prompt.text;
+      }
+    }
+    
+    return null;
+  }, [promptsState]);
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -41,14 +81,29 @@ export function ChatInput({
     }
   }, [message]);
 
+  // Set the message to the active prompt if provided
+  useEffect(() => {
+    if (activePrompt) {
+      setMessage(activePrompt);
+    }
+  }, [activePrompt]);
+
   // Handle text submission in text mode
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() || disabled || isProcessing) return;
+    // If we have an active prompt, use that instead of the input value
+    const textToSend = (activePrompt || message).trim();
     
-    sendMessage(message.trim());
+    if (!textToSend || disabled || isProcessing) return;
+    
+    sendMessage(textToSend);
     setMessage('');
+    
+    // Notify that the active prompt was sent
+    if (activePrompt && onActivePromptSent) {
+      onActivePromptSent();
+    }
     
     // Reset textarea height
     if (textareaRef.current) {
@@ -103,13 +158,13 @@ export function ChatInput({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled || isProcessing}
+              placeholder={firstEnabledPromptText || placeholder}
+              disabled={disabled || isProcessing || !!activePrompt}
               className={cn(
                 "w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
                 "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 "input-accessible min-h-[40px] max-h-[200px] pr-10",
-                disabled && "opacity-50 cursor-not-allowed"
+                (disabled || activePrompt) && "opacity-50 cursor-not-allowed"
               )}
               rows={1}
             />
@@ -117,24 +172,27 @@ export function ChatInput({
           
           <div className="blackbar-controls flex items-center gap-2">
             {/* Voice mode toggle button - Switches between text and voice modes */}
-            <VoiceInputButton 
-              onTranscriptionComplete={handleVoiceTranscription}
-              disabled={disabled || isProcessing}
-              // Auto-send is enabled by default
-              autoSend={true}
-              aria-label="Voice Mode"
-              title="Start Voice Mode"
-              className="voice-mode-btn"
-            />
+            <div className="voice-button-wrapper">
+              <VoiceInputButton 
+                onTranscriptionComplete={handleVoiceTranscription}
+                disabled={disabled || isProcessing}
+                // Auto-send is enabled by default
+                autoSend={true}
+                aria-label="Voice Mode"
+                title="Start Voice Mode"
+                className="voice-mode-btn"
+              />
+            </div>
             
             {/* Send button - Primary action in text mode */}
             <button
               type="submit"
-              disabled={!message.trim() || disabled || isProcessing}
+              disabled={(!message.trim() && !activePrompt) || disabled || isProcessing}
               className={cn(
                 "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
-                message.trim() && !disabled && !isProcessing
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                "send-button-wrapper",
+                (message.trim() || activePrompt || hasEnabledPrompts) && !disabled && !isProcessing
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
                   : "bg-muted text-muted-foreground",
               )}
               aria-label="Send message"

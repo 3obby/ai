@@ -782,3 +782,100 @@ We've implemented several features to address the common issue of acoustic feedb
    - Added user-friendly sliders for fine-tuning these parameters based on environment
 
 These improvements significantly reduce the likelihood of echo feedback, creating a more natural conversational experience when using voice mode with speakers instead of headphones.
+
+## Custom Prompts Management System
+
+We've implemented a comprehensive prompts management system that allows users to create, organize, and toggle custom prompts that can be applied to their conversations with AI assistants:
+
+1. **Prompts Button and Drawer**
+   - Added a prominent centrally positioned "Prompts" button with an old-school circular database icon
+   - Created a slide-down drawer that reveals when the button is clicked
+   - Implemented a clean, intuitive UI with a top bar containing controls (add and close buttons)
+   - Added proper close functionality via a dedicated close button in the drawer header
+
+2. **Toggle Prompts and Containers**
+   - Developed a system of toggleable prompt entries that can be individually enabled/disabled
+   - Created toggle containers that group related prompts together
+   - Implemented a main toggle for each container to quickly enable/disable all contained prompts
+   - Pre-populated with useful example prompts like "I prefer terse, casual output" and others
+
+3. **Intuitive Direct Actions**
+   - Added direct action buttons for each prompt and container
+   - Delete button (trash icon) removes prompts or containers
+   - Clone button (copy icon) duplicates prompts or containers
+   - Provides immediate visual feedback for actions
+   - Simplified interaction model eliminates need for drag-and-drop
+
+4. **Editable Content**
+   - Made prompt text and container titles editable with a simple click
+   - Implemented smooth transitions between view and edit modes
+   - Added proper focus management for a seamless editing experience
+   - Persists changes immediately in the application state
+
+5. **Mobile-Optimized Interface**
+   - Designed with mobile-first principles for touch-friendly interactions
+   - Implemented responsive layout with appropriate sizing for small screens
+   - Integrated with application theme for consistent dark/light mode support
+   - Used animation transitions for a polished user experience
+
+6. **Consistent Theming**
+   - Updated all components to use the application's CSS variables
+   - Ensured proper color contrast for accessibility
+   - Maintained visual coherence with the rest of the application
+   - Supports both light and dark themes automatically
+
+This feature enhances user efficiency by allowing them to save and quickly toggle frequently used prompts or instructions, avoiding the need to repeatedly type common requests or preferences. The direct action buttons make organizing prompts intuitive and efficient.
+
+## Recent UI Reorganization
+
+We've improved the user interface organization to create a cleaner top-level layout:
+
+1. **Moved Accessibility Controls to Settings Modal**
+   - Consolidated all accessibility controls into a dedicated tab in the settings modal
+   - Added more descriptive UI with improved layout and organization of controls
+   - Freed up the top navigation area to provide a cleaner interface
+   - Maintained all keyboard shortcuts for quick access to accessibility features
+
+2. **Made Prompts Button More Prominent**
+   - Positioned the prompts button in the top center with a distinctive circular database icon
+   - Styled with a larger touch target for improved mobile usability
+   - Added clear visual feedback for interactions (hover, active states)
+   - Ensured proper spacing to avoid overlap with other UI elements
+
+3. **Enhanced Settings Modal with Tab Interface**
+   - Added a tabbed interface to the settings modal with "General Settings" and "Accessibility" tabs
+   - Improved organization of settings for easier navigation
+   - Included comprehensive accessibility controls with proper grouping
+   - Added keyboard shortcut reference in the accessibility tab
+
+These changes create a cleaner, more intuitive interface while ensuring all functionality remains accessible. Commonly used features are available at the top level, while less frequently used settings are organized in logical groupings within the modal.
+
+## Custom Prompts Ghost UI
+
+We've enhanced the prompts system with a ghost UI that presents enabled prompts as ready-to-send messages when the chat is empty:
+
+1. **Ghost Prompts Interface**
+   - When a user enables prompts in the drawer, they appear as "ghost" messages in the chat
+   - These replace the default welcome message for a more personalized experience
+   - The first prompt is labeled "Ready to send" to indicate it's the next one to be used
+   - Each ghost prompt is visually distinct with a dashed border and subtle animation
+
+2. **One-Click Sending**
+   - Clicking on any ghost prompt selects it for immediate sending
+   - The send button becomes highlighted when a prompt is ready
+   - Ghost prompts maintain the original formatting and content from the drawer
+   - After sending, the prompt becomes a regular message in the chat history
+
+3. **Enhanced Button Styling**
+   - Applied consistent button styling across the interface
+   - All interactive buttons now have subtle elevation effects
+   - Buttons provide visual feedback with hover and active states
+   - Shadow and transform effects create a cohesive, tactile experience
+
+4. **Accessibility Considerations**
+   - All animations respect the user's motion preferences
+   - Ghost prompts include clear visual indicators of their state
+   - Interactive elements maintain proper contrast in both light and dark modes
+   - Touch targets are appropriately sized for mobile interaction
+
+This feature provides a more intuitive way for users to start conversations with their preferred prompts, removing the friction of typing common requests and ensuring consistent phrasing of frequently used instructions.
