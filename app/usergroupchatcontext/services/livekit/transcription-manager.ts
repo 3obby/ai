@@ -96,6 +96,14 @@ export class TranscriptionManager {
         };
         
         this.speechRecognition.onerror = (event: any) => {
+          // Check if this is a 'no-speech' event, which is normal behavior
+          if (event.error === 'no-speech') {
+            // Log as info instead of error since this is expected when user is silent
+            console.info('[DEBUG] No speech detected');
+            return; // Don't count as an error or attempt to restart
+          }
+          
+          // For actual errors, increment counter and handle as before
           this.speechRecognitionErrorCount++;
           console.error('[DEBUG] Speech recognition error:', event.error, `(Count: ${this.speechRecognitionErrorCount})`);
           

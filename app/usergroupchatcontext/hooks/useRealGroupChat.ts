@@ -21,9 +21,10 @@ export function useRealGroupChat() {
   const sendMessage = async (content: string, messageType: 'text' | 'voice' = 'text') => {
     if (!content.trim()) return;
     
-    // Create a user message
+    // Create a user message with unique ID for correlation
+    const messageId = uuidv4();
     const userMessage = {
-      id: uuidv4(),
+      id: messageId,
       content: content.trim(),
       role: 'user' as const,
       sender: 'user',
@@ -46,7 +47,6 @@ export function useRealGroupChat() {
     // Set processing state
     dispatch({ type: 'SET_PROCESSING', payload: true });
     
-    // Trigger bot responses
     // Get active bot IDs from settings
     const activeBotIds = state.settings?.activeBotIds || [];
     
@@ -61,13 +61,49 @@ export function useRealGroupChat() {
     const isVoiceMessage = messageType === 'voice';
     
     try {
+      // Get the current voice mode state to implement strict mode-based routing
+      const isInVoiceMode = state.settings?.voiceSettings?.modality === 'audio' ||
+        (state.isRecording === true); // Fallback check
+      
+      // STRICT MODE-BASED MESSAGE ROUTING:
+      // 1. Text messages should only be handled by regular bots (not voice ghosts)
+      // 2. Voice messages in voice mode should only be handled by voice ghosts
+      // This prevents duplicate processing and ensures clear responsibilities
+      
       // Process responses for each active bot sequentially
       for (const botId of activeBotIds) {
+        // Get the bot from the registry
         const bot = botRegistry.getBot(botId);
         
         if (!bot) {
           console.warn(`Bot with ID ${botId} not found in registry`);
           continue;
+        }
+        
+        // Implement strict mode-based routing
+        const isVoiceGhost = bot.id.startsWith('ghost-') || bot.id.startsWith('voice-');
+        
+        // Skip voice ghosts for text messages and vice versa
+        if ((isVoiceMessage && isInVoiceMode && !isVoiceGhost) || 
+            (isVoiceMessage && !isInVoiceMode && isVoiceGhost) ||
+            (!isVoiceMessage && isVoiceGhost)) {
+          console.log(`Skipping bot ${bot.id} due to mode mismatch. Voice message: ${isVoiceMessage}, Voice mode: ${isInVoiceMode}, Voice ghost: ${isVoiceGhost}`);
+          continue;
+        }
+        
+        // Add cooldown for voice outputs to prevent rapid responses
+        if (isVoiceMessage && isVoiceGhost) {
+          // Check if we need to add a small delay between voice responses
+          const lastVoiceResponseTime = state.messages
+            .filter(m => m.type === 'voice' && m.role === 'assistant')
+            .map(m => m.timestamp)
+            .sort((a, b) => b - a)[0] || 0;
+          
+          const timeSinceLastVoice = Date.now() - lastVoiceResponseTime;
+          if (lastVoiceResponseTime > 0 && timeSinceLastVoice < 800) {
+            // Add a small delay to prevent responses from stepping on each other
+            await new Promise(resolve => setTimeout(resolve, 800 - timeSinceLastVoice));
+          }
         }
         
         // Set typing indicator for this bot

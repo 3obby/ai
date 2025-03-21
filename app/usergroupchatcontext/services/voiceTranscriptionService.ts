@@ -1,287 +1,257 @@
-import { useEffect, useState } from 'react';
+'use client';
 
-// Define the SpeechRecognition interface
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-  onstart: () => void;
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
+import { Message } from '../types';
+import { VoiceProcessingMetadata } from '../types/voice';
+
+// Transcription tracking to prevent duplicate processing
+interface TranscriptionRecord {
+  id: string;           // Unique ID for this transcription
+  text: string;         // The transcribed text
+  timestamp: number;    // When this transcription was received
+  processed: boolean;   // Whether this transcription has been processed
+  messageId?: string;   // ID of the message created from this transcription
+  isFinal: boolean;     // Whether this is a final transcription
 }
 
-// Declare the SpeechRecognition constructor
-interface SpeechRecognitionConstructor {
-  new (): SpeechRecognition;
-  prototype: SpeechRecognition;
-}
+/**
+ * Centralized service for handling voice transcriptions
+ * This service ensures that each transcription is only processed once
+ * and coordinates message creation from transcriptions
+ */
+class UnifiedTranscriptionService extends EventEmitter {
+  private activeTranscriptions: Map<string, TranscriptionRecord> = new Map();
+  private processingLock: boolean = false;
+  private readonly deduplicationTimeThreshold: number = 500; // reduced from 1000ms to 500ms
+  private readonly deduplicationSimilarityThreshold: number = 0.8; // 80% similarity
 
-// Declare global SpeechRecognition types to address TypeScript errors
-declare global {
-  interface Window {
-    SpeechRecognition: SpeechRecognitionConstructor;
-    webkitSpeechRecognition: SpeechRecognitionConstructor;
+  constructor() {
+    super();
+    console.log('UnifiedTranscriptionService initialized');
   }
-}
 
-export interface VoiceTranscriptionOptions {
-  language?: string;
-  continuous?: boolean;
-  interimResults?: boolean;
-  maxAlternatives?: number;
-}
-
-export interface TranscriptionResult {
-  transcript: string;
-  isFinal: boolean;
-  confidence?: number;
-}
-
-export interface VoiceTranscriptionState {
-  isRecording: boolean;
-  transcript: string;
-  interimTranscript: string;
-  isListening: boolean;
-  error: string | null;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-export class VoiceTranscriptionService {
-  private recognition: SpeechRecognition | null = null;
-  private options: VoiceTranscriptionOptions;
-  private onTranscriptCallback: ((result: TranscriptionResult) => void) | null = null;
-  private onErrorCallback: ((error: string) => void) | null = null;
-  private isListening = false;
-
-  constructor(options: VoiceTranscriptionOptions = {}) {
-    this.options = {
-      language: 'en-US',
-      continuous: true,
-      interimResults: true,
-      maxAlternatives: 1,
-      ...options,
-    };
-    
-    if (typeof window !== 'undefined') {
-      this.initRecognition();
+  /**
+   * Process a new transcription
+   * @param text The transcribed text
+   * @param isFinal Whether this is a final transcription
+   * @returns The record ID if processed, null if duplicate
+   */
+  public processTranscription(text: string, isFinal: boolean): string | null {
+    // Skip empty or very short transcriptions
+    if (!text || text.trim().length < 2) {
+      return null;
     }
+
+    // Log the transcription for debugging
+    console.log(`[Transcription] ${isFinal ? 'FINAL' : 'interim'}: "${text}"`);
+
+    // Check for duplicates
+    if (this.isDuplicate(text, isFinal)) {
+      console.log(`Skipping duplicate transcription: "${text}"`);
+      return null;
+    }
+
+    // Create a new record
+    const record: TranscriptionRecord = {
+      id: uuidv4(),
+      text: text.trim(),
+      timestamp: Date.now(),
+      processed: false,
+      isFinal
+    };
+
+    // Store the record
+    this.activeTranscriptions.set(record.id, record);
+
+    // Emit event for interim transcriptions
+    if (!isFinal) {
+      this.emit('interim-transcription', record);
+      return record.id;
+    }
+
+    // For final transcriptions, trigger message creation with priority
+    if (isFinal) {
+      console.log(`Processing final transcription: "${text}"`);
+      setTimeout(() => {
+        this.createMessageFromTranscription(record);
+      }, 0); // Use setTimeout to ensure async processing
+    } else {
+      this.createMessageFromTranscription(record);
+    }
+    
+    return record.id;
   }
 
-  private initRecognition() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.error('Speech recognition not supported in this browser');
-      if (this.onErrorCallback) {
-        this.onErrorCallback('Speech recognition not supported in this browser');
-      }
+  /**
+   * Create a message from a transcription
+   * @param record The transcription record
+   */
+  private createMessageFromTranscription(record: TranscriptionRecord): void {
+    // If already processed, skip
+    if (record.processed) {
       return;
     }
 
-    // Use the appropriate speech recognition API
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognitionAPI();
-
-    if (this.recognition) {
-      this.recognition.lang = this.options.language || 'en-US';
-      this.recognition.continuous = this.options.continuous ?? true;
-      this.recognition.interimResults = this.options.interimResults ?? true;
-      this.recognition.maxAlternatives = this.options.maxAlternatives ?? 1;
-
-      this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        if (finalTranscript && this.onTranscriptCallback) {
-          this.onTranscriptCallback({
-            transcript: finalTranscript,
-            isFinal: true,
-            confidence: event.results[0][0].confidence,
-          });
-        } else if (interimTranscript && this.onTranscriptCallback) {
-          this.onTranscriptCallback({
-            transcript: interimTranscript,
-            isFinal: false,
-          });
-        }
-      };
-
-      this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (this.onErrorCallback) {
-          this.onErrorCallback(event.error);
-        }
-      };
+    // Check if there's a processing lock active
+    if (this.processingLock) {
+      console.log('Transcription processing locked, queueing for later processing');
+      // Queue for processing in 100ms
+      setTimeout(() => this.createMessageFromTranscription(record), 100);
+      return;
     }
-  }
 
-  public start(): boolean {
-    if (!this.recognition) {
-      this.initRecognition();
-      if (!this.recognition) return false;
-    }
+    // Acquire processing lock
+    this.processingLock = true;
 
     try {
-      this.recognition.start();
-      this.isListening = true;
-      return true;
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
+      // Mark as processed
+      record.processed = true;
+      this.activeTranscriptions.set(record.id, record);
+
+      // Create a message
+      const message: Message = {
+        id: uuidv4(),
+        content: record.text,
+        role: 'user',
+        sender: 'user',
+        senderName: 'You',
+        timestamp: Date.now(),
+        type: 'voice',
+        metadata: {
+          processing: {
+            originalContent: record.text,
+            fromVoiceMode: true,
+            voiceProcessing: {
+              speechDuration: 0,
+              interimTranscripts: [],
+              transcriptionConfidence: 1.0
+            }
+          }
+        }
+      };
+
+      // Update record with message ID
+      record.messageId = message.id;
+      this.activeTranscriptions.set(record.id, record);
+
+      // Emit the message
+      this.emit('transcription-message', message);
+      
+      console.log(`Created message from transcription: "${record.text.substring(0, 30)}..."`);
+    } finally {
+      // Release processing lock
+      setTimeout(() => {
+        this.processingLock = false;
+      }, 100); // Small cooldown to prevent rapid-fire processing
+    }
+  }
+
+  /**
+   * Check if a transcription is a duplicate of a recent one
+   * @param text The transcription to check
+   * @param isFinal Whether this is a final transcription
+   * @returns True if duplicate, false otherwise
+   */
+  private isDuplicate(text: string, isFinal: boolean = false): boolean {
+    const normalizedText = text.trim().toLowerCase();
+    const now = Date.now();
+
+    // Always accept very short texts if they're final transcriptions
+    // This ensures short commands like "yes" or "no" always get through
+    if (isFinal && normalizedText.length < 10) {
       return false;
     }
-  }
 
-  public stop(): void {
-    if (this.recognition && this.isListening) {
-      try {
-        this.recognition.stop();
-        this.isListening = false;
-      } catch (error) {
-        console.error('Error stopping speech recognition:', error);
+    // Use adaptive threshold based on text length
+    // Shorter texts need a higher similarity to be considered duplicates
+    let similarityThreshold = this.deduplicationSimilarityThreshold;
+    if (normalizedText.length < 15) {
+      // Require higher similarity for shorter texts
+      similarityThreshold = 0.9;
+    }
+
+    // Compare with recent transcriptions
+    const records = Array.from(this.activeTranscriptions.values());
+    
+    for (const record of records) {
+      // Skip old transcriptions
+      if (now - record.timestamp > this.deduplicationTimeThreshold) {
+        continue;
+      }
+
+      // Never consider final transcriptions as duplicates of interim ones
+      if (isFinal && !record.isFinal) {
+        continue;
+      }
+
+      // Check for similarity
+      const similarity = this.calculateSimilarity(
+        normalizedText,
+        record.text.trim().toLowerCase()
+      );
+
+      if (similarity > similarityThreshold) {
+        return true;
       }
     }
+
+    return false;
   }
 
-  public onTranscript(callback: (result: TranscriptionResult) => void): void {
-    this.onTranscriptCallback = callback;
+  /**
+   * Calculate similarity between two strings (simplified)
+   * @param a First string
+   * @param b Second string
+   * @returns Similarity ratio (0-1)
+   */
+  private calculateSimilarity(a: string, b: string): number {
+    if (a === b) return 1.0;
+    if (a.includes(b) || b.includes(a)) return 0.9;
+    
+    // Very simple Levenshtein-based similarity
+    const maxLength = Math.max(a.length, b.length);
+    if (maxLength === 0) return 1.0;
+    
+    // Calculate Levenshtein distance (simplified)
+    let distance = 0;
+    const minLength = Math.min(a.length, b.length);
+    
+    for (let i = 0; i < minLength; i++) {
+      if (a[i] !== b[i]) distance++;
+    }
+    
+    // Add remaining length difference to distance
+    distance += maxLength - minLength;
+    
+    // Convert to similarity ratio
+    return 1.0 - (distance / maxLength);
   }
 
-  public onError(callback: (error: string) => void): void {
-    this.onErrorCallback = callback;
-  }
-
-  public isSupported(): boolean {
-    return typeof window !== 'undefined' && (
-      'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
-    );
+  /**
+   * Clean up old transcriptions
+   */
+  public cleanup(): void {
+    const now = Date.now();
+    const expiryTime = 60000; // 1 minute
+    
+    // Fix iteration issue with Map entries
+    const entries = Array.from(this.activeTranscriptions.entries());
+    
+    for (const [id, record] of entries) {
+      if (now - record.timestamp > expiryTime) {
+        this.activeTranscriptions.delete(id);
+      }
+    }
   }
 }
 
-// React hook for using voice transcription
-export function useVoiceTranscription(options?: VoiceTranscriptionOptions) {
-  const [state, setState] = useState<VoiceTranscriptionState>({
-    isRecording: false,
-    transcript: '',
-    interimTranscript: '',
-    isListening: false,
-    error: null,
-  });
+// Create singleton instance
+const unifiedTranscriptionService = new UnifiedTranscriptionService();
 
-  const [service, setService] = useState<VoiceTranscriptionService | null>(null);
+// Start cleanup interval
+if (typeof window !== 'undefined') {
+  setInterval(() => unifiedTranscriptionService.cleanup(), 60000);
+}
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const transcriptionService = new VoiceTranscriptionService(options);
-      
-      transcriptionService.onTranscript((result) => {
-        if (result.isFinal) {
-          setState(prev => ({
-            ...prev,
-            transcript: prev.transcript + ' ' + result.transcript,
-            interimTranscript: '',
-          }));
-        } else {
-          setState(prev => ({
-            ...prev,
-            interimTranscript: result.transcript,
-          }));
-        }
-      });
-
-      transcriptionService.onError((error) => {
-        setState(prev => ({
-          ...prev,
-          error,
-          isRecording: false,
-          isListening: false,
-        }));
-      });
-
-      setService(transcriptionService);
-    }
-
-    return () => {
-      if (service) {
-        service.stop();
-      }
-    };
-  }, []);
-
-  const startRecording = () => {
-    if (service) {
-      const success = service.start();
-      if (success) {
-        setState(prev => ({
-          ...prev,
-          isRecording: true,
-          isListening: true,
-          error: null,
-        }));
-      }
-    }
-  };
-
-  const stopRecording = () => {
-    if (service) {
-      service.stop();
-      setState(prev => ({
-        ...prev,
-        isRecording: false,
-        isListening: false,
-      }));
-    }
-  };
-
-  const resetTranscript = () => {
-    setState(prev => ({
-      ...prev,
-      transcript: '',
-      interimTranscript: '',
-    }));
-  };
-
-  return {
-    ...state,
-    startRecording,
-    stopRecording,
-    resetTranscript,
-    isSupported: service?.isSupported() ?? false,
-  };
-} 
+export default unifiedTranscriptionService; 

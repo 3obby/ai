@@ -41,7 +41,6 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   const [showVoiceBotSelector, setShowVoiceBotSelector] = useState(false);
   const [allowInterruptions, setAllowInterruptions] = useState(false);
-  const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll on new messages or when typing
@@ -116,14 +115,6 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     console.log('Voice context inheritance completed');
   };
 
-  const handlePromptSelected = (text: string) => {
-    setActivePrompt(text);
-  };
-
-  const handleActivePromptSent = () => {
-    setActivePrompt(null);
-  };
-
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
       {/* Prompts Button */}
@@ -148,31 +139,17 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
       
       {/* Main chat area with messages */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        {state.messages.length === 0 ? (
-          <GhostPromptsList onPromptSelected={handlePromptSelected} />
-        ) : (
-          <MessageList
-            messages={state.messages}
-            showDebugInfo={state.settings?.ui?.showDebugInfo || false}
-          />
-        )}
+        <MessageList
+          messages={state.messages}
+          showDebugInfo={state.settings?.ui?.showDebugInfo || false}
+        />
       </div>
-      
-      {/* Voice mode indicator */}
-      {isInVoiceMode && (
-        <div className="voice-mode-indicator flex items-center justify-center py-1 border-t bg-primary/10">
-          <VoiceActivityIndicator isActive={true} />
-          <span className="ml-2 text-xs">Voice Mode Active</span>
-        </div>
-      )}
       
       {/* Blackbar - Contains all input controls for both text and voice modes */}
       <div className={cn("blackbar-container", isInVoiceMode && "in-voice-mode")}>
         <ChatInput
           disabled={state.isProcessing || state.isRecording}
           className={cn(isInVoiceMode && "voice-mode")}
-          activePrompt={activePrompt}
-          onActivePromptSent={handleActivePromptSent}
         />
       </div>
       

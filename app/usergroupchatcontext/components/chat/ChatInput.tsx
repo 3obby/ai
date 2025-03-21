@@ -9,14 +9,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import VoiceModeRedbar from './VoiceModeRedbar';
 import voiceModeManager from '../../services/voice/VoiceModeManager';
+import sessionConnectionManager from '../../services/livekit/session-connection-manager';
 import { usePromptsContext } from '../../context/PromptsContext';
+import { PromptIndicator } from './PromptIndicator';
+import HoldRecordVoiceMessageButton from './HoldRecordVoiceMessageButton';
 
 interface ChatInputProps {
   className?: string;
   placeholder?: string;
   disabled?: boolean;
-  activePrompt?: string | null;
-  onActivePromptSent?: () => void;
 }
 
 /**
@@ -30,14 +31,12 @@ export function ChatInput({
   className,
   placeholder = "Type a message...",
   disabled = false,
-  activePrompt = null,
-  onActivePromptSent,
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, isProcessing } = useRealGroupChat();
   const { isInVoiceMode } = useLiveKitIntegration();
-  const { state: promptsState } = usePromptsContext();
+  const { state: promptsState, dispatch: promptsDispatch } = usePromptsContext();
 
   // Check if there are any enabled prompts
   const hasEnabledPrompts = React.useMemo(() => {
@@ -65,27 +64,18 @@ export function ChatInput({
     return allPromptTexts.length > 0 ? allPromptTexts.join('\n\n') : null;
   }, [promptsState]);
 
-  // Get the first enabled prompt text
-  const firstEnabledPromptText = React.useMemo(() => {
-    // Start with container prompts
-    for (const container of promptsState.containers) {
-      if (container.enabled) {
-        for (const prompt of container.prompts) {
-          if (prompt.enabled) {
-            return prompt.text;
-          }
-        }
-      }
-    }
+  // Count enabled prompts
+  const enabledPromptCount = React.useMemo(() => {
+    const containerPromptCount = promptsState.containers
+      .filter(container => container.enabled)
+      .reduce((acc, container) => 
+        acc + container.prompts.filter(prompt => prompt.enabled).length, 0);
     
-    // Then check standalone prompts
-    for (const prompt of promptsState.standalonePrompts) {
-      if (prompt.enabled) {
-        return prompt.text;
-      }
-    }
+    const standalonePromptCount = promptsState.standalonePrompts
+      .filter(prompt => prompt.enabled)
+      .length;
     
-    return null;
+    return containerPromptCount + standalonePromptCount;
   }, [promptsState]);
 
   // Auto-resize textarea based on content
@@ -96,29 +86,23 @@ export function ChatInput({
     }
   }, [message]);
 
-  // Set the message to the active prompt if provided
-  useEffect(() => {
-    if (activePrompt) {
-      setMessage(activePrompt);
-    }
-  }, [activePrompt]);
-
   // Handle text submission in text mode
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Use text in this priority: activePrompt > message > concatenatedPromptsText
-    const textToSend = (activePrompt || message || concatenatedPromptsText || '').trim();
+    // If there's no message or prompts, or if we're disabled/processing, don't submit
+    if ((!message && !concatenatedPromptsText) || disabled || isProcessing) return;
     
-    if (!textToSend || disabled || isProcessing) return;
-    
-    sendMessage(textToSend);
-    setMessage('');
-    
-    // Notify that the active prompt was sent
-    if (activePrompt && onActivePromptSent) {
-      onActivePromptSent();
+    // Combine prompts with user message if prompts are enabled
+    let textToSend = message;
+    if (concatenatedPromptsText) {
+      textToSend = message 
+        ? `${concatenatedPromptsText}\n\n${message}` 
+        : concatenatedPromptsText;
     }
+    
+    sendMessage(textToSend.trim());
+    setMessage('');
     
     // Reset textarea height
     if (textareaRef.current) {
@@ -146,9 +130,56 @@ export function ChatInput({
 
   // Handle closing voice mode from VoiceModeBlackbar
   const handleCloseVoiceMode = () => {
+    // Get LiveKit integration's stopListening function
+    const { stopListening } = useLiveKitIntegration();
+    
+    // Stop listening for audio
+    if (typeof stopListening === 'function') {
+      stopListening();
+    }
+    
     // Use VoiceModeManager to handle voice-to-text transition
     voiceModeManager.deactivateVoiceMode();
-    console.log('Voice mode closed from blackbar');
+    
+    // Set voice mode inactive in session connection manager
+    try {
+      const activeRoomName = sessionConnectionManager.getActiveRoomName();
+      if (activeRoomName) {
+        sessionConnectionManager.closeConnection(activeRoomName);
+      }
+      sessionConnectionManager.setVoiceModeActive(false);
+    } catch (error) {
+      console.error('Error during voice mode cleanup:', error);
+    }
+    
+    console.log('Voice mode closed from blackbar - complete shutdown sequence executed');
+  };
+
+  // Handle clearing all prompts
+  const handleClearPrompts = () => {
+    // Disable all prompts in containers
+    promptsState.containers.forEach(container => {
+      container.prompts.forEach(prompt => {
+        if (prompt.enabled) {
+          promptsDispatch({
+            type: 'UPDATE_PROMPT',
+            promptId: prompt.id,
+            updates: { enabled: false }
+          });
+        }
+      });
+    });
+    
+    // Disable all standalone prompts
+    promptsState.standalonePrompts.forEach(prompt => {
+      if (prompt.enabled) {
+        promptsDispatch({
+          type: 'UPDATE_PROMPT',
+          promptId: prompt.id,
+          updates: { enabled: false }
+        });
+      }
+    });
   };
 
   // Return the appropriate blackbar based on mode
@@ -161,57 +192,55 @@ export function ChatInput({
         // Text Mode Blackbar - Shows text input and controls
         <form 
           onSubmit={handleSubmit} 
-          className={cn(
-            "blackbar flex items-end gap-2 border-t bg-background p-4 mobile-safe-bottom",
-            className
-          )}
+          className="blackbar"
         >
           {/* Text input - Primary input method in text mode */}
-          <div className="relative flex-1">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={firstEnabledPromptText ? "Prompts ready to send..." : placeholder}
-              disabled={disabled || isProcessing || !!activePrompt}
-              className={cn(
-                "w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "input-accessible min-h-[40px] max-h-[200px] pr-10",
-                (disabled || activePrompt) && "opacity-50 cursor-not-allowed",
-                hasEnabledPrompts && !message && "border-primary/30 bg-primary/5"
+          <div className="w-full mb-3 relative">
+            <div className="flex items-center border border-input rounded-md bg-background overflow-hidden">
+              {/* Prompt indicator rendered directly in the input container */}
+              {enabledPromptCount > 0 && (
+                <PromptIndicator
+                  promptCount={enabledPromptCount}
+                  onClear={handleClearPrompts}
+                  className="ml-3"
+                />
               )}
-              rows={1}
-            />
-          </div>
-          
-          <div className="blackbar-controls flex items-center gap-2">
-            {/* Voice mode toggle button - Switches between text and voice modes */}
-            <div className="voice-button-wrapper">
-              <VoiceInputButton 
-                onTranscriptionComplete={handleVoiceTranscription}
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
                 disabled={disabled || isProcessing}
-                // Auto-send is enabled by default
-                autoSend={true}
-                aria-label="Voice Mode"
-                title="Start Voice Mode"
-                className="voice-mode-btn"
+                className={cn(
+                  "w-full resize-none border-0 bg-transparent px-3 py-2 text-sm flex-1",
+                  "focus-visible:outline-none focus-visible:ring-0",
+                  "input-accessible min-h-[50px] max-h-[200px]",
+                  (disabled || isProcessing) && "opacity-50 cursor-not-allowed"
+                )}
+                rows={1}
               />
             </div>
+          </div>
+          
+          <div className="flex justify-end items-center gap-3 w-full">
+            {/* Press and hold voice recording button */}
+            <HoldRecordVoiceMessageButton
+              onTranscriptionComplete={handleVoiceTranscription}
+              disabled={disabled || isProcessing}
+              className="rounded-full p-2 flex items-center justify-center w-9 h-9 bg-muted/60 text-muted-foreground hover:bg-muted/80 transition-colors touch-target"
+            />
             
             {/* Send button - Primary action in text mode */}
             <button
               type="submit"
-              disabled={(!message && !concatenatedPromptsText && !activePrompt) || disabled || isProcessing}
+              disabled={(!message && !concatenatedPromptsText) || disabled || isProcessing}
               className={cn(
-                "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
-                "send-button-wrapper",
-                hasEnabledPrompts && !message && !disabled && !isProcessing ? 
-                  "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 animate-subtle-pulse" : 
-                (message.trim() || activePrompt) && !disabled && !isProcessing
+                "rounded-full p-2 flex items-center justify-center w-9 h-9 transition-colors touch-target",
+                (message.trim() || concatenatedPromptsText) && !disabled && !isProcessing
                   ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
-                  : "bg-muted text-muted-foreground",
+                  : "bg-muted/60 text-muted-foreground",
+                hasEnabledPrompts && "border-primary/30"
               )}
               aria-label="Send message"
             >
@@ -232,6 +261,14 @@ export function ChatInput({
         }
         .animate-subtle-pulse {
           animation: subtle-pulse 2s infinite;
+        }
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+          50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+          100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s infinite;
         }
       `}</style>
     </>

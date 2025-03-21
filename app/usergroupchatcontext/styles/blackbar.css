@@ -9,13 +9,12 @@
 /* Base blackbar styles */
 .blackbar {
   display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
+  flex-direction: column;
   border-top: 1px solid var(--border);
   background-color: var(--background);
-  padding: 1rem;
+  padding: 0.75rem;
   /* Mobile safe area bottom padding */
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   width: 100%;
   z-index: 10;
   position: relative;
@@ -25,13 +24,12 @@
 /* Voice mode redbar variation */
 .redbar {
   display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
+  flex-direction: column;
   border-top: 1px solid rgba(220, 38, 38, 0.3);
   background-color: rgba(254, 226, 226, 0.9);
-  padding: 1rem;
+  padding: 0.75rem;
   /* Mobile safe area bottom padding */
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   width: 100%;
   z-index: 10;
   position: relative;
@@ -44,148 +42,151 @@
   border-top: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Recording button in redbar */
-.redbar .recording-button {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Recording button states */
-.redbar .recording-button.idle {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: rgb(185, 28, 28);
-}
-
-.redbar .recording-button.speaking {
-  background-color: rgb(239, 68, 68);
-  color: white;
-}
-
-.redbar .recording-button.bot-speaking {
-  background-color: white;
-  color: rgb(239, 68, 68);
-  animation: pulse-white 2s infinite;
-}
-
-/* Voice mode blackbar variation - legacy, keeping for compatibility */
-.blackbar.voice-mode {
-  background-color: rgba(var(--primary-rgb), 0.05);
-  border-top-color: var(--primary);
-  box-shadow: 0 -2px 8px rgba(var(--primary-rgb), 0.05);
-  animation: subtle-glow 2s infinite alternate;
-}
-
-/* Blackbar container */
-.blackbar-container {
+/* Textarea in blackbar */
+.blackbar textarea {
   width: 100%;
-  border-top: 1px solid var(--border);
-  background-color: var(--background);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  resize: none;
+  min-height: 50px;
+  max-height: 200px;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  /* Prevent zoom on input focus for mobile */
+  font-size: 16px !important; /* iOS won't zoom on inputs with font-size >= 16px */
+  touch-action: manipulation; /* Additional help for touch devices */
 }
 
-/* Blackbar container in voice mode */
-.blackbar-container.in-voice-mode {
-  background-color: rgba(var(--primary-rgb), 0.05);
-  border-top-color: var(--primary);
-  animation: subtle-glow 2s infinite alternate;
-}
-
-/* Blackbar controls container */
-.blackbar-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Voice mode toggle button in the blackbar */
-.blackbar-voice-toggle {
-  border-radius: 9999px;
-  padding: 0.5rem;
-  transition: all 0.3s ease;
-  /* Make touch target larger for mobile */
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Voice mode toggle button hover effect */
-.blackbar-voice-toggle:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
-/* Voice mode active state */
-.blackbar-voice-toggle.voice-mode-active {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  animation: pulse 2s infinite;
-}
-
-/* Text mode active state */
-.blackbar-voice-toggle.text-mode-active {
-  background-color: var(--muted);
-  color: var(--muted-foreground);
-}
-
-/* Send button in the blackbar */
-.blackbar-send-btn {
-  border-radius: 9999px;
-  padding: 0.5rem;
-  transition: all 0.3s ease;
-  /* Make touch target larger for mobile */
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Send button hover effect */
-.blackbar-send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
-/* Voice mode indicator */
-.voice-mode-indicator {
-  background-color: rgba(var(--primary-rgb), 0.1);
-  border-top: 1px solid var(--primary);
-  color: var(--primary);
-  padding: 0.25rem 0;
-  font-size: 0.75rem;
-  text-align: center;
-  animation: pulse 2s infinite;
-  transition: all 0.3s ease;
-}
-
-/* Mode transition animation */
-.blackbar-container.in-voice-mode,
-.blackbar.voice-mode {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Audio Visualizer in blackbar */
-.blackbar .audio-visualizer {
-  height: 1.5rem;
+/* Audio visualizer in redbar */
+.redbar .audio-visualizer {
   width: 100%;
+  height: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 2px;
 }
 
-/* Audio Visualizer bars */
-.blackbar .audio-visualizer-bar {
-  width: 3px;
-  border-radius: 1px;
-  transition: height 0.1s ease;
+/* Transcription timer */
+.redbar .transcription-timer {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 20;
+}
+
+.redbar .timer-display {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(220, 38, 38, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Interrupt button */
+.redbar .interrupt-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(239, 68, 68, 0.3);
+  backdrop-filter: blur(1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.redbar .interrupt-button {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: rgb(220, 38, 38);
+  border-radius: 9999px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.redbar .interrupt-button:hover {
+  background-color: white;
+  transform: scale(1.05);
+}
+
+/* Controls container for both bars */
+.blackbar-controls,
+.redbar-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* Buttons in both bars */
+.blackbar button,
+.redbar button {
+  border-radius: 9999px;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Button hover effects */
+.blackbar button:hover:not(:disabled),
+.redbar button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* Button active effects */
+.blackbar button:active:not(:disabled),
+.redbar button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Input containers */
+.blackbar-input-container,
+.redbar-input-container {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+/* Voice mode recording button animations */
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes pulse-white {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
 }
 
 /* Ripple animation for voice button */
@@ -200,39 +201,25 @@
   }
 }
 
-/* Pulse animation for voice mode active state */
+/* Pulse animation for active state */
 @keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-/* Subtle glow animation for voice mode container */
-@keyframes subtle-glow {
-  from {
-    box-shadow: 0 -2px 8px rgba(var(--primary-rgb), 0.05);
-  }
-  to {
-    box-shadow: 0 -2px 10px rgba(var(--primary-rgb), 0.15);
-  }
-}
-
-/* Accessibility controls at the top */
-.accessibility-controls-top {
-  z-index: 20;
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
 }
 
 /* Mobile optimizations */
 @media (max-width: 640px) {
-  .blackbar {
+  .blackbar, .redbar {
     padding: 0.75rem;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  
+  /* Ensure buttons are easy to tap on mobile */
+  .blackbar button,
+  .redbar button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
 }
 
@@ -241,15 +228,15 @@
   animation: ripple 0.6s linear forwards;
 }
 
-/* Pulse animation for white button when bot is speaking */
-@keyframes pulse-white {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+/* Prevent zoom on mobile devices */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important; /* Minimum font size to prevent zoom on iOS */
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  
+  /* Prevent auto-zoom on focus */
+  .blackbar textarea:focus {
+    transform: none !important;
+    font-size: 16px !important;
   }
 } 

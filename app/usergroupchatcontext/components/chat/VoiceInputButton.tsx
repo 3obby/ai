@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Loader2, Volume2, Volume1, VolumeX } from 'lucide-react';
-import { useVoiceTranscription } from '../../services/voiceTranscriptionService';
+import { useVoiceTranscription } from '../../hooks/useVoiceTranscription';
 import { cn } from '@/lib/utils';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
@@ -13,6 +13,8 @@ import multimodalAgentService from '../../services/livekit/multimodal-agent-serv
 import sessionConnectionManager from '../../services/livekit/session-connection-manager';
 import voiceModeManager from '../../services/voice/VoiceModeManager';
 import { useLiveKit } from '../../context/LiveKitProvider';
+import { useVoiceStateStore } from '../../hooks/useVoiceStateStore';
+import { usePromptsContext } from '../../context/PromptsContext';
 
 // Create a single instance of the service for use in this component
 const voiceSynthesisService = new VoiceSynthesisService();
@@ -86,6 +88,23 @@ export function VoiceInputButton({
   
   const { state, dispatch } = useGroupChatContext();
   
+  const { state: promptsState } = usePromptsContext();
+
+  // Get concatenated text of all enabled prompts
+  const concatenatedPromptsText = React.useMemo(() => {
+    const containerPrompts = promptsState.containers
+      .filter(container => container.enabled)
+      .flatMap(container => container.prompts.filter(prompt => prompt.enabled)
+        .map(prompt => prompt.text));
+    
+    const standalonePrompts = promptsState.standalonePrompts
+      .filter(prompt => prompt.enabled)
+      .map(prompt => prompt.text);
+    
+    const allPromptTexts = [...containerPrompts, ...standalonePrompts];
+    return allPromptTexts.length > 0 ? allPromptTexts.join('\n\n') : null;
+  }, [promptsState]);
+
   /**
    * Handles the transition from voice mode back to text mode
    * Ensures proper cleanup and context preservation
@@ -141,8 +160,14 @@ export function VoiceInputButton({
           console.log('[VoiceInputButton] Sending transcription to chat:', text);
           lastSentMessageRef.current = text;
           
+          // Combine prompts with user transcription if prompts are enabled
+          let messageToSend = text;
+          if (concatenatedPromptsText) {
+            messageToSend = `${concatenatedPromptsText}\n\n${text}`;
+          }
+          
           // Send directly to the chat system
-          sendMessage(text, 'voice');
+          sendMessage(messageToSend, 'voice');
           
           // Also notify the parent component via callback
           onTranscriptionComplete(text);
@@ -159,7 +184,7 @@ export function VoiceInputButton({
         handleLiveKitTranscription({ text, isFinal });
       });
     };
-  }, [onTranscriptionComplete, sendMessage]);
+  }, [onTranscriptionComplete, sendMessage, concatenatedPromptsText]);
 
   // Set voice mode start time when activating voice mode
   useEffect(() => {
@@ -367,7 +392,7 @@ export function VoiceInputButton({
         "relative blackbar-voice-toggle rounded-full p-2 transition-colors touch-target",
         isActive
           ? "voice-mode-active bg-primary text-primary-foreground"
-          : "text-mode-active bg-muted text-muted-foreground hover:bg-muted/80",
+          : "bg-muted/60 text-muted-foreground hover:bg-muted/80",
         isInitializing ? "opacity-70 cursor-wait" : "opacity-100",
         className
       )}

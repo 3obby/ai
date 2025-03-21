@@ -211,7 +211,6 @@ function BotsInitializer() {
 }
 
 export default function GroupChatContextPage() {
-  const [showWelcome, setShowWelcome] = useState(true);
   
   // Get environment to conditionally show debug tools
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -230,21 +229,7 @@ export default function GroupChatContextPage() {
                       {/* Event Debug Tools - only in development */}
                       {isDevelopment && <EventLoggerButton />}
                       
-                      {/* Welcome banner */}
-                      {showWelcome && (
-                        <div className="bg-primary text-primary-foreground px-4 py-2 text-center relative">
-                          <div className="max-w-3xl mx-auto text-sm">
-                            Welcome to the Group Chat Context. This demo showcases a minimalist chat interface with both text and voice capabilities.
-                            <button 
-                              onClick={() => setShowWelcome(false)}
-                              className="absolute right-2 top-2 text-primary-foreground/80 hover:text-primary-foreground"
-                              aria-label="Close welcome message"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                   
                       
                       {/* Main content */}
                       <div className="flex-1 min-h-0 flex flex-col">
