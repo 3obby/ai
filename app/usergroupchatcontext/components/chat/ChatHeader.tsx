@@ -3,6 +3,7 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
+import { PromptsButton } from '../prompts/PromptsButton';
 
 interface ChatHeaderProps {
   title: string;
@@ -23,7 +24,8 @@ export function ChatHeader({ title, activeBotCount, onSettingsClick }: ChatHeade
         </p>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <PromptsButton />
         <button 
           onClick={onSettingsClick}
           className="p-2 rounded-full hover:bg-muted"

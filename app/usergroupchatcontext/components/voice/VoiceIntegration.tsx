@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useGroupChatContext } from '../../context/GroupChatContext';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,11 +21,17 @@ export default function VoiceIntegration() {
     isListening, 
     isBotSpeaking, 
     currentSpeakingBotId,
-    playBotResponse
+    playBotResponse,
+    isInVoiceMode
   } = useLiveKitIntegration();
   
   const { settings } = state;
   const isVoiceEnabled = settings.ui?.enableVoice;
+  
+  // Track last processed message to avoid duplicate playback
+  const lastProcessedMessageIdRef = useRef<string | null>(null);
+  const lastProcessedTimestampRef = useRef<number>(0);
+  const processingMessageRef = useRef<boolean>(false);
   
   // Update UI state based on LiveKit integration state
   useEffect(() => {
@@ -56,28 +62,54 @@ export default function VoiceIntegration() {
   
   // Handle text-to-speech for new bot messages
   useEffect(() => {
-    if (!isVoiceEnabled || !state.messages.length) return;
+    // Only synthesize speech if we're actually in voice mode, not just when it's enabled in settings
+    if (!isVoiceEnabled || !isInVoiceMode || !state.messages.length || isBotSpeaking) return;
+    
+    // Prevent duplicate processing
+    if (processingMessageRef.current) {
+      return;
+    }
     
     // Get the last bot message in the chat
     const lastMessage = state.messages[state.messages.length - 1];
     
-    // Skip if it's not a bot message or if speaking is already in progress
-    if (lastMessage.role !== 'assistant' || isBotSpeaking) return;
+    // Skip if it's not a bot message
+    if (lastMessage.role !== 'assistant') return;
     
-    // Skip if the message is older than 5 seconds (to avoid speaking old messages when component mounts)
+    // Skip if we've already processed this message recently
+    if (lastMessage.id === lastProcessedMessageIdRef.current) {
+      return;
+    }
+    
+    // Skip if the message is older than 3 seconds (to avoid speaking old messages when component mounts)
     const messageAge = Date.now() - lastMessage.timestamp;
-    if (messageAge > 5000) return;
+    if (messageAge > 3000) return;
+    
+    // Skip if any message was processed in the last 1 second (to avoid back-to-back responses)
+    const timeSinceLastProcess = Date.now() - lastProcessedTimestampRef.current;
+    if (timeSinceLastProcess < 1000) return;
     
     // Find the bot for this message
     const botId = lastMessage.sender;
     const bot = botRegistryState.availableBots.find(b => b.id === botId);
     
     if (bot) {
+      // Set processing flag
+      processingMessageRef.current = true;
+      
+      // Update last processed info
+      lastProcessedMessageIdRef.current = lastMessage.id;
+      lastProcessedTimestampRef.current = Date.now();
+      
       // Play the bot response using text-to-speech
       // Pass message ID to prevent duplicate playback
-      playBotResponse(botId, lastMessage.content, lastMessage.id);
+      playBotResponse(botId, lastMessage.content, lastMessage.id)
+        .finally(() => {
+          // Release processing flag
+          processingMessageRef.current = false;
+        });
     }
-  }, [isVoiceEnabled, state.messages, isBotSpeaking, botRegistryState.availableBots, playBotResponse]);
+  }, [isVoiceEnabled, isInVoiceMode, state.messages, isBotSpeaking, botRegistryState.availableBots, playBotResponse]);
   
   // This component doesn't render anything visible
   return null;

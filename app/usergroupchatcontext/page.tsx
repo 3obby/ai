@@ -8,6 +8,7 @@ import { ToolIntegrationProvider } from './components/tools/ToolIntegrationProvi
 import { LiveKitProvider } from './context/LiveKitProvider';
 import { LiveKitIntegrationProvider } from './context/LiveKitIntegrationProvider';
 import { PromptsProvider, usePromptsContext } from './context/PromptsContext';
+import { VoiceStateProvider } from './context/VoiceStateProvider';
 import { sampleBots } from './data/sampleBots';
 import { defaultGroupChatSettings } from './data/defaultSettings';
 import { ChatInterface } from './components/chat/ChatInterface';
@@ -16,6 +17,7 @@ import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
 import VoiceCommandController from './components/voice/VoiceCommandController';
 import { VoiceTransitionFeedback } from './components/voice/VoiceTransitionFeedback';
+import EventLoggerButton from './components/debug/EventLoggerButton';
 import './mobile.css';
 
 // Component to initialize bots after mounting
@@ -209,85 +211,62 @@ function BotsInitializer() {
 }
 
 export default function GroupChatContextPage() {
-  const [infoOpen, setInfoOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   
-  // Select just the default bot
-  const activeBot = useMemo(() => {
-    // Using only the default bot
-    return sampleBots.filter(bot => 
-      bot.id === 'default'
-    ).map(bot => ({
-      ...bot,
-      enabled: true
-    }));
-  }, []);
-
-  // Detect if using a mobile device
-  const isMobile = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }, []);
+  // Get environment to conditionally show debug tools
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
-    <div className="h-full w-full">
-      <BotRegistryProvider initialBots={activeBot}>
-        <ToolCallProvider>
-          <GroupChatProvider>
-            <LiveKitProvider>
-              <LiveKitIntegrationProvider>
-                <ToolIntegrationProvider>
-                  <PromptsProvider>
-                    <BotsInitializer />
-                    <div className="flex h-full">
-                      <ChatInterface className="flex-1 h-full" />
-                      {/* Essential voice components - keep these */}
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 relative">
+      {/* Providers */}
+      <LiveKitProvider>
+        <GroupChatProvider>
+          <BotRegistryProvider initialBots={sampleBots}>
+            <ToolCallProvider>
+              <ToolIntegrationProvider>
+                <PromptsProvider>
+                  <VoiceStateProvider>
+                    <LiveKitIntegrationProvider>
+                      {/* Event Debug Tools - only in development */}
+                      {isDevelopment && <EventLoggerButton />}
+                      
+                      {/* Welcome banner */}
+                      {showWelcome && (
+                        <div className="bg-primary text-primary-foreground px-4 py-2 text-center relative">
+                          <div className="max-w-3xl mx-auto text-sm">
+                            Welcome to the Group Chat Context. This demo showcases a minimalist chat interface with both text and voice capabilities.
+                            <button 
+                              onClick={() => setShowWelcome(false)}
+                              className="absolute right-2 top-2 text-primary-foreground/80 hover:text-primary-foreground"
+                              aria-label="Close welcome message"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Main content */}
+                      <div className="flex-1 min-h-0 flex flex-col">
+                        <ChatInterface />
+                      </div>
+                      
+                      {/* Add voice-related components */}
                       <VoiceIntegration />
                       <VoiceResponseManager />
+                      <VoiceCommandController />
                       <VoiceTransitionFeedback />
-                      {/* Remove the floating controls - we're using the blackbar now */}
-                    </div>
-                  </PromptsProvider>
-                </ToolIntegrationProvider>
-              </LiveKitIntegrationProvider>
-            </LiveKitProvider>
-          </GroupChatProvider>
-        </ToolCallProvider>
-      </BotRegistryProvider>
-      
-      {/* Mobile-optimized info panel */}
-      {infoOpen && (
-        <div className="absolute inset-0 bg-background z-20 overflow-auto">
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">About AI Assistant Chat</h2>
-              <button 
-                onClick={() => setInfoOpen(false)}
-                className="p-1 text-muted-foreground hover:text-foreground"
-                aria-label="Close info panel"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              This chat interface allows you to interact with an AI assistant powered by the latest GPT model.
-              You can communicate through text or voice, with transcripts seamlessly integrated into the conversation.
-            </p>
-            
-            <div>
-              <h3 className="font-medium mb-2">Key Features</h3>
-              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li>Text and voice interactions with the same AI assistant</li>
-                <li>Unified conversation history across modalities</li>
-                <li>Powered by the latest GPT model (GPT-4o)</li>
-                <li>Mobile-optimized interface</li>
-                <li>Voice commands support</li>
-                <li>Accessibility features for all users</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
+                      
+                      {/* Initialize bots */}
+                      <BotsInitializer />
+                    </LiveKitIntegrationProvider>
+                  </VoiceStateProvider>
+                </PromptsProvider>
+              </ToolIntegrationProvider>
+            </ToolCallProvider>
+          </BotRegistryProvider>
+        </GroupChatProvider>
+      </LiveKitProvider>
     </div>
   );
 } 

@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid';
 import AudioVisualizer from './AudioVisualizer';
-import eventBus from '../../services/events/EventBus';
+import useEventBus from '../../hooks/useEventBus';
 import { VoiceModeState } from '../../services/voice/VoiceModeManager';
-import { useVoiceState } from '../../hooks/useVoiceState';
+import { useVoiceStateStore } from '../../hooks/useVoiceStateStore';
 import { cn } from '@/lib/utils';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
+import { useGroupChat } from '../../hooks/useGroupChat';
+import { useBotRegistry } from '../../context/BotRegistryProvider';
 
 interface VoiceInputButtonProps {
   onTranscription?: (text: string, isFinal: boolean) => void;
@@ -27,12 +29,17 @@ export default function VoiceInputButton({
   const { 
     isRecording, 
     isProcessing,
-    currentState,
-    toggleVoiceMode,
-    lastError
-  } = useVoiceState();
+    currentVoiceModeState,
+    error,
+    voiceLevel,
+    setVoiceLevel,
+    toggleVoiceMode
+  } = useVoiceStateStore();
+
+  // Required for starting voice mode
+  const { state: groupChatState } = useGroupChat();
+  const { state: botRegistryState } = useBotRegistry();
   
-  const [audioLevel, setAudioLevel] = useState(0);
   const [isInitializing, setIsInitializing] = useState(false);
 
   // Set button size based on prop
@@ -42,80 +49,71 @@ export default function VoiceInputButton({
     lg: 'h-12 w-12'
   }[size];
 
-  // Track audio level for visualizer
-  useEffect(() => {
-    if (!isRecording) return;
-    
-    const handleAudioLevel = (data: { level: number }) => {
-      setAudioLevel(data.level);
-    };
-    
-    // Subscribe to audio level events
-    eventBus.on('audio:level', handleAudioLevel);
-    
-    return () => {
-      eventBus.off('audio:level', handleAudioLevel);
-    };
-  }, [isRecording]);
+  // Track audio level for visualizer using the useEventBus hook
+  useEventBus(
+    isRecording ? 'audio:level' : undefined, 
+    (data) => setVoiceLevel(data.level)
+  );
   
-  // Handle transcription events
-  useEffect(() => {
-    if (!onTranscription) return;
+  // Handle transcription events using the useEventBus hook
+  const handleInterimTranscription = onTranscription 
+    ? (data: { text: string; timestamp: number }) => onTranscription(data.text, false)
+    : undefined;
     
-    const handleInterimTranscription = (data: { text: string; timestamp: number }) => {
-      onTranscription(data.text, false);
-    };
-    
-    const handleFinalTranscription = (data: { text: string; timestamp: number }) => {
-      onTranscription(data.text, true);
-    };
-    
-    // Subscribe to transcription events
-    eventBus.on('transcription:interim', handleInterimTranscription);
-    eventBus.on('transcription:final', handleFinalTranscription);
-    
-    return () => {
-      eventBus.off('transcription:interim', handleInterimTranscription);
-      eventBus.off('transcription:final', handleFinalTranscription);
-    };
-  }, [onTranscription]);
+  const handleFinalTranscription = onTranscription 
+    ? (data: { text: string; timestamp: number }) => onTranscription(data.text, true)
+    : undefined;
+  
+  // Subscribe to interim transcriptions
+  useEventBus(
+    onTranscription ? 'transcription:interim' : undefined,
+    handleInterimTranscription
+  );
+  
+  // Subscribe to final transcriptions
+  useEventBus(
+    onTranscription ? 'transcription:final' : undefined,
+    handleFinalTranscription
+  );
   
   // Track initialization state based on current voice mode state
   useEffect(() => {
-    setIsInitializing(currentState === VoiceModeState.INITIALIZING);
-  }, [currentState]);
+    setIsInitializing(currentVoiceModeState === VoiceModeState.INITIALIZING);
+  }, [currentVoiceModeState]);
 
   // Handle voice button click
   const handleVoiceButtonClick = async () => {
     if (!isVoiceEnabled) return;
     
     try {
-      toggleVoiceMode();
+      // Call toggleVoiceMode with the required parameters
+      toggleVoiceMode(
+        groupChatState.settings.activeBotIds,
+        botRegistryState.availableBots,
+        groupChatState.messages
+      );
     } catch (error) {
       console.error('Error toggling voice mode:', error);
     }
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className={cn('relative', className)}>
       <button
-        className={cn(
-          buttonSize,
-          'rounded-full flex items-center justify-center transition-all duration-200',
-          isRecording
-            ? 'bg-red-600 hover:bg-red-700 text-white'
-            : 'bg-primary hover:bg-primary-dark text-white',
-          isInitializing ? 'opacity-70 cursor-wait' : 'opacity-100',
-          !isVoiceEnabled ? 'opacity-50 cursor-not-allowed' : '',
-          className
-        )}
+        type="button"
         onClick={handleVoiceButtonClick}
-        disabled={isInitializing || !isVoiceEnabled}
-        aria-label={isRecording ? 'Stop voice input' : 'Start voice input'}
+        disabled={isInitializing}
+        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+        className={cn(
+          'rounded-full flex items-center justify-center transition-all',
+          buttonSize,
+          isRecording
+            ? 'bg-red-500 hover:bg-red-600 text-white'
+            : 'bg-primary hover:bg-primary/90 text-primary-foreground',
+          isInitializing && 'opacity-50 cursor-not-allowed'
+        )}
       >
-        {isInitializing ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-        ) : isRecording ? (
+        {isRecording ? (
           <StopIcon className="h-5 w-5" />
         ) : (
           <MicrophoneIcon className="h-5 w-5" />
@@ -123,9 +121,10 @@ export default function VoiceInputButton({
       </button>
       
       {showVisualizer && isRecording && (
-        <div className="mt-2">
-          <AudioVisualizer audioLevel={audioLevel} />
-        </div>
+        <AudioVisualizer
+          audioLevel={voiceLevel}
+          className="absolute -top-1 -right-1 -bottom-1 -left-1"
+        />
       )}
     </div>
   );

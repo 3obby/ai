@@ -24,35 +24,48 @@ export function GhostPromptsList({ onPromptSelected }: GhostPromptsListProps) {
     return [...containerPrompts, ...standalonePrompts];
   }, [promptsState]);
 
+  // Concatenate all enabled prompts into a single string
+  const concatenatedPromptText = React.useMemo(() => {
+    return enabledPrompts.map(prompt => prompt.text).join('\n\n');
+  }, [enabledPrompts]);
+
   // If there are no enabled prompts or chat already has messages, don't render anything
-  if (enabledPrompts.length === 0 || chatState.messages.length > 0) {
+  if (enabledPrompts.length === 0 || chatState.messages.length > 0 || !concatenatedPromptText) {
     return null;
   }
 
   return (
-    <div className="space-y-4 p-4">
-      {enabledPrompts.map((prompt, index) => (
-        <div 
-          key={prompt.id}
-          className={cn(
-            "ghost-prompt relative pl-12 pr-4 py-3 rounded-lg border border-dashed border-primary/40 bg-primary/5",
-            "hover:bg-primary/10 transition-colors duration-150 ease-in-out cursor-pointer"
-          )}
-          onClick={() => onPromptSelected?.(prompt.text)}
-        >
-          <div className="ghost-prompt-indicator absolute left-4 top-1/2 -translate-y-1/2">
-            <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground">{prompt.text}</div>
-          {index === 0 && (
-            <div className="absolute -top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">
-              Ready to send
-            </div>
-          )}
+    <div className="p-4">
+      <div 
+        className={cn(
+          "ghost-prompt-concat relative p-4 rounded-lg border border-primary/40 bg-primary/5",
+          "transition-all duration-200 ease-in-out cursor-pointer"
+        )}
+        onClick={() => onPromptSelected?.(concatenatedPromptText)}
+        style={{
+          animation: 'pulse-glow 2s infinite',
+          boxShadow: '0 0 10px rgba(59, 130, 246, 0.3)'
+        }}
+      >
+        <div className="text-sm whitespace-pre-wrap">
+          {concatenatedPromptText}
         </div>
-      ))}
+        <div className="absolute -bottom-3 right-4 h-6 w-1 bg-primary" 
+             style={{ animation: 'pulse-opacity 2s infinite' }}>
+        </div>
+        <style jsx global>{`
+          @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+          }
+          @keyframes pulse-opacity {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+          }
+        `}</style>
+      </div>
     </div>
   );
 } 

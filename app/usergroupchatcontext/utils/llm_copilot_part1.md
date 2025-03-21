@@ -210,7 +210,14 @@ We have shifted our efforts to create a robust production-ready system. By defau
 
 ## Unified TODO - Prioritized Implementation Plan
 
-1. [_] **Fix Voice Mode Activation** (Priority: Critical)
+1. [X] **Implement Centralized State Management** (Priority: Critical)
+   - [X] Create a dedicated VoiceStateStore using reducer pattern
+   - [X] Implement single source of truth for voice mode state
+   - [X] Replace ref-based state tracking with proper state management
+   - [X] Create selector hooks for state access to eliminate prop drilling
+   - [X] Ensure state consistency across all components
+
+2. [_] **Fix Voice Mode Activation** (Priority: Critical)
    - [X] Fix voiceModeManager.activateVoiceMode() to accept proper parameters
    - [X] Fix import issues with VoiceModeBlackbar component by creating a duplicate in the chat directory
    - [X] Fix AudioVisualizer import by embedding it directly in the VoiceModeBlackbar component
@@ -220,7 +227,21 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Fix audio-publishing-service.ts missing default export bug
    - [_] Test voice mode button activation flow end-to-end
 
-2. [_] **Finalize Voice Ghost Lifecycle Management** (Priority: High)
+3. [X] **Implement Event-Driven Architecture** (Priority: High)
+   - [X] Create a proper EventBus with typed events
+   - [X] Define standard events (TranscriptionReceivedEvent, ResponseGeneratedEvent, etc.)
+   - [X] Implement pub/sub system for component communication
+   - [X] Replace direct method calls with event dispatch
+   - [X] Add event debugging and monitoring
+
+4. [X] **Formalize Message Processing Pipeline** (Priority: High)
+   - [X] Define clear processing stages (deduplication → pre-processing → LLM call → post-processing)
+   - [X] Create pure function processors for each stage
+   - [X] Add middleware system for cross-cutting concerns
+   - [X] Implement proper error boundaries between stages
+   - [X] Create visualization for message transformation flow
+
+5. [_] **Finalize Voice Ghost Lifecycle Management** (Priority: High)
    - [X] Design data structure for tracking ghost and standard bots
    - [X] Add tracking of both standard bots and their voice ghost counterparts
    - [X] Add robust cleanup methods for voice ghosts
@@ -228,7 +249,20 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Add event listeners for voice mode state changes
    - [_] Ensure seamless transition between voice and text modes
 
-3. [X] **Complete Voice Mode Settings UI** (Priority: High)
+6. [_] **Separate Services from UI Components** (Priority: High)
+   - [_] Move voice processing logic from UI components to services
+   - [_] Extract LiveKitIntegrationProvider business logic to dedicated services
+   - [_] Create facade services for component access
+   - [_] Make UI components purely presentational
+   - [_] Implement proper dependency injection for services
+
+7. [_] **Optimize Performance for Mobile** (Priority: High)
+   - [_] Improve responsiveness of voice mode on mobile devices
+   - [_] Optimize audio processing to reduce battery consumption
+   - [_] Enhance touch interactions for voice controls
+   - [_] Test and fix any mobile-specific issues with microphone access
+
+8. [X] **Complete Voice Mode Settings UI** (Priority: High)
    - [X] Implement comprehensive UI controls in GroupSettingsPanel
    - [X] Create persistent storage for voice preferences
    - [X] Add visual feedback during transitions between voice and text modes
@@ -236,63 +270,71 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Add user preferences for voice model selection
    - [X] Create settings storage for voice ghost behavior options
 
-4. [X] **Complete Voice-to-Text Transition** (Priority: High)
+9. [X] **Complete Voice-to-Text Transition** (Priority: High)
    - [X] Create system to re-enable processing hooks when returning to text mode
    - [X] Ensure conversation history is maintained across transitions
    - [X] Handle interrupted voice sessions gracefully
    - [X] Develop error recovery mechanisms for failed transitions
    - [X] Implement smooth transition animations/feedback
 
-5. [_] **Optimize Performance for Mobile** (Priority: High)
-   - [_] Improve responsiveness of voice mode on mobile devices
-   - [_] Optimize audio processing to reduce battery consumption
-   - [_] Enhance touch interactions for voice controls
-   - [_] Test and fix any mobile-specific issues with microphone access
+10. [_] **Apply Unidirectional Data Flow** (Priority: Medium)
+    - [X] Clearly define input → process → output pipelines
+    - [X] Implement state reducers with pure functions
+    - [_] Eliminate side effect chains across components
+    - [X] Create action creators for all state changes
+    - [X] Add immutable state updates throughout the app
 
-6. [_] **Voice Mode Settings Configuration** (Priority: Medium)
-   - [_] Add UI controls for voice mode settings in GroupSettingsPanel
-   - [_] Create settings storage for voice ghost behavior options
-   - [X] Implement settings inheritance/override mechanism
-   - [_] Add user preferences for voice model selection
+11. [_] **Implement Command Pattern for Actions** (Priority: Medium)
+    - [_] Define discrete commands (ProcessTranscriptionCommand, etc.)
+    - [_] Create command bus for dispatching
+    - [_] Add middleware for cross-cutting concerns
+    - [_] Implement command history and undo capability
+    - [_] Add detailed command logging for debugging
 
-7. [_] **Enhance Error Handling and Resilience** (Priority: Medium)
-   - [_] Implement more robust error recovery for broken connections
-   - [_] Add automatic reconnection logic for interrupted voice sessions
-   - [X] Improve error messaging for users when voice mode fails
-   - [X] Fix OpenAI API routes to properly validate models and handle errors
-   - [_] Add telemetry for tracking voice mode stability
+12. [_] **Voice Mode Settings Configuration** (Priority: Medium)
+    - [_] Add UI controls for voice mode settings in GroupSettingsPanel
+    - [_] Create settings storage for voice ghost behavior options
+    - [X] Implement settings inheritance/override mechanism
+    - [_] Add user preferences for voice model selection
 
-8. [_] **Reduce State Duplication** (Priority: Medium)
-   - [_] Continue reducing redundant state tracking across components
-   - [_] Consolidate voice-related state management
-   - [_] Improve type safety across component boundaries
+13. [_] **Enhance Error Handling and Resilience** (Priority: Medium)
+    - [_] Implement more robust error recovery for broken connections
+    - [_] Add automatic reconnection logic for interrupted voice sessions
+    - [X] Improve error messaging for users when voice mode fails
+    - [X] Fix OpenAI API routes to properly validate models and handle errors
+    - [_] Add telemetry for tracking voice mode stability
 
-9. [_] **Bot Manager Voice Ghost Controls** (Priority: Medium)
-   - [X] Implement creation/destruction methods for voice ghosts
-   - [_] Add state tracking for active voice mode sessions
-   - [X] Create event hooks for voice mode transitions
-   - [_] Add logging for voice ghost lifecycle events
+14. [X] **Reduce State Duplication** (Priority: Medium)
+    - [X] Continue reducing redundant state tracking across components
+    - [X] Consolidate voice-related state management
+    - [X] Improve type safety across component boundaries
 
-10. [_] **Unified Text Chat Enhancements** (Priority: Medium)
+15. [X] **Bot Manager Voice Ghost Controls** (Priority: Medium)
+    - [X] Implement creation/destruction methods for voice ghosts
+    - [X] Add state tracking for active voice mode sessions
+    - [X] Create event hooks for voice mode transitions
+    - [_] Add logging for voice ghost lifecycle events
+
+16. [_] **Unified Text Chat Enhancements** (Priority: Medium)
     - [X] Improve transcription display in chat interface
     - [X] Add visual indicators for voice vs. text messages
     - [X] Implement collapsible details for voice processing information
     - [_] Enhance accessibility for voice interactions
     - [_] Add visual indicators for active speaker
 
-11. [_] **Complete VoiceModeBlackbar Implementation** (Priority: Medium)
+17. [_] **Complete VoiceModeBlackbar Implementation** (Priority: Medium)
     - [X] Create VoiceModeBlackbar component to replace overlay
     - [X] Integrate audio visualization directly in blackbar
     - [X] Add smooth transitions between text and voice mode
     - [_] Fix any styling or positioning issues on mobile
     - [_] Ensure proper cleanup when closing voice mode
 
-12. [_] **Cross-Browser Compatibility** (Priority: Low)
+18. [_] **Cross-Browser Compatibility** (Priority: Low)
     - [_] Test and fix WebRTC compatibility issues across browsers
     - [_] Ensure consistent audio processing across platforms
     - [_] Implement fallback mechanisms for unsupported browsers
 
-13. [_] **Voice Experience Refinements** (Priority: Low)
+19. [_] **Voice Experience Refinements** (Priority: Low)
     - [_] Add voice tone/emotion detection
     - [_] Implement natural turn-taking mechanisms
     - [_] Enhance voice activity detection accuracy in noisy environments
@@ -318,22 +360,37 @@ The project has made significant progress in implementing the core voice mode ar
    - Implemented robust API for fetching the latest OpenAI models using official /models endpoint
    - Added graceful fallbacks for UI to continue working even when backend connections fail
 
+5. **Centralized State Management**: Implemented a robust state management solution for voice mode using the reducer pattern:
+   - Created VoiceStateContext to define the shape of voice state with comprehensive interfaces
+   - Implemented VoiceStateProvider with a pure reducer function for predictable state updates
+   - Developed useVoiceStateStore hook for convenient component access to voice state
+   - Established synchronization with existing VoiceModeManager and VoiceStateManager services
+   - Eliminated state duplication across components with a single source of truth
+   - Enhanced type safety with strongly-typed actions and state
+
 ## Next Priorities
 
-1. **Complete Voice-to-Text Transition** (High Priority):
-   - Implement system to properly restore text mode with all processing hooks
-   - Ensure all voice interactions are preserved in conversation history
-   - Add error handling for interrupted voice sessions
+1. **Test Voice Mode Button Activation Flow** (High Priority):
+   - Implement end-to-end testing for voice mode button activation
+   - Verify proper initialization and cleanup of voice resources
+   - Test edge cases with interrupted connections and errors
+   - Ensure consistent behavior across different interaction patterns
 
-2. **Enhance Voice Mode Settings UI** (High Priority):
-   - Add dedicated UI controls in GroupSettingsPanel for configuring voice mode
-   - Create persistent storage for voice ghost behavior preferences
-   - Add voice model selection options with dynamic model fetching
+2. **Separate Services from UI Components** (High Priority):
+   - Move voice processing logic from UI components to services
+   - Extract LiveKitIntegrationProvider business logic to dedicated services
+   - Create facade services for component access
+   - Make UI components purely presentational
+   - Implement proper dependency injection for services
 
 3. **Finalize Voice Ghost Lifecycle Management** (High Priority):
-   - Implement proper cleanup and garbage collection for voice ghosts
-   - Add event listeners for voice mode state changes
-   - Ensure seamless transition between voice and text modes
+   - Ensure seamless transition between voice and text modes 
+
+4. **Optimize Performance for Mobile** (High Priority):
+   - Improve responsiveness of voice mode on mobile devices
+   - Optimize audio processing to reduce battery consumption
+   - Enhance touch interactions for voice controls
+   - Test and fix any mobile-specific issues with microphone access
 
 ## Modular Voice Architecture Implementation
 
@@ -783,99 +840,280 @@ We've implemented several features to address the common issue of acoustic feedb
 
 These improvements significantly reduce the likelihood of echo feedback, creating a more natural conversational experience when using voice mode with speakers instead of headphones.
 
-## Custom Prompts Management System
+## Custom Prompts System UI Improvements
 
-We've implemented a comprehensive prompts management system that allows users to create, organize, and toggle custom prompts that can be applied to their conversations with AI assistants:
+The prompts system UI has been redesigned to provide a more integrated and intuitive experience:
 
-1. **Prompts Button and Drawer**
-   - Added a prominent centrally positioned "Prompts" button with an old-school circular database icon
-   - Created a slide-down drawer that reveals when the button is clicked
-   - Implemented a clean, intuitive UI with a top bar containing controls (add and close buttons)
-   - Added proper close functionality via a dedicated close button in the drawer header
+1. **TopBar Integration**
+   - Moved the PromptsButton from a floating center position to the top navigation bar
+   - Created a compact icon-only design that fits naturally with other controls
+   - Added subtle hover and active states for better touch feedback
+   - Maintains the same drawer toggle functionality with improved positioning
 
-2. **Toggle Prompts and Containers**
-   - Developed a system of toggleable prompt entries that can be individually enabled/disabled
-   - Created toggle containers that group related prompts together
-   - Implemented a main toggle for each container to quickly enable/disable all contained prompts
-   - Pre-populated with useful example prompts like "I prefer terse, casual output" and others
+2. **Concatenated Ghost Prompts**
+   - Replaced individual "ghost" prompt cards with a single concatenated display
+   - All enabled prompts are now joined together with spacing and shown as a single ready-to-send message
+   - Added a gentle blue pulsing glow effect to indicate readiness
+   - Included a visual connection (line) to the send button to show relationship
 
-3. **Intuitive Direct Actions**
-   - Added direct action buttons for each prompt and container
-   - Delete button (trash icon) removes prompts or containers
-   - Clone button (copy icon) duplicates prompts or containers
-   - Provides immediate visual feedback for actions
-   - Simplified interaction model eliminates need for drag-and-drop
+3. **Send Button Integration**
+   - Enhanced the send button to respond to enabled prompts even when text input is empty
+   - Added visual connection through matching pulsing effects
+   - Send button becomes active whenever prompts are enabled
+   - Single click sends the entire concatenated prompt text
 
-4. **Editable Content**
-   - Made prompt text and container titles editable with a simple click
-   - Implemented smooth transitions between view and edit modes
-   - Added proper focus management for a seamless editing experience
-   - Persists changes immediately in the application state
+4. **Consistent Visual Language**
+   - Applied consistent styling with subtle animations for feedback
+   - Used primary color accents for active elements
+   - Maintained the same color scheme across all prompt-related components
+   - Ensured visual harmony between ghost prompts, drawer, and buttons
 
-5. **Mobile-Optimized Interface**
-   - Designed with mobile-first principles for touch-friendly interactions
-   - Implemented responsive layout with appropriate sizing for small screens
-   - Integrated with application theme for consistent dark/light mode support
-   - Used animation transitions for a polished user experience
+These improvements create a more streamlined workflow where users can quickly activate custom prompts and send them with minimal interaction, while maintaining a cleaner interface with controls positioned in more standard locations.
 
-6. **Consistent Theming**
-   - Updated all components to use the application's CSS variables
-   - Ensured proper color contrast for accessibility
-   - Maintained visual coherence with the rest of the application
-   - Supports both light and dark themes automatically
+## Voice Mode Behavior Improvements
 
-This feature enhances user efficiency by allowing them to save and quickly toggle frequently used prompts or instructions, avoiding the need to repeatedly type common requests or preferences. The direct action buttons make organizing prompts intuitive and efficient.
+We've made important improvements to the voice mode behavior to enhance user experience:
 
-## Recent UI Reorganization
+1. **Separation of Text and Voice Modes**
+   - Ensured bots only respond with audio in active voice mode
+   - Bots now only display typed responses in text mode even if voice is enabled in settings
+   - Added explicit isInVoiceMode checks rather than relying only on the enableVoice setting
+   - Fixed inconsistencies in the voice response system across components
 
-We've improved the user interface organization to create a cleaner top-level layout:
+2. **Fixed Typing Indicator Issues**
+   - Resolved an issue where typing indicators would sometimes remain active after responses
+   - Added an explicit clearing of all typing indicators at the end of message processing
+   - Implemented additional safeguards to ensure typing indicators are properly cleaned up
+   - Fixed race conditions that could cause typing indicators to get stuck
 
-1. **Moved Accessibility Controls to Settings Modal**
-   - Consolidated all accessibility controls into a dedicated tab in the settings modal
-   - Added more descriptive UI with improved layout and organization of controls
-   - Freed up the top navigation area to provide a cleaner interface
-   - Maintained all keyboard shortcuts for quick access to accessibility features
+3. **Improved Mode-Specific Behaviors**
+   - Speech synthesis now strictly checks for active voice mode before playing responses
+   - Text mode remains silent even if voice capabilities are enabled
+   - Voice ghosts properly inherit appropriate behavior for their mode
+   - Clearer distinction between enabling voice capabilities and being in active voice mode
 
-2. **Made Prompts Button More Prominent**
-   - Positioned the prompts button in the top center with a distinctive circular database icon
-   - Styled with a larger touch target for improved mobile usability
-   - Added clear visual feedback for interactions (hover, active states)
-   - Ensured proper spacing to avoid overlap with other UI elements
+4. **Enhanced Error Recovery**
+   - Added additional cleanup of typing indicators in error scenarios
+   - Ensured consistent state after failed voice operations
+   - More predictable behavior during mode transitions
+   - Better error handling for interrupted voice sessions
 
-3. **Enhanced Settings Modal with Tab Interface**
-   - Added a tabbed interface to the settings modal with "General Settings" and "Accessibility" tabs
-   - Improved organization of settings for easier navigation
-   - Included comprehensive accessibility controls with proper grouping
-   - Added keyboard shortcut reference in the accessibility tab
+These changes create a more intuitive experience where the system behaves according to the visible mode (text or voice) rather than just the underlying capabilities settings.
 
-These changes create a cleaner, more intuitive interface while ensuring all functionality remains accessible. Commonly used features are available at the top level, while less frequently used settings are organized in logical groupings within the modal.
+## Voice Mode Duplicate Response Fix
 
-## Custom Prompts Ghost UI
+We identified and fixed a complex issue where voice transcriptions would sometimes trigger multiple overlapping bot responses, creating a "chorus of replies" effect in voice mode:
 
-We've enhanced the prompts system with a ghost UI that presents enabled prompts as ready-to-send messages when the chat is empty:
+1. **Enhanced Transcription Deduplication**
+   - Implemented a multi-layered approach to prevent duplicate transcription processing
+   - Added in-progress transcription tracking to block similar transcriptions during processing
+   - Normalized text for more accurate similarity matching to catch minor transcription variations
+   - Added a response-in-progress lock to ensure only one response is generated at a time
 
-1. **Ghost Prompts Interface**
-   - When a user enables prompts in the drawer, they appear as "ghost" messages in the chat
-   - These replace the default welcome message for a more personalized experience
-   - The first prompt is labeled "Ready to send" to indicate it's the next one to be used
-   - Each ghost prompt is visually distinct with a dashed border and subtle animation
+2. **Message Processing Correlation**
+   - Created explicit tracking between user messages and corresponding bot responses
+   - Added a user-message-to-response map to track which responses belong to which user messages
+   - Implemented message ID verification to prevent processing the same message multiple times
+   - Added cleanup logic to prevent memory leaks from tracking data structures
 
-2. **One-Click Sending**
-   - Clicking on any ghost prompt selects it for immediate sending
-   - The send button becomes highlighted when a prompt is ready
-   - Ghost prompts maintain the original formatting and content from the drawer
-   - After sending, the prompt becomes a regular message in the chat history
+3. **Speech Synthesis Coordination**
+   - Enhanced the VoiceIntegration component with more selective playback rules
+   - Added reference-based tracking of recently processed messages to avoid duplicate synthesis
+   - Implemented a cool-down period between voice responses to prevent back-to-back playback
+   - Added explicit modality checking to ensure only voice mode messages trigger speech synthesis
 
-3. **Enhanced Button Styling**
-   - Applied consistent button styling across the interface
-   - All interactive buttons now have subtle elevation effects
-   - Buttons provide visual feedback with hover and active states
-   - Shadow and transform effects create a cohesive, tactile experience
+4. **Response Processing Guards**
+   - Improved the messages collection management to detect and skip already added responses
+   - Added validation to ensure bots exist before attempting to generate responses
+   - Implemented explicit typing indicator cleanup in finally blocks to prevent stuck indicators
+   - Added sequential response delay to prevent overlapping responses in sequential mode
 
-4. **Accessibility Considerations**
-   - All animations respect the user's motion preferences
-   - Ghost prompts include clear visual indicators of their state
-   - Interactive elements maintain proper contrast in both light and dark modes
-   - Touch targets are appropriately sized for mobile interaction
+These improvements create a more stable and predictable voice experience by ensuring each user message triggers exactly one response from each bot, with proper spacing and coordination between speech synthesis operations.
 
-This feature provides a more intuitive way for users to start conversations with their preferred prompts, removing the friction of typing common requests and ensuring consistent phrasing of frequently used instructions.
+## Centralized Voice State Management Implementation
+
+We've implemented a robust centralized state management solution for voice mode using the reducer pattern. This implementation addresses the critical priority item in our TODO list, providing a single source of truth for voice-related state across the application.
+
+### Key Components
+
+1. **VoiceStateContext** (`context/VoiceStateContext.tsx`)  
+   - Defines the shape of voice state with a comprehensive interface
+   - Implements a strongly-typed action system for state updates
+   - Provides initial state with sensible defaults
+   - Creates a React context for state distribution
+
+2. **VoiceStateProvider** (`context/VoiceStateProvider.tsx`)  
+   - Implements a pure reducer function for predictable state updates
+   - Establishes synchronization with VoiceModeManager and VoiceStateManager
+   - Integrates with the event system for state changes
+   - Maintains bidirectional settings updates with the voice managers
+
+3. **useVoiceStateStore** (`hooks/useVoiceStateStore.ts`)  
+   - Custom hook providing simplified access to voice state
+   - Includes action dispatchers for common voice operations
+   - Offers computed properties for derived state values
+   - Eliminates prop drilling with direct context access
+
+### Benefits
+
+- **Single Source of Truth**: All voice-related state is now managed in one location
+- **Type Safety**: Comprehensive TypeScript types ensure consistent data handling
+- **Unidirectional Data Flow**: Clear action → reducer → state update pattern
+- **Improved Component Cohesion**: Components only need to import the hook
+- **Eliminates Duplication**: Removes duplicated state tracking across components
+- **Centralized Error Handling**: Errors are tracked consistently at the state level
+
+The implementation completes the first priority item in our unified TODO list and provides the foundation for further voice mode refinements.
+
+## Event-Driven Architecture Implementation
+
+We've implemented a comprehensive event-driven architecture to improve component communication and state management throughout the application:
+
+### Core Components
+
+1. **EventBus**
+   - Type-safe centralized event management system
+   - Supports rich event metadata and filtering
+   - Includes debugging capabilities with colored console logging
+   - Maintains event history for troubleshooting
+   - Supports categorized events for better organization
+
+2. **useEventBus Hook**
+   - React hook that provides declarative access to the EventBus
+   - Automatic subscription and cleanup management
+   - Supports conditional event subscription
+   - Preserves component render performance
+   - Returns real-time event data as state
+
+3. **EventMonitor Component**
+   - Real-time visualization of all events in the system
+   - Filtering by event category and text search
+   - Interactive event inspection
+   - Pause/resume and history functionality
+   - Automatic event categorization
+
+### Key Benefits
+
+- **Reduced Component Coupling**: Components now communicate through events rather than direct references
+- **Improved Debugging**: Centralized event monitoring makes it easier to track system activity
+- **Enhanced Performance**: Targeted updates only when relevant events occur
+- **Better Error Handling**: Errors in event handlers don't crash the entire application
+- **Type Safety**: TypeScript interfaces ensure correct event data structure
+
+### Event Categories
+
+The event system is organized into logical categories:
+
+- **system**: Core system initialization and configuration events
+- **audio**: Audio input/output and device management
+- **voice**: User voice activity detection and processing
+- **transcription**: Speech-to-text and text analysis
+- **voicemode**: Voice mode state transitions and configuration
+- **bot**: Bot creation, updates, and response management
+- **message**: Chat message lifecycle and processing
+- **tool**: Tool invocation and result handling
+- **state**: Application state changes
+- **connection**: Network connection events
+
+### Usage Examples
+
+Components can use the EventBus directly or through the useEventBus hook:
+
+```tsx
+// Using the useEventBus hook
+const { data: voiceActivity, count } = useEventBus('voice:activity');
+
+// Subscribe to events conditionally
+useEventBus(
+  isRecording ? 'audio:level' : undefined,
+  (data) => updateAudioVisualizer(data.level)
+);
+
+// Emit events easily
+const { emit } = useEventBus();
+emit('tool:called', { 
+  name: 'calculator', 
+  parameters: { expression: '2+2' }, 
+  timestamp: Date.now() 
+});
+```
+
+This event-driven architecture provides a solid foundation for future enhancements and makes the codebase more maintainable by reducing dependencies between components.
+
+## Event Monitoring Implementation
+
+Building on the EventBus architecture, we've implemented a comprehensive real-time event monitoring system that visualizes and tracks all events flowing through the application:
+
+### Key Components
+
+1. **EventLoggerButton**
+   - Floating action button that toggles an event monitoring panel
+   - Displays real-time event statistics and recent events
+   - Filters events by category with color-coded visualization
+   - Shows event details in expandable JSON format
+   - Controlled through application settings
+
+2. **Settings Integration**
+   - Added event monitoring toggle in the Debug & Development section
+   - Persists user preference in localStorage
+   - Communicates with the EventLoggerButton through custom events
+   - Available in development mode for debugging
+
+3. **Visualization Improvements**
+   - Color-coded event categories for easier scanning
+   - Timestamp-based filtering to focus on recent events
+   - Expandable event details with proper JSON formatting
+   - Event statistics with category-specific counts
+
+### Implementation Benefits
+
+- **Improved Debugging**: Real-time visualization of all system events makes troubleshooting easier
+- **Developer Experience**: Interactive monitoring without console.log statements
+- **Performance Profiling**: Timing information helps identify bottlenecks
+- **Event Flow Visualization**: Seeing the sequence of events helps understand system behavior
+- **Selective Activation**: Toggle-based activation ensures it only appears when needed
+
+This monitoring system significantly improves development and debugging capabilities while leveraging the event-driven architecture we've established. It can be easily extended with additional filtering options, event capture, and visualization features as needed.
+
+## Message Processing Pipeline Implementation
+
+We've implemented a robust, event-driven message processing pipeline with clear stages, pure function processors, middleware support, and proper error boundaries. The new architecture follows a unidirectional data flow and employs the middleware pattern for cross-cutting concerns.
+
+### Key Components
+
+1. **PipelineManager**: Orchestrates the entire message flow through configurable stages with proper error handling and timing metrics for each stage.
+
+2. **Stage Processors**: Pure functional processors that handle specific aspects of message processing:
+   - **DeduplicationProcessor**: Prevents duplicate messages from being processed multiple times
+   - **PreprocessingProcessor**: Applies preprocessing to user messages before LLM calls
+   - **LLMCallProcessor**: Handles the core interaction with the language model
+   - **ToolResolutionProcessor**: Extracts tool calls from LLM responses
+   - **ToolExecutionProcessor**: Executes the resolved tool calls and gets follow-up responses
+   - **PostprocessingProcessor**: Applies postprocessing to LLM responses
+
+3. **Middleware System**: 
+   - Enables cross-cutting concerns like logging to be applied across stages
+   - Allows for straightforward addition of timing, validation, or transformation logic
+   - Follows the familiar Express/Connect middleware pattern
+
+4. **Error Boundaries**:
+   - Each stage has proper error handling with typed error classes
+   - Errors are captured in metadata for debugging
+   - Pipeline continues to function even when individual stages fail
+
+5. **Visualization**:
+   - Each stage reports detailed timing and processing metrics
+   - Results from each stage are preserved in the message metadata
+   - Provides a clear view of message transformation across the pipeline
+
+The implementation achieves the goals from our TODO list item #4, formalizing the message processing pipeline with clearly defined stages, pure function processors, middleware support, and proper error handling.
+
+### Benefits of the New Architecture
+
+1. **Modularity**: Each processor handles a specific concern, making the code more maintainable
+2. **Flexibility**: Pipeline stages can be enabled/disabled or customized per bot
+3. **Observability**: Detailed metrics for each processing stage
+4. **Resilience**: Proper error handling with graceful degradation
+5. **Extensibility**: Easy to add new stages or middleware
+
+This implementation provides a solid foundation for future enhancements to the message processing workflow.

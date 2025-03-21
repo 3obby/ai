@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
-import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic, Volume2, Settings, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic, Volume2, Settings, ChevronDown, ChevronRight, AlertCircle, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoiceTransitionSettings } from './VoiceTransitionSettings';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
@@ -259,7 +259,37 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
       vadMode: mode
     }));
   };
-  
+
+  const [showEventMonitor, setShowEventMonitor] = useState(false);
+  const [eventMonitorVisible, setEventMonitorVisible] = useState(false);
+
+  // Toggle event monitor
+  const toggleEventMonitor = () => {
+    const newValue = !showEventMonitor;
+    setShowEventMonitor(newValue);
+    
+    // Store the preference in localStorage
+    localStorage.setItem('showEventMonitor', String(newValue));
+    
+    // Update visibility 
+    setEventMonitorVisible(newValue);
+    
+    // Dispatch a custom event that the EventLoggerButton can listen for
+    window.dispatchEvent(new CustomEvent('toggle-event-monitor', { 
+      detail: { visible: newValue } 
+    }));
+  };
+
+  // Load event monitor preference from localStorage on mount
+  useEffect(() => {
+    const savedPreference = localStorage.getItem('showEventMonitor');
+    if (savedPreference !== null) {
+      const shouldShow = savedPreference === 'true';
+      setShowEventMonitor(shouldShow);
+      setEventMonitorVisible(shouldShow);
+    }
+  }, []);
+
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-6">
       {/* General Settings */}

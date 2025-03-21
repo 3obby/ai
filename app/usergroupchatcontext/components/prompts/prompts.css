@@ -23,6 +23,24 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
+/* Topbar version of the prompts button */
+.topbar-prompts-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: hsl(var(--foreground));
+}
+
+.topbar-prompts-button:hover {
+  transform: translateY(-1px);
+  color: hsl(var(--primary));
+}
+
+.topbar-prompts-button:active {
+  transform: scale(0.95);
+}
+
 .database-icon-circle {
   width: 28px;
   height: 28px;
@@ -58,6 +76,18 @@
 
 .prompts-drawer.open {
   transform: translateY(0);
+}
+
+/* Ghost prompt styles */
+.ghost-prompt-concat {
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--primary) / 0.4);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.ghost-prompt-concat:hover {
+  background-color: hsl(var(--primary) / 0.05);
 }
 
 /* DrawerTopBar */

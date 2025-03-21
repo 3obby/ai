@@ -14,14 +14,11 @@ export function PromptsButton() {
 
   return (
     <button 
-      className="prompts-button"
+      className="topbar-prompts-button p-2 rounded-full hover:bg-muted flex items-center justify-center"
       onClick={handleClick}
       aria-label="Toggle prompts drawer"
     >
-      <div className="database-icon-circle">
-        <Database size={20} strokeWidth={2} />
-      </div>
-      <span className="prompts-button-text">Prompts</span>
+      <Database size={20} strokeWidth={2} className="text-primary" />
     </button>
   );
 } 

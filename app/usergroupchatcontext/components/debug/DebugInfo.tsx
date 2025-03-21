@@ -2,105 +2,141 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import EventMonitor from './EventMonitor';
 
 interface DebugInfoProps {
   metadata: any;
   className?: string;
+  showEventMonitor?: boolean;
 }
 
-export function DebugInfo({ metadata, className }: DebugInfoProps) {
+export function DebugInfo({ metadata, className, showEventMonitor = false }: DebugInfoProps) {
   // Processing info
   const processingInfo = metadata?.processingInfo || {};
   const toolResults = metadata?.toolResults || [];
+  const [activeTab, setActiveTab] = useState<'info' | 'events'>('info');
   
   return (
     <div className={cn("text-xs border rounded-md overflow-hidden", className)}>
-      <div className="bg-muted/50 px-2 py-1 font-medium text-muted-foreground">
-        Debug Information
+      <div className="bg-muted/50 px-2 py-1 font-medium text-muted-foreground flex justify-between items-center">
+        <span>Debug Information</span>
+        
+        {showEventMonitor && (
+          <div className="flex space-x-1 text-[10px]">
+            <button 
+              onClick={() => setActiveTab('info')} 
+              className={cn(
+                "px-2 py-0.5 rounded",
+                activeTab === 'info' 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-muted"
+              )}
+            >
+              Debug Info
+            </button>
+            <button 
+              onClick={() => setActiveTab('events')} 
+              className={cn(
+                "px-2 py-0.5 rounded",
+                activeTab === 'events' 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-muted"
+              )}
+            >
+              Event Monitor
+            </button>
+          </div>
+        )}
       </div>
       
-      {/* Processing Information */}
-      {Object.keys(processingInfo).length > 0 && (
-        <div className="border-t">
-          <div className="bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            Processing Info
-          </div>
-          <div className="px-2 py-1 space-y-1">
-            {processingInfo.processingTime && (
-              <div className="flex justify-between">
-                <span>Processing Time:</span>
-                <span className="font-mono">{processingInfo.processingTime.toFixed(2)}ms</span>
+      {activeTab === 'info' ? (
+        <>
+          {/* Processing Information */}
+          {Object.keys(processingInfo).length > 0 && (
+            <div className="border-t">
+              <div className="bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Processing Info
               </div>
-            )}
-            {processingInfo.reprocessingDepth !== undefined && (
-              <div className="flex justify-between">
-                <span>Reprocessing Depth:</span>
-                <span className="font-mono">{processingInfo.reprocessingDepth}</span>
-              </div>
-            )}
-            {processingInfo.preProcessed !== undefined && (
-              <div className="flex justify-between">
-                <span>Pre-processed:</span>
-                <span className="font-mono">{processingInfo.preProcessed ? 'Yes' : 'No'}</span>
-              </div>
-            )}
-            {processingInfo.postProcessed !== undefined && (
-              <div className="flex justify-between">
-                <span>Post-processed:</span>
-                <span className="font-mono">{processingInfo.postProcessed ? 'Yes' : 'No'}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Show pre/post processed content if available */}
-          {(processingInfo.originalContent || processingInfo.modifiedContent) && (
-            <DebugContentDiff
-              original={processingInfo.originalContent}
-              modified={processingInfo.modifiedContent}
-            />
-          )}
-        </div>
-      )}
-      
-      {/* Tool Results */}
-      {toolResults.length > 0 && (
-        <div className="border-t">
-          <div className="bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            Tool Results ({toolResults.length})
-          </div>
-          <div className="divide-y">
-            {toolResults.map((tool: any, idx: number) => (
-              <div key={idx} className="px-2 py-1 space-y-1">
-                <div className="flex justify-between font-medium">
-                  <span>{tool.toolName}</span>
-                  {tool.executionTime && (
-                    <span className="font-mono text-[10px]">{tool.executionTime.toFixed(2)}ms</span>
-                  )}
-                </div>
-                
-                {tool.error ? (
-                  <div className="px-2 py-1 bg-destructive/10 text-destructive rounded text-[10px]">
-                    {tool.error}
+              <div className="px-2 py-1 space-y-1">
+                {processingInfo.processingTime && (
+                  <div className="flex justify-between">
+                    <span>Processing Time:</span>
+                    <span className="font-mono">{processingInfo.processingTime.toFixed(2)}ms</span>
                   </div>
-                ) : (
-                  <div className="font-mono text-[10px] bg-muted/30 p-1 rounded overflow-x-auto">
-                    {typeof tool.result === 'object' 
-                      ? JSON.stringify(tool.result, null, 2)
-                      : String(tool.result)
-                    }
+                )}
+                {processingInfo.reprocessingDepth !== undefined && (
+                  <div className="flex justify-between">
+                    <span>Reprocessing Depth:</span>
+                    <span className="font-mono">{processingInfo.reprocessingDepth}</span>
+                  </div>
+                )}
+                {processingInfo.preProcessed !== undefined && (
+                  <div className="flex justify-between">
+                    <span>Pre-processed:</span>
+                    <span className="font-mono">{processingInfo.preProcessed ? 'Yes' : 'No'}</span>
+                  </div>
+                )}
+                {processingInfo.postProcessed !== undefined && (
+                  <div className="flex justify-between">
+                    <span>Post-processed:</span>
+                    <span className="font-mono">{processingInfo.postProcessed ? 'Yes' : 'No'}</span>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* No debug info */}
-      {Object.keys(processingInfo).length === 0 && toolResults.length === 0 && (
-        <div className="px-2 py-1 text-center text-muted-foreground">
-          No debug information available
-        </div>
+              
+              {/* Show pre/post processed content if available */}
+              {(processingInfo.originalContent || processingInfo.modifiedContent) && (
+                <DebugContentDiff
+                  original={processingInfo.originalContent}
+                  modified={processingInfo.modifiedContent}
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Tool Results */}
+          {toolResults.length > 0 && (
+            <div className="border-t">
+              <div className="bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Tool Results ({toolResults.length})
+              </div>
+              <div className="divide-y">
+                {toolResults.map((tool: any, idx: number) => (
+                  <div key={idx} className="px-2 py-1 space-y-1">
+                    <div className="flex justify-between font-medium">
+                      <span>{tool.toolName}</span>
+                      {tool.executionTime && (
+                        <span className="font-mono text-[10px]">{tool.executionTime.toFixed(2)}ms</span>
+                      )}
+                    </div>
+                    
+                    {tool.error ? (
+                      <div className="px-2 py-1 bg-destructive/10 text-destructive rounded text-[10px]">
+                        {tool.error}
+                      </div>
+                    ) : (
+                      <div className="font-mono text-[10px] bg-muted/30 p-1 rounded overflow-x-auto">
+                        {typeof tool.result === 'object' 
+                          ? JSON.stringify(tool.result, null, 2)
+                          : String(tool.result)
+                        }
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* No debug info */}
+          {Object.keys(processingInfo).length === 0 && toolResults.length === 0 && (
+            <div className="px-2 py-1 text-center text-muted-foreground">
+              No debug information available
+            </div>
+          )}
+        </>
+      ) : (
+        <EventMonitor maxEvents={50} autoScroll={true} />
       )}
     </div>
   );

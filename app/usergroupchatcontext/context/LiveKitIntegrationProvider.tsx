@@ -69,6 +69,15 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
 
   // Add a reference to track recently played message IDs
   const recentlyPlayedMessageIds = React.useRef<Set<string>>(new Set());
+  
+  // Add tracking for in-progress transcriptions to avoid duplicate processing
+  const processedTranscriptions = React.useRef<Set<string>>(new Set());
+  const inProgressTranscription = React.useRef<{ text: string, timestamp: number } | null>(null);
+  const responseInProgress = React.useRef<boolean>(false);
+
+  // Track messages being processed to avoid duplicate responses
+  const messagesBeingProcessed = React.useRef<Set<string>>(new Set());
+  const userMessageToResponseMap = React.useRef<Map<string, Set<string>>>(new Map());
 
   // Sync connection state from LiveKit hook
   useEffect(() => {
@@ -109,6 +118,31 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         return;
       }
       
+      // Normalize text to help with better matching
+      const normalizedText = text.trim().toLowerCase();
+      
+      // ENHANCED DEDUPLICATION: Check if we're already processing this transcription
+      if (inProgressTranscription.current && (
+        // Exact match 
+        inProgressTranscription.current.text === normalizedText ||
+        // Or very similar content
+        (normalizedText.length > 5 && (
+          inProgressTranscription.current.text.includes(normalizedText) ||
+          normalizedText.includes(inProgressTranscription.current.text)
+        )) ||
+        // Or very recent (within 2 seconds)
+        (Date.now() - inProgressTranscription.current.timestamp < 2000)
+      )) {
+        console.log('[DEBUG TRANSCRIPT] Already processing similar transcription:', inProgressTranscription.current.text);
+        return;
+      }
+      
+      // IMPROVED: Check if we've recently processed this exact transcription
+      if (processedTranscriptions.current.has(normalizedText)) {
+        console.log('[DEBUG TRANSCRIPT] Already processed this exact transcription recently:', normalizedText);
+        return;
+      }
+      
       // Add a deduplication check to prevent duplicate messages
       const recentMessages = state.messages.slice(-10); // Check more recent messages
       console.log('[DEBUG TRANSCRIPT] Checking duplication against recent messages:', recentMessages.length);
@@ -118,61 +152,101 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
         (msg.type === 'voice' || msg.type === 'text') && 
         (
           // Exact match
-          msg.content.trim() === text.trim() ||
+          msg.content.trim().toLowerCase() === normalizedText ||
           // Or very similar (to catch minor transcription differences)
           (
-            msg.content.length > 5 && 
+            msg.content.length > 5 && normalizedText.length > 5 && 
             (
-              msg.content.includes(text.trim()) || 
-              text.trim().includes(msg.content)
+              msg.content.toLowerCase().includes(normalizedText) || 
+              normalizedText.includes(msg.content.toLowerCase())
             )
           )
         ) &&
-        Date.now() - msg.timestamp < 10000
+        // Reduced time window for more aggressive deduplication
+        Date.now() - msg.timestamp < 5000
       );
       
       if (isDuplicate) {
         console.log('[DEBUG TRANSCRIPT] Skipping duplicate transcription message:', text);
         return;
-      } else {
-        console.log('[DEBUG TRANSCRIPT] Not a duplicate, proceeding with message');
       }
       
-      // Check if it contains a tool call
-      const isToolCall = await detectToolsInTranscription(text);
+      // Set this as the current in-progress transcription
+      inProgressTranscription.current = {
+        text: normalizedText,
+        timestamp: Date.now()
+      };
       
-      // If it was a tool call, skip normal message processing
-      if (isToolCall) {
-        console.log('[DEBUG TRANSCRIPT] Skipping normal processing - detected tool call');
+      // Track that we're processing a response to avoid overlapping responses
+      if (responseInProgress.current) {
+        console.log('[DEBUG TRANSCRIPT] Response already in progress, skipping:', text);
         return;
       }
       
-      // Create a new user message from transcription
-      const message: Message = {
-        id: uuidv4(),
-        content: text,
-        role: 'user',
-        sender: 'user',
-        timestamp: Date.now(),
-        type: 'voice',
-        metadata: {
-          processing: {
-            originalContent: text,
-          } as ProcessingMetadata,
-          toolResults: [] as ToolResult[]
+      responseInProgress.current = true;
+      
+      try {
+        console.log('[DEBUG TRANSCRIPT] Not a duplicate, proceeding with message');
+        
+        // Check if it contains a tool call
+        const isToolCall = await detectToolsInTranscription(text);
+        
+        // If it was a tool call, skip normal message processing
+        if (isToolCall) {
+          console.log('[DEBUG TRANSCRIPT] Skipping normal processing - detected tool call');
+          // Add to processed transcriptions to prevent reprocessing
+          processedTranscriptions.current.add(normalizedText);
+          return;
         }
-      };
-      
-      // Add message to chat
-      console.log('[DEBUG TRANSCRIPT] Dispatching transcription to chat:', message);
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: message
-      });
-      
-      // Process message through bot response system
-      console.log('[DEBUG TRANSCRIPT] Processing message through bot response system');
-      await processUserMessage(message);
+        
+        // Create a new user message from transcription
+        const message: Message = {
+          id: uuidv4(),
+          content: text,
+          role: 'user',
+          sender: 'user',
+          timestamp: Date.now(),
+          type: 'voice',
+          metadata: {
+            processing: {
+              originalContent: text,
+            } as ProcessingMetadata,
+            toolResults: [] as ToolResult[]
+          }
+        };
+        
+        // Add message to chat
+        console.log('[DEBUG TRANSCRIPT] Dispatching transcription to chat:', message);
+        dispatch({
+          type: 'ADD_MESSAGE',
+          payload: message
+        });
+        
+        // Process message through bot response system
+        console.log('[DEBUG TRANSCRIPT] Processing message through bot response system');
+        await processUserMessage(message);
+        
+        // Add to processed transcriptions after successful processing
+        processedTranscriptions.current.add(normalizedText);
+        
+        // Clear in-progress after 5 seconds to allow new similar transcriptions
+        setTimeout(() => {
+          if (inProgressTranscription.current?.text === normalizedText) {
+            inProgressTranscription.current = null;
+          }
+        }, 5000);
+        
+        // Clean up old transcriptions (keep only last 20)
+        if (processedTranscriptions.current.size > 20) {
+          const values = Array.from(processedTranscriptions.current);
+          for (let i = 0; i < values.length - 20; i++) {
+            processedTranscriptions.current.delete(values[i]);
+          }
+        }
+      } finally {
+        // Release the in-progress lock
+        responseInProgress.current = false;
+      }
     };
     
     // Set up listener directly on the multimodalAgentService
@@ -187,17 +261,23 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
   // Process user message through bot response system
   const processUserMessage = async (message: Message) => {
     try {
+      // Check if we're already processing this exact message
+      if (messagesBeingProcessed.current.has(message.id)) {
+        console.log('[DEBUG] Already processing this message, skipping duplicate:', message.id);
+        return;
+      }
+      
+      // Track that we're processing this message
+      messagesBeingProcessed.current.add(message.id);
+      
       // Set processing state
       dispatch({ type: 'SET_PROCESSING', payload: true });
       
       // Don't add the message again since it's already added by the caller
-      // dispatch({
-      //   type: 'ADD_MESSAGE',
-      //   payload: message
-      // });
       
       // Check if we should respond at all
       if (state.settings.activeBotIds.length === 0) {
+        console.log('[DEBUG] No active bots to respond, skipping message processing');
         return;
       }
       
@@ -205,17 +285,24 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
       const activeBotIds = state.settings.activeBotIds;
       const activeBots = botRegistryState.availableBots.filter(bot => activeBotIds.includes(bot.id));
       
-      // Handle bot responses according to the response mode (sequential or parallel)
-      if (activeBots.length > 0) {
-        // Check if this message is from voice mode
-        const isVoiceMessage = message.type === 'voice';
+      // Verify we have active bots to respond
+      if (activeBots.length === 0) {
+        console.log('[DEBUG] No active bots found in registry, skipping message processing');
+        return;
+      }
       
-        // Add typing indicators for all active bots
-        dispatch({ 
-          type: 'SET_TYPING_BOT_IDS', 
-          payload: activeBotIds 
-        });
-        
+      // Check if this message is from voice mode
+      const isVoiceMessage = message.type === 'voice';
+      
+      console.log(`[DEBUG] Processing ${isVoiceMessage ? 'voice' : 'text'} message with ${activeBots.length} active bots`);
+    
+      // Add typing indicators for all active bots
+      dispatch({ 
+        type: 'SET_TYPING_BOT_IDS', 
+        payload: activeBotIds 
+      });
+      
+      try {
         // Get bot responses in parallel or sequentially based on settings
         const botResponses: Message[] = [];
         
@@ -236,21 +323,32 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
           const responses = await Promise.all(promises);
           
           // Create bot messages
-          botResponses.push(...responses.map((response, index) => ({
-            id: uuidv4(),
-            content: response.content,
-            role: 'assistant' as const,
-            sender: activeBots[index].id,
-            senderName: activeBots[index].name,
-            timestamp: Date.now(),
-            type: 'text' as const,
-            metadata: {
-              toolResults: response.toolResults,
-              processing: {
-                originalContent: response.content,
-              } as ProcessingMetadata
+          botResponses.push(...responses.map((response, index) => {
+            const botMessage: Message = {
+              id: uuidv4(),
+              content: response.content,
+              role: 'assistant' as const,
+              sender: activeBots[index].id,
+              senderName: activeBots[index].name,
+              timestamp: Date.now(),
+              type: 'text' as const,
+              metadata: {
+                toolResults: response.toolResults,
+                processing: {
+                  originalContent: response.content,
+                  userMessageId: message.id, // Track which user message this responds to
+                } as ProcessingMetadata
+              }
+            };
+            
+            // Track the relationship between user message and bot response
+            if (!userMessageToResponseMap.current.has(message.id)) {
+              userMessageToResponseMap.current.set(message.id, new Set());
             }
-          })));
+            userMessageToResponseMap.current.get(message.id)?.add(botMessage.id);
+            
+            return botMessage;
+          }));
         } else {
           // Sequential mode - get responses one by one
           for (const bot of activeBots) {
@@ -276,16 +374,37 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
                 toolResults: response.toolResults,
                 processing: {
                   originalContent: response.content,
+                  userMessageId: message.id, // Track which user message this responds to
                 } as ProcessingMetadata
               }
             };
             
+            // Track the relationship between user message and bot response
+            if (!userMessageToResponseMap.current.has(message.id)) {
+              userMessageToResponseMap.current.set(message.id, new Set());
+            }
+            userMessageToResponseMap.current.get(message.id)?.add(botMessage.id);
+            
             botResponses.push(botMessage);
+            
+            // Short pause between sequential responses
+            if (activeBots.length > 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
           }
         }
         
+        // Ensure we're not adding duplicate responses
+        const existingMessageIds = new Set(state.messages.map(m => m.id));
+        
         // Add all bot responses to chat
         for (const botResponse of botResponses) {
+          // Skip if this response was somehow already added
+          if (existingMessageIds.has(botResponse.id)) {
+            console.log('[DEBUG] Skipping already added bot response:', botResponse.id);
+            continue;
+          }
+          
           dispatch({
             type: 'ADD_MESSAGE',
             payload: botResponse
@@ -294,12 +413,15 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
           // Find the bot
           const bot = activeBots.find(b => b.id === botResponse.sender);
           
-          // If voice is enabled, speak the response
-          if (bot && state.settings.ui.enableVoice) {
+          // Only speak the response if we're actually in voice mode, not just when voice is enabled
+          if (bot && state.settings.ui.enableVoice && isInVoiceMode && isVoiceMessage) {
             await playBotResponse(bot.id, botResponse.content, botResponse.id);
           }
+          
+          // Add to existing IDs to prevent adding the same response twice
+          existingMessageIds.add(botResponse.id);
         }
-        
+      } finally {
         // Clear typing indicators
         dispatch({ 
           type: 'SET_TYPING_BOT_IDS', 
@@ -311,6 +433,18 @@ export function LiveKitIntegrationProvider({ children }: LiveKitIntegrationProvi
     } finally {
       // Clear processing state
       dispatch({ type: 'SET_PROCESSING', payload: false });
+      
+      // Remove this message from the tracking set
+      messagesBeingProcessed.current.delete(message.id);
+      
+      // Cleanup old entries from the user-response map
+      // Keep most recent 20 entries
+      const entries = Array.from(userMessageToResponseMap.current.entries());
+      if (entries.length > 20) {
+        for (let i = 0; i < entries.length - 20; i++) {
+          userMessageToResponseMap.current.delete(entries[i][0]);
+        }
+      }
     }
   };
   

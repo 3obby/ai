@@ -50,6 +50,21 @@ export function ChatInput({
     return containerPrompts || standalonePrompts;
   }, [promptsState]);
 
+  // Get concatenated text of all enabled prompts
+  const concatenatedPromptsText = React.useMemo(() => {
+    const containerPrompts = promptsState.containers
+      .filter(container => container.enabled)
+      .flatMap(container => container.prompts.filter(prompt => prompt.enabled)
+        .map(prompt => prompt.text));
+    
+    const standalonePrompts = promptsState.standalonePrompts
+      .filter(prompt => prompt.enabled)
+      .map(prompt => prompt.text);
+    
+    const allPromptTexts = [...containerPrompts, ...standalonePrompts];
+    return allPromptTexts.length > 0 ? allPromptTexts.join('\n\n') : null;
+  }, [promptsState]);
+
   // Get the first enabled prompt text
   const firstEnabledPromptText = React.useMemo(() => {
     // Start with container prompts
@@ -92,8 +107,8 @@ export function ChatInput({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If we have an active prompt, use that instead of the input value
-    const textToSend = (activePrompt || message).trim();
+    // Use text in this priority: activePrompt > message > concatenatedPromptsText
+    const textToSend = (activePrompt || message || concatenatedPromptsText || '').trim();
     
     if (!textToSend || disabled || isProcessing) return;
     
@@ -158,13 +173,14 @@ export function ChatInput({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={firstEnabledPromptText || placeholder}
+              placeholder={firstEnabledPromptText ? "Prompts ready to send..." : placeholder}
               disabled={disabled || isProcessing || !!activePrompt}
               className={cn(
                 "w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm",
                 "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 "input-accessible min-h-[40px] max-h-[200px] pr-10",
-                (disabled || activePrompt) && "opacity-50 cursor-not-allowed"
+                (disabled || activePrompt) && "opacity-50 cursor-not-allowed",
+                hasEnabledPrompts && !message && "border-primary/30 bg-primary/5"
               )}
               rows={1}
             />
@@ -187,11 +203,13 @@ export function ChatInput({
             {/* Send button - Primary action in text mode */}
             <button
               type="submit"
-              disabled={(!message.trim() && !activePrompt) || disabled || isProcessing}
+              disabled={(!message && !concatenatedPromptsText && !activePrompt) || disabled || isProcessing}
               className={cn(
                 "blackbar-send-btn rounded-full p-2 transition-colors touch-target",
                 "send-button-wrapper",
-                (message.trim() || activePrompt || hasEnabledPrompts) && !disabled && !isProcessing
+                hasEnabledPrompts && !message && !disabled && !isProcessing ? 
+                  "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 animate-subtle-pulse" : 
+                (message.trim() || activePrompt) && !disabled && !isProcessing
                   ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
                   : "bg-muted text-muted-foreground",
               )}
@@ -206,6 +224,16 @@ export function ChatInput({
           </div>
         </form>
       )}
+      <style jsx global>{`
+        @keyframes subtle-pulse {
+          0% { box-shadow: 0 0 0 rgba(59, 130, 246, 0.3); }
+          50% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+          100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0.3); }
+        }
+        .animate-subtle-pulse {
+          animation: subtle-pulse 2s infinite;
+        }
+      `}</style>
     </>
   );
 } 
