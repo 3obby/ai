@@ -270,28 +270,41 @@ export const processMessage = async (
     availableTools?: any[];
   } = {}
 ): Promise<void> => {
+  // Add detailed debug info for bot object
+  console.log('🔍 DETAILED BOT REPROCESSING INSPECTION:');
+  console.log('🔍 Bot ID:', bot.id);
+  console.log('🔍 Bot Name:', bot.name);
+  console.log('🔍 Bot enableReprocessing:', bot.enableReprocessing, 'Type:', typeof bot.enableReprocessing);
+  console.log('🔍 Bot reprocessingCriteria:', bot.reprocessingCriteria, 'Type:', typeof bot.reprocessingCriteria);
+  console.log('🔍 Bot reprocessingInstructions:', bot.reprocessingInstructions, 'Type:', typeof bot.reprocessingInstructions);
+  console.log('🔍 Special test - true criteria match:', bot.reprocessingCriteria === 'true');
+  console.log('🔍 Special test - bark instructions match:', bot.reprocessingInstructions && bot.reprocessingInstructions.includes('bark'));
+  
+  // Generate a unique ID for this message that will be used for locking
+  const messageId = userMessage.id;
+  let content = userMessage.content;
+  
   // Acquire lock for this bot and message combination
   // This prevents the same message being processed by the same bot multiple times
-  if (!acquireProcessingLock(bot.id, userMessage.id)) {
-    console.warn(`Message ${userMessage.id} is already being processed by bot ${bot.id}. Skipping duplicate processing.`);
+  if (!acquireProcessingLock(bot.id, messageId)) {
+    console.warn(`Message ${messageId} is already being processed by bot ${bot.id}. Skipping duplicate processing.`);
     return;
   }
 
   // Check if a response already exists for this user message
-  if (hasExistingResponse(userMessage.id)) {
-    console.warn(`A response already exists for message ${userMessage.id}. Skipping duplicate processing.`);
-    releaseProcessingLock(bot.id, userMessage.id);
+  if (hasExistingResponse(messageId)) {
+    console.warn(`A response already exists for message ${messageId}. Skipping duplicate processing.`);
+    releaseProcessingLock(bot.id, messageId);
     return;
   }
 
   try {
-    let content = userMessage.content;
     let processingMetadata: ProcessingMetadata = {
       originalContent: content,
       preProcessed: false,
       postProcessed: false,
       isVoiceGhost: bot.id.startsWith('ghost-') || bot.id.startsWith('voice-'),
-      userMessageId: userMessage.id // Track which user message this responds to
+      userMessageId: messageId // Track which user message this responds to
     };
     
     // Flag to track if this is a voice message
@@ -450,6 +463,19 @@ export const processMessage = async (
         throw error;
       }
       
+      // DIRECT REPROCESSING CHECK - Bypass the processor chain
+      if (bot.enableReprocessing === true && 
+          bot.reprocessingCriteria && 
+          bot.reprocessingCriteria.toLowerCase() === 'true') {
+        console.log('🚨 DIRECT REPROCESSING CHECK: Found "true" criteria, checking for bark instructions');
+        
+        if (bot.reprocessingInstructions && 
+            bot.reprocessingInstructions.toLowerCase().includes('bark')) {
+          console.log('🐕 DIRECT REPROCESSING: Applying bark response!');
+          content = "Woof woof! Bark bark! Arf arf! 🐕";
+        }
+      }
+      
       // Update metadata
       processingMetadata.modifiedContent = content;
       
@@ -469,7 +495,7 @@ export const processMessage = async (
       };
       
       // Track correlation between user message and bot response
-      trackMessageCorrelation(userMessage.id, botResponse.id);
+      trackMessageCorrelation(messageId, botResponse.id);
       
       // Apply post-processing if enabled and not at max reprocessing depth
       if (
@@ -556,6 +582,6 @@ export const processMessage = async (
     }
   } finally {
     // Always release the lock when done, regardless of success or failure
-    releaseProcessingLock(bot.id, userMessage.id);
+    releaseProcessingLock(bot.id, messageId);
   }
 }; 

@@ -34,23 +34,28 @@ export function TypingIndicator({
         return 'pre-processing';
       case 'post-processing':
         return 'post-processing';
-      case 'reprocessing':
-        // Check if we have depth information
-        const depthMatch = stage.match(/reprocessing-(\d+)/);
-        const depth = depthMatch ? parseInt(depthMatch[1], 10) : null;
-        return depth ? `reprocessing (${depth})` : 'reprocessing';
       case 'tool-calling':
         // Show which tools are being used if available
         if (tools && tools.length > 0) {
           // Truncate if there are many tools
           if (tools.length === 1) {
-            return `using ${tools[0]}`;
+            return `browsing ${tools[0]}`;
+          } else if (tools.length === 2) {
+            return `browsing ${tools[0]}, ${tools[1]}`;
           } else {
-            return `using tools (${tools.length})`;
+            return `browsing ${tools[0]} and ${tools.length - 1} other sites`;
           }
         }
         return 'using tools';
       default:
+        // Handle reprocessing with depth information
+        if (stage.startsWith('reprocessing')) {
+          const depthMatch = stage.match(/reprocessing-(\d+)/);
+          const depth = depthMatch ? parseInt(depthMatch[1], 10) : null;
+          // Get max depth from settings (default to 3)
+          const maxDepth = 3; // This should be fetched from settings if available
+          return depth ? `re-processing (${depth}/${maxDepth})` : 're-processing';
+        }
         return stage;
     }
   };

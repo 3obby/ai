@@ -68,8 +68,8 @@ export function MessageList({
       
       {state.typingBotIds?.length > 0 && (
         <div className="px-3 py-2">
-          <TypingIndicator
-            botIds={state.typingBotIds}
+          <TypingIndicator 
+            botIds={state.typingBotIds} 
             processingStages={processingState.processingStages}
             activeTools={processingState.activeTools}
           />

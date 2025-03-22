@@ -38,30 +38,37 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
   const allBots = botState.availableBots;
   
   // Create state for form values - use default values if settings not loaded
-  const [formValues, setFormValues] = useState({
-    name: 'Group Chat',
-    responseMode: 'sequential' as 'sequential' | 'parallel',
-    enablePreProcessing: false,
-    enablePostProcessing: false,
-    showDebugInfo: true,
-    enableVoice: true,
-    maxReprocessingDepth: 3,
+  const initialFormValues = {
+    name: '',
+    activeBotIds: [],
+    responseMode: 'sequential' as const,
     systemPrompt: '',
-    activeBots: [] as string[],
-    // Voice settings
-    defaultVoiceModel: 'gpt-4o-realtime-preview',
-    defaultVoice: 'alloy',
-    voiceSpeed: 1.0,
-    showTransitionFeedback: true,
-    // Voice detection settings
-    vadMode: 'auto' as VadMode,
-    vadThreshold: 0.5,
-    // Advanced voice settings
+    maxReprocessingDepth: 3,
+    enablePreProcessing: true,
+    enablePostProcessing: true,
+    preProcessingPrompt: '',
+    postProcessingPrompt: '',
+    theme: 'dark',
+    messageBubbleStyle: 'modern',
+    enableVoice: true,
+    enableTyping: true,
+    showTimestamps: true,
+    showAvatars: true,
+    showDebugInfo: true,
+    vadMode: 'auto',
+    vadThreshold: 0.3,
+    silenceDurationMs: 1000,
+    prefixPaddingMs: 500,
+    defaultVoice: '',
+    defaultVoiceModel: '',
+    speed: 1.0,
     keepPreprocessingHooks: false,
     keepPostprocessingHooks: false,
     preserveVoiceHistory: true,
-    automaticVoiceSelection: true,
-  });
+    automaticVoiceSelection: false
+  };
+  
+  const [formValues, setFormValues] = useState(initialFormValues);
   
   // State for voice settings section
   const [voiceSettingsExpanded, setVoiceSettingsExpanded] = useState(false);
@@ -81,10 +88,10 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
     setFormValues({
       name: state.settings?.name || 'Group Chat',
       responseMode: state.settings?.responseMode || 'sequential',
-      enablePreProcessing: state.settings?.processing?.enablePreProcessing || false,
-      enablePostProcessing: state.settings?.processing?.enablePostProcessing || false,
+      enablePreProcessing: state.settings?.processing?.enablePreProcessing || true,
+      enablePostProcessing: state.settings?.processing?.enablePostProcessing || true,
       showDebugInfo: state.settings?.ui?.showDebugInfo || true,
-      enableVoice: state.settings?.ui?.enableVoice || false,
+      enableVoice: state.settings?.ui?.enableVoice || true,
       maxReprocessingDepth: state.settings?.maxReprocessingDepth || 3,
       systemPrompt: state.settings?.systemPrompt || '',
       activeBots: state.settings?.activeBotIds || [],

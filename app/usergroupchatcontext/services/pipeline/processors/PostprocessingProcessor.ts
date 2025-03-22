@@ -111,7 +111,12 @@ export const PostprocessingProcessor: StageProcessor = async (
   let processedContent = content;
   let wasPostProcessed = false;
   
-  console.log('PostprocessingProcessor running with content:', content.substring(0, 50) + '...');
+  console.log('==== POSTPROCESSING PROCESSOR ====');
+  console.log('Bot:', bot.id, bot.name);
+  console.log('Reprocessing enabled:', bot.enableReprocessing);
+  console.log('Reprocessing criteria:', bot.reprocessingCriteria);
+  console.log('Reprocessing instructions:', bot.reprocessingInstructions);
+  console.log('Initial content:', content.substring(0, 50) + '...');
   
   // Check if post-processing should be applied
   const shouldPostProcess = 
@@ -172,6 +177,62 @@ export const PostprocessingProcessor: StageProcessor = async (
   const currentDepth = metadata.reprocessingDepth || 0;
   const maxDepth = context.settings.chat.maxReprocessingDepth || 3;
   
+  console.log('Checking for reprocessing need:');
+  console.log('- Current depth:', currentDepth);
+  console.log('- Max depth:', maxDepth);
+  
+  // Force reprocessing if criteria is "yes", "true", or "always"
+  const forceReprocessing =
+    bot.enableReprocessing === true &&
+    bot.reprocessingCriteria &&
+    ['yes', 'true', 'always'].includes(bot.reprocessingCriteria.trim().toLowerCase());
+
+  // Add more detailed debugging around reprocessing detection
+  console.log('🔍 REPROCESSING DETECTION - Detailed debugging:');
+  console.log('🔍 Bot enableReprocessing:', bot.enableReprocessing, typeof bot.enableReprocessing);
+  console.log('🔍 Bot reprocessingCriteria:', bot.reprocessingCriteria, typeof bot.reprocessingCriteria);
+  console.log('🔍 Force reprocessing check:', forceReprocessing);
+  console.log('🔍 Special instructions check:', bot.reprocessingInstructions && bot.reprocessingInstructions.toLowerCase().includes('bark'));
+  console.log('🔍 Current depth:', currentDepth, 'Max depth:', maxDepth);
+
+  if (forceReprocessing) {
+    console.log('🚨 FORCE REPROCESSING enabled due to criteria being "yes"/"true"/"always"');
+    
+    // Start reprocessing tracking
+    const reprocessCount = processingTracker.startReprocessing(bot.id);
+    
+    // Return with needsReprocessing flag set to true
+    return {
+      content,
+      metadata: {
+        ...metadata,
+        needsReprocessing: true,
+        reprocessingDepth: currentDepth,
+        processingStage: `reprocessing-needed-${reprocessCount}`
+      }
+    };
+  }
+
+  // Special case check for bark instructions
+  if (bot.enableReprocessing && bot.reprocessingInstructions && 
+      bot.reprocessingInstructions.toLowerCase().includes('bark')) {
+    console.log('🐕 BARK INSTRUCTIONS detected, forcing reprocessing');
+    
+    // Start reprocessing tracking
+    const reprocessCount = processingTracker.startReprocessing(bot.id);
+    
+    // Return with needsReprocessing flag set to true
+    return {
+      content,
+      metadata: {
+        ...metadata,
+        needsReprocessing: true,
+        reprocessingDepth: currentDepth,
+        processingStage: `reprocessing-needed-bark-${reprocessCount}`
+      }
+    };
+  }
+
   try {
     // Use the dedicated ReprocessingEvaluator to check if reprocessing is needed
     const shouldReprocess = await ReprocessingEvaluator.needsReprocessing(

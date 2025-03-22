@@ -1,137 +1,201 @@
 'use client';
 
-import { PipelineManager } from './PipelineManager';
 import { PipelineConfig, PipelineStage } from './types';
 import { 
-  DeduplicationProcessor,
-  PreprocessingProcessor,
+  DeduplicationProcessor, 
+  PreprocessingProcessor, 
+  PostprocessingProcessor,
   LLMCallProcessor,
   ToolResolutionProcessor,
   ToolExecutionProcessor,
-  PostprocessingProcessor,
   ReprocessingProcessor
 } from './processors';
 import { createLoggingMiddleware } from './middlewares/LoggingMiddleware';
+import { Message, Bot } from '../../types';
+import { MessageContext, ProcessingResult, ProcessingMetadata, IStageProcessor } from './types';
+
+// Force enable reprocessing for all bots
+export const FORCE_ENABLE_REPROCESSING = true;
 
 /**
  * Factory for creating message processing pipelines
  */
 export class PipelineFactory {
+  private processorChain: IStageProcessor | null = null;
+
   /**
-   * Create a basic pipeline with all essential processors
+   * Create a pipeline configuration with all stages
    */
-  public static createDefaultPipeline(options: { 
-    enableLogging?: boolean;
-    disableDeduplication?: boolean;
-    disablePreprocessing?: boolean;
-    disableToolProcessing?: boolean;
-    disablePostprocessing?: boolean;
-    disableReprocessing?: boolean;
-  } = {}): PipelineManager {
+  public createDefaultConfig(): PipelineConfig {
+    const pipeline: PipelineConfig = {
+      stages: {
+        [PipelineStage.DEDUPLICATION]: {
+          enabled: true,
+          processor: DeduplicationProcessor,
+          middlewares: [createLoggingMiddleware('Deduplication')]
+        },
+        [PipelineStage.PREPROCESSING]: {
+          enabled: true,
+          processor: PreprocessingProcessor,
+          middlewares: [createLoggingMiddleware('Preprocessing')]
+        },
+        [PipelineStage.TOOL_RESOLUTION]: {
+          enabled: true,
+          processor: ToolResolutionProcessor,
+          middlewares: [createLoggingMiddleware('Tool Resolution')]
+        },
+        [PipelineStage.TOOL_EXECUTION]: {
+          enabled: true,
+          processor: ToolExecutionProcessor,
+          middlewares: [createLoggingMiddleware('Tool Execution')]
+        },
+        [PipelineStage.LLM_CALL]: {
+          enabled: true,
+          processor: LLMCallProcessor,
+          middlewares: [createLoggingMiddleware('LLM Call')]
+        },
+        [PipelineStage.POSTPROCESSING]: {
+          enabled: true,
+          processor: PostprocessingProcessor,
+          middlewares: [createLoggingMiddleware('Postprocessing')]
+        },
+        [PipelineStage.REPROCESSING]: {
+          enabled: true,
+          processor: ReprocessingProcessor,
+          middlewares: [createLoggingMiddleware('Reprocessing')]
+        }
+      },
+      globalMiddlewares: []
+    };
+    
+    return pipeline;
+  }
+
+  /**
+   * Creates and configures a pipeline with processors connected in the Chain of Responsibility pattern
+   */
+  public createChainOfResponsibility(): void {
+    console.log('Creating processing pipeline with Chain of Responsibility pattern');
+    
+    // Create processor instances from the new Chain of Responsibility classes
+    const deduplicationProcessor = new DeduplicationProcessor();
+    const preprocessingProcessor = new PreprocessingProcessor();
+    const toolResolutionProcessor = new ToolResolutionProcessor();
+    const toolExecutionProcessor = new ToolExecutionProcessor();
+    const llmCallProcessor = new LLMCallProcessor();
+    const postprocessingProcessor = new PostprocessingProcessor();
+    const reprocessingProcessor = new ReprocessingProcessor();
+    
+    // Chain them together in the correct order
+    deduplicationProcessor
+      .setNext(preprocessingProcessor)
+      .setNext(toolResolutionProcessor)
+      .setNext(toolExecutionProcessor)
+      .setNext(llmCallProcessor)
+      .setNext(postprocessingProcessor)
+      .setNext(reprocessingProcessor);
+    
+    // Log that the chain has been created
+    console.log('🔗 Chain of Responsibility processors linked:',
+      deduplicationProcessor.getName(),
+      '→', preprocessingProcessor.getName(),
+      '→', toolResolutionProcessor.getName(),
+      '→', toolExecutionProcessor.getName(),
+      '→', llmCallProcessor.getName(),
+      '→', postprocessingProcessor.getName(),
+      '→', reprocessingProcessor.getName()
+    );
+    
+    // Store the head of the chain
+    this.processorChain = deduplicationProcessor;
+  }
+
+  /**
+   * Process a message through the pipeline using the Chain of Responsibility pattern
+   */
+  public async processMessageThroughChain(
+    message: Message,
+    bot: Bot,
+    context: MessageContext
+  ): Promise<ProcessingResult> {
+    console.log('Processing message through Chain of Responsibility pipeline');
+    
+    if (!this.processorChain) {
+      throw new Error('Pipeline not initialized. Call createChainOfResponsibility first.');
+    }
+    
+    try {
+      // Start with empty metadata
+      const initialMetadata: ProcessingMetadata = {
+        processingStage: 'started'
+      };
+      
+      // Start processing through the chain
+      console.log('🔄 Starting message processing through pipeline chain');
+      const result = await this.processorChain.process(
+        message.content,
+        bot,
+        context,
+        initialMetadata
+      );
+      
+      console.log('✅ Pipeline processing completed successfully');
+      return result;
+    } catch (error) {
+      console.error('❌ Error in pipeline processing:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a special debug pipeline with reprocessing fully enabled
+   */
+  public static createReprocessingDebugPipeline(): PipelineConfig {
     const config: PipelineConfig = {
       stages: {
-        // Deduplication stage
         [PipelineStage.DEDUPLICATION]: {
+          enabled: true,
           processor: DeduplicationProcessor,
-          enabled: !options.disableDeduplication,
           middlewares: [],
         },
-        
-        // Preprocessing stage
         [PipelineStage.PREPROCESSING]: {
+          enabled: true,
           processor: PreprocessingProcessor,
-          enabled: !options.disablePreprocessing,
           middlewares: [],
         },
-        
-        // LLM call stage
-        [PipelineStage.LLM_CALL]: {
-          processor: LLMCallProcessor,
-          enabled: true, // Always enabled
-          middlewares: [],
-        },
-        
-        // Tool resolution stage
         [PipelineStage.TOOL_RESOLUTION]: {
+          enabled: true,
           processor: ToolResolutionProcessor,
-          enabled: !options.disableToolProcessing,
           middlewares: [],
         },
-        
-        // Tool execution stage
         [PipelineStage.TOOL_EXECUTION]: {
+          enabled: true,
           processor: ToolExecutionProcessor,
-          enabled: !options.disableToolProcessing,
           middlewares: [],
         },
-        
-        // Postprocessing stage
+        [PipelineStage.LLM_CALL]: {
+          enabled: true,
+          processor: LLMCallProcessor,
+          middlewares: [],
+        },
         [PipelineStage.POSTPROCESSING]: {
+          enabled: true,
           processor: PostprocessingProcessor,
-          enabled: !options.disablePostprocessing,
           middlewares: [],
         },
-        
-        // Reprocessing stage
         [PipelineStage.REPROCESSING]: {
+          enabled: true,
           processor: ReprocessingProcessor,
-          enabled: !options.disableReprocessing,
           middlewares: [],
         },
       },
-      
-      // Global middlewares applied to all stages
-      globalMiddlewares: options.enableLogging 
-        ? [createLoggingMiddleware('debug')] 
-        : [],
+      globalMiddlewares: []
     };
     
-    return new PipelineManager(config);
-  }
-  
-  /**
-   * Create a pipeline for voice mode (optimized for voice processing)
-   */
-  public static createVoicePipeline(): PipelineManager {
-    return PipelineFactory.createDefaultPipeline({
-      disableToolProcessing: true, // Disable tool processing in voice mode
-      disableReprocessing: true, // Disable reprocessing in voice mode
-      enableLogging: true, // Enable logging for debugging
-    });
-  }
-  
-  /**
-   * Create a minimal pipeline with only the LLM call stage
-   */
-  public static createMinimalPipeline(): PipelineManager {
-    return PipelineFactory.createDefaultPipeline({
-      disableDeduplication: true,
-      disablePreprocessing: true,
-      disableToolProcessing: true,
-      disablePostprocessing: true,
-      disableReprocessing: true,
-    });
-  }
-  
-  /**
-   * Create a debug pipeline with extensive logging
-   */
-  public static createDebugPipeline(): PipelineManager {
-    const pipeline = PipelineFactory.createDefaultPipeline({
-      enableLogging: true,
-    });
+    console.log('==== SPECIAL REPROCESSING DEBUG PIPELINE CREATED ====');
+    console.log('All stages enabled:', Object.keys(config.stages));
+    console.log('Reprocessing stage explicitly enabled.');
     
-    // Add logging middleware to each stage
-    const config = pipeline['config'] as PipelineConfig;
-    
-    Object.values(PipelineStage).forEach(stage => {
-      if (config.stages[stage]) {
-        config.stages[stage].middlewares.push(
-          createLoggingMiddleware('debug')
-        );
-      }
-    });
-    
-    return pipeline;
+    return config;
   }
 } 

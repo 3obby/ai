@@ -14,12 +14,15 @@ export interface ProcessingMetadata {
   preProcessed?: boolean;
   postProcessed?: boolean;
   recursionDepth?: number;
+  reprocessingDepth?: number;
   processingTime?: number;
   originalContent?: string;
   modifiedContent?: string;
   preprocessedContent?: string;
   postprocessedContent?: string;
   voiceProcessing?: VoiceProcessingMetadata;
+  needsReprocessing?: boolean;
+  processingStage?: string;
 }
 
 interface ProcessingInfoProps {
@@ -38,6 +41,10 @@ export function ProcessingInfo({ metadata }: ProcessingInfoProps) {
   };
   
   const hasVoiceMetadata = !!metadata.voiceProcessing;
+  const isReprocessing = metadata.processingStage?.includes('reprocessing') || 
+                         metadata.needsReprocessing === true || 
+                         (metadata.reprocessingDepth !== undefined && metadata.reprocessingDepth > 0);
+  const reprocessingDepth = metadata.reprocessingDepth || metadata.recursionDepth || 0;
   
   return (
     <div className="text-xs border border-muted rounded-md mt-2 overflow-hidden">
@@ -46,7 +53,12 @@ export function ProcessingInfo({ metadata }: ProcessingInfoProps) {
         className="w-full p-2 flex justify-between items-center bg-muted/20 hover:bg-muted/30 text-left"
       >
         <span className="font-medium flex items-center">
-          Processing Info {metadata.recursionDepth && metadata.recursionDepth > 0 ? `(Depth: ${metadata.recursionDepth})` : ''}
+          Processing Info 
+          {(reprocessingDepth > 0 || isReprocessing) && (
+            <span className="ml-2 text-amber-500">
+              Reprocessing {reprocessingDepth > 0 ? `(${reprocessingDepth})` : ''}
+            </span>
+          )}
           {hasVoiceMetadata && (
             <span className="ml-2 flex items-center text-primary">
               <Mic className="h-3 w-3 mr-0.5" />
@@ -72,9 +84,23 @@ export function ProcessingInfo({ metadata }: ProcessingInfoProps) {
           </div>
           
           <div className="flex justify-between">
-            <span>Recursion depth:</span>
-            <span>{metadata.recursionDepth || 0}</span>
+            <span>Reprocessing depth:</span>
+            <span>{reprocessingDepth}</span>
           </div>
+          
+          {metadata.needsReprocessing !== undefined && (
+            <div className="flex justify-between">
+              <span>Needs reprocessing:</span>
+              <span>{metadata.needsReprocessing ? '✓' : '✗'}</span>
+            </div>
+          )}
+          
+          {metadata.processingStage && (
+            <div className="flex justify-between">
+              <span>Processing stage:</span>
+              <span>{metadata.processingStage}</span>
+            </div>
+          )}
           
           <div className="flex justify-between">
             <span>Processing time:</span>

@@ -1,6 +1,14 @@
 {
   "commits": [
     {
+      "hash": "e710547",
+      "fullHash": "e710547f50136557065f8143a76fa144dc062580",
+      "date": "2025-03-22 17:31:53 +0700",
+      "author": "3obby",
+      "message": "cursor is broken",
+      "category": "other"
+    },
+    {
       "hash": "edeb699",
       "fullHash": "edeb699d0dd6258acf5dadf4ccb6e9358f2d574d",
       "date": "2025-03-22 13:14:49 +0700",
@@ -791,14 +799,6 @@
       "author": "3obby",
       "message": "Update README with file management details and structured group chat configuration roadmap",
       "category": "enhancement"
-    },
-    {
-      "hash": "7a75a4f",
-      "fullHash": "7a75a4f0ae7893256a1993291bb333286ecb7cbe",
-      "date": "2025-03-09 18:52:11 +0700",
-      "author": "3obby",
-      "message": "Move Files page to (root)/(routes), add left sidebar/navbar, implement 5GB storage limit",
-      "category": "feature"
     }
   ]
 }

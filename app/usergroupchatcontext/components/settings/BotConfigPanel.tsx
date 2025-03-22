@@ -94,6 +94,12 @@ export function BotConfigPanel({ botId, onClose }: BotConfigPanelProps) {
     if (onClose) {
       onClose();
     }
+
+    console.log('🔄 Saving bot settings with reprocessing config:', {
+      enableReprocessing: formValues.enableReprocessing,
+      reprocessingCriteria: formValues.reprocessingCriteria,
+      reprocessingInstructions: formValues.reprocessingInstructions
+    });
   };
 
   const handleToolSelection = (toolId: string) => {

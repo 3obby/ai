@@ -85,6 +85,7 @@ export interface ProcessingMetadata {
   postprocessedContent?: string;
   usedFallbackService?: boolean;
   error?: string;
+  reprocessingError?: string;
   voiceProcessing?: VoiceProcessingMetadata;
   userMessageId?: string; // Track which user message this responds to
   isVoiceGhost?: boolean; // Indicates if this message is from a voice ghost bot

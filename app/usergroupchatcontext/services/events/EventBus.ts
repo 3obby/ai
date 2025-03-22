@@ -5,6 +5,8 @@
  * Provides type-safe event subscription and publishing.
  */
 
+import { ProcessingEvents, ProcessingEventPayloads } from './ProcessingEvents';
+
 type EventCallback<T = any> = (data: T) => void;
 
 export interface EventMap {
@@ -116,6 +118,44 @@ export interface EventMap {
   
   // Custom events (can be extended by components)
   [key: `custom:${string}`]: any;
+  
+  // Processing lifecycle events
+  [ProcessingEvents.PROCESSING_STARTED]: ProcessingEventPayloads[ProcessingEvents.PROCESSING_STARTED];
+  [ProcessingEvents.PROCESSING_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.PROCESSING_COMPLETED];
+  [ProcessingEvents.PROCESSING_FAILED]: ProcessingEventPayloads[ProcessingEvents.PROCESSING_FAILED];
+  
+  // Stage start events
+  [ProcessingEvents.PREPROCESSING_STARTED]: ProcessingEventPayloads[ProcessingEvents.PREPROCESSING_STARTED];
+  [ProcessingEvents.TOOL_RESOLUTION_STARTED]: ProcessingEventPayloads[ProcessingEvents.TOOL_RESOLUTION_STARTED];
+  [ProcessingEvents.TOOL_EXECUTION_STARTED]: ProcessingEventPayloads[ProcessingEvents.TOOL_EXECUTION_STARTED];
+  [ProcessingEvents.LLM_CALL_STARTED]: ProcessingEventPayloads[ProcessingEvents.LLM_CALL_STARTED];
+  [ProcessingEvents.POSTPROCESSING_STARTED]: ProcessingEventPayloads[ProcessingEvents.POSTPROCESSING_STARTED];
+  [ProcessingEvents.REPROCESSING_STARTED]: ProcessingEventPayloads[ProcessingEvents.REPROCESSING_STARTED];
+  
+  // Stage completion events
+  [ProcessingEvents.PREPROCESSING_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.PREPROCESSING_COMPLETED];
+  [ProcessingEvents.TOOL_RESOLUTION_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.TOOL_RESOLUTION_COMPLETED];
+  [ProcessingEvents.TOOL_EXECUTION_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.TOOL_EXECUTION_COMPLETED];
+  [ProcessingEvents.LLM_CALL_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.LLM_CALL_COMPLETED];
+  [ProcessingEvents.POSTPROCESSING_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.POSTPROCESSING_COMPLETED];
+  [ProcessingEvents.REPROCESSING_COMPLETED]: ProcessingEventPayloads[ProcessingEvents.REPROCESSING_COMPLETED];
+  
+  // Stage error events
+  [ProcessingEvents.PREPROCESSING_FAILED]: ProcessingEventPayloads[ProcessingEvents.PREPROCESSING_FAILED];
+  [ProcessingEvents.TOOL_RESOLUTION_FAILED]: ProcessingEventPayloads[ProcessingEvents.TOOL_RESOLUTION_FAILED];
+  [ProcessingEvents.TOOL_EXECUTION_FAILED]: ProcessingEventPayloads[ProcessingEvents.TOOL_EXECUTION_FAILED];
+  [ProcessingEvents.LLM_CALL_FAILED]: ProcessingEventPayloads[ProcessingEvents.LLM_CALL_FAILED];
+  [ProcessingEvents.POSTPROCESSING_FAILED]: ProcessingEventPayloads[ProcessingEvents.POSTPROCESSING_FAILED];
+  [ProcessingEvents.REPROCESSING_FAILED]: ProcessingEventPayloads[ProcessingEvents.REPROCESSING_FAILED];
+  
+  // Reprocessing events
+  [ProcessingEvents.REPROCESSING_NEEDED]: ProcessingEventPayloads[ProcessingEvents.REPROCESSING_NEEDED];
+  [ProcessingEvents.REPROCESSING_SKIPPED]: ProcessingEventPayloads[ProcessingEvents.REPROCESSING_SKIPPED];
+  [ProcessingEvents.MAX_DEPTH_REACHED]: ProcessingEventPayloads[ProcessingEvents.MAX_DEPTH_REACHED];
+  
+  // Tool events
+  [ProcessingEvents.TOOL_CALLED]: ProcessingEventPayloads[ProcessingEvents.TOOL_CALLED];
+  [ProcessingEvents.TOOL_RESULT_RECEIVED]: ProcessingEventPayloads[ProcessingEvents.TOOL_RESULT_RECEIVED];
 }
 
 export interface EventFilter<T = any> {

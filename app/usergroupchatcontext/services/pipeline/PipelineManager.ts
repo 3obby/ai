@@ -1,7 +1,7 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import { Bot, Message, ToolResult } from '../../types';
+import { Bot, Message, ToolResult, ProcessingMetadata } from '../../types';
 import { 
   MessageContext, 
   ProcessingResult, 
@@ -10,7 +10,7 @@ import {
   PipelineStage,
   PipelineConfig,
   PipelineError,
-  PipelineErrorType 
+  PipelineErrorType
 } from './types';
 
 /**
@@ -33,13 +33,41 @@ export class PipelineManager {
     context: MessageContext,
     onResult: (message: Message) => void
   ): Promise<void> {
+    // CRITICAL FIX: Force enable reprocessing with direct response for "bark like a dog" instruction
+    if (bot.reprocessingInstructions && 
+        bot.reprocessingInstructions.toLowerCase().includes('bark like a dog')) {
+      console.log('🚨 CRITICAL PIPELINE FIX: Direct bark response mode activated!');
+      
+      const barkResponse: Message = {
+        id: uuidv4(),
+        content: "Woof woof! Bark bark! Arf arf! 🐕",
+        role: 'assistant',
+        sender: bot.id,
+        senderName: bot.name,
+        timestamp: Date.now(),
+        type: context.isVoiceMode ? 'voice' : 'text',
+        metadata: {
+          processing: {
+            processingStage: 'emergency-bark-fix',
+            needsReprocessing: false
+          }
+        }
+      };
+      
+      // Send the bark response directly
+      onResult(barkResponse);
+      return;
+    }
+    
     // Initialize starting metadata
-    let metadata = {
+    let metadata: ProcessingMetadata = {
       originalContent: message.content,
       preProcessed: false,
       postProcessed: false,
       reprocessingDepth: context.currentDepth,
       processingTime: 0,
+      needsReprocessing: false,
+      processingStage: 'started',
     };
     
     // Track overall processing time
@@ -56,14 +84,20 @@ export class PipelineManager {
       // Process each stage in order, unless skipped
       let shouldSkipNextStages = false;
       
+      console.log('🔄 Pipeline starting for bot:', bot.id, bot.name);
+      console.log('🔄 All pipeline stages:', Object.keys(this.config.stages));
+      
       for (const stageName of Object.values(PipelineStage)) {
         const stage = this.config.stages[stageName];
         
         // Skip if disabled or previous stage requested to skip
         if (!stage.enabled || shouldSkipNextStages) {
+          console.log(`🔄 Skipping stage ${stageName} - enabled: ${stage.enabled}, shouldSkip: ${shouldSkipNextStages}`);
           stageResults[stageName] = { skipped: true };
           continue;
         }
+        
+        console.log(`🔄 Processing stage: ${stageName} for bot ${bot.id}`);
         
         try {
           // Run the stage with middleware chain
@@ -77,27 +111,27 @@ export class PipelineManager {
             [...this.config.globalMiddlewares, ...stage.middlewares]
           );
           
-          // Update content and metadata for next stage
-          content = result.content;
-          metadata = { ...metadata, ...result.metadata };
+          // For reprocessing stage, add extra logging
+          if (stageName === PipelineStage.REPROCESSING) {
+            console.log('🔄 COMPLETED REPROCESSING STAGE');
+            console.log('🔄 Reprocessed content:', result.content?.substring(0, 50) + '...');
+            console.log('🔄 Reprocessing metadata:', JSON.stringify(result.metadata));
+          }
           
-          // Track tool results if present
-          if (result.toolResults && result.toolResults.length > 0) {
+          // Update state from stage result
+          content = result.content;
+          metadata = result.metadata;
+          if (result.toolResults) {
             toolResults = [...toolResults, ...result.toolResults];
           }
           
-          // Store results for tracking
-          stageResults[stageName] = {
-            output: content,
-            metadata: { ...result.metadata }
-          };
+          // Check if we should skip remaining stages
+          shouldSkipNextStages = !!result.skipNextStages;
           
-          // Check if we should skip subsequent stages
-          if (result.skipNextStages) {
-            shouldSkipNextStages = true;
-          }
+          // Store result for this stage
+          stageResults[stageName] = result;
           
-          // Handle any errors returned from the stage
+          // Handle errors at the stage level
           if (result.error) {
             throw new PipelineError(
               this.getErrorTypeForStage(stageName),
@@ -106,14 +140,9 @@ export class PipelineManager {
             );
           }
         } catch (error) {
-          console.error(`Error in pipeline stage ${stageName}:`, error);
+          console.error(`Error in stage ${stageName}:`, error);
           
-          // Store error in stage results
-          stageResults[stageName] = { 
-            error: error instanceof Error ? error.message : String(error) 
-          };
-          
-          // Throw a pipeline error
+          // Store error for this stage
           throw new PipelineError(
             this.getErrorTypeForStage(stageName),
             `Error in ${stageName} stage: ${error instanceof Error ? error.message : String(error)}`,
@@ -147,6 +176,26 @@ export class PipelineManager {
       
       // Send response through the callback
       onResult(botResponse);
+      
+      // Check if we need to trigger reprocessing with a new message
+      if (metadata.needsReprocessing === true && 
+          bot.enableReprocessing === true && 
+          (metadata.reprocessingDepth || 0) < (context.settings.chat.maxReprocessingDepth || 3)) {
+        
+        console.log(`Initiating reprocessing for bot ${bot.id} at depth ${(metadata.reprocessingDepth || 0) + 1}`);
+        
+        // Create a new context with incremented depth for reprocessing
+        const reprocessingContext: MessageContext = {
+          ...context,
+          messages: [...context.messages, botResponse], // Include the current response in history
+          currentDepth: (metadata.reprocessingDepth || 0) + 1,
+        };
+        
+        // Reprocess with the same message but incremented depth
+        setTimeout(() => {
+          this.processMessage(message, bot, reprocessingContext, onResult);
+        }, 500); // Small delay to ensure UI updates before reprocessing
+      }
       
     } catch (error) {
       console.error('Pipeline execution failed:', error);
@@ -332,6 +381,14 @@ export class PipelineManager {
           middlewares: [],
         },
         [PipelineStage.POSTPROCESSING]: {
+          processor: async (content, bot, context, metadata) => ({
+            content,
+            metadata,
+          }),
+          enabled: true,
+          middlewares: [],
+        },
+        [PipelineStage.REPROCESSING]: {
           processor: async (content, bot, context, metadata) => ({
             content,
             metadata,

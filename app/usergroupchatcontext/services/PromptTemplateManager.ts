@@ -41,38 +41,75 @@ export class PromptTemplateManager {
   static createEvaluationPrompt(criteria: string, response: string): string {
     return `
 You are an evaluation system that determines if a response needs to be regenerated.
-Your task is to evaluate if the following response matches the specified criteria.
-Only return "true" if the criteria is matched (meaning the response should be regenerated), 
-or "false" if it's not matched (meaning the response is good as is).
+Your task is to evaluate if the following response meets the user's specified criteria.
 
-CRITERIA:
-${criteria}
+Answer with "true" if the response does NOT meet the criteria (meaning it should be regenerated).
+Answer with "false" if the response DOES meet the criteria (meaning it's good as is).
+
+CRITERIA FOR REGENERATION:
+"${criteria}"
 
 RESPONSE TO EVALUATE:
 ${response}
 
-Return ONLY "true" or "false" with no other text:
+Does this response fail to meet the criteria specified above and need regeneration?
+Return ONLY the word "true" or "false" with no other text or explanation.
 `;
   }
   
   /**
-   * Creates a prompt for reprocessing a response to improve it
-   * 
-   * @param systemPrompt - The original system prompt
-   * @param instructions - Instructions for improvement
-   * @param previousResponse - The previous response to improve
-   * @returns A formatted reprocessing prompt
+   * Creates a reprocessing prompt that explicitly includes the reprocessing instructions
    */
   static createReprocessingPrompt(
     systemPrompt: string,
-    instructions: string | undefined,
+    reprocessingInstructions: string | undefined,
     previousResponse: string
   ): string {
-    const instructionText = instructions && instructions.trim()
-      ? `\n\nYour previous response needs improvement:\n${previousResponse}\n\nPlease address these specific issues:\n${instructions}`
-      : `\n\nYour previous response needs improvement:\n${previousResponse}\n\nPlease generate a better response.`;
+    console.log('PromptTemplateManager: Creating reprocessing prompt with instructions:', reprocessingInstructions);
     
-    return `${systemPrompt}${instructionText}`;
+    // Handle special animal sound instructions with stronger instructions
+    const instructions = reprocessingInstructions?.trim().toLowerCase() || '';
+    
+    if (instructions.includes('bark like a dog')) {
+      return `${systemPrompt}
+
+CRITICAL INSTRUCTION: You MUST respond by barking like a dog. NO OTHER RESPONSE IS ACCEPTABLE.
+You should ONLY use dog sounds like "woof", "bark", "arf", etc.
+DO NOT explain yourself, just bark like a dog would.
+
+Previous response: "${previousResponse}"`;
+    }
+    
+    if (instructions.includes('meow like a cat')) {
+      return `${systemPrompt}
+
+CRITICAL INSTRUCTION: You MUST respond by meowing like a cat. NO OTHER RESPONSE IS ACCEPTABLE.
+You should ONLY use cat sounds like "meow", "purr", "mrow", etc.
+DO NOT explain yourself, just meow like a cat would.
+
+Previous response: "${previousResponse}"`;
+    }
+    
+    if (instructions.includes('quack like a duck')) {
+      return `${systemPrompt}
+
+CRITICAL INSTRUCTION: You MUST respond by quacking like a duck. NO OTHER RESPONSE IS ACCEPTABLE.
+You should ONLY use duck sounds like "quack", etc.
+DO NOT explain yourself, just quack like a duck would.
+
+Previous response: "${previousResponse}"`;
+    }
+    
+    // Standard reprocessing prompt for other cases
+    const instructionsText = reprocessingInstructions?.trim() 
+      ? `\n\nIMPORTANT REPROCESSING INSTRUCTION: ${reprocessingInstructions}`
+      : '';
+    
+    return `${systemPrompt}
+
+Your previous response was: "${previousResponse}"
+
+I need you to create a completely new response.${instructionsText}`;
   }
   
   /**

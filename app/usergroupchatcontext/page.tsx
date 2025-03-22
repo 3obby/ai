@@ -18,6 +18,7 @@ import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
 import VoiceCommandController from './components/voice/VoiceCommandController';
 import EventLoggerButton from './components/debug/EventLoggerButton';
+import DebugTools from './components/debug/DebugTools';
 import './mobile.css';
 
 // Component to initialize bots after mounting
@@ -211,8 +212,20 @@ function BotsInitializer() {
 }
 
 export default function GroupChatContextPage() {
+  // Create a default bot object for debugging
+  const defaultDebugBot = {
+    id: 'default',
+    name: 'AI Assistant',
+    description: 'A helpful assistant',
+    avatar: '',
+    model: 'gpt-4o',
+    systemPrompt: '',
+    temperature: 0.7,
+    maxTokens: 1000,
+    enabled: true,
+    useTools: false
+  };
   
-  // Get environment to conditionally show debug tools
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
@@ -230,11 +243,13 @@ export default function GroupChatContextPage() {
                         {/* Event Debug Tools - only in development */}
                         {isDevelopment && <EventLoggerButton />}
                         
-                     
-                        
                         {/* Main content */}
                         <div className="flex-1 min-h-0 flex flex-col">
                           <ChatInterface />
+                          <DebugTools 
+                            bot={defaultDebugBot} 
+                            isVisible={isDevelopment}
+                          />
                         </div>
                         
                         {/* Add voice-related components */}
