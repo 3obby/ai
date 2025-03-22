@@ -2,58 +2,8 @@
 
 import { StageProcessor, PipelineError, PipelineErrorType } from '../types';
 import { ProcessingMetadata } from '../../../types';
-
-/**
- * Process a message with an LLM using the provided prompt
- */
-async function processWithLLM(
-  content: string,
-  prompt: string,
-  model: string
-): Promise<string> {
-  // Prepare message format for OpenAI API
-  const messages = [
-    {
-      role: 'system',
-      content: prompt
-    },
-    {
-      role: 'user',
-      content
-    }
-  ];
-  
-  try {
-    // Call the OpenAI API through our endpoint
-    const response = await fetch('/usergroupchatcontext/api/openai/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model || 'gpt-4o',
-        messages,
-        temperature: 0.3,
-        max_tokens: 1000
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.choices && data.choices.length > 0) {
-      return data.choices[0].message.content || content;
-    } else {
-      throw new Error('No response content received from OpenAI');
-    }
-  } catch (error) {
-    console.error('Error processing with LLM:', error);
-    throw error;
-  }
-}
+import { processingTracker } from '../../ProcessingTracker';
+import { LLMService } from '../../LLMService';
 
 /**
  * Preprocesses a message using the bot's preprocessing prompt if available
@@ -78,7 +28,8 @@ export const PreprocessingProcessor: StageProcessor = async (
       metadata: {
         ...metadata,
         preProcessed: false,
-        preprocessedContent: undefined
+        preprocessedContent: undefined,
+        processingStage: 'skipped-preprocessing'
       }
     };
   }
@@ -86,11 +37,14 @@ export const PreprocessingProcessor: StageProcessor = async (
   // Track the start time for performance monitoring
   const startTime = Date.now();
   
+  // Update processing stage
+  processingTracker.startPreProcessing(bot.id);
+  
   try {
-    // Process content with bot's preprocessing prompt
-    const processedContent = await processWithLLM(
+    // Process content with bot's preprocessing prompt using the specialized LLMService method
+    const processedContent = await LLMService.preprocessUserInput(
       content,
-      bot.preProcessingPrompt,
+      bot.preProcessingPrompt || '', // Handle undefined with empty string
       bot.model
     );
     
@@ -100,17 +54,24 @@ export const PreprocessingProcessor: StageProcessor = async (
     // Check if content was modified
     const wasModified = processedContent !== content;
     
+    // End preprocessing stage
+    processingTracker.endPreProcessing(bot.id);
+    
     return {
       content: processedContent,
       metadata: {
         ...metadata,
         preProcessed: wasModified,
         preprocessedContent: wasModified ? processedContent : undefined,
-        preprocessingTime: processingTime
+        preprocessingTime: processingTime,
+        processingStage: 'completed-preprocessing'
       }
     };
   } catch (error) {
     console.error('Error in preprocessing:', error);
+    
+    // End preprocessing stage with error
+    processingTracker.endPreProcessing(bot.id);
     
     // Create a pipeline error
     const pipelineError = new PipelineError(
@@ -126,7 +87,8 @@ export const PreprocessingProcessor: StageProcessor = async (
         ...metadata,
         preProcessed: false,
         preprocessingTime: Date.now() - startTime,
-        preprocessingError: pipelineError.message
+        preprocessingError: pipelineError.message,
+        processingStage: 'error-preprocessing'
       },
       error: pipelineError
     };

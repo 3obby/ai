@@ -14,7 +14,7 @@ export function PromptsButton() {
 
   return (
     <button 
-      className="topbar-prompts-button p-2 rounded-full hover:bg-muted flex items-center justify-center"
+      className="topbar-prompts-button p-2 hover:bg-muted flex items-center justify-center"
       onClick={handleClick}
       aria-label="Toggle prompts drawer"
     >

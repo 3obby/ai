@@ -4,6 +4,8 @@
 
 GroupChatContext provides a minimalist, mobile-first group chat interface where users can communicate with one or more AI bots through both text and voice. The system features a unified text chat that serves as the central communication hub, capturing all interactions regardless of input method.
 
+We're using livekit to connect to openai, here's documentation: https://docs.livekit.io/agents/integrations/openai/realtime/
+
 ## Key Terminology
 
 - **Blackbar**: The bottom navigation bar that contains the text input field, voice mode button, and send button. Acts as the primary control center for all user interactions in text mode.
@@ -247,12 +249,12 @@ We have shifted our efforts to create a robust production-ready system. By defau
    - [X] Implement proper bot status tracking with temporary pause for original bots
    - [X] Fix the multiple-voice response issue by ensuring only voice ghosts respond in voice mode
 
-6. [_] **Fix Voice Mode Erroneous Additional Responses** (Priority: Critical)
-   - [_] Implement centralized message processing lock to prevent concurrent processing
-   - [_] Enhance message correlation with unique IDs to track user message to bot response relationships
-   - [_] Create unified transcription processing service to eliminate redundant handlers
-   - [_] Implement strict mode-based message routing that respects voice/text mode boundaries
-   - [_] Add response coordination with proper cooldown periods between voice outputs
+6. [X] **Fix Voice Mode Erroneous Additional Responses** (Priority: Critical)
+   - [X] Implement centralized message processing lock to prevent concurrent processing
+   - [X] Enhance message correlation with unique IDs to track user message to bot response relationships
+   - [X] Create unified transcription processing service to eliminate redundant handlers
+   - [X] Implement strict mode-based message routing that respects voice/text mode boundaries
+   - [X] Add response coordination with proper cooldown periods between voice outputs
 
 7. [_] **Complete Voice-to-Text Transition** (Priority: High)
    - [X] Create system to re-enable processing hooks when returning to text mode
@@ -353,6 +355,127 @@ We have shifted our efforts to create a robust production-ready system. By defau
     - [_] Enhance voice activity detection accuracy in noisy environments
     - [_] Add support for multiple languages
 
+## UI Enhancements
+
+We have implemented several UI improvements to make the chat interface more intuitive and feature-rich:
+
+1. **Bot Counter in Header**
+   - The top navigation bar now shows a clear count of active bots in the conversation
+   - Displays a Lucide bot icon followed by the number of active bots
+   - Provides users with immediate visibility into how many bots are participating
+
+2. **Segregated Settings System**
+   - **Bot-specific settings** are accessed by clicking on the bot's avatar or name in the chat
+   - Bot settings are organized into clear categories:
+     - Identity (name, description, system prompt)
+     - Model (model selection, temperature, max tokens)
+     - Processing (pre/post processing, reprocessing)
+     - Tools (tool enablement and configuration)
+   - **Group-wide settings** are accessed through the Settings gear icon in the top bar
+   - Group settings focus on chat-level configurations:
+     - Active bots selection
+     - Response mode (sequential vs. parallel)
+     - Voice mode configuration
+     - UI preferences
+
+3. **Improved Settings Modals**
+   - BotSettingsModal now displays the bot's name in the title
+   - GroupSettingsPanel includes guidance on how to access bot-specific settings
+   - Clear visual distinction between bot-level and group-level settings
+   - Each settings category is properly organized with relevant controls
+
+4. **Advanced Reprocessing Control**
+   - Added "Try this again if..." criteria field for bot reprocessing
+   - Allows users to specify conditions that trigger response regeneration
+   - A fresh GPT instance evaluates if responses meet the specified criteria
+   - Automatically disables reprocessing if no criteria are specified
+   - Added "Reprocessing Instructions" field to provide additional guidance
+   - Provides fine-grained control over response quality standards
+
+5. **Signal Chain Status Indication**
+   - Added real-time processing stage indicators in the typing status
+   - Shows when a bot is in pre-processing, tool use, post-processing, or reprocessing
+   - Displays which tools are being used when in tool-calling stage
+   - Shows reprocessing attempt count (e.g., "reprocessing (2/3)")
+   - Provides transparent insight into the bot's thought process
+   - Creates a more engaging and informative user experience
+
+These improvements ensure users can easily understand which bots are active in the conversation, track their processing stages, and provide intuitive access to both bot-specific and group-wide settings through a consistent interface.
+
+## Signal Chain and Reprocessing Improvements
+
+We've implemented a robust tracking system for message processing stages and improved the reprocessing functionality:
+
+1. **Processing Stage Tracking**
+   - Added real-time tracking of all processing stages: pre-processing, tool-calling, post-processing, reprocessing
+   - Created a dedicated `ProcessingStateProvider` context to centralize processing state
+   - Implemented a singleton `ProcessingTrackerService` for consistent access across components
+   - Visual indicators in the typing status show current processing stage for each bot
+
+2. **Enhanced Reprocessing System**
+   - Implemented criteria-based reprocessing with GPT evaluation
+   - Added "Try this again if..." input field in bot settings to define reprocessing criteria
+   - Added "Reprocessing Instructions" input field to guide improved responses
+   - Created separate ReprocessingProcessor to handle response regeneration
+   - Made reprocessing logic work independently of post-processing enablement
+   - Added special handling for "yes", "true", or "always" criteria for easy testing
+   - Added proper tracking of reprocessing attempts against global maximum
+
+3. **Improved Processing Feedback**
+   - Added stage indicators in typing status (e.g., "Bot is pre-processing...")
+   - Show tool usage in typing status (e.g., "Bot is using Brave Search...")
+   - Display reprocessing count (e.g., "Bot is reprocessing (2/3)...")
+   - All processing stages connect to the bot settings for proper configuration
+
+4. **Architecture Improvements**
+   - Unified processing state tracking across all components
+   - Implemented a cleaner separation of processing stages
+   - Added proper error handling for each processing stage
+   - Ensured reprocessing respects global depth limits
+   - Fixed issue where reprocessing was skipped when post-processing was disabled
+   - Added comprehensive logging to facilitate debugging
+
+These improvements make the processing stages more transparent to users and ensure that reprocessing is properly configured and triggered based on user-defined criteria, regardless of other pipeline settings.
+
+## Architecture Improvements for Single-Responsibility
+
+Following the single-responsibility principle, we've significantly improved the architecture of the system:
+
+1. **Centralized LLM Service**
+   - Created a dedicated `LLMService` that handles all API calls to language models
+   - Removed duplicated LLM interaction code from processors
+   - Centralized error handling for API calls
+   - Added specialized methods for different use cases (preprocessing, postprocessing, evaluation)
+   - Makes it easier to swap models, add caching, or change providers
+
+2. **Separated Prompt Management**
+   - Implemented a `PromptTemplateManager` to handle all prompt templates
+   - Removed prompt string construction from processing components
+   - Created consistent prompt formatting across the system
+   - Makes prompts easier to test, version, and modify
+
+3. **Isolated Reprocessing Evaluation**
+   - Created a dedicated `ReprocessingEvaluator` to handle reprocessing decisions
+   - Separated evaluation logic from processing and tracking logic
+   - Provided clear, focused responsibility for determining when to reprocess
+   - Added detailed logging for reprocessing decisions
+
+4. **Cleaner Component Responsibilities**
+   - Each processor now focuses solely on its specific transformation
+   - The `PreprocessingProcessor` only handles preprocessing logic
+   - The `PostprocessingProcessor` only handles postprocessing logic
+   - The `ReprocessingProcessor` only handles reprocessing logic
+   - The `ProcessingTracker` only handles state tracking
+
+These architectural improvements have several benefits:
+- **Maintainability**: Each component has a clear, singular responsibility
+- **Testability**: Components can be tested in isolation
+- **Flexibility**: Easier to modify one component without affecting others
+- **Readability**: Code is more organized and intention-revealing
+- **Reusability**: Services can be reused across different parts of the application
+
+By following the single-responsibility principle, we've made the codebase more robust, easier to understand, and better positioned for future enhancements.
+
 ## Type System
 
 ```typescript
@@ -380,6 +503,8 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
+  reprocessingCriteria?: string;
+  reprocessingInstructions?: string;
   voiceSettings?: BotVoiceSettings;
 }
 
@@ -444,6 +569,10 @@ export interface ProcessingMetadata {
   voiceProcessing?: VoiceProcessingMetadata;
   userMessageId?: string; // Track which user message this responds to
   isVoiceGhost?: boolean; // Indicates if this message is from a voice ghost bot
+  fromVoiceMode?: boolean; // Indicates if this message originated from voice mode
+  processingStage?: string; // Current stage in the processing pipeline: 'pre-processing', 'tool-calling', 'post-processing', 'reprocessing'
+  activeTools?: string[]; // List of tools currently being used
+  needsReprocessing?: boolean; // Whether the message needs to be reprocessed
 }
 
 // Voice-related settings
@@ -569,19 +698,20 @@ export type GroupChatAction =
   ├── chat/
     ├── ChatContainer.tsx (0.4KB)
     ├── ChatHeader.tsx (1.1KB)
-    ├── ChatInput.tsx (9.2KB)
-    ├── ChatInterface.tsx (6.7KB)
+    ├── ChatInput.tsx (9.9KB)
+    ├── ChatInterface.tsx (6.8KB)
     ├── GhostPromptsList.tsx (3.8KB)
+    ├── HoldRecordVoiceMessageButton.tsx (9.1KB)
     ├── MessageBubble.tsx (3.5KB)
     ├── MessageInput.tsx (2.7KB)
     ├── MessageItem.tsx (22.6KB)
-    ├── MessageList.tsx (1.9KB)
+    ├── MessageList.tsx (2.4KB)
     ├── MessageSpeaker.tsx (2.2KB)
     ├── OpenAIVoiceButton.tsx (3.6KB)
-    ├── PromptIndicator.tsx (1.1KB)
-    ├── TypingIndicator.tsx (1.5KB)
-    ├── VoiceInputButton.tsx (14.5KB)
-    ├── VoiceModeRedbar.tsx (17.4KB)
+    ├── PromptIndicator.tsx (0.9KB)
+    ├── TypingIndicator.tsx (2.9KB)
+    ├── VoiceInputButton.tsx (14.4KB)
+    ├── VoiceModeRedbar.tsx (18KB)
   ├── debug/
     ├── DebugInfo.tsx (6.8KB)
     ├── EventLoggerButton.tsx (6.5KB)
@@ -598,9 +728,9 @@ export type GroupChatAction =
     ├── prompts.css (5.7KB)
   ├── settings/
     ├── AccessibilitySettingsPanel.tsx (9.5KB)
-    ├── BotConfigPanel.tsx (21.8KB)
-    ├── BotSettingsModal.tsx (1KB)
-    ├── GroupSettingsPanel.tsx (37.2KB)
+    ├── BotConfigPanel.tsx (22.8KB)
+    ├── BotSettingsModal.tsx (1.6KB)
+    ├── GroupSettingsPanel.tsx (36.6KB)
     ├── PromptEditor.tsx (4.8KB)
     ├── SettingsModal.tsx (3.5KB)
     ├── SettingsPanel.tsx (10.4KB)
@@ -629,7 +759,6 @@ export type GroupChatAction =
     ├── VoiceResponseManager.tsx (6KB)
     ├── VoiceTextTransitionHandler.tsx (3.7KB)
     ├── VoiceTransitionEventManager.tsx (6.8KB)
-    ├── VoiceTransitionFeedback.tsx (4.4KB)
     ├── WebSpeechTest.tsx (8.9KB)
 ├── context/
   ├── BotRegistryContext.tsx (1.7KB) # Context definition
@@ -638,6 +767,7 @@ export type GroupChatAction =
   ├── GroupChatProvider.tsx (6.7KB) # State/service provider
   ├── LiveKitIntegrationProvider.tsx (40.4KB) # State/service provider
   ├── LiveKitProvider.tsx (10.7KB) # State/service provider
+  ├── ProcessingStateProvider.tsx (4.5KB) # State/service provider
   ├── PromptsContext.tsx (8.6KB) # Context definition
   ├── ToolCallProvider.tsx (5.4KB) # State/service provider
   ├── VoiceStateContext.tsx (3.6KB) # Context definition
@@ -653,7 +783,7 @@ export type GroupChatAction =
   ├── useGroupChat.ts (3.2KB)
   ├── useLiveKit.ts (4KB)
   ├── usePromptProcessor.ts (3.3KB)
-  ├── useRealGroupChat.ts (6.3KB)
+  ├── useRealGroupChat.ts (8.2KB)
   ├── useToolIntegration.ts (6.9KB)
   ├── useTurnTaking.ts (4.2KB)
   ├── useVoiceActivity.ts (2.5KB)
@@ -661,12 +791,17 @@ export type GroupChatAction =
   ├── useVoiceState.ts (3.8KB)
   ├── useVoiceStateStore.ts (5.9KB)
   ├── useVoiceToolConfirmation.ts (2.1KB)
+  ├── useVoiceTranscription.ts (3.7KB)
 ├── layout.tsx (0.4KB)
-├── llm_copilot_overview_and_todo.md (80.1KB)
+├── llm_copilot_overview_and_todo.md (31.3KB)
 ├── mobile.css (5.1KB)
-├── page.tsx (9.4KB)
+├── page.tsx (9.5KB)
 ├── scripts/
 ├── services/
+  ├── LLMService.ts (5.5KB) # Service implementation
+  ├── ProcessingTracker.ts (5.1KB)
+  ├── PromptTemplateManager.ts (3.3KB)
+  ├── ReprocessingEvaluator.ts (2.4KB)
   ├── connection/
     ├── ConnectionManager.ts (20.5KB)
   ├── events/
@@ -686,7 +821,7 @@ export type GroupChatAction =
     ├── session-connection-manager.ts (8.6KB)
     ├── speech-synthesis-service.ts (6.2KB)
     ├── tool-detection-service.ts (6.2KB)
-    ├── transcription-manager.ts (11.1KB)
+    ├── transcription-manager.ts (11.5KB)
     ├── turn-taking-service.ts (20.3KB)
     ├── voice-activity-service.ts (17.4KB)
   ├── mockBotService.ts (8KB) # Service implementation
@@ -694,7 +829,7 @@ export type GroupChatAction =
   ├── openaiRealtimeService.ts (12.8KB) # Service implementation
   ├── pineconeService.ts (1.6KB) # Service implementation
   ├── pipeline/
-    ├── PipelineFactory.ts (3.5KB)
+    ├── PipelineFactory.ts (3.9KB)
     ├── PipelineManager.ts (10.1KB)
     ├── index.ts (0.3KB)
     ├── middlewares/
@@ -702,13 +837,15 @@ export type GroupChatAction =
     ├── processors/
       ├── DeduplicationProcessor.ts (3.8KB)
       ├── LLMCallProcessor.ts (4.8KB)
-      ├── PostprocessingProcessor.ts (4.4KB)
-      ├── PreprocessingProcessor.ts (3.3KB)
+      ├── PostprocessingProcessor.ts (7.3KB)
+      ├── PreprocessingProcessor.ts (2.8KB)
+      ├── ReprocessingChecker.ts (5.4KB)
+      ├── ReprocessingProcessor.ts (3.2KB)
       ├── ToolExecutionProcessor.ts (4.6KB)
       ├── ToolResolutionProcessor.ts (2.5KB)
-      ├── index.ts (0.4KB)
-    ├── types.ts (2.4KB) # Type definitions
-  ├── prompt-processor-service.ts (16.1KB)
+      ├── index.ts (0.5KB)
+    ├── types.ts (2.3KB) # Type definitions
+  ├── prompt-processor-service.ts (18.7KB)
   ├── toolCallService.ts (5.8KB) # Service implementation
   ├── toolProcessorService.ts (4.7KB) # Service implementation
   ├── tools/
@@ -725,11 +862,11 @@ export type GroupChatAction =
   ├── voiceSynthesisService.ts (12.7KB) # Service implementation
   ├── voiceToolCallingService.ts (11.8KB) # Service implementation
   ├── voiceToolRegistry.ts (2.9KB)
-  ├── voiceTranscriptionService.ts (7.3KB) # Service implementation
+  ├── voiceTranscriptionService.ts (7.6KB) # Service implementation
 ├── speech-test/
   ├── page.tsx (0.9KB)
 ├── styles/
-  ├── blackbar.css (4.6KB)
+  ├── blackbar.css (5.1KB)
 ├── tempfix.ts (0.1KB)
 ├── types/
   ├── bots.ts (1.5KB)
@@ -739,11 +876,11 @@ export type GroupChatAction =
   ├── prompts.ts (1.2KB)
   ├── settings.ts (3.1KB)
   ├── voice.ts (5.2KB)
-├── types.ts (4.8KB) # Type definitions
+├── types.ts (5.2KB) # Type definitions
 ├── utils/
   ├── generateReadme.js (4.6KB)
   ├── livekit-auth.ts (2.9KB)
-  ├── llm_copilot_part1.md (18.4KB)
+  ├── llm_copilot_part1.md (25.2KB)
   ├── llm_copilot_todo.txt (1.5KB)
   ├── toolResponseFormatter.ts (3.7KB)
 ```

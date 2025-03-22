@@ -5,7 +5,7 @@ import { useRealGroupChat } from '../../hooks/useRealGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
 import { SettingsModal } from '../settings/SettingsModal';
 import { BotSettingsModal } from '../settings/BotSettingsModal';
-import { Settings, Mic, VolumeX, Volume2 } from 'lucide-react';
+import { Settings, Mic, VolumeX, Volume2, Bot } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageItem } from './MessageItem';
 import { ChatInput } from './ChatInput';
@@ -18,7 +18,7 @@ import VoiceBotSelector from '../voice/VoiceBotSelector';
 import VoiceContextInheritance from '../voice/VoiceContextInheritance';
 import VoiceTextTransitionHandler from '../voice/VoiceTextTransitionHandler';
 import { cn } from '@/lib/utils';
-import { Bot } from '../../types';
+import { Bot as BotType } from '../../types';
 import { useLiveKitIntegration } from '../../context/LiveKitIntegrationProvider';
 import multimodalAgentService from '../../services/livekit/multimodal-agent-service';
 import { useGroupChatContext } from '../../context/GroupChatContext';
@@ -36,6 +36,9 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
   const { isBotSpeaking, isListening, isInVoiceMode } = useLiveKitIntegration();
   const { sendMessage } = useRealGroupChat();
   const bots = botState.availableBots;
+  
+  // Get active bots count
+  const activeBotCount = state.settings?.activeBotIds?.length || 0;
   
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
@@ -91,7 +94,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
     setShowVoiceBotSelector(!showVoiceBotSelector);
   };
 
-  const handleVoiceBotSelected = (voiceBot: Bot) => {
+  const handleVoiceBotSelected = (voiceBot: BotType) => {
     // Hide the selector after a bot is selected
     setShowVoiceBotSelector(false);
   };
@@ -127,6 +130,10 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/10">
         <div className="flex items-center">
           <h2 className="font-medium text-sm">AI Assistant</h2>
+          <span className="inline-flex items-center gap-0.5 text-xs text-primary/80 border-r border-r-input pr-1 mr-1 py-1 ml-3">
+            <Bot className="h-3 w-3 mr-0.5" />
+            <span className="font-medium">{activeBotCount}</span>
+          </span>
         </div>
         <button
           onClick={toggleSettings}
@@ -142,6 +149,7 @@ export function ChatInterface({ className = '' }: ChatInterfaceProps) {
         <MessageList
           messages={state.messages}
           showDebugInfo={state.settings?.ui?.showDebugInfo || false}
+          onBotSettingsClick={handleBotSettingsClick}
         />
       </div>
       

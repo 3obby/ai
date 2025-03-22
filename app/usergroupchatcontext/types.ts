@@ -22,6 +22,8 @@ export interface Bot {
   enabled: boolean;
   useTools: boolean;
   enableReprocessing?: boolean;
+  reprocessingCriteria?: string;
+  reprocessingInstructions?: string;
   voiceSettings?: BotVoiceSettings;
 }
 
@@ -87,6 +89,9 @@ export interface ProcessingMetadata {
   userMessageId?: string; // Track which user message this responds to
   isVoiceGhost?: boolean; // Indicates if this message is from a voice ghost bot
   fromVoiceMode?: boolean; // Indicates if this message originated from voice mode
+  processingStage?: string; // Current stage in the processing pipeline: 'pre-processing', 'tool-calling', 'post-processing', 'reprocessing'
+  activeTools?: string[]; // List of tools currently being used
+  needsReprocessing?: boolean; // Whether the message needs to be reprocessed
 }
 
 // Voice-related settings

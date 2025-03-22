@@ -5,10 +5,12 @@ import { MessageItem } from './MessageItem';
 import { Message } from '../../types';
 import { TypingIndicator } from './TypingIndicator';
 import { useGroupChatContext } from '../../context/GroupChatContext';
+import { useProcessingState } from '../../context/ProcessingStateProvider';
 
 interface MessageListProps {
   messages: Message[];
   showDebugInfo?: boolean;
+  onBotSettingsClick?: (botId: string) => void;
 }
 
 /**
@@ -17,8 +19,13 @@ interface MessageListProps {
  * Renders the list of messages in the chat interface
  * with automatic scrolling to the latest message.
  */
-export function MessageList({ messages, showDebugInfo = false }: MessageListProps) {
+export function MessageList({ 
+  messages, 
+  showDebugInfo = false,
+  onBotSettingsClick
+}: MessageListProps) {
   const { state, dispatch } = useGroupChatContext();
+  const { state: processingState } = useProcessingState();
   const bottomRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom when new messages arrive
@@ -28,8 +35,13 @@ export function MessageList({ messages, showDebugInfo = false }: MessageListProp
     }
   }, [messages.length]);
   
-  const handleBotSettingsClick = (botId: string) => {
-    dispatch({ type: 'SET_SELECTED_BOT', payload: botId });
+  // Use the passed handler if provided, otherwise use the local one
+  const handleBotSettings = (botId: string) => {
+    if (onBotSettingsClick) {
+      onBotSettingsClick(botId);
+    } else {
+      dispatch({ type: 'SET_SELECTED_BOT', payload: botId });
+    }
   };
   
   return (
@@ -48,7 +60,7 @@ export function MessageList({ messages, showDebugInfo = false }: MessageListProp
               showTimestamp={true}
               showAvatar={true}
               showDebugInfo={showDebugInfo}
-              onBotSettingsClick={handleBotSettingsClick}
+              onBotSettingsClick={handleBotSettings}
             />
           ))}
         </div>
@@ -56,7 +68,11 @@ export function MessageList({ messages, showDebugInfo = false }: MessageListProp
       
       {state.typingBotIds?.length > 0 && (
         <div className="px-3 py-2">
-          <TypingIndicator botIds={state.typingBotIds} />
+          <TypingIndicator
+            botIds={state.typingBotIds}
+            processingStages={processingState.processingStages}
+            activeTools={processingState.activeTools}
+          />
         </div>
       )}
       

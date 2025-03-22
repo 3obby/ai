@@ -354,3 +354,124 @@ We have shifted our efforts to create a robust production-ready system. By defau
     - [_] Implement natural turn-taking mechanisms
     - [_] Enhance voice activity detection accuracy in noisy environments
     - [_] Add support for multiple languages
+
+## UI Enhancements
+
+We have implemented several UI improvements to make the chat interface more intuitive and feature-rich:
+
+1. **Bot Counter in Header**
+   - The top navigation bar now shows a clear count of active bots in the conversation
+   - Displays a Lucide bot icon followed by the number of active bots
+   - Provides users with immediate visibility into how many bots are participating
+
+2. **Segregated Settings System**
+   - **Bot-specific settings** are accessed by clicking on the bot's avatar or name in the chat
+   - Bot settings are organized into clear categories:
+     - Identity (name, description, system prompt)
+     - Model (model selection, temperature, max tokens)
+     - Processing (pre/post processing, reprocessing)
+     - Tools (tool enablement and configuration)
+   - **Group-wide settings** are accessed through the Settings gear icon in the top bar
+   - Group settings focus on chat-level configurations:
+     - Active bots selection
+     - Response mode (sequential vs. parallel)
+     - Voice mode configuration
+     - UI preferences
+
+3. **Improved Settings Modals**
+   - BotSettingsModal now displays the bot's name in the title
+   - GroupSettingsPanel includes guidance on how to access bot-specific settings
+   - Clear visual distinction between bot-level and group-level settings
+   - Each settings category is properly organized with relevant controls
+
+4. **Advanced Reprocessing Control**
+   - Added "Try this again if..." criteria field for bot reprocessing
+   - Allows users to specify conditions that trigger response regeneration
+   - A fresh GPT instance evaluates if responses meet the specified criteria
+   - Automatically disables reprocessing if no criteria are specified
+   - Added "Reprocessing Instructions" field to provide additional guidance
+   - Provides fine-grained control over response quality standards
+
+5. **Signal Chain Status Indication**
+   - Added real-time processing stage indicators in the typing status
+   - Shows when a bot is in pre-processing, tool use, post-processing, or reprocessing
+   - Displays which tools are being used when in tool-calling stage
+   - Shows reprocessing attempt count (e.g., "reprocessing (2/3)")
+   - Provides transparent insight into the bot's thought process
+   - Creates a more engaging and informative user experience
+
+These improvements ensure users can easily understand which bots are active in the conversation, track their processing stages, and provide intuitive access to both bot-specific and group-wide settings through a consistent interface.
+
+## Signal Chain and Reprocessing Improvements
+
+We've implemented a robust tracking system for message processing stages and improved the reprocessing functionality:
+
+1. **Processing Stage Tracking**
+   - Added real-time tracking of all processing stages: pre-processing, tool-calling, post-processing, reprocessing
+   - Created a dedicated `ProcessingStateProvider` context to centralize processing state
+   - Implemented a singleton `ProcessingTrackerService` for consistent access across components
+   - Visual indicators in the typing status show current processing stage for each bot
+
+2. **Enhanced Reprocessing System**
+   - Implemented criteria-based reprocessing with GPT evaluation
+   - Added "Try this again if..." input field in bot settings to define reprocessing criteria
+   - Added "Reprocessing Instructions" input field to guide improved responses
+   - Created separate ReprocessingProcessor to handle response regeneration
+   - Made reprocessing logic work independently of post-processing enablement
+   - Added special handling for "yes", "true", or "always" criteria for easy testing
+   - Added proper tracking of reprocessing attempts against global maximum
+
+3. **Improved Processing Feedback**
+   - Added stage indicators in typing status (e.g., "Bot is pre-processing...")
+   - Show tool usage in typing status (e.g., "Bot is using Brave Search...")
+   - Display reprocessing count (e.g., "Bot is reprocessing (2/3)...")
+   - All processing stages connect to the bot settings for proper configuration
+
+4. **Architecture Improvements**
+   - Unified processing state tracking across all components
+   - Implemented a cleaner separation of processing stages
+   - Added proper error handling for each processing stage
+   - Ensured reprocessing respects global depth limits
+   - Fixed issue where reprocessing was skipped when post-processing was disabled
+   - Added comprehensive logging to facilitate debugging
+
+These improvements make the processing stages more transparent to users and ensure that reprocessing is properly configured and triggered based on user-defined criteria, regardless of other pipeline settings.
+
+## Architecture Improvements for Single-Responsibility
+
+Following the single-responsibility principle, we've significantly improved the architecture of the system:
+
+1. **Centralized LLM Service**
+   - Created a dedicated `LLMService` that handles all API calls to language models
+   - Removed duplicated LLM interaction code from processors
+   - Centralized error handling for API calls
+   - Added specialized methods for different use cases (preprocessing, postprocessing, evaluation)
+   - Makes it easier to swap models, add caching, or change providers
+
+2. **Separated Prompt Management**
+   - Implemented a `PromptTemplateManager` to handle all prompt templates
+   - Removed prompt string construction from processing components
+   - Created consistent prompt formatting across the system
+   - Makes prompts easier to test, version, and modify
+
+3. **Isolated Reprocessing Evaluation**
+   - Created a dedicated `ReprocessingEvaluator` to handle reprocessing decisions
+   - Separated evaluation logic from processing and tracking logic
+   - Provided clear, focused responsibility for determining when to reprocess
+   - Added detailed logging for reprocessing decisions
+
+4. **Cleaner Component Responsibilities**
+   - Each processor now focuses solely on its specific transformation
+   - The `PreprocessingProcessor` only handles preprocessing logic
+   - The `PostprocessingProcessor` only handles postprocessing logic
+   - The `ReprocessingProcessor` only handles reprocessing logic
+   - The `ProcessingTracker` only handles state tracking
+
+These architectural improvements have several benefits:
+- **Maintainability**: Each component has a clear, singular responsibility
+- **Testability**: Components can be tested in isolation
+- **Flexibility**: Easier to modify one component without affecting others
+- **Readability**: Code is more organized and intention-revealing
+- **Reusability**: Services can be reused across different parts of the application
+
+By following the single-responsibility principle, we've made the codebase more robust, easier to understand, and better positioned for future enhancements.

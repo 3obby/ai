@@ -8,7 +8,8 @@ import {
   LLMCallProcessor,
   ToolResolutionProcessor,
   ToolExecutionProcessor,
-  PostprocessingProcessor
+  PostprocessingProcessor,
+  ReprocessingProcessor
 } from './processors';
 import { createLoggingMiddleware } from './middlewares/LoggingMiddleware';
 
@@ -25,6 +26,7 @@ export class PipelineFactory {
     disablePreprocessing?: boolean;
     disableToolProcessing?: boolean;
     disablePostprocessing?: boolean;
+    disableReprocessing?: boolean;
   } = {}): PipelineManager {
     const config: PipelineConfig = {
       stages: {
@@ -69,6 +71,13 @@ export class PipelineFactory {
           enabled: !options.disablePostprocessing,
           middlewares: [],
         },
+        
+        // Reprocessing stage
+        [PipelineStage.REPROCESSING]: {
+          processor: ReprocessingProcessor,
+          enabled: !options.disableReprocessing,
+          middlewares: [],
+        },
       },
       
       // Global middlewares applied to all stages
@@ -86,6 +95,7 @@ export class PipelineFactory {
   public static createVoicePipeline(): PipelineManager {
     return PipelineFactory.createDefaultPipeline({
       disableToolProcessing: true, // Disable tool processing in voice mode
+      disableReprocessing: true, // Disable reprocessing in voice mode
       enableLogging: true, // Enable logging for debugging
     });
   }
@@ -99,6 +109,7 @@ export class PipelineFactory {
       disablePreprocessing: true,
       disableToolProcessing: true,
       disablePostprocessing: true,
+      disableReprocessing: true,
     });
   }
   
@@ -114,9 +125,11 @@ export class PipelineFactory {
     const config = pipeline['config'] as PipelineConfig;
     
     Object.values(PipelineStage).forEach(stage => {
-      config.stages[stage].middlewares.push(
-        createLoggingMiddleware('debug')
-      );
+      if (config.stages[stage]) {
+        config.stages[stage].middlewares.push(
+          createLoggingMiddleware('debug')
+        );
+      }
     });
     
     return pipeline;

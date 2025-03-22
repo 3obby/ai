@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useGroupChat } from '../../hooks/useGroupChat';
 import { useBotRegistry } from '../../context/BotRegistryProvider';
-import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic, Volume2, Settings, ChevronDown, ChevronRight, AlertCircle, Activity } from 'lucide-react';
+import { Plus, Save, Check, Sliders, Bot, RefreshCw, Mic, Volume2, Settings, ChevronDown, ChevronRight, AlertCircle, Activity, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoiceTransitionSettings } from './VoiceTransitionSettings';
 import { useVoiceSettings } from '../../hooks/useVoiceSettings';
-import { VoiceTransitionFeedback } from '../voice/VoiceTransitionFeedback';
 import { VadMode, VoiceOption } from '../../types/voice';
 import { VoiceActivityIndicator } from '../voice/VoiceActivityIndicator';
 
@@ -291,63 +290,116 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 space-y-6">
+    <div className="p-4 space-y-8">
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-1">Group Chat Settings</h2>
+        <p className="text-sm text-muted-foreground">
+          Configure group-wide settings here. For bot-specific settings like model, personality, or tools, 
+          click on a bot's avatar or name in the chat.
+        </p>
+      </div>
+
+      {/* Chat Name */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Basic Settings</h3>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">
+            Chat Name
+            <input
+              type="text"
+              name="name"
+              value={formValues.name}
+              onChange={handleChange}
+              className="mt-1 w-full p-2 border rounded-md"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Bot Selection */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Active Bots</h3>
+          <div className="text-xs text-muted-foreground">
+            {activeBotIds.length} selected
+          </div>
+        </div>
+        
+        <div className="border rounded-md divide-y max-h-60 overflow-y-auto">
+          {allBots.map((bot) => (
+            <div key={bot.id} className="p-2 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-2 text-sm">
+                  {bot.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="font-medium text-sm">{bot.name}</div>
+                  <div className="text-xs text-muted-foreground">{bot.model}</div>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {!bot.id.startsWith('voice-') && (
+                  <input
+                    type="checkbox"
+                    id={`bot-${bot.id}`}
+                    checked={activeBotIds.includes(bot.id)}
+                    onChange={() => handleBotSelectionChange(bot.id, !activeBotIds.includes(bot.id))}
+                    className="h-4 w-4 ml-4"
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Info className="h-4 w-4 mr-1" />
+          <span>Click on a bot's avatar in the chat to customize its settings</span>
+        </div>
+      </div>
+
+      {/* Chat Behavior Settings */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Chat Behavior</h3>
+        
+        <div className="space-y-3">
+          <label className="block text-sm">
+            Response Mode
+            <select
+              name="responseMode"
+              value={formValues.responseMode}
+              onChange={handleChange}
+              className="mt-1 w-full p-2 border rounded-md"
+            >
+              <option value="sequential">Sequential (one bot at a time)</option>
+              <option value="parallel">Parallel (all bots respond)</option>
+            </select>
+          </label>
+          
+          <label className="block text-sm">
+            Max Reprocessing Depth
+            <input
+              type="number"
+              name="maxReprocessingDepth"
+              min="0"
+              max="5"
+              value={formValues.maxReprocessingDepth}
+              onChange={handleChange}
+              className="mt-1 w-full p-2 border rounded-md"
+            />
+            <span className="text-xs text-muted-foreground">
+              Maximum number of reprocessing iterations for bot responses. Higher values can improve quality but may increase response time.
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Voice Settings Section - Keep this existing section */}
+      
       {/* General Settings */}
       <div>
         <h3 className="text-lg font-medium mb-4">General Settings</h3>
         <div className="space-y-4">
-          <div className="grid gap-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Chat Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formValues.name}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <label htmlFor="responseMode" className="text-sm font-medium">
-              Response Mode
-            </label>
-            <select
-              id="responseMode"
-              name="responseMode"
-              value={formValues.responseMode}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-            >
-              <option value="sequential">Sequential</option>
-              <option value="parallel">Parallel</option>
-            </select>
-            <p className="text-xs text-muted-foreground">
-              Sequential: Bots respond one after another. Parallel: All bots respond at once.
-            </p>
-          </div>
-          
-          <div className="grid gap-2">
-            <label htmlFor="maxReprocessingDepth" className="text-sm font-medium">
-              Max Reprocessing Depth
-            </label>
-            <input
-              type="number"
-              id="maxReprocessingDepth"
-              name="maxReprocessingDepth"
-              min="0"
-              max="10"
-              value={formValues.maxReprocessingDepth}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Controls how many times a bot can reprocess a response. Set to 0 to disable reprocessing completely.
-            </p>
-          </div>
-          
           <div className="grid gap-2">
             <label htmlFor="systemPrompt" className="text-sm font-medium">
               System Prompt
@@ -818,89 +870,36 @@ export function GroupSettingsPanel({ onClose }: GroupSettingsPanelProps) {
         </div>
       )}
       
-      {/* Bot Selection */}
-      <div>
-        <h3 className="text-lg font-medium mb-4 flex items-center">
-          <Bot className="h-5 w-5 mr-2" />
-          Active Bots
-        </h3>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Select which bots are active in this chat. To configure a specific bot's settings, click on its avatar or name in the chat.
-          </p>
-          
-          <div className="space-y-2">
-            {allBots.map((bot) => {
-              const isActive = activeBotIds.includes(bot.id);
-              return (
-                <div 
-                  key={bot.id} 
-                  className={cn(
-                    "flex items-center p-2 rounded-md",
-                    isActive 
-                      ? "bg-primary/10" 
-                      : "bg-muted"
-                  )}
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm mr-2">
-                    {bot.name.charAt(0)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{bot.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{bot.model || 'GPT-4o'}</div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => handleBotSelectionChange(bot.id, !isActive)}
-                      className={cn(
-                        "p-1.5 rounded-md",
-                        isActive 
-                          ? "bg-primary/10 text-primary hover:bg-primary/20" 
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                      )}
-                      aria-label={isActive ? `Remove ${bot.name} from chat` : `Add ${bot.name} to chat`}
-                    >
-                      {isActive ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      
-      {/* Action Buttons */}
-      <div className="flex justify-between pt-4 border-t">
+      {/* Actions */}
+      <div className="flex justify-between pt-6 border-t mt-8">
         <button
           type="button"
           onClick={handleResetChat}
-          className="px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-md transition-colors flex items-center"
+          className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-md transition-colors"
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
           Reset Chat
         </button>
         
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border rounded-md hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+          
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors flex items-center"
-          >
-            <Save className="h-4 w-4 mr-2" />
             Save Settings
           </button>
         </div>
       </div>
-    </form>
+    </div>
   );
 }

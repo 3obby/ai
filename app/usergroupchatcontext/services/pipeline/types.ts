@@ -55,7 +55,8 @@ export enum PipelineStage {
   LLM_CALL = 'llm_call',
   TOOL_RESOLUTION = 'tool_resolution',
   TOOL_EXECUTION = 'tool_execution',
-  POSTPROCESSING = 'postprocessing'
+  POSTPROCESSING = 'postprocessing',
+  REPROCESSING = 'reprocessing'
 }
 
 /**
@@ -79,13 +80,12 @@ export interface PipelineConfig {
  * All possible errors that can occur in the message pipeline
  */
 export enum PipelineErrorType {
-  PREPROCESSING_ERROR = 'preprocessing_error',
-  LLM_CALL_ERROR = 'llm_call_error',
-  TOOL_RESOLUTION_ERROR = 'tool_resolution_error',
-  TOOL_EXECUTION_ERROR = 'tool_execution_error',
-  POSTPROCESSING_ERROR = 'postprocessing_error',
-  MIDDLEWARE_ERROR = 'middleware_error',
-  UNKNOWN_ERROR = 'unknown_error'
+  PREPROCESSING_ERROR = 'preprocessingError',
+  PROCESSING_ERROR = 'processingError',
+  POSTPROCESSING_ERROR = 'postprocessingError',
+  REPROCESSING_ERROR = 'reprocessingError',
+  TOOL_CALL_ERROR = 'toolCallError',
+  GENERIC_ERROR = 'genericError'
 }
 
 /**

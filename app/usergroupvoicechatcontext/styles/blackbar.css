@@ -1,0 +1,242 @@
+/* 
+ * Blackbar & Redbar Styles
+ * 
+ * CSS for the bottom navigation bars:
+ * - blackbar: primary control for text mode
+ * - redbar: primary control for voice mode
+ */
+
+/* Base blackbar styles */
+.blackbar {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background-color: var(--background);
+  padding: 0.75rem;
+  /* Mobile safe area bottom padding */
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  width: 100%;
+  z-index: 10;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Voice mode redbar variation */
+.redbar {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(220, 38, 38, 0.3);
+  background-color: rgba(254, 226, 226, 0.9);
+  padding: 0.75rem;
+  /* Mobile safe area bottom padding */
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  width: 100%;
+  z-index: 10;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Dark mode redbar */
+:root.dark .redbar {
+  background-color: rgba(127, 29, 29, 0.3);
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Textarea in blackbar */
+.blackbar textarea {
+  width: 100%;
+  resize: none;
+  min-height: 50px;
+  max-height: 200px;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  /* Prevent zoom on input focus for mobile */
+  font-size: 16px !important; /* iOS won't zoom on inputs with font-size >= 16px */
+  touch-action: manipulation; /* Additional help for touch devices */
+}
+
+/* Audio visualizer in redbar */
+.redbar .audio-visualizer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Transcription timer */
+.redbar .transcription-timer {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 20;
+}
+
+.redbar .timer-display {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(220, 38, 38, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Interrupt button */
+.redbar .interrupt-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(239, 68, 68, 0.3);
+  backdrop-filter: blur(1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.redbar .interrupt-button {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: rgb(220, 38, 38);
+  border-radius: 9999px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.redbar .interrupt-button:hover {
+  background-color: white;
+  transform: scale(1.05);
+}
+
+/* Controls container for both bars */
+.blackbar-controls,
+.redbar-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* Buttons in both bars */
+.blackbar button,
+.redbar button {
+  border-radius: 9999px;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Button hover effects */
+.blackbar button:hover:not(:disabled),
+.redbar button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* Button active effects */
+.blackbar button:active:not(:disabled),
+.redbar button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Input containers */
+.blackbar-input-container,
+.redbar-input-container {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+/* Voice mode recording button animations */
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes pulse-white {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+/* Ripple animation for voice button */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for active state */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .blackbar, .redbar {
+    padding: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  
+  /* Ensure buttons are easy to tap on mobile */
+  .blackbar button,
+  .redbar button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+/* Voice mode button ripple effect */
+.animate-ripple {
+  animation: ripple 0.6s linear forwards;
+}
+
+/* Prevent zoom on mobile devices */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important; /* Minimum font size to prevent zoom on iOS */
+  }
+  
+  /* Prevent auto-zoom on focus */
+  .blackbar textarea:focus {
+    transform: none !important;
+    font-size: 16px !important;
+  }
+} 

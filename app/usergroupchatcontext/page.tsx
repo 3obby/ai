@@ -9,6 +9,7 @@ import { LiveKitProvider } from './context/LiveKitProvider';
 import { LiveKitIntegrationProvider } from './context/LiveKitIntegrationProvider';
 import { PromptsProvider, usePromptsContext } from './context/PromptsContext';
 import { VoiceStateProvider } from './context/VoiceStateProvider';
+import { ProcessingStateProvider } from './context/ProcessingStateProvider';
 import { sampleBots } from './data/sampleBots';
 import { defaultGroupChatSettings } from './data/defaultSettings';
 import { ChatInterface } from './components/chat/ChatInterface';
@@ -16,7 +17,6 @@ import { Info, X } from 'lucide-react';
 import VoiceIntegration from './components/voice/VoiceIntegration';
 import VoiceResponseManager from './components/voice/VoiceResponseManager';
 import VoiceCommandController from './components/voice/VoiceCommandController';
-import { VoiceTransitionFeedback } from './components/voice/VoiceTransitionFeedback';
 import EventLoggerButton from './components/debug/EventLoggerButton';
 import './mobile.css';
 
@@ -225,26 +225,27 @@ export default function GroupChatContextPage() {
               <ToolIntegrationProvider>
                 <PromptsProvider>
                   <VoiceStateProvider>
-                    <LiveKitIntegrationProvider>
-                      {/* Event Debug Tools - only in development */}
-                      {isDevelopment && <EventLoggerButton />}
-                      
-                   
-                      
-                      {/* Main content */}
-                      <div className="flex-1 min-h-0 flex flex-col">
-                        <ChatInterface />
-                      </div>
-                      
-                      {/* Add voice-related components */}
-                      <VoiceIntegration />
-                      <VoiceResponseManager />
-                      <VoiceCommandController />
-                      <VoiceTransitionFeedback />
-                      
-                      {/* Initialize bots */}
-                      <BotsInitializer />
-                    </LiveKitIntegrationProvider>
+                    <ProcessingStateProvider>
+                      <LiveKitIntegrationProvider>
+                        {/* Event Debug Tools - only in development */}
+                        {isDevelopment && <EventLoggerButton />}
+                        
+                     
+                        
+                        {/* Main content */}
+                        <div className="flex-1 min-h-0 flex flex-col">
+                          <ChatInterface />
+                        </div>
+                        
+                        {/* Add voice-related components */}
+                        <VoiceIntegration />
+                        <VoiceResponseManager />
+                        <VoiceCommandController />
+                        
+                        {/* Initialize bots */}
+                        <BotsInitializer />
+                      </LiveKitIntegrationProvider>
+                    </ProcessingStateProvider>
                   </VoiceStateProvider>
                 </PromptsProvider>
               </ToolIntegrationProvider>

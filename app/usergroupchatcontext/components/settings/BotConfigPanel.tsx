@@ -14,7 +14,7 @@ export function BotConfigPanel({ botId, onClose }: BotConfigPanelProps) {
   const { state, dispatch, getBot } = useBotRegistry();
   const [formValues, setFormValues] = useState<Partial<Bot>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('identity');
   const [availableTools, setAvailableTools] = useState([
     { 
       id: 'brave_search', 
@@ -44,7 +44,9 @@ export function BotConfigPanel({ botId, onClose }: BotConfigPanelProps) {
         maxTokens: bot.maxTokens,
         enabled: bot.enabled,
         useTools: bot.useTools,
-        enableReprocessing: bot.enableReprocessing
+        enableReprocessing: bot.enableReprocessing,
+        reprocessingCriteria: bot.reprocessingCriteria || '',
+        reprocessingInstructions: bot.reprocessingInstructions || ''
       });
       setIsLoading(false);
     }
@@ -136,13 +138,20 @@ export function BotConfigPanel({ botId, onClose }: BotConfigPanelProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className="flex border-b overflow-x-auto">
           <button
             type="button"
-            className={`px-4 py-2 ${activeTab === 'general' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
-            onClick={() => setActiveTab('general')}
+            className={`px-4 py-2 ${activeTab === 'identity' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
+            onClick={() => setActiveTab('identity')}
           >
-            General
+            Identity
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 ${activeTab === 'model' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
+            onClick={() => setActiveTab('model')}
+          >
+            Model
           </button>
           <button
             type="button"
@@ -160,408 +169,425 @@ export function BotConfigPanel({ botId, onClose }: BotConfigPanelProps) {
           </button>
         </div>
         
-        {/* General Tab */}
-        {activeTab === 'general' && (
-          <>
-            {/* Bot Identity */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Bot Identity</h3>
-              
-              <div className="space-y-3">
-                <label className="block text-sm font-medium">
-                  Name
-                  <input
-                    type="text"
-                    name="name"
-                    value={formValues.name || ''}
-                    onChange={handleChange}
-                    className="mt-1 w-full p-2 border rounded-md bg-background"
-                    required
-                  />
-                </label>
-                
-                <label className="block text-sm font-medium">
-                  Description
-                  <textarea
-                    name="description"
-                    value={formValues.description || ''}
-                    onChange={handleChange}
-                    rows={2}
-                    className="mt-1 w-full p-2 border rounded-md bg-background"
-                  />
-                </label>
-              </div>
-            </div>
+        {/* Identity Tab */}
+        {activeTab === 'identity' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Bot Identity</h3>
             
-            {/* Model Settings */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Model Settings</h3>
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  value={formValues.name || ''}
+                  onChange={handleChange}
+                  className="mt-1 w-full p-2 border rounded-md bg-background"
+                  required
+                />
+              </label>
               
-              <div className="space-y-3">
-                <label className="block text-sm font-medium">
-                  Model
-                  <select
-                    name="model"
-                    value={formValues.model || ''}
-                    onChange={handleChange}
-                    className="mt-1 w-full p-2 border rounded-md bg-background"
-                    required
-                  >
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="claude-3-opus">Claude 3 Opus</option>
-                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                    <option value="claude-3-haiku">Claude 3 Haiku</option>
-                  </select>
-                </label>
-                
-                <label className="block text-sm font-medium">
-                  Temperature
-                  <input
-                    type="range"
-                    name="temperature"
-                    value={formValues.temperature || 0}
-                    onChange={handleChange}
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    className="mt-1 w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>0 - More precise</span>
-                    <span>{formValues.temperature?.toFixed(1)}</span>
-                    <span>1 - More creative</span>
-                  </div>
-                </label>
-                
-                <label className="block text-sm font-medium">
-                  Max Tokens
-                  <input
-                    type="number"
-                    name="maxTokens"
-                    value={formValues.maxTokens || 0}
-                    onChange={handleChange}
-                    min="100"
-                    max="32000"
-                    className="mt-1 w-full p-2 border rounded-md bg-background"
-                  />
-                </label>
-              </div>
-            </div>
-            
-            {/* System Prompt */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">System Prompt</h3>
-              
-              <div>
+              <label className="block text-sm font-medium">
+                Description
+                <textarea
+                  name="description"
+                  value={formValues.description || ''}
+                  onChange={handleChange}
+                  rows={2}
+                  className="mt-1 w-full p-2 border rounded-md bg-background"
+                />
+              </label>
+
+              <label className="block text-sm font-medium">
+                System Prompt
                 <textarea
                   name="systemPrompt"
                   value={formValues.systemPrompt || ''}
                   onChange={handleChange}
-                  rows={6}
-                  className="w-full p-2 border rounded-md bg-background font-mono text-sm"
-                  placeholder="Enter a system prompt to define the bot's behavior and persona..."
+                  rows={4}
+                  className="mt-1 w-full p-2 border rounded-md bg-background"
                 />
-              </div>
+                <span className="text-xs text-muted-foreground">
+                  Core instructions that define this bot's personality and capabilities
+                </span>
+              </label>
             </div>
-            
-            {/* Features */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Features</h3>
-              
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enabled"
-                    name="enabled"
-                    checked={formValues.enabled}
-                    onChange={handleChange}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <label htmlFor="enabled" className="text-sm cursor-pointer">
-                    Bot is enabled
-                  </label>
-                </div>
-              </div>
-            </div>
-          </>
+          </div>
         )}
+        
+        {/* Model Tab */}
+        {activeTab === 'model' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Model Settings</h3>
+            
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
+                Model
+                <select
+                  name="model"
+                  value={formValues.model || ''}
+                  onChange={handleChange}
+                  className="mt-1 w-full p-2 border rounded-md bg-background"
+                  required
+                >
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <option value="claude-3-opus">Claude 3 Opus</option>
+                  <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                  <option value="claude-3-haiku">Claude 3 Haiku</option>
+                </select>
+              </label>
+              
+              <label className="block text-sm font-medium">
+                Temperature
+                <input
+                  type="range"
+                  name="temperature"
+                  value={formValues.temperature || 0}
+                  onChange={handleChange}
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  className="mt-1 w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0 - More precise</span>
+                  <span>{formValues.temperature?.toFixed(1)}</span>
+                  <span>1 - More creative</span>
+                </div>
+              </label>
+              
+              <label className="block text-sm font-medium">
+                Max Tokens
+                <input
+                  type="number"
+                  name="maxTokens"
+                  value={formValues.maxTokens || 0}
+                  onChange={handleChange}
+                  min="100"
+                  max="32000"
+                  className="mt-1 w-full p-2 border rounded-md bg-background"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Maximum number of tokens (words/characters) in each response
+                </span>
+              </label>
 
+              <div className="flex items-center mt-4">
+                <input
+                  type="checkbox"
+                  id="enabled"
+                  name="enabled"
+                  checked={formValues.enabled}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded-sm border-gray-300"
+                />
+                <label htmlFor="enabled" className="ml-2 text-sm font-medium">
+                  Bot Enabled
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Processing Tab */}
         {activeTab === 'processing' && (
-          <>
-            {/* Pre-processing Settings */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Pre-processing</h3>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enablePreProcessing"
-                    name="enablePreProcessing"
-                    checked={!!formValues.preProcessingPrompt}
-                    onChange={(e) => {
-                      if (!e.target.checked) {
-                        setFormValues(prev => ({
-                          ...prev,
-                          preProcessingPrompt: ''
-                        }));
-                      } else {
-                        setFormValues(prev => ({
-                          ...prev,
-                          preProcessingPrompt: 'Analyze the user query and rewrite it to be more precise and clear.'
-                        }));
-                      }
-                    }}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <label htmlFor="enablePreProcessing" className="text-sm cursor-pointer">
-                    Enabled
-                  </label>
-                </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Processing Settings</h3>
+            
+            <div className="p-3 bg-muted/10 rounded-md space-y-3">
+              <h4 className="text-sm font-medium">Pre-Processing</h4>
+              
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id="has-preprocessing"
+                  checked={!!formValues.preProcessingPrompt}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
+                      setFormValues(prev => ({
+                        ...prev,
+                        preProcessingPrompt: ''
+                      }));
+                    } else {
+                      setFormValues(prev => ({
+                        ...prev,
+                        preProcessingPrompt: 'Process the user input by: \n1. Analyzing key points\n2. Identifying main questions or requests'
+                      }));
+                    }
+                  }}
+                  className="h-4 w-4 rounded-sm border-gray-300"
+                />
+                <label htmlFor="has-preprocessing" className="ml-2 text-sm">
+                  Enable Pre-Processing
+                </label>
               </div>
               
-              {!!formValues.preProcessingPrompt && (
-                <div className="space-y-2">
+              {formValues.preProcessingPrompt && (
+                <div>
                   <label className="block text-sm font-medium">
-                    Pre-processing Prompt
+                    Pre-Processing Instructions
                     <textarea
                       name="preProcessingPrompt"
-                      value={formValues.preProcessingPrompt}
+                      value={formValues.preProcessingPrompt || ''}
                       onChange={handleChange}
-                      rows={4}
+                      rows={3}
                       className="mt-1 w-full p-2 border rounded-md bg-background"
-                      placeholder="Prompt for pre-processing user messages"
                     />
+                    <span className="text-xs text-muted-foreground">
+                      Instructions for processing user messages before they reach the bot
+                    </span>
                   </label>
-                  <p className="text-xs text-muted-foreground">
-                    This prompt will be used to analyze and potentially modify user messages before they are sent to the model.
-                    For example: "Analyze this message and improve clarity while keeping the original meaning."
-                  </p>
                 </div>
               )}
             </div>
             
-            {/* Post-processing Settings */}
-            <div className="space-y-4 mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Post-processing</h3>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enablePostProcessing"
-                    name="enablePostProcessing"
-                    checked={!!formValues.postProcessingPrompt}
-                    onChange={(e) => {
-                      if (!e.target.checked) {
-                        setFormValues(prev => ({
-                          ...prev,
-                          postProcessingPrompt: ''
-                        }));
-                      } else {
-                        setFormValues(prev => ({
-                          ...prev,
-                          postProcessingPrompt: 'Improve this response by making it more clear, concise, and helpful.'
-                        }));
-                      }
-                    }}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <label htmlFor="enablePostProcessing" className="text-sm cursor-pointer">
-                    Enabled
-                  </label>
-                </div>
-              </div>
+            <div className="p-3 bg-muted/10 rounded-md space-y-3">
+              <h4 className="text-sm font-medium">Post-Processing</h4>
               
-              {!!formValues.postProcessingPrompt && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Post-processing Prompt
-                    <textarea
-                      name="postProcessingPrompt"
-                      value={formValues.postProcessingPrompt}
-                      onChange={handleChange}
-                      rows={4}
-                      className="mt-1 w-full p-2 border rounded-md bg-background"
-                      placeholder="Prompt for post-processing bot responses"
-                    />
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    This prompt will be used to refine and improve bot responses before they are displayed to the user.
-                    For example: "Improve this response by: 1) Ensuring accuracy 2) Removing repetition 3) Making the tone consistent."
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Reprocessing Settings */}
-            <div className="space-y-4 mt-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Response Reprocessing</h3>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enableReprocessing"
-                    name="enableReprocessing"
-                    checked={!!formValues.enableReprocessing}
-                    onChange={(e) => {
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id="has-postprocessing"
+                  checked={!!formValues.postProcessingPrompt}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
                       setFormValues(prev => ({
                         ...prev,
-                        enableReprocessing: e.target.checked
+                        postProcessingPrompt: ''
                       }));
-                    }}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <label htmlFor="enableReprocessing" className="text-sm cursor-pointer">
-                    Enabled
-                  </label>
-                </div>
+                    } else {
+                      setFormValues(prev => ({
+                        ...prev,
+                        postProcessingPrompt: 'Refine the bot response by:\n1. Improving clarity and tone\n2. Ensuring accuracy\n3. Removing redundancy'
+                      }));
+                    }
+                  }}
+                  className="h-4 w-4 rounded-sm border-gray-300"
+                />
+                <label htmlFor="has-postprocessing" className="ml-2 text-sm">
+                  Enable Post-Processing
+                </label>
               </div>
               
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Reprocessing allows the bot to iteratively improve its responses when significant changes are made during post-processing. 
-                  This can help with complex questions but may result in multiple responses to a single user message.
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Note: Reprocessing respects the global maximum reprocessing depth limit set in group settings.
-                  When enabled, the bot may generate multiple successive responses if post-processing significantly changes the content.
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Tools Tab */}
-        {activeTab === 'tools' && (
-          <>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Tool Configuration</h3>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="useTools"
-                    name="useTools"
-                    checked={formValues.useTools}
-                    onChange={handleChange}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <label htmlFor="useTools" className="text-sm cursor-pointer">
-                    Enable tool usage
+              {formValues.postProcessingPrompt && (
+                <div>
+                  <label className="block text-sm font-medium">
+                    Post-Processing Instructions
+                    <textarea
+                      name="postProcessingPrompt"
+                      value={formValues.postProcessingPrompt || ''}
+                      onChange={handleChange}
+                      rows={3}
+                      className="mt-1 w-full p-2 border rounded-md bg-background"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Instructions for processing bot responses before displaying to the user
+                    </span>
                   </label>
                 </div>
-              </div>
-              
-              {formValues.useTools && (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-md font-medium">Available Tools</h4>
-                    </div>
-                    
-                    <div className="mt-2 border rounded-md divide-y max-h-60 overflow-y-auto">
-                      {availableTools.map(tool => (
-                        <div key={tool.id} className="p-2 space-y-2">
-                          <div className="flex items-start space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`tool-${tool.id}`}
-                              checked={tool.isEnabled}
-                              onChange={() => handleToolSelection(tool.id)}
-                              className="mt-1 h-4 w-4"
-                            />
-                            <label htmlFor={`tool-${tool.id}`} className="flex-1 cursor-pointer">
-                              <div className="flex items-center">
-                                <Wrench className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span className="font-medium">{tool.name}</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {tool.description}
-                              </p>
-                            </label>
-                          </div>
-                          
-                          {tool.isEnabled && (
-                            <div className="pl-6 space-y-2 mt-2">
-                              <div>
-                                <label className="text-xs font-medium block mb-1">
-                                  Usage Frequency
-                                </label>
-                                <select
-                                  value={tool.settings.usageFrequency}
-                                  onChange={(e) => handleToolSettingChange(
-                                    tool.id, 
-                                    'usageFrequency', 
-                                    e.target.value
-                                  )}
-                                  className="w-full p-1 text-xs border rounded-md bg-background"
-                                >
-                                  <option value="always">Always use when appropriate</option>
-                                  <option value="keywords">When specific keywords are detected</option>
-                                  <option value="uncertainty">When the bot is uncertain about an answer</option>
-                                </select>
-                              </div>
-                              
-                              {tool.settings.usageFrequency === 'keywords' && (
-                                <div>
-                                  <label className="text-xs font-medium block mb-1">
-                                    Trigger Keywords (comma separated)
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={tool.settings.keywords}
-                                    onChange={(e) => handleToolSettingChange(
-                                      tool.id, 
-                                      'keywords', 
-                                      e.target.value
-                                    )}
-                                    placeholder="search, find, look up, etc."
-                                    className="w-full p-1 text-xs border rounded-md bg-background"
-                                  />
-                                </div>
-                              )}
-                              
-                              <div>
-                                <label className="text-xs font-medium block mb-1">
-                                  API Key
-                                </label>
-                                <div className="bg-muted/20 rounded p-1 text-xs text-muted-foreground">
-                                  {tool.settings.apiKey === 'ALREADY_CONFIGURED' 
-                                    ? 'API key is configured and ready to use' 
-                                    : 'API key not configured'}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
               )}
             </div>
-          </>
+            
+            <div className="p-3 bg-muted/10 rounded-md space-y-3">
+              <h4 className="text-sm font-medium">Reprocessing</h4>
+              
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id="enableReprocessing"
+                  name="enableReprocessing"
+                  checked={formValues.enableReprocessing && !!formValues.reprocessingCriteria}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
+                      setFormValues(prev => ({
+                        ...prev,
+                        enableReprocessing: false,
+                        reprocessingCriteria: ''
+                      }));
+                    } else {
+                      setFormValues(prev => ({
+                        ...prev,
+                        enableReprocessing: true,
+                        reprocessingCriteria: prev.reprocessingCriteria || 'The response is vague or lacks specific details.',
+                        reprocessingInstructions: prev.reprocessingInstructions || 'Please be more specific and provide concrete examples.'
+                      }));
+                    }
+                  }}
+                  className="h-4 w-4 rounded-sm border-gray-300"
+                />
+                <label htmlFor="enableReprocessing" className="ml-2 text-sm font-medium">
+                  Enable Reprocessing
+                </label>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, the bot's final response proposal will be evaluated against specified criteria and regenerated if needed
+              </p>
+              
+              {formValues.enableReprocessing && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Try this again if...
+                      <textarea
+                        name="reprocessingCriteria"
+                        value={formValues.reprocessingCriteria || ''}
+                        onChange={(e) => {
+                          const criteria = e.target.value;
+                          setFormValues(prev => ({
+                            ...prev,
+                            reprocessingCriteria: criteria,
+                            // Automatically disable reprocessing if criteria is empty
+                            enableReprocessing: criteria.trim().length > 0
+                          }));
+                        }}
+                        rows={2}
+                        placeholder="E.g.: The response is vague or lacks specific details"
+                        className="mt-1 w-full p-2 border rounded-md bg-background"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Define specific criteria that will trigger a response to be regenerated. A fresh GPT instance will evaluate if the response meets these criteria.
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Reprocessing Instructions
+                      <textarea
+                        name="reprocessingInstructions"
+                        value={formValues.reprocessingInstructions || ''}
+                        onChange={(e) => {
+                          const instructions = e.target.value;
+                          setFormValues(prev => ({
+                            ...prev,
+                            reprocessingInstructions: instructions
+                          }));
+                        }}
+                        rows={2}
+                        placeholder="E.g.: Please be more specific and provide concrete examples"
+                        className="mt-1 w-full p-2 border rounded-md bg-background"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Additional instructions to include when reprocessing. These will be combined with the original prompt to guide the improved response.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Tools Tab */}
+        {activeTab === 'tools' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Tool Access</h3>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="useTools"
+                  name="useTools"
+                  checked={formValues.useTools}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded-sm border-gray-300"
+                />
+                <label htmlFor="useTools" className="ml-2 text-sm font-medium">
+                  Enable Tool Usage
+                </label>
+              </div>
+            </div>
+            
+            {formValues.useTools && (
+              <div className="space-y-4 mt-4">
+                {availableTools.map(tool => (
+                  <div 
+                    key={tool.id} 
+                    className="p-3 border rounded-md bg-muted/5 hover:bg-muted/10 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Wrench className="h-4 w-4 mr-2 text-primary" />
+                        <div>
+                          <h4 className="text-sm font-medium">{tool.name}</h4>
+                          <p className="text-xs text-muted-foreground">{tool.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`tool-${tool.id}`}
+                          checked={tool.isEnabled}
+                          onChange={() => handleToolSelection(tool.id)}
+                          className="h-4 w-4 rounded-sm border-gray-300"
+                        />
+                        <label htmlFor={`tool-${tool.id}`} className="ml-2 text-sm cursor-pointer">
+                          {tool.isEnabled ? 'Enabled' : 'Disabled'}
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {tool.isEnabled && (
+                      <div className="mt-3 pl-6 border-l-2 border-primary/20">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium">
+                            Usage Frequency
+                            <select
+                              value={tool.settings.usageFrequency}
+                              onChange={(e) => handleToolSettingChange(
+                                tool.id,
+                                'usageFrequency',
+                                e.target.value as 'always' | 'keywords' | 'uncertainty'
+                              )}
+                              className="mt-1 w-full p-1.5 border rounded-md bg-background text-xs"
+                            >
+                              <option value="always">Always Available</option>
+                              <option value="keywords">When Specific Keywords Present</option>
+                              <option value="uncertainty">Only When Uncertain</option>
+                            </select>
+                          </label>
+                          
+                          {tool.settings.usageFrequency === 'keywords' && (
+                            <label className="block text-xs font-medium">
+                              Trigger Keywords
+                              <input
+                                type="text"
+                                value={tool.settings.keywords}
+                                onChange={(e) => handleToolSettingChange(
+                                  tool.id,
+                                  'keywords',
+                                  e.target.value
+                                )}
+                                placeholder="search, find, lookup, information"
+                                className="mt-1 w-full p-1.5 border rounded-md bg-background text-xs"
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                Comma-separated list of keywords that will trigger this tool
+                              </span>
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         
         {/* Submit Button */}
-        <div className="flex justify-end gap-2">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border rounded-md hover:bg-muted"
-            >
-              Cancel
-            </button>
-          )}
+        <div className="flex justify-end pt-4 border-t">
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
-            Save Bot
+            Save Changes
           </button>
         </div>
       </form>

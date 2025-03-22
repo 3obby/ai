@@ -5,4 +5,5 @@ export { PreprocessingProcessor } from './PreprocessingProcessor';
 export { LLMCallProcessor } from './LLMCallProcessor';
 export { ToolResolutionProcessor } from './ToolResolutionProcessor';
 export { ToolExecutionProcessor } from './ToolExecutionProcessor';
-export { PostprocessingProcessor } from './PostprocessingProcessor'; 
+export { PostprocessingProcessor } from './PostprocessingProcessor';
+export { ReprocessingProcessor } from './ReprocessingProcessor'; 
